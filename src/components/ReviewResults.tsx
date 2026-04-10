@@ -7,7 +7,7 @@
 // fields that Claude extracted automatically from the uploaded documents.
 // Everything below that is the review itself.
 
-import type { ReviewResult } from "@/lib/types";
+import type { ReviewResult, ScoreBreakdown } from "@/lib/types";
 
 interface Props {
   result: ReviewResult;
@@ -52,7 +52,7 @@ export default function ReviewResults({ result, onReset }: Props) {
   const statusBadge = (status: string) => {
     if (status === "Missing")
       return "bg-red-100 text-red-700 border border-red-200";
-    if (status === "Possibly covered elsewhere")
+    if (status === "Substantially complete")
       return "bg-amber-100 text-amber-700 border border-amber-200";
     return "bg-gray-100 text-gray-600 border border-gray-200";
   };
@@ -173,6 +173,9 @@ export default function ReviewResults({ result, onReset }: Props) {
           <p className="text-sm text-gray-700 leading-relaxed">{result.executive_summary}</p>
         </ResultCard>
 
+        {/* ── Score breakdown ── */}
+        <ScoreBreakdownCard breakdown={result.score_breakdown} />
+
         {/* ── Missing evidence ── */}
         {result.missing_evidence.length > 0 ? (
           <ResultCard
@@ -287,6 +290,58 @@ export default function ReviewResults({ result, onReset }: Props) {
 
       </div>
     </>
+  );
+}
+
+// ─── ScoreBreakdownCard ───────────────────────────────────────────────────
+
+function ScoreBreakdownCard({ breakdown }: { breakdown: ScoreBreakdown }) {
+  return (
+    <ResultCard
+      title="How this score was determined"
+      subtitle="Based on weighted evidence categories — critical items carry more weight"
+      accent="blue"
+    >
+      <p className="text-sm text-gray-700 leading-relaxed mb-4">{breakdown.rationale}</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {breakdown.strong_contributors.length > 0 && (
+          <div className="rounded-lg bg-green-50 border border-green-100 px-3 py-3">
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">Boosted the score</p>
+            <ul className="space-y-1">
+              {breakdown.strong_contributors.map((item, i) => (
+                <li key={i} className="text-xs text-green-800 leading-snug flex gap-1.5">
+                  <span className="mt-0.5 shrink-0 text-green-500">✓</span>{item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {breakdown.score_reductions.length > 0 && (
+          <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-3">
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Reduced the score</p>
+            <ul className="space-y-1">
+              {breakdown.score_reductions.map((item, i) => (
+                <li key={i} className="text-xs text-amber-800 leading-snug flex gap-1.5">
+                  <span className="mt-0.5 shrink-0 text-amber-500">−</span>{item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {breakdown.genuinely_missing.length > 0 && (
+          <div className="rounded-lg bg-red-50 border border-red-100 px-3 py-3">
+            <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">Genuinely missing</p>
+            <ul className="space-y-1">
+              {breakdown.genuinely_missing.map((item, i) => (
+                <li key={i} className="text-xs text-red-800 leading-snug flex gap-1.5">
+                  <span className="mt-0.5 shrink-0 text-red-500">✗</span>{item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </ResultCard>
   );
 }
 

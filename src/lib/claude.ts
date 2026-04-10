@@ -11,6 +11,7 @@ import type {
   MissingEvidence,
   KeyIssue,
   InspectionHeader,
+  ScoreBreakdown,
 } from "./types";
 
 const MODEL = "claude-sonnet-4-6";
@@ -63,7 +64,9 @@ export async function runBundleReview(files: ProcessedFile[]): Promise<ReviewRes
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system: buildSystemPrompt(),
-      messages: [{ role: "user", content: contentBlocks }],
+      messages: [
+        { role: "user", content: contentBlocks },
+      ],
     });
 
     const block = message.content[0];
@@ -73,28 +76,70 @@ export async function runBundleReview(files: ProcessedFile[]): Promise<ReviewRes
 
     rawResponse = block.text;
     console.log(`[claude] Response received (${rawResponse.length} chars)`);
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("[claude] Raw response:\n", rawResponse.slice(0, 2000));
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(`Claude API error: ${msg}`);
   }
 
-  // Strip code fences in case Claude wrapped the JSON anyway
   let parsed: unknown;
   try {
-    const cleaned = rawResponse
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/i, "")
-      .trim();
-    parsed = JSON.parse(cleaned);
+    parsed = extractJson(rawResponse);
   } catch {
-    console.error("[claude] Failed to parse response as JSON:", rawResponse.slice(0, 300));
+    console.error("[claude] Failed to parse response as JSON:", rawResponse.slice(0, 500));
     throw new Error(
       "Claude returned a response that could not be read as JSON. Try running the review again."
     );
   }
 
   return validateResult(parsed);
+}
+
+/**
+ * Robustly extracts a JSON object from a string that may contain:
+ *  - Markdown code fences (```json … ``` or ``` … ```)
+ *  - Leading or trailing prose text
+ *
+ * Strategy:
+ *  1. Try parsing the string as-is.
+ *  2. Extract content from the innermost ```json … ``` or ``` … ``` fence.
+ *  3. Slice from the first "{" to the last "}" and parse that.
+ *
+ * Throws if no valid JSON object can be extracted.
+ */
+function extractJson(raw: string): unknown {
+  // 1. Direct parse (fast path — works when prefill forces clean JSON)
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // fall through
+  }
+
+  // 2. Strip markdown code fences anywhere in the string
+  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenceMatch) {
+    try {
+      return JSON.parse(fenceMatch[1].trim());
+    } catch {
+      // fall through
+    }
+  }
+
+  // 3. Find outermost { … } and parse that slice
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start !== -1 && end > start) {
+    try {
+      return JSON.parse(raw.slice(start, end + 1));
+    } catch {
+      // fall through
+    }
+  }
+
+  throw new Error("No valid JSON object found in Claude response.");
 }
 
 function validateResult(raw: unknown): ReviewResult {
@@ -161,11 +206,33 @@ function validateResult(raw: unknown): ReviewResult {
   );
   const next_actions = need("next_actions", isStringArray, "string[]");
 
+  // ── score_breakdown ───────────────────────────────────────────────────────
+  if (typeof r.score_breakdown !== "object" || r.score_breakdown === null) {
+    throw new Error('Claude\'s response was missing a "score_breakdown" object.');
+  }
+  const sb = r.score_breakdown as Record<string, unknown>;
+  if (typeof sb.rationale !== "string") throw new Error("score_breakdown.rationale must be a string.");
+  if (!Array.isArray(sb.strong_contributors) || !sb.strong_contributors.every((x) => typeof x === "string")) {
+    throw new Error("score_breakdown.strong_contributors must be a string array.");
+  }
+  if (!Array.isArray(sb.score_reductions) || !sb.score_reductions.every((x) => typeof x === "string")) {
+    throw new Error("score_breakdown.score_reductions must be a string array.");
+  }
+  if (!Array.isArray(sb.genuinely_missing) || !sb.genuinely_missing.every((x) => typeof x === "string")) {
+    throw new Error("score_breakdown.genuinely_missing must be a string array.");
+  }
+  const score_breakdown: ScoreBreakdown = {
+    rationale: sb.rationale as string,
+    strong_contributors: sb.strong_contributors as string[],
+    score_reductions: sb.score_reductions as string[],
+    genuinely_missing: sb.genuinely_missing as string[],
+  };
+
   // ── missing_evidence ──────────────────────────────────────────────────────
   if (!Array.isArray(r.missing_evidence)) {
     throw new Error('Claude\'s response was missing a "missing_evidence" array.');
   }
-  const validStatuses = ["Missing", "Possibly covered elsewhere", "Unclear"] as const;
+  const validStatuses = ["Missing", "Substantially complete", "Unclear"] as const;
   const missing_evidence: MissingEvidence[] = r.missing_evidence.map((item: unknown, i: number) => {
     if (typeof item !== "object" || item === null) throw new Error(`missing_evidence[${i}] is not an object.`);
     const m = item as Record<string, unknown>;
@@ -219,6 +286,7 @@ function validateResult(raw: unknown): ReviewResult {
     confidence,
     executive_summary,
     package_assessment,
+    score_breakdown,
     missing_evidence,
     key_issues,
     next_actions,

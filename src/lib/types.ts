@@ -36,14 +36,24 @@ export interface InspectionHeader {
 
 /**
  * A single missing-evidence item returned by Claude.
- * status reflects how certain Claude is that the item is genuinely absent
- * after reviewing the whole bundle.
+ * Uses evidence quality classification aligned with practical ITP review.
  */
 export interface MissingEvidence {
   item: number;
   evidence_type: string;
   reason: string;
-  status: "Missing" | "Possibly covered elsewhere" | "Unclear";
+  status: "Missing" | "Substantially complete" | "Unclear";
+}
+
+/**
+ * Explanation of how the overall score was determined.
+ * Used to give site managers and PMs a plain-language breakdown.
+ */
+export interface ScoreBreakdown {
+  rationale: string;           // 2–3 sentence overview of how the score was reached
+  strong_contributors: string[]; // evidence that strongly boosted the score
+  score_reductions: string[];    // gaps or issues that reduced the score
+  genuinely_missing: string[];   // items truly absent (not just informal/unsigned)
 }
 
 /** A single key issue (problem, inconsistency, or concern) returned by Claude. */
@@ -60,6 +70,7 @@ export interface ReviewResult {
   confidence: "high" | "medium" | "low";
   executive_summary: string;
   package_assessment: "complete" | "mostly complete" | "incomplete";
+  score_breakdown: ScoreBreakdown;
   missing_evidence: MissingEvidence[];
   key_issues: KeyIssue[];
   next_actions: string[];
