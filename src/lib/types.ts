@@ -1,30 +1,14 @@
 // ─── Shared TypeScript types used across the app ───────────────────────────
 
-/**
- * A single file from the bundle, after it has been processed on the server.
- *
- * - "text"  → we extracted readable text from a PDF
- * - "image" → we have a raw image (JPG/PNG) to send to Claude's vision API
- */
 export type ProcessedFile =
   | { kind: "text"; filename: string; text: string }
-  | {
-      kind: "image";
-      filename: string;
-      base64: string;
-      mediaType: "image/jpeg" | "image/png";
-    };
+  | { kind: "image"; filename: string; base64: string; mediaType: "image/jpeg" | "image/png" };
 
-/** One file's observation returned by Claude */
 export interface DocumentObservation {
   filename: string;
   observation: string;
 }
 
-/**
- * Package identification fields extracted automatically by Claude from the bundle.
- * Null means Claude could not confidently identify the field.
- */
 export interface InspectionHeader {
   project_name: string | null;
   project_number: string | null;
@@ -34,10 +18,6 @@ export interface InspectionHeader {
   extraction_confidence: "high" | "medium" | "low";
 }
 
-/**
- * A single missing-evidence item returned by Claude.
- * Uses evidence quality classification aligned with practical ITP review.
- */
 export interface MissingEvidence {
   item: number;
   evidence_type: string;
@@ -45,31 +25,41 @@ export interface MissingEvidence {
   status: "Missing" | "Substantially complete" | "Unclear";
 }
 
-/**
- * Explanation of how the overall score was determined.
- * Used to give site managers and PMs a plain-language breakdown.
- */
-export interface ScoreBreakdown {
-  rationale: string;           // 2–3 sentence overview of how the score was reached
-  strong_contributors: string[]; // evidence that strongly boosted the score
-  score_reductions: string[];    // gaps or issues that reduced the score
-  genuinely_missing: string[];   // items truly absent (not just informal/unsigned)
-}
-
-/** A single key issue (problem, inconsistency, or concern) returned by Claude. */
 export interface KeyIssue {
   item: number;
   title: string;
   explanation: string;
 }
 
-/** The full structured result returned by Claude */
+export interface CategoryScore {
+  applicable_points: number;
+  achieved_points: number;
+}
+
+export interface ScoreBreakdown {
+  excluded_as_not_applicable: string[];
+  category_scores: {
+    high_value: CategoryScore;
+    medium_value: CategoryScore;
+    low_value: CategoryScore;
+  };
+  scoring_explanation: string;
+  strong_contributors: string[];
+  score_reductions: string[];
+  genuinely_missing: string[];
+}
+
+export type ScoreBand = "excellent" | "good" | "partial" | "poor" | "critical";
+
 export interface ReviewResult {
   inspection_header: InspectionHeader;
-  score: number;                          // 0–100
+  total_score: number;           // 0–100, computed from achieved/applicable
+  score_band: ScoreBand;
   confidence: "high" | "medium" | "low";
-  executive_summary: string;
   package_assessment: "complete" | "mostly complete" | "incomplete";
+  executive_summary: string;
+  applicable_points: number;     // total points possible from applicable items
+  achieved_points: number;       // total points earned
   score_breakdown: ScoreBreakdown;
   missing_evidence: MissingEvidence[];
   key_issues: KeyIssue[];
@@ -77,7 +67,6 @@ export interface ReviewResult {
   document_observations: DocumentObservation[];
 }
 
-/** What the /api/review route returns to the browser */
 export type ReviewResponse =
   | { success: true; result: ReviewResult }
   | { success: false; error: string };

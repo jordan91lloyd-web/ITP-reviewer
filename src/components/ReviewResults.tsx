@@ -7,7 +7,7 @@
 // fields that Claude extracted automatically from the uploaded documents.
 // Everything below that is the review itself.
 
-import type { ReviewResult, ScoreBreakdown } from "@/lib/types";
+import type { ReviewResult, ScoreBreakdown, CategoryScore } from "@/lib/types";
 
 interface Props {
   result: ReviewResult;
@@ -22,14 +22,14 @@ export default function ReviewResults({ result, onReset }: Props) {
   // ── Colour helpers ───────────────────────────────────────────────────────
 
   const scoreColour =
-    result.score >= 80 ? "text-green-600" :
-    result.score >= 50 ? "text-yellow-500" :
-                         "text-red-500";
+    result.total_score >= 80 ? "text-green-600" :
+    result.total_score >= 55 ? "text-yellow-500" :
+                               "text-red-500";
 
   const scoreBgColour =
-    result.score >= 80 ? "bg-green-50 border-green-200" :
-    result.score >= 50 ? "bg-yellow-50 border-yellow-200" :
-                         "bg-red-50 border-red-200";
+    result.total_score >= 80 ? "bg-green-50 border-green-200" :
+    result.total_score >= 55 ? "bg-yellow-50 border-yellow-200" :
+                               "bg-red-50 border-red-200";
 
   const assessmentStyle: Record<string, string> = {
     "complete":        "bg-green-100 text-green-800",
@@ -42,12 +42,13 @@ export default function ReviewResults({ result, onReset }: Props) {
     result.confidence === "medium" ? "text-yellow-600" :
                                      "text-red-500";
 
-  const scoreLabel =
-    result.score >= 90 ? "Complete and well-evidenced" :
-    result.score >= 70 ? "Mostly complete — minor gaps" :
-    result.score >= 50 ? "Significant gaps present" :
-    result.score >= 30 ? "Major deficiencies found" :
-                         "Critically incomplete";
+  const scoreLabel: Record<string, string> = {
+    excellent: "Complete and well-evidenced",
+    good:      "Mostly complete — minor gaps",
+    partial:   "Partial evidence — gaps present",
+    poor:      "Significant deficiencies",
+    critical:  "Critical evidence largely absent",
+  };
 
   const statusBadge = (status: string) => {
     if (status === "Missing")
@@ -141,9 +142,9 @@ export default function ReviewResults({ result, onReset }: Props) {
 
           <div className={`rounded-xl border p-5 text-center ${scoreBgColour}`}>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">Score</p>
-            <p className={`text-5xl font-bold leading-none ${scoreColour}`}>{result.score}</p>
-            <p className="mt-1 text-xs text-gray-400">out of 100</p>
-            <p className={`mt-2 text-xs font-medium ${scoreColour}`}>{scoreLabel}</p>
+            <p className={`text-5xl font-bold leading-none ${scoreColour}`}>{result.total_score}</p>
+            <p className="mt-1 text-xs text-gray-400">{result.achieved_points}/{result.applicable_points} pts</p>
+            <p className={`mt-2 text-xs font-medium ${scoreColour}`}>{scoreLabel[result.score_band] ?? result.score_band}</p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
@@ -295,14 +296,63 @@ export default function ReviewResults({ result, onReset }: Props) {
 
 // ─── ScoreBreakdownCard ───────────────────────────────────────────────────
 
+function CategoryBar({ label, cat }: { label: string; cat: CategoryScore }) {
+  const pct = cat.applicable_points > 0
+    ? Math.round((cat.achieved_points / cat.applicable_points) * 100)
+    : null;
+  return (
+    <div>
+      <div className="flex justify-between items-baseline mb-1">
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+        <span className="text-xs text-gray-400">
+          {cat.achieved_points}/{cat.applicable_points} pts
+          {pct !== null ? ` (${pct}%)` : " (N/A)"}
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+        {pct !== null && (
+          <div
+            className={`h-full rounded-full ${pct >= 80 ? "bg-green-400" : pct >= 55 ? "bg-amber-400" : "bg-red-400"}`}
+            style={{ width: `${pct}%` }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ScoreBreakdownCard({ breakdown }: { breakdown: ScoreBreakdown }) {
   return (
     <ResultCard
       title="How this score was determined"
-      subtitle="Based on weighted evidence categories — critical items carry more weight"
+      subtitle="Only applicable evidence items are scored — N/A items are excluded entirely"
       accent="blue"
     >
-      <p className="text-sm text-gray-700 leading-relaxed mb-4">{breakdown.rationale}</p>
+      {/* Point totals — read from top-level result fields */}
+      <div className="flex gap-4 mb-4">
+        <div className="rounded-lg bg-gray-50 border border-gray-100 px-4 py-3 flex-1 text-center">
+          <p className="text-xs text-gray-400 mb-0.5">Achieved</p>
+          <p className="text-xl font-bold text-gray-800">{breakdown.category_scores.high_value.achieved_points + breakdown.category_scores.medium_value.achieved_points + breakdown.category_scores.low_value.achieved_points}</p>
+          <p className="text-xs text-gray-400">points</p>
+        </div>
+        <div className="rounded-lg bg-gray-50 border border-gray-100 px-4 py-3 flex-1 text-center">
+          <p className="text-xs text-gray-400 mb-0.5">Applicable</p>
+          <p className="text-xl font-bold text-gray-800">{breakdown.category_scores.high_value.applicable_points + breakdown.category_scores.medium_value.applicable_points + breakdown.category_scores.low_value.applicable_points}</p>
+          <p className="text-xs text-gray-400">points</p>
+        </div>
+      </div>
+
+      {/* Category bars */}
+      <div className="space-y-2.5 mb-4">
+        <CategoryBar label="High value (engineer certs, hold points, test results)" cat={breakdown.category_scores.high_value} />
+        <CategoryBar label="Medium value (checklists, supervisor sign-offs, photos)" cat={breakdown.category_scores.medium_value} />
+        <CategoryBar label="Low value (admin, formatting, internal sign-offs)" cat={breakdown.category_scores.low_value} />
+      </div>
+
+      {/* Scoring explanation */}
+      <p className="text-sm text-gray-700 leading-relaxed mb-4">{breakdown.scoring_explanation}</p>
+
+      {/* Three columns: boosted / reduced / missing */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {breakdown.strong_contributors.length > 0 && (
           <div className="rounded-lg bg-green-50 border border-green-100 px-3 py-3">
@@ -341,6 +391,18 @@ function ScoreBreakdownCard({ breakdown }: { breakdown: ScoreBreakdown }) {
           </div>
         )}
       </div>
+
+      {/* Excluded N/A items */}
+      {breakdown.excluded_as_not_applicable.length > 0 && (
+        <div className="mt-3 rounded-lg bg-gray-50 border border-gray-100 px-3 py-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Excluded as not applicable</p>
+          <div className="flex flex-wrap gap-1.5">
+            {breakdown.excluded_as_not_applicable.map((item, i) => (
+              <span key={i} className="inline-block rounded-full bg-gray-200 text-gray-600 text-xs px-2.5 py-0.5">{item}</span>
+            ))}
+          </div>
+        </div>
+      )}
     </ResultCard>
   );
 }

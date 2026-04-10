@@ -41,6 +41,9 @@ export default function UploadPortal() {
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
 
+      // Debug: confirm all files are in FormData before sending
+      console.log(`[upload] Submitting ${files.length} file(s):`, files.map((f) => f.name));
+
       const response = await fetch("/api/review", {
         method: "POST",
         body: formData,
@@ -85,10 +88,14 @@ export default function UploadPortal() {
         />
 
         {files.length > 0 && (
-          <p className="mt-3 text-xs text-gray-500">
-            {files.length} document{files.length !== 1 ? "s" : ""} ready —
-            Claude will review them together as one package.
-          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+              {files.length} file{files.length !== 1 ? "s" : ""} selected
+            </span>
+            <span className="text-xs text-gray-500">
+              — all will be reviewed together as one bundle
+            </span>
+          </div>
         )}
       </div>
 
@@ -109,7 +116,7 @@ export default function UploadPortal() {
           {isLoading ? (
             <span className="flex items-center justify-center gap-3">
               <Spinner />
-              Reviewing bundle — this takes 30–90 seconds…
+              Reviewing {files.length} file{files.length !== 1 ? "s" : ""} — this takes 30–90 seconds…
             </span>
           ) : (
             "Run ITP Package Review"

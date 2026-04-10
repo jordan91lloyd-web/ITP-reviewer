@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await runBundleReview(processedFiles);
 
-    console.log(`[review] Review complete. Score: ${result.score}, Assessment: ${result.package_assessment}`);
+    console.log(`[review] Review complete. Score: ${result.total_score} (${result.score_band}), Assessment: ${result.package_assessment}`);
     console.log("[review] ─────────────────────────────────────\n");
 
     return NextResponse.json({ success: true, result });
