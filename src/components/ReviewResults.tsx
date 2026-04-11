@@ -414,7 +414,7 @@ function ScoreBreakdownCard({
   return (
     <ResultCard
       title="How This Score Was Determined"
-      subtitle="Only applicable evidence items are scored — N/A items are excluded entirely"
+      subtitle="Engineer verification (30 pts) · ITP, docs &amp; traceability (50 pts) · Visual evidence (20 pts)"
       accent="blue"
       collapsible
       defaultOpen={false}
@@ -436,9 +436,9 @@ function ScoreBreakdownCard({
 
       {/* Category bars */}
       <div className="space-y-2.5 mb-4">
-        <CategoryBar label="High value (engineer certs, hold points, test results)" cat={breakdown.category_scores.high_value} />
-        <CategoryBar label="Medium value (checklists, supervisor sign-offs, photos)" cat={breakdown.category_scores.medium_value} />
-        <CategoryBar label="Low value (admin, formatting, internal sign-offs)" cat={breakdown.category_scores.low_value} />
+        <CategoryBar label="Engineer verification (certs, reports, correspondence)" cat={breakdown.category_scores.high_value} />
+        <CategoryBar label="ITP completion, supporting docs &amp; traceability" cat={breakdown.category_scores.medium_value} />
+        <CategoryBar label="Visual evidence &amp; overall completeness" cat={breakdown.category_scores.low_value} />
       </div>
 
       {/* Scoring explanation */}
