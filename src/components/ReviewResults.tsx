@@ -11,7 +11,7 @@
 // After the print dialog closes the on-screen mode is restored automatically.
 
 import { useState, useEffect } from "react";
-import type { ReviewResult, ScoreBreakdown, CategoryScore } from "@/lib/types";
+import type { ReviewResult, ScoreBreakdown, CategoryScore, CommercialConfidence } from "@/lib/types";
 
 type ViewMode = "compact" | "full";
 
@@ -234,6 +234,9 @@ export default function ReviewResults({ result, onReset }: Props) {
 
         </div>
 
+        {/* ── Commercial Confidence ── */}
+        <CommercialConfidenceCard cc={result.commercial_confidence} />
+
         {/* ── Summary ── */}
         <ResultCard title="Summary" collapsible defaultOpen forceOpen={forceOpen}>
           <p className="text-sm text-gray-700 leading-relaxed">{result.executive_summary}</p>
@@ -374,6 +377,41 @@ export default function ReviewResults({ result, onReset }: Props) {
 
       </div>
     </>
+  );
+}
+
+// ─── CommercialConfidenceCard ─────────────────────────────────────────────
+
+function CommercialConfidenceCard({ cc }: { cc: CommercialConfidence | undefined }) {
+  const safe: CommercialConfidence = cc ?? { rating: "medium", reason: "Commercial confidence not returned." };
+  const colour =
+    safe.rating === "high"   ? "text-green-700" :
+    safe.rating === "medium" ? "text-amber-600" :
+                               "text-red-600";
+
+  const bg =
+    safe.rating === "high"   ? "bg-green-50 border-green-200" :
+    safe.rating === "medium" ? "bg-amber-50 border-amber-200" :
+                               "bg-red-50 border-red-200";
+
+  const label =
+    safe.rating === "high"   ? "Comfortable to proceed" :
+    safe.rating === "medium" ? "Proceed with caution" :
+                               "Do not proceed — gaps unresolved";
+
+  return (
+    <div className={`rounded-xl border px-5 py-4 ${bg}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">
+            Commercial Confidence
+          </p>
+          <p className={`text-lg font-bold capitalize ${colour}`}>{safe.rating}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+        </div>
+        <p className="text-sm text-gray-700 leading-relaxed max-w-prose text-right">{safe.reason}</p>
+      </div>
+    </div>
   );
 }
 

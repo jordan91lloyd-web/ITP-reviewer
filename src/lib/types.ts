@@ -53,6 +53,11 @@ export interface ScoreBreakdown {
 
 export type ScoreBand = "excellent" | "good" | "partial" | "poor" | "critical";
 
+export interface CommercialConfidence {
+  rating: "high" | "medium" | "low";
+  reason: string;
+}
+
 export interface ReviewResult {
   inspection_header: InspectionHeader;
   total_score: number;           // 0–100, computed from achieved/applicable
@@ -67,6 +72,7 @@ export interface ReviewResult {
   key_issues: KeyIssue[];
   next_actions: string[];
   document_observations: DocumentObservation[];
+  commercial_confidence: CommercialConfidence;
 }
 
 export type ReviewResponse =

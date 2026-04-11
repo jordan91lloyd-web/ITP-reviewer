@@ -83,6 +83,22 @@ Package assessment logic:
   "mostly complete" → some gaps but still acceptable — typical score 60–75
   "incomplete"      → major missing evidence — score below 60
 
+COMMERCIAL CONFIDENCE — second judgement layer (does NOT affect the numeric score):
+After scoring, assign a commercial_confidence rating that answers the practical question:
+"Would a competent site manager be comfortable proceeding with the works based on this evidence?"
+
+  HIGH:   Engineer evidence is present in any valid format (signed PDF, unsigned PDF, photo of signed report,
+          or clear engineer email/correspondence), supporting documents are present, and there are no major red flags.
+
+  MEDIUM: Some key evidence is present, but there are gaps, inconsistencies, or engineer involvement is
+          indirect or unclear.
+
+  LOW:    Engineer evidence is missing, or there are major verification gaps or conflicting information.
+
+commercial_confidence must reflect practical construction judgement, NOT the numeric score.
+The reason must be 1–2 sentences, short and construction-focused.
+This field is completely independent of total_score — do not let one influence the other.
+
 PRACTICAL PRINCIPLES:
 - Assess evidence on PRESENCE and INTENT, not perfection. Reward reasonable evidence even if informal.
 - All formats (signed, unsigned, email, photo of document) are valid if content is clear.
@@ -150,6 +166,7 @@ ENUM VALUES — use these exact lowercase strings, no other values:
   confidence: "high" or "medium" or "low"
   score_band: "excellent" or "good" or "partial" or "poor" or "critical"
   missing_evidence status: "Missing" or "Substantially complete" or "Unclear"
+  commercial_confidence rating: "high" or "medium" or "low"
 
 {
   "inspection_header": {
@@ -212,6 +229,10 @@ ENUM VALUES — use these exact lowercase strings, no other values:
       "filename": "exact-filename.pdf",
       "observation": "1 sentence: what this document is and its key contribution or concern. For images: visible elements and whether it supports or contradicts the checklist item."
     }
-  ]
+  ],
+  "commercial_confidence": {
+    "rating": "high",
+    "reason": "1–2 sentences. Would a competent site manager be comfortable proceeding based on this evidence? Keep it practical and construction-focused."
+  }
 }`;
 }

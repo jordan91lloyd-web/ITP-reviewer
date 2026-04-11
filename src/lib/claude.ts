@@ -14,6 +14,7 @@ import type {
   ScoreBreakdown,
   CategoryScore,
   ScoreBand,
+  CommercialConfidence,
 } from "./types";
 
 const MODEL = "claude-sonnet-4-6";
@@ -215,6 +216,19 @@ function normalizeEnums(parsed: unknown): unknown {
     }
   }
 
+  // ── commercial_confidence.rating ──────────────────────────────────────────
+  if (typeof r.commercial_confidence === "object" && r.commercial_confidence !== null) {
+    const cc = r.commercial_confidence as Record<string, unknown>;
+    if (typeof cc.rating === "string") {
+      const raw = cc.rating;
+      const norm = normalizeConfidence(raw);
+      if (isDev && norm !== raw) {
+        console.log(`[claude] normalise commercial_confidence.rating: "${raw}" → "${norm}"`);
+      }
+      cc.rating = norm;
+    }
+  }
+
   return r;
 }
 
@@ -389,6 +403,21 @@ function validateResult(raw: unknown): ReviewResult {
     return { filename: obs.filename, observation: obs.observation };
   });
 
+  // ── commercial_confidence ─────────────────────────────────────────────────
+  // Validate if present; fall back gracefully if Claude omitted it.
+  const validCcRatings = ["high", "medium", "low"] as const;
+  let commercial_confidence: CommercialConfidence;
+  if (typeof r.commercial_confidence === "object" && r.commercial_confidence !== null) {
+    const cc = r.commercial_confidence as Record<string, unknown>;
+    const rating = validCcRatings.includes(cc.rating as typeof validCcRatings[number])
+      ? (cc.rating as CommercialConfidence["rating"])
+      : "medium";
+    const reason = isStr(cc.reason) ? cc.reason : "Commercial confidence not returned.";
+    commercial_confidence = { rating, reason };
+  } else {
+    commercial_confidence = { rating: "medium", reason: "Commercial confidence not returned." };
+  }
+
   return {
     inspection_header,
     total_score,
@@ -403,5 +432,6 @@ function validateResult(raw: unknown): ReviewResult {
     key_issues,
     next_actions,
     document_observations,
+    commercial_confidence,
   };
 }
