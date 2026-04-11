@@ -22,6 +22,15 @@ interface Props {
 
 const UNIDENTIFIED = "Not confidently identified";
 
+// ── QA Status — derived from score + missing evidence count + confidence ──
+// Answers: "How does this package stand up as a completed QA record?"
+function getQAStatus(result: ReviewResult): "strong" | "acceptable" | "high-risk" {
+  const missingCount = result.missing_evidence.filter(e => e.status === "Missing").length;
+  if (result.total_score >= 75 && missingCount <= 1 && result.confidence !== "low") return "strong";
+  if (result.total_score < 55 || result.confidence === "low" || missingCount >= 3) return "high-risk";
+  return "acceptable";
+}
+
 export default function ReviewResults({ result, onReset }: Props) {
   const h = result.inspection_header;
 
@@ -50,6 +59,10 @@ export default function ReviewResults({ result, onReset }: Props) {
     };
   };
 
+  // ── QA Status ────────────────────────────────────────────────────────────
+
+  const qaStatus = getQAStatus(result);
+
   // ── Colour helpers ───────────────────────────────────────────────────────
 
   const scoreColour =
@@ -66,6 +79,12 @@ export default function ReviewResults({ result, onReset }: Props) {
     "complete":        "bg-green-100 text-green-800",
     "mostly complete": "bg-yellow-100 text-yellow-800",
     "incomplete":      "bg-red-100 text-red-800",
+  };
+
+  const assessmentLabel: Record<string, string> = {
+    "complete":        "Strong package",
+    "mostly complete": "Acceptable with gaps",
+    "incomplete":      "High risk / incomplete",
   };
 
   const confidenceColour =
@@ -202,6 +221,31 @@ export default function ReviewResults({ result, onReset }: Props) {
           </p>
         </ResultCard>
 
+        {/* ── QA Status banner ── */}
+        <div className={`rounded-xl border px-5 py-4 flex items-center gap-3 ${
+          qaStatus === "strong"     ? "bg-green-50 border-green-200" :
+          qaStatus === "acceptable" ? "bg-amber-50 border-amber-200" :
+                                      "bg-red-50 border-red-200"
+        }`}>
+          <span className={`flex h-3 w-3 rounded-full shrink-0 ${
+            qaStatus === "strong"     ? "bg-green-500" :
+            qaStatus === "acceptable" ? "bg-amber-400" :
+                                        "bg-red-500"
+          }`} />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">QA Status</p>
+            <p className={`text-lg font-bold ${
+              qaStatus === "strong"     ? "text-green-700" :
+              qaStatus === "acceptable" ? "text-amber-700" :
+                                          "text-red-700"
+            }`}>
+              {qaStatus === "strong"     ? "Strong package" :
+               qaStatus === "acceptable" ? "Acceptable with gaps" :
+                                           "High risk / incomplete"}
+            </p>
+          </div>
+        </div>
+
         {/* ── Score · Package · Confidence — always visible ── */}
         <div className="grid grid-cols-3 gap-3">
 
@@ -215,13 +259,13 @@ export default function ReviewResults({ result, onReset }: Props) {
           <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Package</p>
             <span
-              className={`inline-block rounded-full px-3 py-1.5 text-xs font-bold capitalize leading-none ${
+              className={`inline-block rounded-full px-3 py-1.5 text-xs font-bold leading-none ${
                 assessmentStyle[result.package_assessment] ?? "bg-gray-100 text-gray-700"
               }`}
             >
-              {result.package_assessment}
+              {assessmentLabel[result.package_assessment] ?? result.package_assessment}
             </span>
-            <p className="mt-3 text-xs text-gray-400 leading-snug">Overall package completeness</p>
+            <p className="mt-3 text-xs text-gray-400 leading-snug">Evidence quality rating</p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
@@ -298,7 +342,7 @@ export default function ReviewResults({ result, onReset }: Props) {
         {result.key_issues.length > 0 && (
           <ResultCard
             title="Key Issues"
-            subtitle="Problems, inconsistencies, or concerns found in the bundle"
+            subtitle="Issues and inconsistencies found in the bundle"
             accent="yellow"
             collapsible
             defaultOpen={false}
@@ -323,8 +367,8 @@ export default function ReviewResults({ result, onReset }: Props) {
         {/* ── Recommended next actions ── */}
         {result.next_actions.length > 0 && (
           <ResultCard
-            title="Recommended Next Actions"
-            subtitle="Steps a quality manager can act on straight away"
+            title="Next Actions"
+            subtitle="Steps to close evidence gaps and improve audit readiness"
             accent="blue"
             collapsible
             defaultOpen={false}
@@ -395,9 +439,9 @@ function CommercialConfidenceCard({ cc }: { cc: CommercialConfidence | undefined
                                "bg-red-50 border-red-200";
 
   const label =
-    safe.rating === "high"   ? "Comfortable to proceed" :
-    safe.rating === "medium" ? "Proceed with caution" :
-                               "Do not proceed — gaps unresolved";
+    safe.rating === "high"   ? "Low audit risk" :
+    safe.rating === "medium" ? "Moderate audit risk" :
+                               "High audit risk";
 
   return (
     <div className={`rounded-xl border px-5 py-4 ${bg}`}>
@@ -406,8 +450,8 @@ function CommercialConfidenceCard({ cc }: { cc: CommercialConfidence | undefined
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">
             Commercial Confidence
           </p>
-          <p className={`text-lg font-bold capitalize ${colour}`}>{safe.rating}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+          <p className={`text-lg font-bold ${colour}`}>{label}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Audit readiness based on available evidence</p>
         </div>
         <p className="text-sm text-gray-700 leading-relaxed max-w-prose text-right">{safe.reason}</p>
       </div>
