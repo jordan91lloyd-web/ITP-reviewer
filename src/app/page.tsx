@@ -1,4 +1,5 @@
 import UploadPortal from "@/components/UploadPortal";
+import ProcoreConnect from "@/components/ProcoreConnect";
 
 export default function Home() {
   return (
@@ -17,6 +18,10 @@ export default function Home() {
           what&apos;s missing, and what to do next.
         </p>
       </header>
+
+      <div className="mb-6">
+        <ProcoreConnect />
+      </div>
 
       <UploadPortal />
 
