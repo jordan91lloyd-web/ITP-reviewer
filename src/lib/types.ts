@@ -15,6 +15,8 @@ export interface InspectionHeader {
   itp_number: string | null;
   itp_name: string | null;
   inspection_reference: string | null;
+  closed_by: string | null;
+  inspection_number_of_type: number | null;
   extraction_confidence: "high" | "medium" | "low";
 }
 

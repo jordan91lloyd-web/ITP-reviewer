@@ -9,7 +9,7 @@ export default function Home() {
           Powered by Claude AI
         </div>
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-          ITP Package Reviewer
+          QA Report
         </h1>
         <p className="mt-3 text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
           Upload the documents from one inspection package. Claude will identify

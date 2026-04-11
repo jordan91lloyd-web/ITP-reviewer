@@ -73,7 +73,19 @@ OUTPUT LENGTH — MANDATORY LIMITS (apply to every review, single or multi-file)
 These limits are essential. Exceeding them causes output truncation and breaks the app.
 
 IMAGE ANALYSIS:
-Treat images as inspection evidence. For each image: identify visible construction elements (reinforcement layout and cover, formwork condition, penetrations, pour quality, defects, embedded items, surface finish). State whether the image supports, contradicts, or is unrelated to the related ITP checklist item. If quality is too poor to assess, write "Unclear due to image quality" in the observation.`;
+Treat images as inspection evidence. For each image: identify visible construction elements (reinforcement layout and cover, formwork condition, penetrations, pour quality, defects, embedded items, surface finish). State whether the image supports, contradicts, or is unrelated to the related ITP checklist item. If quality is too poor to assess, write "Unclear due to image quality" in the observation.
+
+HEADER FIELD EXTRACTION:
+
+inspection_number_of_type: Identify which sequential inspection this is of the same ITP type.
+Look for explicit numbering in the title, filename, or document body — patterns such as:
+  "#2", "Pour 2", "Inspection 2", "2nd pour", "second pour", or equivalent.
+Set to the integer (e.g. 2) only if a clear sequential indicator is present; otherwise null.
+Do not infer from document count alone. Do not guess.
+
+closed_by: Look for "Closed by", "Inspected by", "Completed by", "Signed by", or equivalent fields
+in any inspection form. Extract the name or role of the person who closed or approved the inspection.
+If not clearly identifiable, set to null.`;
 }
 
 
@@ -113,6 +125,8 @@ ENUM VALUES — use these exact lowercase strings, no other values:
     "itp_number": null,
     "itp_name": null,
     "inspection_reference": null,
+    "closed_by": null,
+    "inspection_number_of_type": null,
     "extraction_confidence": "medium"
   },
   "total_score": 0,

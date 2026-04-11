@@ -272,6 +272,10 @@ function validateResult(raw: unknown): ReviewResult {
   if (!isStrOrNull(h.itp_number)) throw new Error("inspection_header.itp_number must be string or null.");
   if (!isStrOrNull(h.itp_name)) throw new Error("inspection_header.itp_name must be string or null.");
   if (!isStrOrNull(h.inspection_reference)) throw new Error("inspection_header.inspection_reference must be string or null.");
+  if (!isStrOrNull(h.closed_by)) throw new Error("inspection_header.closed_by must be string or null.");
+  if (h.inspection_number_of_type !== null && typeof h.inspection_number_of_type !== "number") {
+    throw new Error("inspection_header.inspection_number_of_type must be a number or null.");
+  }
   if (!validConf.includes(h.extraction_confidence as typeof validConf[number])) {
     throw new Error("inspection_header.extraction_confidence must be high | medium | low.");
   }
@@ -281,6 +285,8 @@ function validateResult(raw: unknown): ReviewResult {
     itp_number: h.itp_number as string | null,
     itp_name: h.itp_name as string | null,
     inspection_reference: h.inspection_reference as string | null,
+    closed_by: h.closed_by as string | null,
+    inspection_number_of_type: h.inspection_number_of_type as number | null,
     extraction_confidence: h.extraction_confidence as InspectionHeader["extraction_confidence"],
   };
 

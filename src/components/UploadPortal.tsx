@@ -119,7 +119,7 @@ export default function UploadPortal() {
               Reviewing {files.length} file{files.length !== 1 ? "s" : ""} — this takes 30–90 seconds…
             </span>
           ) : (
-            "Run ITP Package Review"
+            "Run QA Review"
           )}
         </button>
 

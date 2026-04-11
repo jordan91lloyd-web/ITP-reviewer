@@ -1,12 +1,11 @@
 "use client";
 
 // ─── ReviewResults ────────────────────────────────────────────────────────
-// Displays the structured review returned by Claude.
-//
-// The Inspection Header section (top of page) shows the package identity
-// fields that Claude extracted automatically from the uploaded documents.
-// Everything below that is the review itself.
+// Displays the structured QA review returned by Claude.
+// Most sections are collapsible. Inspection Header, score cards, and Summary
+// are expanded by default; all other sections start collapsed.
 
+import { useState } from "react";
 import type { ReviewResult, ScoreBreakdown, CategoryScore } from "@/lib/types";
 
 interface Props {
@@ -67,7 +66,7 @@ export default function ReviewResults({ result, onReset }: Props) {
     day: "2-digit", month: "long", year: "numeric",
   });
 
-  // Helper: render a header field value or a "not identified" placeholder
+  // Helper: render a field value or a "not identified" placeholder
   const field = (value: string | null) =>
     value
       ? <span className="font-medium text-gray-900">{value}</span>
@@ -77,7 +76,7 @@ export default function ReviewResults({ result, onReset }: Props) {
     <>
       {/* ── Print-only header ── */}
       <div className="hidden print:block mb-6 border-b border-gray-300 pb-4">
-        <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">ITP Package Review</p>
+        <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">QA Report</p>
         <h1 className="text-xl font-bold text-gray-900">
           {h.project_name ?? "Project not identified"}
         </h1>
@@ -87,13 +86,13 @@ export default function ReviewResults({ result, onReset }: Props) {
         <p className="text-xs text-gray-400 mt-1">Generated {today}</p>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
 
         {/* ── Header bar ── */}
         <div className="flex items-start justify-between gap-4 print:hidden">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Review complete</h2>
-            <p className="mt-0.5 text-sm text-gray-500">ITP Package Review</p>
+            <p className="mt-0.5 text-sm text-gray-500">QA Report</p>
           </div>
           <div className="flex gap-2 shrink-0">
             <button
@@ -111,33 +110,27 @@ export default function ReviewResults({ result, onReset }: Props) {
           </div>
         </div>
 
-        {/* ── Inspection Header ── */}
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm border-l-4 border-l-blue-400">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-800">Inspection Header</h3>
-              <p className="mt-0.5 text-xs text-gray-400">
-                Extracted automatically from the uploaded documents
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-400">Extraction confidence</p>
-              <p className={`text-sm font-semibold capitalize ${extractionConfidenceColour}`}>
-                {h.extraction_confidence}
-              </p>
-            </div>
-          </div>
-
+        {/* ── Inspection Header — expanded by default ── */}
+        <ResultCard title="Inspection Header" accent="blue" collapsible defaultOpen>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-            <HeaderField label="Project" value={field(h.project_name)} />
-            <HeaderField label="Project No." value={field(h.project_number)} />
-            <HeaderField label="ITP No." value={field(h.itp_number)} />
-            <HeaderField label="ITP Name" value={field(h.itp_name)} />
-            <HeaderField label="Inspection Reference" value={field(h.inspection_reference)} />
+            <HeaderField label="Project No."            value={field(h.project_number)} />
+            <HeaderField label="Project Name"           value={field(h.project_name)} />
+            <HeaderField label="ITP Name"               value={field(h.itp_name)} />
+            <HeaderField label="Closed By"              value={field(h.closed_by ?? null)} />
+            <HeaderField
+              label="Inspection No. of Type"
+              value={field(h.inspection_number_of_type != null ? String(h.inspection_number_of_type) : null)}
+            />
           </dl>
-        </div>
+          <p className="mt-3 text-xs text-gray-400">
+            Extraction confidence:{" "}
+            <span className={`font-semibold capitalize ${extractionConfidenceColour}`}>
+              {h.extraction_confidence}
+            </span>
+          </p>
+        </ResultCard>
 
-        {/* ── Summary row: Score · Assessment · Confidence ── */}
+        {/* ── Score · Package · Confidence — always visible ── */}
         <div className="grid grid-cols-3 gap-3">
 
           <div className={`rounded-xl border p-5 text-center ${scoreBgColour}`}>
@@ -169,20 +162,22 @@ export default function ReviewResults({ result, onReset }: Props) {
 
         </div>
 
-        {/* ── Executive summary ── */}
-        <ResultCard title="Summary">
+        {/* ── Summary — expanded by default ── */}
+        <ResultCard title="Summary" collapsible defaultOpen>
           <p className="text-sm text-gray-700 leading-relaxed">{result.executive_summary}</p>
         </ResultCard>
 
-        {/* ── Score breakdown ── */}
+        {/* ── Score breakdown — collapsed by default ── */}
         <ScoreBreakdownCard breakdown={result.score_breakdown} />
 
-        {/* ── Missing evidence ── */}
+        {/* ── Missing evidence — collapsed by default ── */}
         {result.missing_evidence.length > 0 ? (
           <ResultCard
-            title="Missing evidence"
+            title="Missing Evidence"
             subtitle="Items that appear to be absent — review status before acting"
             accent="red"
+            collapsible
+            defaultOpen={false}
           >
             <div className="overflow-x-auto -mx-1">
               <table className="w-full text-sm border-collapse">
@@ -212,17 +207,19 @@ export default function ReviewResults({ result, onReset }: Props) {
             </div>
           </ResultCard>
         ) : (
-          <ResultCard title="Missing evidence" accent="green">
+          <ResultCard title="Missing Evidence" accent="green" collapsible defaultOpen={false}>
             <p className="text-sm text-green-700">No significant missing evidence identified.</p>
           </ResultCard>
         )}
 
-        {/* ── Key issues ── */}
+        {/* ── Key issues — collapsed by default ── */}
         {result.key_issues.length > 0 && (
           <ResultCard
-            title="Key issues"
+            title="Key Issues"
             subtitle="Problems, inconsistencies, or concerns found in the bundle"
             accent="yellow"
+            collapsible
+            defaultOpen={false}
           >
             <div className="space-y-3">
               {result.key_issues.map((issue) => (
@@ -240,12 +237,14 @@ export default function ReviewResults({ result, onReset }: Props) {
           </ResultCard>
         )}
 
-        {/* ── Recommended next actions ── */}
+        {/* ── Recommended next actions — collapsed by default ── */}
         {result.next_actions.length > 0 && (
           <ResultCard
-            title="Recommended next actions"
+            title="Recommended Next Actions"
             subtitle="Steps a quality manager can act on straight away"
             accent="blue"
+            collapsible
+            defaultOpen={false}
           >
             <ol className="space-y-2">
               {result.next_actions.map((item, i) => (
@@ -260,11 +259,13 @@ export default function ReviewResults({ result, onReset }: Props) {
           </ResultCard>
         )}
 
-        {/* ── Document observations ── */}
+        {/* ── Document observations — collapsed by default ── */}
         {result.document_observations.length > 0 && (
           <ResultCard
-            title="Document observations"
+            title="Document Observations"
             subtitle="Claude's notes on each file in the bundle"
+            collapsible
+            defaultOpen={false}
           >
             <div className="space-y-3">
               {result.document_observations.map((obs, i) => (
@@ -324,11 +325,13 @@ function CategoryBar({ label, cat }: { label: string; cat: CategoryScore }) {
 function ScoreBreakdownCard({ breakdown }: { breakdown: ScoreBreakdown }) {
   return (
     <ResultCard
-      title="How this score was determined"
+      title="How This Score Was Determined"
       subtitle="Only applicable evidence items are scored — N/A items are excluded entirely"
       accent="blue"
+      collapsible
+      defaultOpen={false}
     >
-      {/* Point totals — read from top-level result fields */}
+      {/* Point totals */}
       <div className="flex gap-4 mb-4">
         <div className="rounded-lg bg-gray-50 border border-gray-100 px-4 py-3 flex-1 text-center">
           <p className="text-xs text-gray-400 mb-0.5">Achieved</p>
@@ -419,24 +422,57 @@ function HeaderField({ label, value }: { label: string; value: React.ReactNode }
 }
 
 // ─── ResultCard ───────────────────────────────────────────────────────────
+// When collapsible=true, the heading row is a toggle button.
+// defaultOpen controls the initial state.
 
 function ResultCard({
   title,
   subtitle,
   accent,
+  collapsible = false,
+  defaultOpen = true,
   children,
 }: {
   title: string;
   subtitle?: string;
   accent?: "red" | "yellow" | "blue" | "green";
+  collapsible?: boolean;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   const border =
     accent === "red"    ? "border-l-red-400" :
     accent === "yellow" ? "border-l-amber-400" :
     accent === "blue"   ? "border-l-blue-400" :
     accent === "green"  ? "border-l-green-400" :
                           "border-l-gray-200";
+
+  if (collapsible) {
+    return (
+      <div className={`rounded-xl border border-gray-200 bg-white shadow-sm border-l-4 ${border}`}>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-5 py-3.5 text-left gap-3"
+        >
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+            {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
+          </div>
+          <span className="text-xs font-medium text-gray-400 shrink-0 select-none">
+            {open ? "▾ Hide" : "▸ Show"}
+          </span>
+        </button>
+        {open && (
+          <div className="px-5 pb-4 pt-3 border-t border-gray-100">
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm border-l-4 ${border}`}>

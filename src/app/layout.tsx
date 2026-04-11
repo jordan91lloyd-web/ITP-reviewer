@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Inspection Bundle Reviewer",
-  description: "AI-powered review of construction inspection and ITP document bundles",
+  title: "QA Report",
+  description: "AI-powered QA review of construction inspection and ITP document bundles",
 };
 
 export default function RootLayout({
