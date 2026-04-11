@@ -2,11 +2,18 @@
 
 // ─── ReviewResults ────────────────────────────────────────────────────────
 // Displays the structured QA review returned by Claude.
-// Most sections are collapsible. Inspection Header, score cards, and Summary
-// are expanded by default; all other sections start collapsed.
+//
+// Two on-screen view modes:
+//   compact     — sections are collapsible (default)
+//   full        — all sections expanded, good for detailed review / export
+//
+// PDF export always uses the full expanded layout regardless of current mode.
+// After the print dialog closes the on-screen mode is restored automatically.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReviewResult, ScoreBreakdown, CategoryScore } from "@/lib/types";
+
+type ViewMode = "compact" | "full";
 
 interface Props {
   result: ReviewResult;
@@ -17,6 +24,31 @@ const UNIDENTIFIED = "Not confidently identified";
 
 export default function ReviewResults({ result, onReset }: Props) {
   const h = result.inspection_header;
+
+  // ── View / print mode ────────────────────────────────────────────────────
+
+  const [viewMode, setViewMode] = useState<ViewMode>("compact");
+  // printMode forces all sections open for the PDF snapshot
+  const [printMode, setPrintMode] = useState(false);
+  // printPending triggers window.print() after React re-renders with printMode=true
+  const [printPending, setPrintPending] = useState(false);
+
+  const forceOpen = printMode || viewMode === "full";
+
+  useEffect(() => {
+    if (!printPending) return;
+    window.print();
+    setPrintPending(false);
+  }, [printPending]);
+
+  const handlePrint = () => {
+    setPrintMode(true);
+    setPrintPending(true);
+    window.onafterprint = () => {
+      setPrintMode(false);
+      window.onafterprint = null;
+    };
+  };
 
   // ── Colour helpers ───────────────────────────────────────────────────────
 
@@ -66,7 +98,6 @@ export default function ReviewResults({ result, onReset }: Props) {
     day: "2-digit", month: "long", year: "numeric",
   });
 
-  // Helper: render a field value or a "not identified" placeholder
   const field = (value: string | null) =>
     value
       ? <span className="font-medium text-gray-900">{value}</span>
@@ -88,7 +119,7 @@ export default function ReviewResults({ result, onReset }: Props) {
 
       <div className="space-y-4">
 
-        {/* ── Header bar ── */}
+        {/* ── Top bar: title + action buttons ── */}
         <div className="flex items-start justify-between gap-4 print:hidden">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Review complete</h2>
@@ -96,7 +127,7 @@ export default function ReviewResults({ result, onReset }: Props) {
           </div>
           <div className="flex gap-2 shrink-0">
             <button
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 active:bg-blue-200 transition-colors"
             >
               Download Report PDF
@@ -110,13 +141,54 @@ export default function ReviewResults({ result, onReset }: Props) {
           </div>
         </div>
 
-        {/* ── Inspection Header — expanded by default ── */}
-        <ResultCard title="Inspection Header" accent="blue" collapsible defaultOpen>
+        {/* ── View mode toggle ── */}
+        <div className="flex items-center gap-3 print:hidden">
+          <span className="text-xs text-gray-400">View as:</span>
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("compact")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                viewMode === "compact"
+                  ? "bg-white text-gray-900 shadow-sm border border-gray-100"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              Compact
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("full")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                viewMode === "full"
+                  ? "bg-white text-gray-900 shadow-sm border border-gray-100"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              Full Report
+            </button>
+          </div>
+          {viewMode === "full" && (
+            <span className="text-xs text-gray-400 italic">All sections expanded</span>
+          )}
+          {viewMode === "compact" && (
+            <span className="text-xs text-gray-400 italic">PDF export always includes full report</span>
+          )}
+        </div>
+
+        {/* ── Inspection Header ── */}
+        <ResultCard
+          title="Inspection Header"
+          accent="blue"
+          collapsible
+          defaultOpen
+          forceOpen={forceOpen}
+        >
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-            <HeaderField label="Project No."            value={field(h.project_number)} />
-            <HeaderField label="Project Name"           value={field(h.project_name)} />
-            <HeaderField label="ITP Name"               value={field(h.itp_name)} />
-            <HeaderField label="Closed By"              value={field(h.closed_by ?? null)} />
+            <HeaderField label="Project No."           value={field(h.project_number)} />
+            <HeaderField label="Project Name"          value={field(h.project_name)} />
+            <HeaderField label="ITP Name"              value={field(h.itp_name)} />
+            <HeaderField label="Closed By"             value={field(h.closed_by ?? null)} />
             <HeaderField
               label="Inspection No. of Type"
               value={field(h.inspection_number_of_type != null ? String(h.inspection_number_of_type) : null)}
@@ -162,15 +234,15 @@ export default function ReviewResults({ result, onReset }: Props) {
 
         </div>
 
-        {/* ── Summary — expanded by default ── */}
-        <ResultCard title="Summary" collapsible defaultOpen>
+        {/* ── Summary ── */}
+        <ResultCard title="Summary" collapsible defaultOpen forceOpen={forceOpen}>
           <p className="text-sm text-gray-700 leading-relaxed">{result.executive_summary}</p>
         </ResultCard>
 
-        {/* ── Score breakdown — collapsed by default ── */}
-        <ScoreBreakdownCard breakdown={result.score_breakdown} />
+        {/* ── Score breakdown ── */}
+        <ScoreBreakdownCard breakdown={result.score_breakdown} forceOpen={forceOpen} />
 
-        {/* ── Missing evidence — collapsed by default ── */}
+        {/* ── Missing evidence ── */}
         {result.missing_evidence.length > 0 ? (
           <ResultCard
             title="Missing Evidence"
@@ -178,6 +250,7 @@ export default function ReviewResults({ result, onReset }: Props) {
             accent="red"
             collapsible
             defaultOpen={false}
+            forceOpen={forceOpen}
           >
             <div className="overflow-x-auto -mx-1">
               <table className="w-full text-sm border-collapse">
@@ -207,12 +280,18 @@ export default function ReviewResults({ result, onReset }: Props) {
             </div>
           </ResultCard>
         ) : (
-          <ResultCard title="Missing Evidence" accent="green" collapsible defaultOpen={false}>
+          <ResultCard
+            title="Missing Evidence"
+            accent="green"
+            collapsible
+            defaultOpen={false}
+            forceOpen={forceOpen}
+          >
             <p className="text-sm text-green-700">No significant missing evidence identified.</p>
           </ResultCard>
         )}
 
-        {/* ── Key issues — collapsed by default ── */}
+        {/* ── Key issues ── */}
         {result.key_issues.length > 0 && (
           <ResultCard
             title="Key Issues"
@@ -220,6 +299,7 @@ export default function ReviewResults({ result, onReset }: Props) {
             accent="yellow"
             collapsible
             defaultOpen={false}
+            forceOpen={forceOpen}
           >
             <div className="space-y-3">
               {result.key_issues.map((issue) => (
@@ -237,7 +317,7 @@ export default function ReviewResults({ result, onReset }: Props) {
           </ResultCard>
         )}
 
-        {/* ── Recommended next actions — collapsed by default ── */}
+        {/* ── Recommended next actions ── */}
         {result.next_actions.length > 0 && (
           <ResultCard
             title="Recommended Next Actions"
@@ -245,6 +325,7 @@ export default function ReviewResults({ result, onReset }: Props) {
             accent="blue"
             collapsible
             defaultOpen={false}
+            forceOpen={forceOpen}
           >
             <ol className="space-y-2">
               {result.next_actions.map((item, i) => (
@@ -259,13 +340,14 @@ export default function ReviewResults({ result, onReset }: Props) {
           </ResultCard>
         )}
 
-        {/* ── Document observations — collapsed by default ── */}
+        {/* ── Document observations ── */}
         {result.document_observations.length > 0 && (
           <ResultCard
             title="Document Observations"
             subtitle="Claude's notes on each file in the bundle"
             collapsible
             defaultOpen={false}
+            forceOpen={forceOpen}
           >
             <div className="space-y-3">
               {result.document_observations.map((obs, i) => (
@@ -322,7 +404,13 @@ function CategoryBar({ label, cat }: { label: string; cat: CategoryScore }) {
   );
 }
 
-function ScoreBreakdownCard({ breakdown }: { breakdown: ScoreBreakdown }) {
+function ScoreBreakdownCard({
+  breakdown,
+  forceOpen,
+}: {
+  breakdown: ScoreBreakdown;
+  forceOpen?: boolean;
+}) {
   return (
     <ResultCard
       title="How This Score Was Determined"
@@ -330,6 +418,7 @@ function ScoreBreakdownCard({ breakdown }: { breakdown: ScoreBreakdown }) {
       accent="blue"
       collapsible
       defaultOpen={false}
+      forceOpen={forceOpen}
     >
       {/* Point totals */}
       <div className="flex gap-4 mb-4">
@@ -422,8 +511,9 @@ function HeaderField({ label, value }: { label: string; value: React.ReactNode }
 }
 
 // ─── ResultCard ───────────────────────────────────────────────────────────
-// When collapsible=true, the heading row is a toggle button.
-// defaultOpen controls the initial state.
+// collapsible=true  forceOpen=false → toggleable, state tracked internally
+// collapsible=true  forceOpen=true  → static card (all content shown, no toggle)
+// collapsible=false                 → static card (original behaviour)
 
 function ResultCard({
   title,
@@ -431,6 +521,7 @@ function ResultCard({
   accent,
   collapsible = false,
   defaultOpen = true,
+  forceOpen = false,
   children,
 }: {
   title: string;
@@ -438,6 +529,7 @@ function ResultCard({
   accent?: "red" | "yellow" | "blue" | "green";
   collapsible?: boolean;
   defaultOpen?: boolean;
+  forceOpen?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -449,38 +541,40 @@ function ResultCard({
     accent === "green"  ? "border-l-green-400" :
                           "border-l-gray-200";
 
-  if (collapsible) {
+  // Static card — used for non-collapsible sections and when forceOpen overrides
+  if (!collapsible || forceOpen) {
     return (
-      <div className={`rounded-xl border border-gray-200 bg-white shadow-sm border-l-4 ${border}`}>
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="w-full flex items-center justify-between px-5 py-3.5 text-left gap-3"
-        >
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-            {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
-          </div>
-          <span className="text-xs font-medium text-gray-400 shrink-0 select-none">
-            {open ? "▾ Hide" : "▸ Show"}
-          </span>
-        </button>
-        {open && (
-          <div className="px-5 pb-4 pt-3 border-t border-gray-100">
-            {children}
-          </div>
-        )}
+      <div className={`rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm border-l-4 ${border}`}>
+        <div className="mb-3">
+          <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+          {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
+        </div>
+        {children}
       </div>
     );
   }
 
+  // Collapsible card
   return (
-    <div className={`rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm border-l-4 ${border}`}>
-      <div className="mb-3">
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
-      </div>
-      {children}
+    <div className={`rounded-xl border border-gray-200 bg-white shadow-sm border-l-4 ${border}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-5 py-3.5 text-left gap-3"
+      >
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+          {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
+        </div>
+        <span className="text-xs font-medium text-gray-400 shrink-0 select-none">
+          {open ? "▾ Hide" : "▸ Show"}
+        </span>
+      </button>
+      {open && (
+        <div className="px-5 pb-4 pt-3 border-t border-gray-100">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
