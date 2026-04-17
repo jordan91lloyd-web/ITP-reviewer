@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getInspections } from "@/lib/procore";
+import { getInspections, type ProcoreInspection } from "@/lib/procore";
 import { createClient } from "@supabase/supabase-js";
 import type { ReviewResult } from "@/lib/types";
 
@@ -134,7 +134,11 @@ export async function GET(request: NextRequest) {
       last_score_band:          record ? (record.score_band as string) : null,
       last_package_assessment:  record ? (record.package_assessment as string) : null,
       last_reviewed_at:         record ? (record.reviewed_at as string) : null,
-      inspection_number_of_type: record ? (record.inspection_number_of_type as number | null) : null,
+      // Prefer the Procore-native sequence number (available for all inspections)
+      // and fall back to what Claude extracted during a previous review.
+      inspection_number_of_type:
+        extractProcoreSequenceNumber(insp) ??
+        (record ? (record.inspection_number_of_type as number | null) : null),
       review_data:              record ? (record.review_data as ReviewResult | null) : null,
       override_score:           override ? (override.override_score as number) : null,
       override_note:            override ? (override.note as string | null) : null,
@@ -158,4 +162,21 @@ export async function GET(request: NextRequest) {
 function extractItpNumber(name: string): number {
   const match = (name ?? "").match(/^ITP[-\s]*0*(\d+)/i);
   return match ? parseInt(match[1], 10) : 999;
+}
+
+/**
+ * Extracts the Procore sequential inspection number directly from the
+ * inspection object. Procore exposes this as `number`, `inspection_number`,
+ * or `position_of_type` depending on API version and tenant config.
+ * This is available for all inspections regardless of review status.
+ */
+function extractProcoreSequenceNumber(insp: ProcoreInspection): number | null {
+  const raw =
+    insp.number ??
+    (insp.inspection_number != null ? String(insp.inspection_number) : null) ??
+    (insp.position_of_type  != null ? String(insp.position_of_type)  : null) ??
+    null;
+  if (raw == null) return null;
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? null : n;
 }

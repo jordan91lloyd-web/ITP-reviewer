@@ -875,7 +875,7 @@ function InspectionPanel({
                 </span>
               </div>
               {insp.override_note && (
-                <p className="text-xs text-purple-600 mt-1 italic">"{insp.override_note}"</p>
+                <p className="text-xs text-purple-600 mt-1 italic break-words">"{insp.override_note}"</p>
               )}
               {insp.override_created_by && (
                 <p className="text-[10px] text-purple-400 mt-0.5">by {insp.override_created_by}</p>
@@ -908,7 +908,7 @@ function InspectionPanel({
                   onChange={e => onOverrideNoteChange(e.target.value)}
                   placeholder="Explain why the score is being adjusted…"
                   rows={3}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-y-auto"
                 />
               </div>
               {overrideError && (

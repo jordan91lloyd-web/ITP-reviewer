@@ -388,8 +388,31 @@ export async function POST(request: NextRequest) {
     reviewResult = await runBundleReview(processedFiles);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[procore/import] Review failed:", msg);
-    return NextResponse.json({ error: `QA review failed: ${msg}` }, { status: 500 });
+    // Claude can return a 400 if an individual file (usually an image) is
+    // malformed or exceeds its per-file limits. Retry once with all image
+    // files removed — PDFs and the inspection text are sufficient for a
+    // valid review. Only surface the error to the user if the retry also fails.
+    const imageFiles = processedFiles.filter(f => f.kind === "image");
+    if (imageFiles.length > 0) {
+      console.warn(
+        `[procore/import] Review failed (${msg}), retrying without ` +
+        `${imageFiles.length} image file(s)`
+      );
+      const filesWithoutImages = processedFiles.filter(f => f.kind !== "image");
+      for (const img of imageFiles) {
+        skippedFiles.push(`${img.filename} (skipped on retry: Claude API rejected the initial request)`);
+      }
+      try {
+        reviewResult = await runBundleReview(filesWithoutImages);
+      } catch (err2) {
+        const msg2 = err2 instanceof Error ? err2.message : String(err2);
+        console.error("[procore/import] Retry without images also failed:", msg2);
+        return NextResponse.json({ error: `QA review failed: ${msg2}` }, { status: 500 });
+      }
+    } else {
+      console.error("[procore/import] Review failed:", msg);
+      return NextResponse.json({ error: `QA review failed: ${msg}` }, { status: 500 });
+    }
   }
 
   // ── 7. Save to history ─────────────────────────────────────────────────────
