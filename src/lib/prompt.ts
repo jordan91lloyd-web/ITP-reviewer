@@ -31,93 +31,70 @@ Do NOT penalise based on format. An unsigned document with clear content is Subs
 
 SCORING — compute silently, report results only in JSON fields:
 
-STEP 1 — DETECT BUNDLE TYPE (do this before scoring):
-  TYPE A (ITP-only): The bundle contains only the ITP checklist form. No separate engineer reports,
-    dockets, survey drawings, test records, lab certificates, email/correspondence files, or photo/
-    image files are present or readable. A Procore-generated PDF with ticked checkboxes = TYPE A.
-  TYPE B (ITP + evidence): The bundle contains the ITP plus at least one actual supporting file —
-    an engineer's report, concrete docket, survey drawing, test certificate, .msg/.email, or image.
+STEP 1 — CLASSIFY THE ITP TIER
+Read the ITP name and line items to determine the tier. Do not use ITP numbers alone — classify by the nature of the work described.
 
-TYPE A HARD CAP — MANDATORY:
-  If the bundle is TYPE A, total_score MUST NOT exceed 55, regardless of ITP completeness.
-  A filled-in checklist is process evidence only. It cannot substitute for actual verification records.
-  Typical TYPE A score: 35–55 depending on ITP completeness and internal consistency.
+TIER 1 — STRUCTURAL: Any ITP where the work is structural — reinforcement, formwork, concrete pours (suspended slabs, footings, walls, transfer slabs), pre-cast elements, shotcrete, backpropping and temporary structural works, piling, anchoring, excavation and shoring, underpinning, deflection monitoring, load-bearing masonry.
 
-STEP 2 — SCORE EACH CATEGORY:
+TIER 2 — WATERPROOFING: Any ITP where the primary work is waterproofing — basement and tank waterproofing, external and internal wet area waterproofing, planter box waterproofing, waterstop installation.
 
-The scoring system has three categories (map to JSON fields high_value, medium_value, low_value):
+TIER 3 — STANDARD: All remaining ITPs. Classify into sub-groups:
+  3A Licensed Services: electrical, hydraulic, gas, fire systems, lifts
+  3B Envelope and Structure: roofing, cladding, windows and glazing
+  3C Mechanical Services: ductwork, mechanical plant, air conditioning
+  3D Finishes and General: tiling, flooring, painting, plasterboard, joinery, minor works
 
-HIGH VALUE = Engineer Verification (applicable_points = 30):
-  Score ONLY if actual engineer evidence exists as a separate file, embedded readable document,
-  or a clear image in the bundle. A ticked checkbox, hold point notation, or RFI reference in the
-  ITP is NOT engineer evidence. Do not infer engineer involvement from the ITP form alone.
-  - Signed engineer report or certificate (separate file)         → achieved_points 28–30
-  - Unsigned engineer report with clear content (separate file)   → achieved_points 24–27
-  - Engineer approval via email or correspondence (separate file) → achieved_points 24–27
-  - Photo of a signed engineer document (clear and readable)      → achieved_points 27–30
-  - ITP references engineer involvement but no actual document    → achieved_points 6–12
-  - No engineer evidence or reference at all                      → achieved_points 0–5
-  Survey drawings (setout or as-built) as separate files contribute positively to this category.
+STEP 2 — ASSESS THE BUNDLE HOLISTICALLY
+Read the entire bundle before scoring. A document attached to any item number can satisfy any dimension — do not score line by line. One document can satisfy multiple dimensions simultaneously and is counted once only. Each ITP stands alone — do not penalise for evidence not re-attached from previous ITPs in a series.
 
-MEDIUM VALUE = ITP Completion + Supporting Documentation + Traceability (applicable_points = 50):
-  Three sub-areas combined into one medium score:
+STEP 3 — SCORE EACH DIMENSION
+Five dimensions. Weights vary by tier:
 
-  ITP Completion (up to 20 of the 50):
-    Score from the ITP form itself — checklist completeness, signatures, hold/witness points filled.
-    Mostly complete → 16–20. Minor missing fields or signatures → 10–15. Largely incomplete → 0–9.
-    Missing signatures alone are a MINOR deduction — do not treat as missing evidence.
+D1 Engineer and Inspector Verification:
+  Tier 1: 35 points. Tier 2: 30 points. Tier 3: 20 points.
+  Satisfied by: signed engineer certificate, inspector or superintendent sign-off, signed hold point by engineer, RFI response confirming compliance, consultant inspection note.
+  For Tier 3A Licensed Services: satisfied by statutory compliance certificate (CCEW for electrical, hydraulic compliance certificate for plumbing, CFIA for fire systems, gas test certificate for gas), OR subcontractor ITP signed and closed, OR subcontractor ITP on licensed contractor letterhead unsigned. Licence number not appearing on the document is NOT a gap.
 
-  Supporting Documentation (up to 20 of the 50):
-    Score ONLY from actual attached or embedded files: concrete dockets, survey drawings,
-    test certificates, lab reports, email or .msg correspondence files.
-    An ITP entry or checkbox stating that a document exists is NOT the same as the document being
-    present. If the file is not in the bundle and not readable, score it as absent.
-    Present and clearly readable → 16–20. Some files present → 8–15. None present → 0–4.
+D2 Technical Testing Evidence:
+  Tier 1: 25 points. Tier 2: 30 points. Tier 3: 10 points.
+  Satisfied by: concrete delivery dockets and cylinder break results, flood test or waterproofing test evidence, PT stressing records, geotechnical reports, NDT and weld certificates, commissioning records, pressure test results — as applicable to the work scope.
+  Determine applicability from the ITP name and line items before treating absence as a gap.
 
-  Traceability / Consistency (up to 10 of the 50):
-    Multiple documents clearly cross-referencing each other → 8–10.
-    TYPE A (ITP-only) — cap at 4, internal consistency within the ITP only.
-    Poor linkage or no supporting files → 0–3.
+D3 ITP Form and Subcontractor ITP Completeness:
+  Tier 1: 25 points. Tier 2: 25 points. Tier 3: 45 points.
+  Satisfied by: main ITP submitted and responded to, subcontractor ITP present and closed or signed.
 
-LOW VALUE = Visual Evidence + Overall Completeness (applicable_points = 20):
-  Two sub-areas combined into one low score:
+D4 Material Traceability:
+  Tier 1: 10 points. Tier 2: 5 points. Tier 3: 15 points.
+  Satisfied by: reinforcement schedules, material delivery dockets. Partially overridden when a signed engineer inspection is present.
 
-  Visual Evidence (up to 10 of the 20):
-    Score ONLY if actual photo or image files are present in the bundle and clearly related to the
-    inspection work. An ITP field stating that photos were taken does NOT count.
-    Photos present and relevant → 7–10. No photo or image files in bundle → 0–3.
+D5 Physical Evidence Record:
+  Tier 1: 5 points. Tier 2: 10 points. Tier 3: 10 points.
+  Satisfied by: pre-concealment photos, as-built surveys. Score only if actual image or survey files are present in the bundle.
 
-  Overall Completeness (up to 10 of the 20):
-    How complete is the total package across all evidence types?
-    Full package with engineer docs + supporting records + ITP + photos → 8–10.
-    TYPE A (ITP-only) → 2–4.
-    Mixed or partial evidence set → 4–7.
+STEP 4 — APPLY SCORING STATES TO EACH DIMENSION
+Score each dimension using one of these states:
 
-Not applicable items: set applicable_points = 0 and achieved_points = 0 for that item. Exclude from scoring. Never list N/A items in missing_evidence or key_issues.
+Full — 100% of available points. Qualifying evidence found anywhere in the bundle clearly satisfies the dimension intent.
 
-Score calculation:
-  category applicable_points = max points available for that category (after excluding any N/A items)
-  category achieved_points   = points earned in that category
-  total applicable_points    = sum across all three categories
-  total achieved_points      = sum across all three categories
-  total_score                = round(achieved_points / applicable_points × 100), or 0 if applicable_points is 0
+Declared No Evidence — 70% of available points. An ITP item is marked Yes or Pass by the site manager but no supporting evidence is attached anywhere in the bundle. The site manager's professional declaration has value but is not independently defensible.
 
-REAL-WORLD CALIBRATION — MANDATORY:
-  TYPE A (ITP-only): total_score MUST NOT exceed 55. Apply the cap before reporting.
-  TYPE B (ITP + real evidence): if engineer evidence + supporting docs + completed ITP are all present,
-    total_score MUST fall between 75 and 90. Do not score below 75 unless MAJOR elements are absent.
+Partial — 40 to 75% of available points. Some evidence exists but the dimension is not fully satisfied. Assess the gap: how well does the partial evidence hold up if challenged? Lean toward the generous end of the range when intent is clearly there. Examples: delivery dockets present but no cylinder breaks scores closer to 40%. Engineer report present but unsigned scores closer to 70%. Subcontractor ITP present but open or unsigned scores approximately 55%.
 
-Score bands:
-  90–100 → excellent
-  75–89  → good
-  55–74  → partial
-  35–54  → poor
-  0–34   → critical
+Missing — 0% of available points. No evidence of any kind and no ITP response for work that clearly required this dimension. Never apply Missing when partial evidence exists — use Partial instead.
 
-Package assessment logic:
-  "complete"        → TYPE B package, strong evidence across all key areas — typical score 75–90+
-  "mostly complete" → TYPE B package with some gaps — typical score 60–75
-  "incomplete"      → TYPE A (ITP-only) package, or TYPE B with major missing evidence — score below 60
+N/A — Excluded from denominator entirely. The dimension genuinely does not apply to this work scope. Trust N/A items marked by the site manager. A high N/A count does not reduce the score.
+
+STEP 5 — CALCULATE SCORE
+total_applicable_points = sum of available points for all non-N/A dimensions
+total_achieved_points = sum of points earned across all dimensions
+total_score = round(achieved_points / applicable_points x 100), or 0 if applicable_points is 0
+
+STEP 6 — ASSIGN RATING BAND
+85 to 100 → compliant
+70 to 84  → minor_gaps
+50 to 69  → significant_gaps
+0 to 49   → critical_risk
 
 COMMERCIAL CONFIDENCE — second judgement layer (does NOT affect the numeric score):
 After scoring, assign a commercial_confidence rating reflecting the audit risk of this package.
@@ -202,9 +179,9 @@ Replace every placeholder value with real values from your review.
 CRITICAL: The document_observations array must contain exactly ${fileCount} entr${fileCount === 1 ? "y" : "ies"} — one for every file in this bundle. Do not skip any file.
 
 ENUM VALUES — use these exact lowercase strings, no other values:
-  package_assessment: "complete" or "mostly complete" or "incomplete"
+  package_assessment: "compliant" or "minor_gaps" or "significant_gaps" or "critical_risk"
   confidence: "high" or "medium" or "low"
-  score_band: "excellent" or "good" or "partial" or "poor" or "critical"
+  score_band: "compliant" or "minor_gaps" or "significant_gaps" or "critical_risk"
   missing_evidence status: "Missing" or "Substantially complete" or "Unclear"
   commercial_confidence rating: "high" or "medium" or "low"
 
@@ -217,12 +194,14 @@ ENUM VALUES — use these exact lowercase strings, no other values:
     "inspection_reference": null,
     "closed_by": null,
     "inspection_number_of_type": null,
+    "tier": "Tier 1",
+    "tier_subgroup": null,
     "extraction_confidence": "medium"
   },
   "total_score": 0,
-  "score_band": "critical",
+  "score_band": "critical_risk",
   "confidence": "medium",
-  "package_assessment": "incomplete",
+  "package_assessment": "critical_risk",
   "executive_summary": "3–5 short sentences. What is strong, what is missing, and what this means for audit readiness. Practical and direct.",
   "applicable_points": 0,
   "achieved_points": 0,
@@ -231,9 +210,11 @@ ENUM VALUES — use these exact lowercase strings, no other values:
       "Name of item excluded as not applicable"
     ],
     "category_scores": {
-      "high_value": { "applicable_points": 0, "achieved_points": 0 },
-      "medium_value": { "applicable_points": 0, "achieved_points": 0 },
-      "low_value": { "applicable_points": 0, "achieved_points": 0 }
+      "D1_engineer_verification": { "applicable_points": 0, "achieved_points": 0 },
+      "D2_technical_testing": { "applicable_points": 0, "achieved_points": 0 },
+      "D3_itp_form_completeness": { "applicable_points": 0, "achieved_points": 0 },
+      "D4_material_traceability": { "applicable_points": 0, "achieved_points": 0 },
+      "D5_physical_evidence": { "applicable_points": 0, "achieved_points": 0 }
     },
     "scoring_explanation": "2 sentences max: which categories applied and why the score landed here.",
     "strong_contributors": [

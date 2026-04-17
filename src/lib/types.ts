@@ -2,7 +2,10 @@
 
 export type ProcessedFile =
   | { kind: "text"; filename: string; text: string }
-  | { kind: "image"; filename: string; base64: string; mediaType: "image/jpeg" | "image/png" };
+  | { kind: "image"; filename: string; base64: string; mediaType: "image/jpeg" | "image/png" }
+  // PDFs sent natively to Claude — the model reads both typed text AND sees
+  // embedded images, signatures, stamps, and scanned pages.
+  | { kind: "pdf"; filename: string; base64: string };
 
 export interface DocumentObservation {
   filename: string;
@@ -17,6 +20,8 @@ export interface InspectionHeader {
   inspection_reference: string | null;
   closed_by: string | null;
   inspection_number_of_type: number | null;
+  tier: "Tier 1" | "Tier 2" | "Tier 3" | null;
+  tier_subgroup: string | null;
   extraction_confidence: "high" | "medium" | "low";
 }
 
@@ -41,9 +46,11 @@ export interface CategoryScore {
 export interface ScoreBreakdown {
   excluded_as_not_applicable: string[];
   category_scores: {
-    high_value: CategoryScore;
-    medium_value: CategoryScore;
-    low_value: CategoryScore;
+    D1_engineer_verification: CategoryScore;
+    D2_technical_testing: CategoryScore;
+    D3_itp_form_completeness: CategoryScore;
+    D4_material_traceability: CategoryScore;
+    D5_physical_evidence: CategoryScore;
   };
   scoring_explanation: string;
   strong_contributors: string[];
@@ -51,7 +58,7 @@ export interface ScoreBreakdown {
   genuinely_missing: string[];
 }
 
-export type ScoreBand = "excellent" | "good" | "partial" | "poor" | "critical";
+export type ScoreBand = "compliant" | "minor_gaps" | "significant_gaps" | "critical_risk";
 
 export interface CommercialConfidence {
   rating: "high" | "medium" | "low";
@@ -63,7 +70,7 @@ export interface ReviewResult {
   total_score: number;           // 0–100, computed from achieved/applicable
   score_band: ScoreBand;
   confidence: "high" | "medium" | "low";
-  package_assessment: "complete" | "mostly complete" | "incomplete";
+  package_assessment: "compliant" | "minor_gaps" | "significant_gaps" | "critical_risk";
   executive_summary: string;
   applicable_points: number;     // total points possible from applicable items
   achieved_points: number;       // total points earned

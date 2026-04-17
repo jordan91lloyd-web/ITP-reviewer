@@ -12,7 +12,6 @@ import {
   MAX_FILE_COUNT,
 } from "@/lib/validation";
 import type { ProcessedFile } from "@/lib/types";
-import pdfParse from "pdf-parse";
 
 export async function POST(request: NextRequest) {
   console.log("\n[review] ─────────────────────────────────────");
@@ -73,30 +72,15 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     if (file.type === "application/pdf") {
-      try {
-        const pdfData = await pdfParse(buffer);
-        const text = pdfData.text?.trim();
-
-        if (!text) {
-          console.warn(`[review] Warning: No text found in ${file.name} — may be a scanned image`);
-          processedFiles.push({
-            kind: "text",
-            filename: file.name,
-            text: "[This PDF contains no extractable text. It appears to be a scanned image. " +
-                  "Consider uploading it as a JPG or PNG so Claude can analyse its contents visually.]",
-          });
-        } else {
-          console.log(`[review]   → Extracted ${text.length} characters of text`);
-          processedFiles.push({ kind: "text", filename: file.name, text });
-        }
-      } catch (err) {
-        console.error(`[review] Failed to parse PDF ${file.name}:`, err);
-        processedFiles.push({
-          kind: "text",
-          filename: file.name,
-          text: "[Could not read this PDF. It may be corrupted or password-protected.]",
-        });
-      }
+      // Pass PDF natively so Claude reads typed text AND sees embedded
+      // images, signatures, stamps, and scanned pages — exactly what a
+      // human reviewer would see when opening the file.
+      console.log(`[review]   → Passing PDF natively (${(buffer.length / 1024).toFixed(1)} KB)`);
+      processedFiles.push({
+        kind: "pdf",
+        filename: file.name,
+        base64: buffer.toString("base64"),
+      });
     } else {
       const base64 = buffer.toString("base64");
       const mediaType = file.type === "image/png" ? "image/png" : "image/jpeg";

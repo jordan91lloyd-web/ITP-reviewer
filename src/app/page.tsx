@@ -1,17 +1,18 @@
 import UploadPortal from "@/components/UploadPortal";
 import ProcoreConnect from "@/components/ProcoreConnect";
+import ProcoreImport from "@/components/ProcoreImport";
 
 export default function Home() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
 
       <header className="mb-8 text-center">
-        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 tracking-wide uppercase">
-          Powered by Claude AI
-        </div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-          QA Report
+        <h1 className="text-4xl font-bold tracking-tight">
+          <span className="text-yellow-400">Fleek Constructions</span>
         </h1>
+        <p className="mt-1 text-base font-semibold text-gray-500 tracking-wide">
+          ITP QA Reviewer
+        </p>
         <p className="mt-3 text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
           Upload the documents from one inspection package. Claude will identify
           the project details automatically and tell you what&apos;s complete,
@@ -21,6 +22,17 @@ export default function Home() {
 
       <div className="mb-6">
         <ProcoreConnect />
+      </div>
+
+      <ProcoreImport />
+
+      <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-3 text-gray-400 font-medium tracking-wide">or upload manually</span>
+        </div>
       </div>
 
       <UploadPortal />

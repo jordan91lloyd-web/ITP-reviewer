@@ -27,7 +27,25 @@ const MAX_TOKENS = 16000;
  * Sends the document bundle to Claude and returns a structured ReviewResult.
  * Claude extracts the project/ITP metadata automatically from the documents.
  */
-export async function runBundleReview(files: ProcessedFile[]): Promise<ReviewResult> {
+export async function runBundleReview(filesRaw: ProcessedFile[]): Promise<ReviewResult> {
+  // ── Pre-flight: strip any images that exceed Claude's 5 MB per-image limit.
+  // base64.length * 0.75 ≈ raw bytes (base64 encodes 3 bytes as 4 chars).
+  // This guard runs before any content block is built, so the 400 error is
+  // impossible even if the download-stage check was bypassed.
+  const MAX_IMAGE_RAW = 5 * 1024 * 1024; // 5 MB
+  const files = filesRaw.filter(f => {
+    if (f.kind !== "image") return true;
+    const rawBytes = Math.floor(f.base64.length * 0.75);
+    if (rawBytes > MAX_IMAGE_RAW) {
+      console.warn(
+        `[claude] Pre-flight: dropping "${f.filename}" — ` +
+        `${(rawBytes / 1024 / 1024).toFixed(1)} MB exceeds 5 MB image limit`
+      );
+      return false;
+    }
+    return true;
+  });
+
   const client = new Anthropic();
 
   const contentBlocks: Anthropic.ContentBlockParam[] = [];
@@ -48,11 +66,32 @@ export async function runBundleReview(files: ProcessedFile[]): Promise<ReviewRes
         type: "text",
         text: `${label}\n${file.text}\n--- End of document ${i + 1} ---`,
       });
+    } else if (file.kind === "image") {
+      // Claude's API enforces a hard 5 MB limit per image. base64 is ~33%
+      // larger than the raw bytes, so we check raw bytes: 5 MB = 5,242,880.
+      const rawBytes = Math.floor(file.base64.length * 0.75);
+      if (rawBytes > 5 * 1024 * 1024) {
+        const sizeMb = (rawBytes / 1024 / 1024).toFixed(1);
+        console.warn(`[claude] Dropping "${file.filename}" — image too large for API (${sizeMb} MB > 5 MB)`);
+        contentBlocks.push({
+          type: "text",
+          text: `${label}\n[Image skipped — file is ${sizeMb} MB which exceeds the 5 MB per-image API limit. File existence is noted but visual content cannot be analysed.]\n--- End of document ${i + 1} ---`,
+        });
+      } else {
+        contentBlocks.push({ type: "text", text: `${label}\n[Image file — see below]` });
+        contentBlocks.push({
+          type: "image",
+          source: { type: "base64", media_type: file.mediaType, data: file.base64 },
+        });
+        contentBlocks.push({ type: "text", text: `--- End of document ${i + 1} ---` });
+      }
     } else {
-      contentBlocks.push({ type: "text", text: `${label}\n[Image file — see below]` });
+      // PDF — passed natively so Claude reads typed text AND sees embedded
+      // photos, signatures, stamps, and any scanned content on each page.
+      contentBlocks.push({ type: "text", text: `${label}\n[PDF document — see attached]` });
       contentBlocks.push({
-        type: "image",
-        source: { type: "base64", media_type: file.mediaType, data: file.base64 },
+        type: "document",
+        source: { type: "base64", media_type: "application/pdf", data: file.base64 },
       });
       contentBlocks.push({ type: "text", text: `--- End of document ${i + 1} ---` });
     }
@@ -233,10 +272,11 @@ function normalizeEnums(parsed: unknown): unknown {
 }
 
 function normalizePackageAssessment(v: string): string {
-  const s = v.toLowerCase().trim().replace(/_/g, " ");
-  if (s === "complete") return "complete";
-  if (s === "mostly complete" || s === "substantially complete" || s === "largely complete") return "mostly complete";
-  if (s === "incomplete" || s === "partial" || s === "partially complete" || s === "not complete") return "incomplete";
+  const s = v.toLowerCase().trim().replace(/ /g, "_");
+  if (s === "compliant") return "compliant";
+  if (s === "minor_gaps" || s === "minor gaps") return "minor_gaps";
+  if (s === "significant_gaps" || s === "significant gaps") return "significant_gaps";
+  if (s === "critical_risk" || s === "critical risk" || s === "critical") return "critical_risk";
   // Unknown — return as-is and let the validator report it
   return v;
 }
@@ -250,12 +290,11 @@ function normalizeConfidence(v: string): string {
 }
 
 function normalizeScoreBand(v: string): string {
-  const s = v.toLowerCase().trim().replace(/_/g, " ");
-  if (s === "excellent") return "excellent";
-  if (s === "good") return "good";
-  if (s === "partial" || s === "moderate" || s === "medium") return "partial";
-  if (s === "poor") return "poor";
-  if (s === "critical" || s === "very poor" || s === "fail") return "critical";
+  const s = v.toLowerCase().trim().replace(/ /g, "_");
+  if (s === "compliant") return "compliant";
+  if (s === "minor_gaps" || s === "minor gaps") return "minor_gaps";
+  if (s === "significant_gaps" || s === "significant gaps") return "significant_gaps";
+  if (s === "critical_risk" || s === "critical risk" || s === "critical") return "critical_risk";
   return v;
 }
 
@@ -290,6 +329,11 @@ function validateResult(raw: unknown): ReviewResult {
   if (h.inspection_number_of_type !== null && typeof h.inspection_number_of_type !== "number") {
     throw new Error("inspection_header.inspection_number_of_type must be a number or null.");
   }
+  const validTiers = ["Tier 1", "Tier 2", "Tier 3"] as const;
+  const tier = validTiers.includes(h.tier as typeof validTiers[number])
+    ? (h.tier as InspectionHeader["tier"])
+    : null;
+  const tier_subgroup = isStrOrNull(h.tier_subgroup) ? (h.tier_subgroup as string | null) : null;
   if (!validConf.includes(h.extraction_confidence as typeof validConf[number])) {
     throw new Error("inspection_header.extraction_confidence must be high | medium | low.");
   }
@@ -301,16 +345,18 @@ function validateResult(raw: unknown): ReviewResult {
     inspection_reference: h.inspection_reference as string | null,
     closed_by: h.closed_by as string | null,
     inspection_number_of_type: h.inspection_number_of_type as number | null,
+    tier,
+    tier_subgroup,
     extraction_confidence: h.extraction_confidence as InspectionHeader["extraction_confidence"],
   };
 
   // ── Core fields ───────────────────────────────────────────────────────────
   const total_score = need("total_score", isNum, "number");
-  const validBands = ["excellent", "good", "partial", "poor", "critical"] as const;
+  const validBands = ["compliant", "minor_gaps", "significant_gaps", "critical_risk"] as const;
   const score_band = need(
     "score_band",
     (v): v is ScoreBand => validBands.includes(v as ScoreBand),
-    "excellent | good | partial | poor | critical"
+    "compliant | minor_gaps | significant_gaps | critical_risk"
   );
   const confidence = need(
     "confidence",
@@ -319,9 +365,9 @@ function validateResult(raw: unknown): ReviewResult {
   );
   const package_assessment = need(
     "package_assessment",
-    (v): v is "complete" | "mostly complete" | "incomplete" =>
-      v === "complete" || v === "mostly complete" || v === "incomplete",
-    "complete | mostly complete | incomplete"
+    (v): v is "compliant" | "minor_gaps" | "significant_gaps" | "critical_risk" =>
+      v === "compliant" || v === "minor_gaps" || v === "significant_gaps" || v === "critical_risk",
+    "compliant | minor_gaps | significant_gaps | critical_risk"
   );
   const executive_summary = need("executive_summary", isStr, "string");
   const applicable_points = need("applicable_points", isNum, "number");
@@ -356,9 +402,11 @@ function validateResult(raw: unknown): ReviewResult {
   const score_breakdown: ScoreBreakdown = {
     excluded_as_not_applicable: sb.excluded_as_not_applicable as string[],
     category_scores: {
-      high_value: validateCat("high_value"),
-      medium_value: validateCat("medium_value"),
-      low_value: validateCat("low_value"),
+      D1_engineer_verification: validateCat("D1_engineer_verification"),
+      D2_technical_testing: validateCat("D2_technical_testing"),
+      D3_itp_form_completeness: validateCat("D3_itp_form_completeness"),
+      D4_material_traceability: validateCat("D4_material_traceability"),
+      D5_physical_evidence: validateCat("D5_physical_evidence"),
     },
     scoring_explanation: sb.scoring_explanation as string,
     strong_contributors: sb.strong_contributors as string[],

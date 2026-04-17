@@ -22,12 +22,15 @@ interface Props {
 
 const UNIDENTIFIED = "Not confidently identified";
 
-// ── QA Status — derived from score + missing evidence count + confidence ──
+// ── QA Status — derived from score + commercial confidence ──
 // Answers: "How does this package stand up as a completed QA record?"
+// We use commercial_confidence as the primary driver because Claude already
+// computed it as a holistic audit readiness judgement. Score is a secondary
+// check — a low score always overrides a high confidence rating.
 function getQAStatus(result: ReviewResult): "strong" | "acceptable" | "high-risk" {
-  const missingCount = result.missing_evidence.filter(e => e.status === "Missing").length;
-  if (result.total_score >= 75 && missingCount <= 1 && result.confidence !== "low") return "strong";
-  if (result.total_score < 55 || result.confidence === "low" || missingCount >= 3) return "high-risk";
+  const cc = result.commercial_confidence?.rating ?? "medium";
+  if (result.total_score >= 85 && cc === "high") return "strong";
+  if (result.total_score < 50 || cc === "low") return "high-risk";
   return "acceptable";
 }
 
@@ -76,15 +79,17 @@ export default function ReviewResults({ result, onReset }: Props) {
                                "bg-red-50 border-red-200";
 
   const assessmentStyle: Record<string, string> = {
-    "complete":        "bg-green-100 text-green-800",
-    "mostly complete": "bg-yellow-100 text-yellow-800",
-    "incomplete":      "bg-red-100 text-red-800",
+    "compliant":         "bg-green-100 text-green-800",
+    "minor_gaps":        "bg-yellow-100 text-yellow-800",
+    "significant_gaps":  "bg-orange-100 text-orange-800",
+    "critical_risk":     "bg-red-100 text-red-800",
   };
 
   const assessmentLabel: Record<string, string> = {
-    "complete":        "Strong package",
-    "mostly complete": "Acceptable with gaps",
-    "incomplete":      "High risk / incomplete",
+    "compliant":         "Compliant",
+    "minor_gaps":        "Minor gaps",
+    "significant_gaps":  "Significant gaps",
+    "critical_risk":     "Critical risk",
   };
 
   const confidenceColour =
@@ -93,11 +98,10 @@ export default function ReviewResults({ result, onReset }: Props) {
                                      "text-red-500";
 
   const scoreLabel: Record<string, string> = {
-    excellent: "Complete and well-evidenced",
-    good:      "Mostly complete — minor gaps",
-    partial:   "Partial evidence — gaps present",
-    poor:      "Significant deficiencies",
-    critical:  "Critical evidence largely absent",
+    compliant:         "Compliant — strong evidence",
+    minor_gaps:        "Minor gaps — mostly complete",
+    significant_gaps:  "Significant gaps present",
+    critical_risk:     "Critical risk — major gaps",
   };
 
   const statusBadge = (status: string) => {
@@ -126,14 +130,21 @@ export default function ReviewResults({ result, onReset }: Props) {
     <>
       {/* ── Print-only header ── */}
       <div className="hidden print:block mb-6 border-b border-gray-300 pb-4">
-        <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">QA Report</p>
-        <h1 className="text-xl font-bold text-gray-900">
-          {h.project_name ?? "Project not identified"}
-        </h1>
-        <p className="text-sm text-gray-600">
-          {[h.itp_number, h.itp_name].filter(Boolean).join(" — ") || "ITP details not identified"}
-        </p>
-        <p className="text-xs text-gray-400 mt-1">Generated {today}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">QA Report — Fleek Constructions</p>
+            <h1 className="text-xl font-bold text-gray-900">
+              {h.project_name ?? "Project not identified"}
+            </h1>
+            <p className="text-sm text-gray-600">
+              {[h.itp_number, h.itp_name].filter(Boolean).join(" — ") || "ITP details not identified"}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-400">Generated {today}</p>
+            {h.closed_by && <p className="text-xs text-gray-400 mt-0.5">Closed by {h.closed_by}</p>}
+          </div>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -212,8 +223,12 @@ export default function ReviewResults({ result, onReset }: Props) {
               label="Inspection No. of Type"
               value={field(h.inspection_number_of_type != null ? String(h.inspection_number_of_type) : null)}
             />
+            <HeaderField
+              label="Tier"
+              value={field(h.tier ? (h.tier_subgroup ? `${h.tier} — ${h.tier_subgroup}` : h.tier) : null)}
+            />
           </dl>
-          <p className="mt-3 text-xs text-gray-400">
+          <p className="mt-3 text-xs text-gray-400 print:hidden">
             Extraction confidence:{" "}
             <span className={`font-semibold capitalize ${extractionConfidenceColour}`}>
               {h.extraction_confidence}
@@ -250,8 +265,8 @@ export default function ReviewResults({ result, onReset }: Props) {
         <div className="grid grid-cols-3 gap-3">
 
           <div className={`rounded-xl border p-5 text-center ${scoreBgColour}`}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">Score</p>
-            <p className={`text-5xl font-bold leading-none ${scoreColour}`}>{result.total_score}</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">Score</p>
+            <ScoreRing score={result.total_score} />
             <p className="mt-1 text-xs text-gray-400">{result.achieved_points}/{result.applicable_points} pts</p>
             <p className={`mt-2 text-xs font-medium ${scoreColour}`}>{scoreLabel[result.score_band] ?? result.score_band}</p>
           </div>
@@ -461,23 +476,23 @@ function CommercialConfidenceCard({ cc }: { cc: CommercialConfidence | undefined
 
 // ─── ScoreBreakdownCard ───────────────────────────────────────────────────
 
-function CategoryBar({ label, cat }: { label: string; cat: CategoryScore }) {
+function CategoryBar({ label, cat, bordered }: { label: string; cat: CategoryScore; bordered?: boolean }) {
   const pct = cat.applicable_points > 0
     ? Math.round((cat.achieved_points / cat.applicable_points) * 100)
     : null;
   return (
-    <div>
-      <div className="flex justify-between items-baseline mb-1">
-        <span className="text-xs font-medium text-gray-600">{label}</span>
-        <span className="text-xs text-gray-400">
+    <div className={bordered ? "pb-4 border-b border-gray-100" : ""}>
+      <div className="flex justify-between items-baseline mb-1.5">
+        <span className="text-xs font-semibold text-gray-700">{label}</span>
+        <span className="text-xs text-gray-400 tabular-nums">
           {cat.achieved_points}/{cat.applicable_points} pts
-          {pct !== null ? ` (${pct}%)` : " (N/A)"}
+          {pct !== null ? ` · ${pct}%` : " · N/A"}
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
         {pct !== null && (
           <div
-            className={`h-full rounded-full ${pct >= 80 ? "bg-green-400" : pct >= 55 ? "bg-amber-400" : "bg-red-400"}`}
+            className={`h-full rounded-full transition-all ${pct >= 80 ? "bg-green-400" : pct >= 55 ? "bg-amber-400" : "bg-red-400"}`}
             style={{ width: `${pct}%` }}
           />
         )}
@@ -495,8 +510,8 @@ function ScoreBreakdownCard({
 }) {
   return (
     <ResultCard
-      title="How This Score Was Determined"
-      subtitle="Engineer verification (30 pts) · ITP, docs &amp; traceability (50 pts) · Visual evidence (20 pts)"
+      title="Score Breakdown"
+      subtitle="D1 Engineer verification · D2 Technical testing · D3 ITP completeness · D4 Material traceability · D5 Physical evidence"
       accent="blue"
       collapsible
       defaultOpen={false}
@@ -506,21 +521,23 @@ function ScoreBreakdownCard({
       <div className="flex gap-4 mb-4">
         <div className="rounded-lg bg-gray-50 border border-gray-100 px-4 py-3 flex-1 text-center">
           <p className="text-xs text-gray-400 mb-0.5">Achieved</p>
-          <p className="text-xl font-bold text-gray-800">{breakdown.category_scores.high_value.achieved_points + breakdown.category_scores.medium_value.achieved_points + breakdown.category_scores.low_value.achieved_points}</p>
+          <p className="text-xl font-bold text-gray-800">{breakdown.category_scores.D1_engineer_verification.achieved_points + breakdown.category_scores.D2_technical_testing.achieved_points + breakdown.category_scores.D3_itp_form_completeness.achieved_points + breakdown.category_scores.D4_material_traceability.achieved_points + breakdown.category_scores.D5_physical_evidence.achieved_points}</p>
           <p className="text-xs text-gray-400">points</p>
         </div>
         <div className="rounded-lg bg-gray-50 border border-gray-100 px-4 py-3 flex-1 text-center">
           <p className="text-xs text-gray-400 mb-0.5">Applicable</p>
-          <p className="text-xl font-bold text-gray-800">{breakdown.category_scores.high_value.applicable_points + breakdown.category_scores.medium_value.applicable_points + breakdown.category_scores.low_value.applicable_points}</p>
+          <p className="text-xl font-bold text-gray-800">{breakdown.category_scores.D1_engineer_verification.applicable_points + breakdown.category_scores.D2_technical_testing.applicable_points + breakdown.category_scores.D3_itp_form_completeness.applicable_points + breakdown.category_scores.D4_material_traceability.applicable_points + breakdown.category_scores.D5_physical_evidence.applicable_points}</p>
           <p className="text-xs text-gray-400">points</p>
         </div>
       </div>
 
       {/* Category bars */}
-      <div className="space-y-2.5 mb-4">
-        <CategoryBar label="Engineer verification (certs, reports, correspondence)" cat={breakdown.category_scores.high_value} />
-        <CategoryBar label="ITP completion, supporting docs &amp; traceability" cat={breakdown.category_scores.medium_value} />
-        <CategoryBar label="Visual evidence &amp; overall completeness" cat={breakdown.category_scores.low_value} />
+      <div className="space-y-4 mb-5">
+        <CategoryBar label="D1 — Engineer and inspector verification" cat={breakdown.category_scores.D1_engineer_verification} bordered />
+        <CategoryBar label="D2 — Technical testing evidence" cat={breakdown.category_scores.D2_technical_testing} bordered />
+        <CategoryBar label="D3 — ITP form and subcontractor ITP completeness" cat={breakdown.category_scores.D3_itp_form_completeness} bordered />
+        <CategoryBar label="D4 — Material traceability" cat={breakdown.category_scores.D4_material_traceability} bordered />
+        <CategoryBar label="D5 — Physical evidence record" cat={breakdown.category_scores.D5_physical_evidence} />
       </div>
 
       {/* Scoring explanation */}
@@ -578,6 +595,43 @@ function ScoreBreakdownCard({
         </div>
       )}
     </ResultCard>
+  );
+}
+
+// ─── ScoreRing ────────────────────────────────────────────────────────────
+// SVG circular gauge for the score card. Clean and professional.
+
+function ScoreRing({ score }: { score: number }) {
+  const r = 36;
+  const circ = 2 * Math.PI * r;
+  const filled = Math.min(score / 100, 1) * circ;
+  const strokeColour =
+    score >= 80 ? "#16a34a" :
+    score >= 55 ? "#d97706" :
+                  "#dc2626";
+  return (
+    <svg width="96" height="96" viewBox="0 0 96 96" className="mx-auto">
+      {/* Track */}
+      <circle cx="48" cy="48" r={r} fill="none" stroke="#e5e7eb" strokeWidth="8" />
+      {/* Progress arc */}
+      <circle
+        cx="48" cy="48" r={r} fill="none"
+        stroke={strokeColour} strokeWidth="8"
+        strokeDasharray={`${filled} ${circ - filled}`}
+        strokeLinecap="round"
+        transform="rotate(-90 48 48)"
+      />
+      {/* Score number */}
+      <text
+        x="48" y="54"
+        textAnchor="middle"
+        fontSize="24" fontWeight="bold"
+        fill={strokeColour}
+        fontFamily="inherit"
+      >
+        {score}
+      </text>
+    </svg>
   );
 }
 
