@@ -544,7 +544,28 @@ export default function DashboardPage() {
               )}
 
               {!inspectionsLoading && filteredInspections.length > 0 && (
-                <table className="w-full text-sm">
+                <>
+                  {/* Collapse / Expand All */}
+                  <div className="flex justify-end px-4 py-2 border-b border-gray-100 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allCollapsed = groupOrder.length > 0 && collapsedGroups.size === groupOrder.length;
+                        if (allCollapsed) {
+                          setCollapsedGroups(new Set());
+                        } else {
+                          setCollapsedGroups(new Set(groupOrder));
+                        }
+                      }}
+                      className="text-[11px] font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length
+                        ? "Expand All"
+                        : "Collapse All"}
+                    </button>
+                  </div>
+
+                  <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50">
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-6 py-2">ITP</th>
@@ -553,6 +574,7 @@ export default function DashboardPage() {
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Rating</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-20">Status</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Reviewed</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Person</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -569,7 +591,7 @@ export default function DashboardPage() {
                           onClick={() => toggleGroup(groupName)}
                           className="cursor-pointer bg-gray-50 hover:bg-gray-100 border-t border-gray-200 select-none"
                         >
-                          <td colSpan={6} className="px-4 py-2">
+                          <td colSpan={7} className="px-4 py-2">
                             <div className="flex items-center gap-2">
                               {/* Collapse arrow */}
                               <span className={`text-gray-400 text-xs transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}>
@@ -598,7 +620,8 @@ export default function DashboardPage() {
                       ];
                     })}
                   </tbody>
-                </table>
+                  </table>
+                </>
               )}
             </div>
           )}
@@ -731,15 +754,9 @@ function InspectionRow({
         selected ? "bg-blue-50" : "hover:bg-gray-50"
       }`}
     >
-      {/* ITP name + closed_by / assignee */}
+      {/* ITP name */}
       <td className="px-6 py-3 max-w-0">
         <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
-        {isClosed && insp.closed_by && (
-          <p className="text-[10px] text-gray-400 mt-0.5 truncate">Closed by {insp.closed_by}</p>
-        )}
-        {!isClosed && insp.assignee && (
-          <p className="text-[10px] text-gray-400 mt-0.5 truncate">Assigned to {insp.assignee}</p>
-        )}
       </td>
 
       {/* Inspection # of type */}
@@ -803,6 +820,13 @@ function InspectionRow({
         {insp.review_status === "changed" && (
           <span className="ml-1 text-amber-500 text-[10px]">⚠</span>
         )}
+      </td>
+
+      {/* Person: closed_by for closed, assignee for open/in-review */}
+      <td className="px-3 py-3 text-[10px] text-gray-400 whitespace-nowrap">
+        {isClosed
+          ? (insp.closed_by ? `Closed by ${insp.closed_by}` : "—")
+          : (insp.assignee  ? `Assigned to ${insp.assignee}` : "—")}
       </td>
     </tr>
   );
