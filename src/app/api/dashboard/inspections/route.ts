@@ -131,7 +131,14 @@ export async function GET(request: NextRequest) {
       closed_at:      insp.closed_at  ?? null,
       updated_at:     insp.updated_at ?? null,
       closed_by:      insp.closed_by?.name ?? null,
-      assignee:       insp.assignees?.[0]?.name ?? null,
+      // Procore's list endpoint doesn't always return `assignees` — try
+      // every field name Procore uses across API versions and tenants.
+      assignee:
+        insp.assignees?.[0]?.name ??
+        insp.responsible_party?.name ??
+        insp.responsible_contractor?.name ??
+        insp.point_of_contact?.name ??
+        null,
       review_status,
       review_record_id:         recordId ?? null,
       last_score:               record ? (record.score as number) : null,

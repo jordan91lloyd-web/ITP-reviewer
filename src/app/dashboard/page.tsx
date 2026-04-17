@@ -546,7 +546,7 @@ export default function DashboardPage() {
               {!inspectionsLoading && filteredInspections.length > 0 && (
                 <>
                   {/* Collapse / Expand All */}
-                  <div className="flex justify-end px-4 py-2 border-b border-gray-100 bg-white">
+                  <div className="flex justify-start px-4 py-2 border-b border-gray-100 bg-white">
                     <button
                       type="button"
                       onClick={() => {
@@ -569,12 +569,12 @@ export default function DashboardPage() {
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50">
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-6 py-2">ITP</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Person</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-12">#</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Score</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Rating</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-20">Status</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Reviewed</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Person</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -759,6 +759,13 @@ function InspectionRow({
         <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
       </td>
 
+      {/* Person: closed_by for closed, assignee for open/in-review */}
+      <td className="px-3 py-3 text-[10px] text-gray-400 whitespace-nowrap">
+        {isClosed
+          ? (insp.closed_by ? `Closed by ${insp.closed_by}` : "—")
+          : (insp.assignee  ? `Assigned to ${insp.assignee}` : "—")}
+      </td>
+
       {/* Inspection # of type */}
       <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
         {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : ""}
@@ -820,13 +827,6 @@ function InspectionRow({
         {insp.review_status === "changed" && (
           <span className="ml-1 text-amber-500 text-[10px]">⚠</span>
         )}
-      </td>
-
-      {/* Person: closed_by for closed, assignee for open/in-review */}
-      <td className="px-3 py-3 text-[10px] text-gray-400 whitespace-nowrap">
-        {isClosed
-          ? (insp.closed_by ? `Closed by ${insp.closed_by}` : "—")
-          : (insp.assignee  ? `Assigned to ${insp.assignee}` : "—")}
       </td>
     </tr>
   );
