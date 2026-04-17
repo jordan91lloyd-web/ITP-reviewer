@@ -11,6 +11,8 @@ import type { DashboardInspection } from "@/app/api/dashboard/inspections/route"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+type BulkItemStatus = "queued" | "processing" | "done" | "failed";
+
 interface Company { id: number; name: string; is_active: boolean }
 
 interface DashboardProject {
@@ -115,6 +117,227 @@ function computeInspectionStats(list: DashboardInspection[]): InspectionStats {
   };
 }
 
+// ── PDF export helpers ─────────────────────────────────────────────────────────
+
+function buildFilename(insp: DashboardInspection): string {
+  const itpMatch = insp.name.match(/^ITP[-\s]*0*(\d+)/i);
+  const itpNum   = itpMatch ? String(parseInt(itpMatch[1])).padStart(3, "0") : "000";
+  const descPart = insp.name.replace(/^ITP[-\s]*\d+[-\s]*/i, "").trim();
+  const sanitized = descPart
+    .replace(/[^a-zA-Z0-9\s]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .substring(0, 50);
+  const seq = insp.inspection_number_of_type != null ? `-${insp.inspection_number_of_type}` : "";
+  return `ITP-${itpNum}-${sanitized}${seq}-QA-Report`;
+}
+
+function esc(s: string | null | undefined): string {
+  return (s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buildReportHtml(insp: DashboardInspection, autoPrint = false): string {
+  const rd           = insp.review_data!;
+  const displayScore = insp.override_score ?? insp.last_score;
+  const band         = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
+  const bandLabel    = band ? scoreBandLabel(band) : "Not reviewed";
+
+  const bandColor = ({
+    compliant:        "#16a34a",
+    minor_gaps:       "#d97706",
+    significant_gaps: "#ea580c",
+    critical_risk:    "#dc2626",
+  } as Record<string, string>)[band ?? ""] ?? "#6b7280";
+
+  const bandBg = ({
+    compliant:        "#f0fdf4",
+    minor_gaps:       "#fffbeb",
+    significant_gaps: "#fff7ed",
+    critical_risk:    "#fef2f2",
+  } as Record<string, string>)[band ?? ""] ?? "#f9fafb";
+
+  const cc   = rd.commercial_confidence;
+  const ccColor = cc?.rating === "high" ? "#16a34a" : cc?.rating === "medium" ? "#d97706" : "#dc2626";
+
+  const dims: [string, string, CategoryScore | undefined][] = [
+    ["D1", "Engineer & Inspector Verification", rd.score_breakdown?.category_scores?.D1_engineer_verification],
+    ["D2", "Technical Testing Evidence",        rd.score_breakdown?.category_scores?.D2_technical_testing],
+    ["D3", "ITP Form Completeness",             rd.score_breakdown?.category_scores?.D3_itp_form_completeness],
+    ["D4", "Material Traceability",             rd.score_breakdown?.category_scores?.D4_material_traceability],
+    ["D5", "Physical Evidence Record",          rd.score_breakdown?.category_scores?.D5_physical_evidence],
+  ];
+
+  const missingRows = (rd.missing_evidence ?? []).slice(0, 6).map(m =>
+    `<tr><td style="padding:6px 8px;border-bottom:1px solid #fee2e2;color:#b91c1c;font-weight:600">${esc(m.evidence_type)}</td><td style="padding:6px 8px;border-bottom:1px solid #fee2e2;color:#dc2626">${esc(m.reason)}</td></tr>`
+  ).join("");
+
+  const issueRows = (rd.key_issues ?? []).slice(0, 5).map((issue, i) =>
+    `<div style="margin-bottom:6px;padding:8px 10px;background:#fef2f2;border-left:3px solid #dc2626;border-radius:4px">
+      <span style="font-size:11px;color:#6b7280;font-weight:600">${i + 1}. ${esc(issue.title)}</span>
+      <p style="margin:4px 0 0 0;font-size:11px;color:#dc2626">${esc(issue.explanation)}</p>
+    </div>`
+  ).join("");
+
+  const actionRows = (rd.next_actions ?? []).slice(0, 5).map((a, i) =>
+    `<div style="margin-bottom:6px;padding:8px 10px;background:#eff6ff;border-left:3px solid #2563eb;border-radius:4px">
+      <span style="font-size:11px;color:#6b7280;font-weight:600">${i + 1}.</span>
+      <span style="font-size:12px;color:#1a1a1a;margin-left:6px">${esc(a)}</span>
+    </div>`
+  ).join("");
+
+  const dimBars = dims.map(([code, label, cat]) => {
+    if (!cat) return "";
+    const pct = cat.applicable_points > 0
+      ? Math.round((cat.achieved_points / cat.applicable_points) * 100)
+      : null;
+    const barColor = pct == null ? "#e5e7eb" : pct >= 80 ? "#4ade80" : pct >= 55 ? "#fbbf24" : "#f87171";
+    return `
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;font-weight:600;color:#374151">${esc(code)} — ${esc(label)}</span>
+          <span style="font-size:11px;color:#6b7280">${pct != null ? pct + "%" : "N/A"} (${cat.achieved_points}/${cat.applicable_points} pts)</span>
+        </div>
+        <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden">
+          ${pct != null ? `<div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px"></div>` : ""}
+        </div>
+      </div>`;
+  }).join("");
+
+  const docObs = (rd.document_observations ?? []).map(o =>
+    `<tr>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:11px;color:#374151;font-weight:600;vertical-align:top;max-width:180px;word-break:break-word">${esc(o.filename)}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:11px;color:#4b5563;vertical-align:top;white-space:pre-wrap">${esc(o.observation)}</td>
+    </tr>`
+  ).join("");
+
+  const header = rd.inspection_header;
+  const headerRows = header ? [
+    ["Project",     header.project_name],
+    ["ITP Number",  header.itp_number],
+    ["Tier",        header.tier],
+    ["Closed by",   header.closed_by],
+    ["Reference",   header.inspection_reference],
+  ].filter(([, v]) => v).map(([k, v]) =>
+    `<tr><td style="padding:4px 8px;font-size:11px;color:#6b7280;font-weight:600;white-space:nowrap">${esc(k)}</td><td style="padding:4px 8px;font-size:11px;color:#1a1a1a">${esc(v)}</td></tr>`
+  ).join("") : "";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${esc(insp.name)} — QA Report</title>
+<style>
+  @page { margin: 18mm 20mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a1a1a; margin: 0; padding: 0; }
+  h2 { font-size: 15px; font-weight: 700; margin: 0 0 4px 0; }
+  h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 0 0 10px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  @media print { .no-print { display: none; } }
+</style>
+</head>
+<body>
+<!-- Header -->
+<div style="border-bottom:2px solid #1d4ed8;padding-bottom:12px;margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:4px">Fleek Constructions — ITP QA Report</div>
+      <h2>${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — Inspection #${insp.inspection_number_of_type}` : ""}</h2>
+      <div style="font-size:10px;color:#6b7280;margin-top:2px">Generated ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:36px;font-weight:700;color:${bandColor};line-height:1">${displayScore ?? "—"}</div>
+      <div style="font-size:10px;font-weight:600;color:${bandColor};background:${bandBg};border-radius:20px;padding:2px 8px;display:inline-block;margin-top:4px">${esc(bandLabel)}</div>
+      ${insp.override_score != null ? `<div style="font-size:10px;color:#7c3aed;margin-top:2px">Human reviewed (AI: ${insp.last_score})</div>` : ""}
+    </div>
+  </div>
+</div>
+
+${headerRows ? `
+<!-- Inspection metadata -->
+<div style="margin-bottom:16px;padding:10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb">
+  <table style="width:auto"><tbody>${headerRows}</tbody></table>
+</div>` : ""}
+
+<!-- Executive summary -->
+${rd.executive_summary ? `
+<div style="margin-bottom:16px;padding:10px 12px;background:#eff6ff;border-radius:6px;border-left:4px solid #2563eb">
+  <h3>Executive Summary</h3>
+  <p style="margin:0;font-size:12px;color:#1e40af;line-height:1.5">${esc(rd.executive_summary)}</p>
+</div>` : ""}
+
+<!-- Commercial confidence -->
+${cc ? `
+<div style="margin-bottom:16px;padding:10px 12px;border-radius:6px;border:1px solid #e5e7eb;background:#f9fafb">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <h3 style="margin-bottom:4px">Commercial Confidence</h3>
+      <div style="font-size:16px;font-weight:700;color:${ccColor}">${esc(cc.rating)}</div>
+    </div>
+    <div style="max-width:340px;font-size:11px;color:#4b5563;line-height:1.4;text-align:right">${esc(cc.reason)}</div>
+  </div>
+</div>` : ""}
+
+<!-- Score breakdown -->
+${dimBars ? `
+<div style="margin-bottom:16px">
+  <h3>Score Breakdown</h3>
+  ${dimBars}
+</div>` : ""}
+
+<!-- Missing evidence -->
+${missingRows ? `
+<div style="margin-bottom:16px">
+  <h3>Missing Evidence</h3>
+  <table style="font-size:12px">
+    <thead>
+      <tr style="background:#fef2f2">
+        <th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.05em;width:35%">Evidence Type</th>
+        <th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.05em">Reason</th>
+      </tr>
+    </thead>
+    <tbody>${missingRows}</tbody>
+  </table>
+</div>` : ""}
+
+<!-- Key issues -->
+${issueRows ? `
+<div style="margin-bottom:16px">
+  <h3>Key Issues</h3>
+  ${issueRows}
+</div>` : ""}
+
+<!-- Recommended actions -->
+${actionRows ? `
+<div style="margin-bottom:16px">
+  <h3>Recommended Actions</h3>
+  ${actionRows}
+</div>` : ""}
+
+<!-- Document observations -->
+${docObs ? `
+<div style="margin-bottom:16px;page-break-inside:avoid">
+  <h3>Document Observations</h3>
+  <table style="font-size:11px">
+    <thead>
+      <tr style="background:#f3f4f6">
+        <th style="padding:6px 8px;text-align:left;font-weight:700;color:#374151;width:30%">File</th>
+        <th style="padding:6px 8px;text-align:left;font-weight:700;color:#374151;width:70%">Observation</th>
+      </tr>
+    </thead>
+    <tbody>${docObs}</tbody>
+  </table>
+</div>` : ""}
+
+${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</script>" : ""}
+</body>
+</html>`;
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -129,7 +352,7 @@ export default function DashboardPage() {
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState<DashboardProject | null>(null);
 
-  // Per-project inspection stats (populated after loading inspections for each project)
+  // Per-project inspection stats
   const [projectStats, setProjectStats] = useState<Map<number, InspectionStats>>(new Map());
 
   // Inspections
@@ -137,8 +360,20 @@ export default function DashboardPage() {
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [statusFilter, setStatusFilter]             = useState<StatusFilter>("closed");
 
-  // ITP group collapse state (tracks which groups are collapsed; all expanded by default)
+  // ITP group collapse state
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  // Bulk review
+  const [bulkRunning, setBulkRunning]   = useState(false);
+  const [bulkStatus, setBulkStatus]     = useState<Map<number, BulkItemStatus>>(new Map());
+  const [bulkSummary, setBulkSummary]   = useState<{ completed: number; failed: number } | null>(null);
+
+  // Bulk export
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportRunning, setExportRunning]     = useState(false);
 
   // Side panel
   const [selectedInsp, setSelectedInsp] = useState<DashboardInspection | null>(null);
@@ -153,7 +388,7 @@ export default function DashboardPage() {
   const [overrideSaving, setOverrideSaving] = useState(false);
   const [overrideError, setOverrideError]   = useState<string | null>(null);
 
-  // Run review
+  // Run review (single)
   const [reviewRunning, setReviewRunning] = useState(false);
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
@@ -191,6 +426,9 @@ export default function DashboardPage() {
     setSelectedProject(null);
     setInspections([]);
     setProjectStats(new Map());
+    setSelectedIds(new Set());
+    setBulkStatus(new Map());
+    setBulkSummary(null);
     fetch(`/api/dashboard/projects?company_id=${selectedCompany.id}`)
       .then(r => r.json())
       .then(data => setProjects(data.projects ?? []))
@@ -209,7 +447,6 @@ export default function DashboardPage() {
       const data = await res.json();
       const list: DashboardInspection[] = data.inspections ?? [];
       setInspections(list);
-      // Compute and store split stats for the sidebar
       setProjectStats(prev => new Map(prev).set(project.id, computeInspectionStats(list)));
     } catch {
       setInspections([]);
@@ -222,6 +459,9 @@ export default function DashboardPage() {
     setSelectedProject(project);
     setPanelOpen(false);
     setSelectedInsp(null);
+    setSelectedIds(new Set());
+    setBulkStatus(new Map());
+    setBulkSummary(null);
     if (selectedCompany) loadInspections(project, selectedCompany);
   }
 
@@ -241,7 +481,7 @@ export default function DashboardPage() {
     setTimeout(() => setSelectedInsp(null), 300);
   }
 
-  // ── Run Review ──────────────────────────────────────────────────────────────
+  // ── Single review ───────────────────────────────────────────────────────────
 
   async function handleRunReview() {
     if (!selectedInsp || !selectedProject || !selectedCompany) return;
@@ -259,9 +499,7 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
-
       await loadInspections(selectedProject, selectedCompany);
-
       setInspections(prev => {
         const updated = prev.find(i => i.id === selectedInsp.id);
         if (updated) {
@@ -304,12 +542,10 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
-
       const updater = (insp: DashboardInspection): DashboardInspection =>
         insp.id === selectedInsp.id
           ? { ...insp, override_score: parsed, override_note: overrideNote.trim() || null, override_created_by: user?.name ?? null }
           : insp;
-
       setInspections(prev => prev.map(updater));
       setSelectedInsp(prev => prev ? updater(prev) : prev);
     } catch (err) {
@@ -335,7 +571,6 @@ export default function DashboardPage() {
     return s !== "closed" && s !== "in_review";
   }).length;
 
-  // Group by ITP name (all instances of the same type share the same name)
   const groupOrder: string[] = [];
   const groupMap = new Map<string, DashboardInspection[]>();
   for (const insp of filteredInspections) {
@@ -353,6 +588,140 @@ export default function DashboardPage() {
       else next.add(name);
       return next;
     });
+  }
+
+  // ── Bulk selection helpers ──────────────────────────────────────────────────
+
+  const visibleIds = filteredInspections.map(i => i.id);
+  const allVisible = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+  const someVisible = !allVisible && visibleIds.some(id => selectedIds.has(id));
+
+  function toggleSelectAll() {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisible) {
+        visibleIds.forEach(id => next.delete(id));
+      } else {
+        visibleIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  }
+
+  function toggleSelect(id: number) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectGroup(group: DashboardInspection[]) {
+    const ids = group.map(i => i.id);
+    const allGroupSelected = ids.every(id => selectedIds.has(id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allGroupSelected) {
+        ids.forEach(id => next.delete(id));
+      } else {
+        ids.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  }
+
+  // ── Bulk review ─────────────────────────────────────────────────────────────
+
+  const selectedUnreviewed = filteredInspections.filter(
+    i => selectedIds.has(i.id) && i.review_status === "not_reviewed"
+  );
+  const selectedReviewed = filteredInspections.filter(
+    i => selectedIds.has(i.id) && i.review_data != null
+  );
+
+  async function handleBulkReview() {
+    if (!selectedProject || !selectedCompany || bulkRunning) return;
+    if (selectedUnreviewed.length === 0) return;
+
+    setBulkRunning(true);
+    setBulkSummary(null);
+    setBulkStatus(() => {
+      const m = new Map<number, BulkItemStatus>();
+      selectedUnreviewed.forEach(i => m.set(i.id, "queued"));
+      return m;
+    });
+
+    let completed = 0, failed = 0;
+    for (const insp of selectedUnreviewed) {
+      setBulkStatus(prev => new Map(prev).set(insp.id, "processing"));
+      try {
+        const res = await fetch("/api/procore/import", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            project_id:    selectedProject.id,
+            inspection_id: insp.id,
+            company_id:    selectedCompany.id,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
+        setBulkStatus(prev => new Map(prev).set(insp.id, "done"));
+        completed++;
+      } catch {
+        setBulkStatus(prev => new Map(prev).set(insp.id, "failed"));
+        failed++;
+      }
+    }
+
+    await loadInspections(selectedProject, selectedCompany);
+    setBulkSummary({ completed, failed });
+    setBulkRunning(false);
+    setSelectedIds(new Set());
+  }
+
+  // ── Bulk PDF export ─────────────────────────────────────────────────────────
+
+  async function handleBulkExportSeparate() {
+    setExportModalOpen(false);
+    for (const insp of selectedReviewed) {
+      const html = buildReportHtml(insp, true);
+      const win  = window.open("", "_blank");
+      if (!win) {
+        alert("Popup blocked. Please allow popups for this site and try again.");
+        return;
+      }
+      win.document.write(html);
+      win.document.close();
+      // Small delay between windows so browsers don't batch-block them
+      await new Promise(r => setTimeout(r, 400));
+    }
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkExportZip() {
+    setExportRunning(true);
+    try {
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      for (const insp of selectedReviewed) {
+        const html     = buildReportHtml(insp, false);
+        const filename = buildFilename(insp) + ".html";
+        zip.file(filename, html);
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `ITP-QA-Reports-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportModalOpen(false);
+      setSelectedIds(new Set());
+    } finally {
+      setExportRunning(false);
+    }
   }
 
   // ── Not authenticated ───────────────────────────────────────────────────────
@@ -405,6 +774,8 @@ export default function DashboardPage() {
 
   // ── Dashboard layout ────────────────────────────────────────────────────────
 
+  const selectedCount = selectedIds.size;
+
   return (
     <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
 
@@ -446,7 +817,6 @@ export default function DashboardPage() {
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Projects</p>
           </div>
-
           {!selectedCompany && (
             <p className="px-4 py-6 text-xs text-gray-400 italic">Select a company to load projects.</p>
           )}
@@ -458,7 +828,6 @@ export default function DashboardPage() {
           {selectedCompany && !projectsLoading && projects.length === 0 && (
             <p className="px-4 py-4 text-xs text-gray-400 italic">No projects found.</p>
           )}
-
           {projects.map(p => (
             <ProjectRow
               key={p.id}
@@ -471,7 +840,7 @@ export default function DashboardPage() {
         </aside>
 
         {/* ── Main: ITP list ── */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto relative">
           {!selectedProject && (
             <div className="flex h-full items-center justify-center">
               <p className="text-sm text-gray-400">Select a project to view its ITPs.</p>
@@ -479,7 +848,7 @@ export default function DashboardPage() {
           )}
 
           {selectedProject && (
-            <div>
+            <div className="pb-24">
               {/* Project header */}
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
                 <div className="flex items-center justify-between">
@@ -516,7 +885,7 @@ export default function DashboardPage() {
                       <button
                         key={s}
                         type="button"
-                        onClick={() => setStatusFilter(s)}
+                        onClick={() => { setStatusFilter(s); setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
                         className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           statusFilter === s
                             ? "bg-white text-gray-900 shadow-sm border border-gray-100"
@@ -529,6 +898,18 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Bulk summary banner */}
+              {bulkSummary && (
+                <div className={`mx-4 mt-3 rounded-lg border px-4 py-2.5 flex items-center justify-between ${
+                  bulkSummary.failed > 0 ? "bg-amber-50 border-amber-200" : "bg-green-50 border-green-200"
+                }`}>
+                  <span className={`text-xs font-semibold ${bulkSummary.failed > 0 ? "text-amber-700" : "text-green-700"}`}>
+                    Bulk review complete — {bulkSummary.completed} succeeded{bulkSummary.failed > 0 ? `, ${bulkSummary.failed} failed` : ""}
+                  </span>
+                  <button onClick={() => setBulkSummary(null)} className="text-xs text-gray-400 hover:text-gray-600 ml-4">✕</button>
+                </div>
+              )}
 
               {/* ITP table */}
               {inspectionsLoading && (
@@ -551,79 +932,112 @@ export default function DashboardPage() {
                       type="button"
                       onClick={() => {
                         const allCollapsed = groupOrder.length > 0 && collapsedGroups.size === groupOrder.length;
-                        if (allCollapsed) {
-                          setCollapsedGroups(new Set());
-                        } else {
-                          setCollapsedGroups(new Set(groupOrder));
-                        }
+                        setCollapsedGroups(allCollapsed ? new Set() : new Set(groupOrder));
                       }}
                       className="text-[11px] font-medium text-gray-500 hover:text-gray-700 transition-colors"
                     >
-                      {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length
-                        ? "Expand All"
-                        : "Collapse All"}
+                      {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "Expand All" : "Collapse All"}
                     </button>
                   </div>
 
                   <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-6 py-2">ITP</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Person</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-12">#</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Score</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Rating</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-20">Status</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Reviewed</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {groupOrder.map(groupName => {
-                      const group = groupMap.get(groupName)!;
-                      const isCollapsed = collapsedGroups.has(groupName);
-                      const worst = worstBandInGroup(group);
-                      const reviewedInGroup = group.filter(i => i.review_status !== "not_reviewed").length;
-
-                      return [
-                        // Group header row
-                        <tr
-                          key={`group-${groupName}`}
-                          onClick={() => toggleGroup(groupName)}
-                          className="cursor-pointer bg-gray-50 hover:bg-gray-100 border-t border-gray-200 select-none"
-                        >
-                          <td colSpan={7} className="px-4 py-2">
-                            <div className="flex items-center gap-2">
-                              {/* Collapse arrow */}
-                              <span className={`text-gray-400 text-xs transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}>
-                                ▶
-                              </span>
-                              {/* Worst-band colour dot */}
-                              <span className={`h-2 w-2 rounded-full shrink-0 ${groupIndicatorClasses(worst)}`} />
-                              {/* Group name */}
-                              <span className="text-xs font-semibold text-gray-700">{groupName}</span>
-                              {/* Count badges */}
-                              <span className="text-[10px] text-gray-400 ml-1">
-                                {reviewedInGroup}/{group.length} reviewed
-                              </span>
-                            </div>
-                          </td>
-                        </tr>,
-                        // Inspection rows (hidden when collapsed)
-                        ...(!isCollapsed ? group.map(insp => (
-                          <InspectionRow
-                            key={insp.id}
-                            insp={insp}
-                            selected={selectedInsp?.id === insp.id && panelOpen}
-                            onClick={() => openPanel(insp)}
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50">
+                        {/* Select-all checkbox */}
+                        <th className="px-3 py-2 w-8">
+                          <input
+                            type="checkbox"
+                            checked={allVisible}
+                            ref={el => { if (el) el.indeterminate = someVisible; }}
+                            onChange={toggleSelectAll}
+                            disabled={bulkRunning}
+                            className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
                           />
-                        )) : []),
-                      ];
-                    })}
-                  </tbody>
+                        </th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2">ITP</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Person</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-12">#</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Score</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Rating</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-20">Status</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Reviewed</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {groupOrder.map(groupName => {
+                        const group          = groupMap.get(groupName)!;
+                        const isCollapsed    = collapsedGroups.has(groupName);
+                        const worst          = worstBandInGroup(group);
+                        const reviewedInGroup = group.filter(i => i.review_status !== "not_reviewed").length;
+                        const groupIds       = group.map(i => i.id);
+                        const allGroupSel    = groupIds.every(id => selectedIds.has(id));
+                        const someGroupSel   = !allGroupSel && groupIds.some(id => selectedIds.has(id));
+
+                        return [
+                          // Group header row
+                          <tr
+                            key={`group-${groupName}`}
+                            className="bg-gray-50 hover:bg-gray-100 border-t border-gray-200 select-none"
+                          >
+                            {/* Group checkbox */}
+                            <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={allGroupSel}
+                                ref={el => { if (el) el.indeterminate = someGroupSel; }}
+                                onChange={() => toggleSelectGroup(group)}
+                                disabled={bulkRunning}
+                                className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                              />
+                            </td>
+                            <td
+                              colSpan={7}
+                              className="px-3 py-2 cursor-pointer"
+                              onClick={() => toggleGroup(groupName)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className={`text-gray-400 text-xs transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}>▶</span>
+                                <span className={`h-2 w-2 rounded-full shrink-0 ${groupIndicatorClasses(worst)}`} />
+                                <span className="text-xs font-semibold text-gray-700">{groupName}</span>
+                                <span className="text-[10px] text-gray-400 ml-1">
+                                  {reviewedInGroup}/{group.length} reviewed
+                                </span>
+                              </div>
+                            </td>
+                          </tr>,
+                          // Inspection rows
+                          ...(!isCollapsed ? group.map(insp => (
+                            <InspectionRow
+                              key={insp.id}
+                              insp={insp}
+                              selected={selectedInsp?.id === insp.id && panelOpen}
+                              checked={selectedIds.has(insp.id)}
+                              bulkItemStatus={bulkStatus.get(insp.id) ?? null}
+                              bulkRunning={bulkRunning}
+                              onCheck={e => { e.stopPropagation(); toggleSelect(insp.id); }}
+                              onClick={() => openPanel(insp)}
+                            />
+                          )) : []),
+                        ];
+                      })}
+                    </tbody>
                   </table>
                 </>
               )}
             </div>
+          )}
+
+          {/* ── Bulk action bar ── */}
+          {selectedCount > 0 && (
+            <BulkActionBar
+              selectedCount={selectedCount}
+              unreviewedCount={selectedUnreviewed.length}
+              reviewedCount={selectedReviewed.length}
+              bulkRunning={bulkRunning}
+              onRunReviews={handleBulkReview}
+              onExportPdfs={() => setExportModalOpen(true)}
+              onClearSelection={() => { setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
+            />
           )}
         </main>
       </div>
@@ -659,6 +1073,131 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* ── Export modal ── */}
+      {exportModalOpen && (
+        <ExportModal
+          count={selectedReviewed.length}
+          exportRunning={exportRunning}
+          onSeparate={handleBulkExportSeparate}
+          onZip={handleBulkExportZip}
+          onClose={() => setExportModalOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── BulkActionBar ──────────────────────────────────────────────────────────────
+
+function BulkActionBar({
+  selectedCount,
+  unreviewedCount,
+  reviewedCount,
+  bulkRunning,
+  onRunReviews,
+  onExportPdfs,
+  onClearSelection,
+}: {
+  selectedCount: number;
+  unreviewedCount: number;
+  reviewedCount: number;
+  bulkRunning: boolean;
+  onRunReviews: () => void;
+  onExportPdfs: () => void;
+  onClearSelection: () => void;
+}) {
+  return (
+    <div className="sticky bottom-0 z-20 mx-4 mb-4 rounded-xl bg-white shadow-lg border border-gray-200 px-4 py-3 flex items-center gap-3">
+      <span className="text-xs font-semibold text-gray-700 shrink-0">
+        {selectedCount} selected
+      </span>
+      <div className="flex items-center gap-2 flex-1">
+        <button
+          type="button"
+          onClick={onRunReviews}
+          disabled={bulkRunning || unreviewedCount === 0}
+          className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+        >
+          {bulkRunning && <Spinner className="h-3 w-3 text-white" />}
+          Run Reviews ({unreviewedCount})
+        </button>
+        <button
+          type="button"
+          onClick={onExportPdfs}
+          disabled={bulkRunning || reviewedCount === 0}
+          className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Export PDFs ({reviewedCount})
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onClearSelection}
+        disabled={bulkRunning}
+        className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-40 shrink-0"
+      >
+        Clear
+      </button>
+    </div>
+  );
+}
+
+// ── ExportModal ────────────────────────────────────────────────────────────────
+
+function ExportModal({
+  count,
+  exportRunning,
+  onSeparate,
+  onZip,
+  onClose,
+}: {
+  count: number;
+  exportRunning: boolean;
+  onSeparate: () => void;
+  onZip: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="bg-white rounded-2xl shadow-2xl w-[400px] p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-gray-900">Export {count} QA Report{count !== 1 ? "s" : ""}</h3>
+          <button onClick={onClose} disabled={exportRunning} className="text-gray-400 hover:text-gray-600 disabled:opacity-40">✕</button>
+        </div>
+        <p className="text-xs text-gray-500 mb-5">
+          Choose how to export the selected reviewed ITPs. Each report is formatted for printing.
+        </p>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={onSeparate}
+            disabled={exportRunning}
+            className="flex items-start gap-3 rounded-xl border-2 border-blue-100 bg-blue-50 hover:border-blue-300 hover:bg-blue-100 px-4 py-3 transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="text-xl">🖨️</span>
+            <div>
+              <p className="text-xs font-bold text-blue-800">Separate files</p>
+              <p className="text-[11px] text-blue-600 mt-0.5">
+                Opens a print dialog for each report in a new window. Allow popups when prompted.
+              </p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={onZip}
+            disabled={exportRunning}
+            className="flex items-start gap-3 rounded-xl border-2 border-gray-100 bg-gray-50 hover:border-gray-300 hover:bg-gray-100 px-4 py-3 transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {exportRunning ? <Spinner className="h-5 w-5 mt-0.5 text-gray-500" /> : <span className="text-xl">📦</span>}
+            <div>
+              <p className="text-xs font-bold text-gray-800">Download as ZIP</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                Downloads a ZIP file containing HTML report files. Open each in a browser to print.
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -692,7 +1231,6 @@ function ProjectRow({
       )}
       <div className="flex flex-col gap-0.5 mt-1.5">
         {stats ? (
-          // Show split reviewed counts once inspections are loaded for this project
           <>
             {stats.closedTotal > 0 && (
               <span className="text-[10px] text-gray-400">
@@ -737,10 +1275,18 @@ function ProjectRow({
 function InspectionRow({
   insp,
   selected,
+  checked,
+  bulkItemStatus,
+  bulkRunning,
+  onCheck,
   onClick,
 }: {
   insp: DashboardInspection;
   selected: boolean;
+  checked: boolean;
+  bulkItemStatus: BulkItemStatus | null;
+  bulkRunning: boolean;
+  onCheck: (e: React.MouseEvent) => void;
   onClick: () => void;
 }) {
   const displayScore = insp.override_score ?? insp.last_score;
@@ -751,22 +1297,38 @@ function InspectionRow({
     <tr
       onClick={onClick}
       className={`cursor-pointer transition-colors ${
-        selected ? "bg-blue-50" : "hover:bg-gray-50"
+        selected ? "bg-blue-50" : checked ? "bg-blue-50/50" : "hover:bg-gray-50"
       }`}
     >
-      {/* ITP name */}
-      <td className="px-6 py-3 max-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
+      {/* Checkbox */}
+      <td className="px-3 py-3" onClick={onCheck}>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() => {/* handled by onCheck */}}
+          disabled={bulkRunning}
+          className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+        />
       </td>
 
-      {/* Person: closed_by for closed, assignee for open/in-review */}
+      {/* ITP name + bulk status */}
+      <td className="px-3 py-3 max-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
+          {bulkItemStatus && (
+            <BulkStatusBadge status={bulkItemStatus} />
+          )}
+        </div>
+      </td>
+
+      {/* Person */}
       <td className="px-3 py-3 text-[10px] text-gray-400 whitespace-nowrap">
         {isClosed
           ? (insp.closed_by ? `Closed by ${insp.closed_by}` : "—")
           : (insp.assignee  ? `Assigned to ${insp.assignee}` : "—")}
       </td>
 
-      {/* Inspection # of type */}
+      {/* # */}
       <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
         {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : ""}
       </td>
@@ -832,6 +1394,37 @@ function InspectionRow({
   );
 }
 
+// ── BulkStatusBadge ────────────────────────────────────────────────────────────
+
+function BulkStatusBadge({ status }: { status: BulkItemStatus }) {
+  if (status === "queued") {
+    return (
+      <span className="shrink-0 inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">
+        Queued
+      </span>
+    );
+  }
+  if (status === "processing") {
+    return (
+      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">
+        <Spinner className="h-2.5 w-2.5 text-blue-500" /> Processing
+      </span>
+    );
+  }
+  if (status === "done") {
+    return (
+      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+        ✓ Done
+      </span>
+    );
+  }
+  return (
+    <span className="shrink-0 inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
+      ✕ Failed
+    </span>
+  );
+}
+
 // ── InspectionPanel ────────────────────────────────────────────────────────────
 
 function InspectionPanel({
@@ -870,6 +1463,9 @@ function InspectionPanel({
   const rd            = insp.review_data;
   const hasOverride   = insp.override_score !== null;
 
+  // Unused but required to satisfy the prop type — keep to avoid TS error
+  void companyId;
+
   return (
     <div className="flex flex-col h-full">
 
@@ -882,9 +1478,7 @@ function InspectionPanel({
             <p className="text-xs text-gray-400 mt-0.5">Inspection #{insp.inspection_number_of_type}</p>
           )}
         </div>
-        <button onClick={onClose} className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded">
-          ✕
-        </button>
+        <button onClick={onClose} className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded">✕</button>
       </div>
 
       {/* Scrollable body */}
@@ -982,9 +1576,7 @@ function InspectionPanel({
         {/* Top 3 missing evidence */}
         {rd?.missing_evidence && rd.missing_evidence.length > 0 && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
-              Missing evidence
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Missing evidence</p>
             <div className="space-y-2">
               {rd.missing_evidence.slice(0, 3).map((item, i) => (
                 <div key={i} className="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
@@ -1057,9 +1649,7 @@ function InspectionPanel({
           {insp.review_record_id ? (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Override score (0–100)
-                </label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Override score (0–100)</label>
                 <input
                   type="number"
                   min={0}
@@ -1071,9 +1661,7 @@ function InspectionPanel({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Reason for override
-                </label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Reason for override</label>
                 <RichNoteEditor
                   value={overrideNote}
                   onChange={onOverrideNoteChange}
@@ -1094,9 +1682,7 @@ function InspectionPanel({
               </button>
             </div>
           ) : (
-            <p className="text-xs text-gray-400 italic">
-              Run a review first to enable score overrides.
-            </p>
+            <p className="text-xs text-gray-400 italic">Run a review first to enable score overrides.</p>
           )}
         </div>
 
@@ -1106,8 +1692,6 @@ function InspectionPanel({
 }
 
 // ── RichNoteEditor ─────────────────────────────────────────────────────────────
-// Simple contentEditable editor that preserves newlines and lets the user
-// type bullet-style lines. Saves as plain text with \n line breaks.
 
 function RichNoteEditor({
   value,
@@ -1122,11 +1706,9 @@ function RichNoteEditor({
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Reset content when a new panel is opened (instanceKey changes)
   useEffect(() => {
     if (!ref.current) return;
     if (value) {
-      // Convert \n to <br> for display; escape HTML entities in text
       const escaped = value
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -1135,7 +1717,6 @@ function RichNoteEditor({
     } else {
       ref.current.innerHTML = "";
     }
-  // Only trigger on instanceKey change, not every keystroke
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceKey]);
 
@@ -1145,7 +1726,6 @@ function RichNoteEditor({
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    // Prevent Shift+Enter from inserting a <div> in some browsers
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       document.execCommand("insertLineBreak");
