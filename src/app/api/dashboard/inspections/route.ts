@@ -131,12 +131,14 @@ export async function GET(request: NextRequest) {
       closed_at:      insp.closed_at  ?? null,
       updated_at:     insp.updated_at ?? null,
       closed_by:      insp.closed_by?.name ?? null,
-      // Procore's list endpoint doesn't always return `assignees` — try
-      // every field name Procore uses across API versions and tenants.
+      // `assignees` is the Procore field for the people assigned to complete
+      // the inspection. This is distinct from `responsible_contractor` (the
+      // subcontractor performing the work) — do NOT fall back to that field
+      // as it caused the wrong name to appear. `point_of_contact` is the
+      // secondary fallback since it also represents an accountable person
+      // for the inspection rather than a trade contractor.
       assignee:
         insp.assignees?.[0]?.name ??
-        insp.responsible_party?.name ??
-        insp.responsible_contractor?.name ??
         insp.point_of_contact?.name ??
         null,
       review_status,
