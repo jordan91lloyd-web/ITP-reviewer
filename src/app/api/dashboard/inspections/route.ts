@@ -26,6 +26,8 @@ export interface DashboardInspection {
   status: string;
   closed_at: string | null;
   updated_at: string | null;
+  closed_by: string | null;   // name of the person who closed the inspection
+  assignee: string | null;    // first assignee name (for open/in-review ITPs)
   // From review_records (latest)
   review_status: "not_reviewed" | "reviewed" | "changed";
   review_record_id: string | null;
@@ -128,6 +130,8 @@ export async function GET(request: NextRequest) {
       status:         insp.status,
       closed_at:      insp.closed_at  ?? null,
       updated_at:     insp.updated_at ?? null,
+      closed_by:      insp.closed_by?.name ?? null,
+      assignee:       insp.assignees?.[0]?.name ?? null,
       review_status,
       review_record_id:         recordId ?? null,
       last_score:               record ? (record.score as number) : null,

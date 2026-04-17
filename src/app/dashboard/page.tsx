@@ -3,7 +3,7 @@
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 // Project → ITP overview with review history, score overrides, and side panel.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
@@ -22,6 +22,17 @@ interface DashboardProject {
   avg_score: number | null;
   last_reviewed_at: string | null;
 }
+
+interface InspectionStats {
+  closedReviewed: number;
+  closedTotal: number;
+  openReviewed: number;
+  openTotal: number;
+  inReviewReviewed: number;
+  inReviewTotal: number;
+}
+
+type StatusFilter = "closed" | "open" | "in_review";
 
 // ── Score helpers ──────────────────────────────────────────────────────────────
 
@@ -62,6 +73,48 @@ function fmtDate(iso: string | null | undefined): string {
   });
 }
 
+// Worst band among a group of inspections (for group colour indicator)
+const BAND_PRIORITY: Record<string, number> = {
+  critical_risk: 0, significant_gaps: 1, minor_gaps: 2, compliant: 3,
+};
+
+function worstBandInGroup(group: DashboardInspection[]): string | null {
+  const reviewed = group.filter(i => i.review_status !== "not_reviewed");
+  if (reviewed.length === 0) return null;
+  const bands = reviewed.map(i => scoreBand(i.override_score ?? i.last_score));
+  return bands.reduce((worst, b) =>
+    (BAND_PRIORITY[b] ?? 99) < (BAND_PRIORITY[worst] ?? 99) ? b : worst
+  );
+}
+
+function groupIndicatorClasses(band: string | null): string {
+  if (!band) return "bg-gray-300";
+  return ({
+    compliant:         "bg-green-400",
+    minor_gaps:        "bg-amber-400",
+    significant_gaps:  "bg-orange-400",
+    critical_risk:     "bg-red-500",
+  } as Record<string, string>)[band] ?? "bg-gray-300";
+}
+
+// Compute per-project inspection stats once inspections are loaded
+function computeInspectionStats(list: DashboardInspection[]): InspectionStats {
+  const closed   = list.filter(i => i.status?.toLowerCase() === "closed");
+  const inReview = list.filter(i => i.status?.toLowerCase() === "in_review");
+  const open     = list.filter(i => {
+    const s = i.status?.toLowerCase();
+    return s !== "closed" && s !== "in_review";
+  });
+  return {
+    closedReviewed:   closed.filter(i => i.review_status !== "not_reviewed").length,
+    closedTotal:      closed.length,
+    openReviewed:     open.filter(i => i.review_status !== "not_reviewed").length,
+    openTotal:        open.length,
+    inReviewReviewed: inReview.filter(i => i.review_status !== "not_reviewed").length,
+    inReviewTotal:    inReview.length,
+  };
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -76,10 +129,16 @@ export default function DashboardPage() {
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState<DashboardProject | null>(null);
 
+  // Per-project inspection stats (populated after loading inspections for each project)
+  const [projectStats, setProjectStats] = useState<Map<number, InspectionStats>>(new Map());
+
   // Inspections
   const [inspections, setInspections]               = useState<DashboardInspection[]>([]);
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
-  const [statusFilter, setStatusFilter]             = useState<"closed" | "open">("closed");
+  const [statusFilter, setStatusFilter]             = useState<StatusFilter>("closed");
+
+  // ITP group collapse state (tracks which groups are collapsed; all expanded by default)
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Side panel
   const [selectedInsp, setSelectedInsp] = useState<DashboardInspection | null>(null);
@@ -131,6 +190,7 @@ export default function DashboardPage() {
     setProjectsLoading(true);
     setSelectedProject(null);
     setInspections([]);
+    setProjectStats(new Map());
     fetch(`/api/dashboard/projects?company_id=${selectedCompany.id}`)
       .then(r => r.json())
       .then(data => setProjects(data.projects ?? []))
@@ -143,10 +203,14 @@ export default function DashboardPage() {
   const loadInspections = useCallback(async (project: DashboardProject, company: Company) => {
     setInspectionsLoading(true);
     setInspections([]);
+    setCollapsedGroups(new Set());
     try {
       const res  = await fetch(`/api/dashboard/inspections?project_id=${project.id}&company_id=${company.id}`);
       const data = await res.json();
-      setInspections(data.inspections ?? []);
+      const list: DashboardInspection[] = data.inspections ?? [];
+      setInspections(list);
+      // Compute and store split stats for the sidebar
+      setProjectStats(prev => new Map(prev).set(project.id, computeInspectionStats(list)));
     } catch {
       setInspections([]);
     } finally {
@@ -174,7 +238,7 @@ export default function DashboardPage() {
 
   function closePanel() {
     setPanelOpen(false);
-    setTimeout(() => setSelectedInsp(null), 300); // wait for slide-out
+    setTimeout(() => setSelectedInsp(null), 300);
   }
 
   // ── Run Review ──────────────────────────────────────────────────────────────
@@ -196,10 +260,8 @@ export default function DashboardPage() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
 
-      // Refresh inspections to get the new record + review_data
       await loadInspections(selectedProject, selectedCompany);
 
-      // Re-select the same inspection with updated data
       setInspections(prev => {
         const updated = prev.find(i => i.id === selectedInsp.id);
         if (updated) {
@@ -243,7 +305,6 @@ export default function DashboardPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
 
-      // Update local state for immediate feedback
       const updater = (insp: DashboardInspection): DashboardInspection =>
         insp.id === selectedInsp.id
           ? { ...insp, override_score: parsed, override_note: overrideNote.trim() || null, override_created_by: user?.name ?? null }
@@ -258,16 +319,41 @@ export default function DashboardPage() {
     }
   }
 
-  // ── Filtered ITP list ───────────────────────────────────────────────────────
+  // ── Filtered + grouped ITP list ─────────────────────────────────────────────
 
-  const filteredInspections = inspections.filter(i =>
-    statusFilter === "closed"
-      ? i.status?.toLowerCase() === "closed"
-      : i.status?.toLowerCase() !== "closed"
-  );
+  const filteredInspections = inspections.filter(i => {
+    const s = i.status?.toLowerCase();
+    if (statusFilter === "closed")    return s === "closed";
+    if (statusFilter === "in_review") return s === "in_review";
+    return s !== "closed" && s !== "in_review";
+  });
 
-  const closedCount = inspections.filter(i => i.status?.toLowerCase() === "closed").length;
-  const openCount   = inspections.filter(i => i.status?.toLowerCase() !== "closed").length;
+  const closedCount   = inspections.filter(i => i.status?.toLowerCase() === "closed").length;
+  const inReviewCount = inspections.filter(i => i.status?.toLowerCase() === "in_review").length;
+  const openCount     = inspections.filter(i => {
+    const s = i.status?.toLowerCase();
+    return s !== "closed" && s !== "in_review";
+  }).length;
+
+  // Group by ITP name (all instances of the same type share the same name)
+  const groupOrder: string[] = [];
+  const groupMap = new Map<string, DashboardInspection[]>();
+  for (const insp of filteredInspections) {
+    if (!groupMap.has(insp.name)) {
+      groupOrder.push(insp.name);
+      groupMap.set(insp.name, []);
+    }
+    groupMap.get(insp.name)!.push(insp);
+  }
+
+  function toggleGroup(name: string) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
 
   // ── Not authenticated ───────────────────────────────────────────────────────
 
@@ -334,7 +420,6 @@ export default function DashboardPage() {
             <span className="ml-2 font-normal text-gray-500">ITP Dashboard</span>
           </h1>
         </div>
-        {/* Company picker */}
         {companies.length > 1 && (
           <select
             value={selectedCompany?.id ?? ""}
@@ -365,13 +450,11 @@ export default function DashboardPage() {
           {!selectedCompany && (
             <p className="px-4 py-6 text-xs text-gray-400 italic">Select a company to load projects.</p>
           )}
-
           {selectedCompany && projectsLoading && (
             <div className="flex items-center gap-2 px-4 py-4 text-xs text-gray-400">
               <Spinner className="h-3 w-3 text-blue-400" /> Loading…
             </div>
           )}
-
           {selectedCompany && !projectsLoading && projects.length === 0 && (
             <p className="px-4 py-4 text-xs text-gray-400 italic">No projects found.</p>
           )}
@@ -381,6 +464,7 @@ export default function DashboardPage() {
               key={p.id}
               project={p}
               selected={selectedProject?.id === p.id}
+              stats={projectStats.get(p.id) ?? null}
               onClick={() => handleSelectProject(p)}
             />
           ))}
@@ -421,10 +505,14 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Open / Closed toggle */}
+                {/* Status tabs */}
                 <div className="mt-3 flex items-center gap-1 w-fit">
                   <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 gap-0.5">
-                    {(["closed", "open"] as const).map(s => (
+                    {([
+                      ["closed",    `Closed (${closedCount})`],
+                      ["in_review", `In Review (${inReviewCount})`],
+                      ["open",      `Open (${openCount})`],
+                    ] as [StatusFilter, string][]).map(([s, label]) => (
                       <button
                         key={s}
                         type="button"
@@ -435,7 +523,7 @@ export default function DashboardPage() {
                             : "text-gray-400 hover:text-gray-600"
                         }`}
                       >
-                        {s === "closed" ? `Closed (${closedCount})` : `Open (${openCount})`}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -451,7 +539,7 @@ export default function DashboardPage() {
 
               {!inspectionsLoading && filteredInspections.length === 0 && (
                 <div className="px-6 py-10 text-center text-sm text-gray-400">
-                  No {statusFilter} ITP inspections found.
+                  No {statusFilter === "in_review" ? "in-review" : statusFilter} ITP inspections found.
                 </div>
               )}
 
@@ -468,14 +556,47 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filteredInspections.map(insp => (
-                      <InspectionRow
-                        key={insp.id}
-                        insp={insp}
-                        selected={selectedInsp?.id === insp.id && panelOpen}
-                        onClick={() => openPanel(insp)}
-                      />
-                    ))}
+                    {groupOrder.map(groupName => {
+                      const group = groupMap.get(groupName)!;
+                      const isCollapsed = collapsedGroups.has(groupName);
+                      const worst = worstBandInGroup(group);
+                      const reviewedInGroup = group.filter(i => i.review_status !== "not_reviewed").length;
+
+                      return [
+                        // Group header row
+                        <tr
+                          key={`group-${groupName}`}
+                          onClick={() => toggleGroup(groupName)}
+                          className="cursor-pointer bg-gray-50 hover:bg-gray-100 border-t border-gray-200 select-none"
+                        >
+                          <td colSpan={6} className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              {/* Collapse arrow */}
+                              <span className={`text-gray-400 text-xs transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}>
+                                ▶
+                              </span>
+                              {/* Worst-band colour dot */}
+                              <span className={`h-2 w-2 rounded-full shrink-0 ${groupIndicatorClasses(worst)}`} />
+                              {/* Group name */}
+                              <span className="text-xs font-semibold text-gray-700">{groupName}</span>
+                              {/* Count badges */}
+                              <span className="text-[10px] text-gray-400 ml-1">
+                                {reviewedInGroup}/{group.length} reviewed
+                              </span>
+                            </div>
+                          </td>
+                        </tr>,
+                        // Inspection rows (hidden when collapsed)
+                        ...(!isCollapsed ? group.map(insp => (
+                          <InspectionRow
+                            key={insp.id}
+                            insp={insp}
+                            selected={selectedInsp?.id === insp.id && panelOpen}
+                            onClick={() => openPanel(insp)}
+                          />
+                        )) : []),
+                      ];
+                    })}
                   </tbody>
                 </table>
               )}
@@ -486,10 +607,7 @@ export default function DashboardPage() {
 
       {/* ── Side panel backdrop ── */}
       {panelOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/20"
-          onClick={closePanel}
-        />
+        <div className="fixed inset-0 z-30 bg-black/20" onClick={closePanel} />
       )}
 
       {/* ── Side panel ── */}
@@ -527,10 +645,12 @@ export default function DashboardPage() {
 function ProjectRow({
   project: p,
   selected,
+  stats,
   onClick,
 }: {
   project: DashboardProject;
   selected: boolean;
+  stats: InspectionStats | null;
   onClick: () => void;
 }) {
   return (
@@ -547,9 +667,28 @@ function ProjectRow({
       {p.project_number && (
         <p className="text-[10px] text-gray-400 mt-0.5">#{p.project_number}</p>
       )}
-      <div className="flex items-center gap-2 mt-1.5">
-        {p.reviewed_count > 0 ? (
+      <div className="flex flex-col gap-0.5 mt-1.5">
+        {stats ? (
+          // Show split reviewed counts once inspections are loaded for this project
           <>
+            {stats.closedTotal > 0 && (
+              <span className="text-[10px] text-gray-400">
+                Closed: {stats.closedReviewed} reviewed / {stats.closedTotal}
+              </span>
+            )}
+            {stats.inReviewTotal > 0 && (
+              <span className="text-[10px] text-blue-400">
+                In Review: {stats.inReviewReviewed} reviewed / {stats.inReviewTotal}
+              </span>
+            )}
+            {stats.openTotal > 0 && (
+              <span className="text-[10px] text-gray-400">
+                Open: {stats.openReviewed} reviewed / {stats.openTotal}
+              </span>
+            )}
+          </>
+        ) : p.reviewed_count > 0 ? (
+          <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-400">{p.reviewed_count} reviewed</span>
             {p.avg_score !== null && (
               <span className={`text-[10px] font-semibold ${
@@ -561,7 +700,7 @@ function ProjectRow({
                 Avg {p.avg_score}
               </span>
             )}
-          </>
+          </div>
         ) : (
           <span className="text-[10px] text-gray-300 italic">Not reviewed</span>
         )}
@@ -583,6 +722,7 @@ function InspectionRow({
 }) {
   const displayScore = insp.override_score ?? insp.last_score;
   const band = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
+  const isClosed = insp.status?.toLowerCase() === "closed";
 
   return (
     <tr
@@ -591,9 +731,15 @@ function InspectionRow({
         selected ? "bg-blue-50" : "hover:bg-gray-50"
       }`}
     >
-      {/* ITP name */}
+      {/* ITP name + closed_by / assignee */}
       <td className="px-6 py-3 max-w-0">
         <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
+        {isClosed && insp.closed_by && (
+          <p className="text-[10px] text-gray-400 mt-0.5 truncate">Closed by {insp.closed_by}</p>
+        )}
+        {!isClosed && insp.assignee && (
+          <p className="text-[10px] text-gray-400 mt-0.5 truncate">Assigned to {insp.assignee}</p>
+        )}
       </td>
 
       {/* Inspection # of type */}
@@ -643,7 +789,9 @@ function InspectionRow({
       {/* Status */}
       <td className="px-3 py-3 whitespace-nowrap">
         <span className={`text-[10px] font-semibold uppercase tracking-wide ${
-          insp.status?.toLowerCase() === "closed" ? "text-gray-400" : "text-blue-500"
+          isClosed ? "text-gray-400" :
+          insp.status?.toLowerCase() === "in_review" ? "text-blue-500" :
+          "text-emerald-500"
         }`}>
           {insp.status ?? "—"}
         </span>
@@ -710,10 +858,7 @@ function InspectionPanel({
             <p className="text-xs text-gray-400 mt-0.5">Inspection #{insp.inspection_number_of_type}</p>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded"
-        >
+        <button onClick={onClose} className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded">
           ✕
         </button>
       </div>
@@ -875,7 +1020,9 @@ function InspectionPanel({
                 </span>
               </div>
               {insp.override_note && (
-                <p className="text-xs text-purple-600 mt-1 italic break-words">"{insp.override_note}"</p>
+                <p className="text-xs text-purple-600 mt-1 italic break-words whitespace-pre-wrap">
+                  &ldquo;{insp.override_note}&rdquo;
+                </p>
               )}
               {insp.override_created_by && (
                 <p className="text-[10px] text-purple-400 mt-0.5">by {insp.override_created_by}</p>
@@ -903,12 +1050,11 @@ function InspectionPanel({
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Reason for override
                 </label>
-                <textarea
+                <RichNoteEditor
                   value={overrideNote}
-                  onChange={e => onOverrideNoteChange(e.target.value)}
-                  placeholder="Explain why the score is being adjusted…"
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-y-auto"
+                  onChange={onOverrideNoteChange}
+                  instanceKey={String(insp.id)}
+                  placeholder="Explain why the score is being adjusted…&#10;• Use Enter for new lines&#10;• Start a line with - for bullet points"
                 />
               </div>
               {overrideError && (
@@ -932,6 +1078,80 @@ function InspectionPanel({
 
       </div>
     </div>
+  );
+}
+
+// ── RichNoteEditor ─────────────────────────────────────────────────────────────
+// Simple contentEditable editor that preserves newlines and lets the user
+// type bullet-style lines. Saves as plain text with \n line breaks.
+
+function RichNoteEditor({
+  value,
+  onChange,
+  placeholder,
+  instanceKey,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  instanceKey: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Reset content when a new panel is opened (instanceKey changes)
+  useEffect(() => {
+    if (!ref.current) return;
+    if (value) {
+      // Convert \n to <br> for display; escape HTML entities in text
+      const escaped = value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      ref.current.innerHTML = escaped.replace(/\n/g, "<br>");
+    } else {
+      ref.current.innerHTML = "";
+    }
+  // Only trigger on instanceKey change, not every keystroke
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instanceKey]);
+
+  function handleInput() {
+    if (!ref.current) return;
+    onChange(ref.current.innerText);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    // Prevent Shift+Enter from inserting a <div> in some browsers
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      document.execCommand("insertLineBreak");
+      if (ref.current) onChange(ref.current.innerText);
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, text);
+    if (ref.current) onChange(ref.current.innerText);
+  }
+
+  return (
+    <div
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      onInput={handleInput}
+      onKeyDown={handleKeyDown}
+      onPaste={handlePaste}
+      data-placeholder={placeholder}
+      className={[
+        "w-full min-h-[80px] rounded-lg border border-gray-200 bg-white px-3 py-2",
+        "text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400",
+        "whitespace-pre-wrap break-words overflow-y-auto",
+        "empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none",
+      ].join(" ")}
+    />
   );
 }
 

@@ -75,11 +75,22 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  // Sort: most reviews first, then alphabetical
+  // Sort: project number ascending (numeric prefix of project_number or name)
   result.sort((a, b) => {
-    if (b.reviewed_count !== a.reviewed_count) return b.reviewed_count - a.reviewed_count;
+    const numA = extractProjectNumber(a);
+    const numB = extractProjectNumber(b);
+    if (numA !== numB) return numA - numB;
     return (a.name ?? "").localeCompare(b.name ?? "");
   });
 
   return NextResponse.json({ projects: result });
+}
+
+function extractProjectNumber(p: { project_number?: string | null; name?: string | null }): number {
+  if (p.project_number?.trim()) {
+    const n = parseInt(p.project_number.trim(), 10);
+    if (!isNaN(n)) return n;
+  }
+  const match = (p.name ?? "").match(/^\s*(\d+)/);
+  return match ? parseInt(match[1], 10) : 9999;
 }
