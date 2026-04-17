@@ -404,6 +404,8 @@ export async function POST(request: NextRequest) {
     score_band: reviewResult.score_band,
     package_assessment: reviewResult.package_assessment,
     procore_updated_at: inspection.updated_at ?? null,
+    inspection_number_of_type: reviewResult.inspection_header.inspection_number_of_type ?? null,
+    review_data: reviewResult,
   });
 
   console.log(

@@ -3,11 +3,10 @@
 // Replaces the previous local JSON file at data/review-history.json.
 //
 // All functions are async — callers must await them.
-// Structured so the function signatures remain stable if the storage layer
-// ever changes again — all access goes through the four exported functions below.
 
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import type { ReviewResult } from "@/lib/types";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,23 +16,30 @@ const supabase = createClient(
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export interface ReviewRecord {
-  id: string;                          // UUID, stable across runs
+  id: string;
   source: "procore" | "manual";
 
   // Procore identifiers (null for manual uploads)
   procore_project_id:    number | null;
   procore_inspection_id: number | null;
-  company_id:            string | null; // Procore company ID — scopes history per company
+  company_id:            string | null;
   inspection_title:      string;
 
   // Review outcome
-  reviewed_at:        string;   // ISO 8601 — when this app ran the review
+  reviewed_at:        string;
   score:              number;
   score_band:         string;
   package_assessment: string;
 
-  // Procore change-detection: the inspection's updated_at value at review time.
-  // If the current updated_at is newer, we flag it as "changed since review".
+  // Sequential inspection number Claude extracted from the document
+  // (e.g. "Pour #24" → 24). Null on old records or when not found.
+  inspection_number_of_type: number | null;
+
+  // Full ReviewResult JSON — powers the dashboard D1–D5 breakdown and
+  // full-report view without re-running the review.
+  review_data: ReviewResult | null;
+
+  // Procore change-detection
   procore_updated_at: string | null;
 }
 
@@ -74,8 +80,8 @@ export async function appendRecord(
 }
 
 /**
- * Returns the most recent review for a given Procore inspection, or undefined.
- * Scoped to company_id so history badges are accurate across multiple companies.
+ * Returns the most recent review for a given Procore inspection, scoped to
+ * company_id so history badges are accurate across multiple companies.
  */
 export async function findLatestForInspection(
   project_id: number,

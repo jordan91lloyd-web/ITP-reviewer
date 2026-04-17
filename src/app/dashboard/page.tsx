@@ -1,0 +1,947 @@
+"use client";
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+// Project → ITP overview with review history, score overrides, and side panel.
+
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import ReviewResults from "@/components/ReviewResults";
+import type { ReviewResult, CategoryScore } from "@/lib/types";
+import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+interface Company { id: number; name: string; is_active: boolean }
+
+interface DashboardProject {
+  id: number;
+  name: string;
+  display_name: string;
+  project_number: string | null;
+  reviewed_count: number;
+  avg_score: number | null;
+  last_reviewed_at: string | null;
+}
+
+// ── Score helpers ──────────────────────────────────────────────────────────────
+
+function scoreBand(score: number | null): string {
+  if (score === null) return "not_reviewed";
+  if (score >= 85) return "compliant";
+  if (score >= 70) return "minor_gaps";
+  if (score >= 50) return "significant_gaps";
+  return "critical_risk";
+}
+
+function scoreBandLabel(band: string): string {
+  return ({
+    compliant: "Compliant", minor_gaps: "Minor gaps",
+    significant_gaps: "Significant gaps", critical_risk: "Critical risk",
+  } as Record<string, string>)[band] ?? band;
+}
+
+function scorePillClasses(band: string): string {
+  return ({
+    compliant:         "bg-green-100 text-green-800",
+    minor_gaps:        "bg-yellow-100 text-yellow-800",
+    significant_gaps:  "bg-orange-100 text-orange-800",
+    critical_risk:     "bg-red-100 text-red-800",
+  } as Record<string, string>)[band] ?? "bg-gray-100 text-gray-600";
+}
+
+function scoreBarColour(pct: number): string {
+  if (pct >= 80) return "bg-green-400";
+  if (pct >= 55) return "bg-amber-400";
+  return "bg-red-400";
+}
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-AU", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────────
+
+export default function DashboardPage() {
+  // Auth + company
+  const [authenticated, setAuthenticated]     = useState<boolean | null>(null);
+  const [user, setUser]                        = useState<{ name: string } | null>(null);
+  const [companies, setCompanies]              = useState<Company[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+
+  // Projects
+  const [projects, setProjects]               = useState<DashboardProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<DashboardProject | null>(null);
+
+  // Inspections
+  const [inspections, setInspections]               = useState<DashboardInspection[]>([]);
+  const [inspectionsLoading, setInspectionsLoading] = useState(false);
+  const [statusFilter, setStatusFilter]             = useState<"closed" | "open">("closed");
+
+  // Side panel
+  const [selectedInsp, setSelectedInsp] = useState<DashboardInspection | null>(null);
+  const [panelOpen, setPanelOpen]       = useState(false);
+
+  // Full report overlay
+  const [fullReportInsp, setFullReportInsp] = useState<DashboardInspection | null>(null);
+
+  // Override form
+  const [overrideScore, setOverrideScore]   = useState("");
+  const [overrideNote, setOverrideNote]     = useState("");
+  const [overrideSaving, setOverrideSaving] = useState(false);
+  const [overrideError, setOverrideError]   = useState<string | null>(null);
+
+  // Run review
+  const [reviewRunning, setReviewRunning] = useState(false);
+  const [reviewError, setReviewError]     = useState<string | null>(null);
+
+  // ── Auth + company discovery ────────────────────────────────────────────────
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.authenticated) {
+          setAuthenticated(true);
+          setUser(data.user ?? null);
+          loadCompanies();
+        } else {
+          setAuthenticated(false);
+        }
+      })
+      .catch(() => setAuthenticated(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function loadCompanies() {
+    const res  = await fetch("/api/procore/companies");
+    const data = await res.json();
+    const list: Company[] = data.companies ?? [];
+    setCompanies(list);
+    if (list.length === 1) setSelectedCompany(list[0]);
+  }
+
+  // ── Load projects when company selected ────────────────────────────────────
+
+  useEffect(() => {
+    if (!selectedCompany) return;
+    setProjectsLoading(true);
+    setSelectedProject(null);
+    setInspections([]);
+    fetch(`/api/dashboard/projects?company_id=${selectedCompany.id}`)
+      .then(r => r.json())
+      .then(data => setProjects(data.projects ?? []))
+      .catch(() => setProjects([]))
+      .finally(() => setProjectsLoading(false));
+  }, [selectedCompany]);
+
+  // ── Load inspections when project selected ─────────────────────────────────
+
+  const loadInspections = useCallback(async (project: DashboardProject, company: Company) => {
+    setInspectionsLoading(true);
+    setInspections([]);
+    try {
+      const res  = await fetch(`/api/dashboard/inspections?project_id=${project.id}&company_id=${company.id}`);
+      const data = await res.json();
+      setInspections(data.inspections ?? []);
+    } catch {
+      setInspections([]);
+    } finally {
+      setInspectionsLoading(false);
+    }
+  }, []);
+
+  function handleSelectProject(project: DashboardProject) {
+    setSelectedProject(project);
+    setPanelOpen(false);
+    setSelectedInsp(null);
+    if (selectedCompany) loadInspections(project, selectedCompany);
+  }
+
+  // ── Side panel ──────────────────────────────────────────────────────────────
+
+  function openPanel(insp: DashboardInspection) {
+    setSelectedInsp(insp);
+    setPanelOpen(true);
+    setOverrideScore(insp.override_score != null ? String(insp.override_score) : "");
+    setOverrideNote(insp.override_note ?? "");
+    setOverrideError(null);
+    setReviewError(null);
+  }
+
+  function closePanel() {
+    setPanelOpen(false);
+    setTimeout(() => setSelectedInsp(null), 300); // wait for slide-out
+  }
+
+  // ── Run Review ──────────────────────────────────────────────────────────────
+
+  async function handleRunReview() {
+    if (!selectedInsp || !selectedProject || !selectedCompany) return;
+    setReviewRunning(true);
+    setReviewError(null);
+    try {
+      const res  = await fetch("/api/procore/import", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          project_id:    selectedProject.id,
+          inspection_id: selectedInsp.id,
+          company_id:    selectedCompany.id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
+
+      // Refresh inspections to get the new record + review_data
+      await loadInspections(selectedProject, selectedCompany);
+
+      // Re-select the same inspection with updated data
+      setInspections(prev => {
+        const updated = prev.find(i => i.id === selectedInsp.id);
+        if (updated) {
+          setSelectedInsp(updated);
+          setOverrideScore(updated.override_score != null ? String(updated.override_score) : "");
+          setOverrideNote(updated.override_note ?? "");
+        }
+        return prev;
+      });
+    } catch (err) {
+      setReviewError(err instanceof Error ? err.message : "Review failed");
+    } finally {
+      setReviewRunning(false);
+    }
+  }
+
+  // ── Save Override ───────────────────────────────────────────────────────────
+
+  async function handleSaveOverride() {
+    if (!selectedInsp?.review_record_id || !selectedCompany) return;
+    const parsed = parseInt(overrideScore, 10);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+      setOverrideError("Score must be a number between 0 and 100.");
+      return;
+    }
+    setOverrideSaving(true);
+    setOverrideError(null);
+    try {
+      const res  = await fetch("/api/dashboard/override", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          review_record_id: selectedInsp.review_record_id,
+          company_id:       String(selectedCompany.id),
+          original_score:   selectedInsp.last_score ?? 0,
+          override_score:   parsed,
+          note:             overrideNote.trim() || null,
+          created_by:       user?.name ?? null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Save failed");
+
+      // Update local state for immediate feedback
+      const updater = (insp: DashboardInspection): DashboardInspection =>
+        insp.id === selectedInsp.id
+          ? { ...insp, override_score: parsed, override_note: overrideNote.trim() || null, override_created_by: user?.name ?? null }
+          : insp;
+
+      setInspections(prev => prev.map(updater));
+      setSelectedInsp(prev => prev ? updater(prev) : prev);
+    } catch (err) {
+      setOverrideError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setOverrideSaving(false);
+    }
+  }
+
+  // ── Filtered ITP list ───────────────────────────────────────────────────────
+
+  const filteredInspections = inspections.filter(i =>
+    statusFilter === "closed"
+      ? i.status?.toLowerCase() === "closed"
+      : i.status?.toLowerCase() !== "closed"
+  );
+
+  const closedCount = inspections.filter(i => i.status?.toLowerCase() === "closed").length;
+  const openCount   = inspections.filter(i => i.status?.toLowerCase() !== "closed").length;
+
+  // ── Not authenticated ───────────────────────────────────────────────────────
+
+  if (authenticated === false) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+        <p className="text-sm text-gray-600">Connect to Procore to use the dashboard.</p>
+        <a
+          href="/api/auth/login"
+          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Connect to Procore
+        </a>
+        <Link href="/" className="text-xs text-gray-400 hover:underline">← Back to reviews</Link>
+      </div>
+    );
+  }
+
+  if (authenticated === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Spinner className="h-6 w-6 text-blue-400" />
+      </div>
+    );
+  }
+
+  // ── Full report overlay ─────────────────────────────────────────────────────
+
+  if (fullReportInsp?.review_data) {
+    return (
+      <div className="min-h-screen bg-white overflow-y-auto">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-white border-b border-gray-200 px-6 py-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Full Report — {fullReportInsp.name}
+          </p>
+          <button
+            onClick={() => setFullReportInsp(null)}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+          >
+            ← Back to dashboard
+          </button>
+        </div>
+        <div className="mx-auto max-w-2xl px-4 py-8">
+          <ReviewResults result={fullReportInsp.review_data} onReset={() => setFullReportInsp(null)} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Dashboard layout ────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
+
+      {/* ── Header ── */}
+      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3 shrink-0 z-10">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            ← Back to reviews
+          </Link>
+          <span className="text-gray-200">|</span>
+          <h1 className="text-sm font-bold text-gray-900">
+            <span className="text-yellow-400">Fleek Constructions</span>
+            <span className="ml-2 font-normal text-gray-500">ITP Dashboard</span>
+          </h1>
+        </div>
+        {/* Company picker */}
+        {companies.length > 1 && (
+          <select
+            value={selectedCompany?.id ?? ""}
+            onChange={e => {
+              const c = companies.find(x => x.id === Number(e.target.value));
+              if (c) setSelectedCompany(c);
+            }}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="">— Select company —</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
+        {companies.length === 1 && selectedCompany && (
+          <span className="text-xs text-gray-500">{selectedCompany.name}</span>
+        )}
+      </header>
+
+      {/* ── Body ── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* ── Left: project list ── */}
+        <aside className="w-64 shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Projects</p>
+          </div>
+
+          {!selectedCompany && (
+            <p className="px-4 py-6 text-xs text-gray-400 italic">Select a company to load projects.</p>
+          )}
+
+          {selectedCompany && projectsLoading && (
+            <div className="flex items-center gap-2 px-4 py-4 text-xs text-gray-400">
+              <Spinner className="h-3 w-3 text-blue-400" /> Loading…
+            </div>
+          )}
+
+          {selectedCompany && !projectsLoading && projects.length === 0 && (
+            <p className="px-4 py-4 text-xs text-gray-400 italic">No projects found.</p>
+          )}
+
+          {projects.map(p => (
+            <ProjectRow
+              key={p.id}
+              project={p}
+              selected={selectedProject?.id === p.id}
+              onClick={() => handleSelectProject(p)}
+            />
+          ))}
+        </aside>
+
+        {/* ── Main: ITP list ── */}
+        <main className="flex-1 overflow-y-auto">
+          {!selectedProject && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-gray-400">Select a project to view its ITPs.</p>
+            </div>
+          )}
+
+          {selectedProject && (
+            <div>
+              {/* Project header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-gray-900">
+                      {selectedProject.display_name || selectedProject.name}
+                    </h2>
+                    {selectedProject.project_number && (
+                      <p className="text-xs text-gray-400 mt-0.5">#{selectedProject.project_number}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    {selectedProject.reviewed_count > 0 && (
+                      <>
+                        <span>{selectedProject.reviewed_count} reviewed</span>
+                        {selectedProject.avg_score !== null && (
+                          <span className={`font-bold ${selectedProject.avg_score >= 85 ? "text-green-600" : selectedProject.avg_score >= 70 ? "text-amber-600" : selectedProject.avg_score >= 50 ? "text-orange-500" : "text-red-500"}`}>
+                            Avg {selectedProject.avg_score}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Open / Closed toggle */}
+                <div className="mt-3 flex items-center gap-1 w-fit">
+                  <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 gap-0.5">
+                    {(["closed", "open"] as const).map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setStatusFilter(s)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                          statusFilter === s
+                            ? "bg-white text-gray-900 shadow-sm border border-gray-100"
+                            : "text-gray-400 hover:text-gray-600"
+                        }`}
+                      >
+                        {s === "closed" ? `Closed (${closedCount})` : `Open (${openCount})`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ITP table */}
+              {inspectionsLoading && (
+                <div className="flex items-center gap-2 px-6 py-6 text-sm text-gray-400">
+                  <Spinner className="h-4 w-4 text-blue-400" /> Loading inspections…
+                </div>
+              )}
+
+              {!inspectionsLoading && filteredInspections.length === 0 && (
+                <div className="px-6 py-10 text-center text-sm text-gray-400">
+                  No {statusFilter} ITP inspections found.
+                </div>
+              )}
+
+              {!inspectionsLoading && filteredInspections.length > 0 && (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-6 py-2">ITP</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-12">#</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Score</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Rating</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-20">Status</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Reviewed</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filteredInspections.map(insp => (
+                      <InspectionRow
+                        key={insp.id}
+                        insp={insp}
+                        selected={selectedInsp?.id === insp.id && panelOpen}
+                        onClick={() => openPanel(insp)}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* ── Side panel backdrop ── */}
+      {panelOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/20"
+          onClick={closePanel}
+        />
+      )}
+
+      {/* ── Side panel ── */}
+      <div
+        className={`fixed right-0 top-0 h-full w-[480px] bg-white shadow-2xl z-40 transform transition-transform duration-300 overflow-y-auto ${
+          panelOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {selectedInsp && (
+          <InspectionPanel
+            insp={selectedInsp}
+            companyId={selectedCompany ? String(selectedCompany.id) : ""}
+            reviewRunning={reviewRunning}
+            reviewError={reviewError}
+            overrideScore={overrideScore}
+            overrideNote={overrideNote}
+            overrideSaving={overrideSaving}
+            overrideError={overrideError}
+            onClose={closePanel}
+            onRunReview={handleRunReview}
+            onViewFullReport={() => { setFullReportInsp(selectedInsp); setPanelOpen(false); }}
+            onOverrideScoreChange={setOverrideScore}
+            onOverrideNoteChange={setOverrideNote}
+            onSaveOverride={handleSaveOverride}
+          />
+        )}
+      </div>
+
+    </div>
+  );
+}
+
+// ── ProjectRow ─────────────────────────────────────────────────────────────────
+
+function ProjectRow({
+  project: p,
+  selected,
+  onClick,
+}: {
+  project: DashboardProject;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left px-4 py-3 border-b border-gray-50 transition-colors ${
+        selected ? "bg-blue-50 border-l-2 border-l-blue-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"
+      }`}
+    >
+      <p className="text-xs font-semibold text-gray-800 leading-snug truncate">
+        {p.display_name || p.name}
+      </p>
+      {p.project_number && (
+        <p className="text-[10px] text-gray-400 mt-0.5">#{p.project_number}</p>
+      )}
+      <div className="flex items-center gap-2 mt-1.5">
+        {p.reviewed_count > 0 ? (
+          <>
+            <span className="text-[10px] text-gray-400">{p.reviewed_count} reviewed</span>
+            {p.avg_score !== null && (
+              <span className={`text-[10px] font-semibold ${
+                p.avg_score >= 85 ? "text-green-600" :
+                p.avg_score >= 70 ? "text-amber-600" :
+                p.avg_score >= 50 ? "text-orange-500" :
+                                    "text-red-500"
+              }`}>
+                Avg {p.avg_score}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-[10px] text-gray-300 italic">Not reviewed</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ── InspectionRow ──────────────────────────────────────────────────────────────
+
+function InspectionRow({
+  insp,
+  selected,
+  onClick,
+}: {
+  insp: DashboardInspection;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const displayScore = insp.override_score ?? insp.last_score;
+  const band = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
+
+  return (
+    <tr
+      onClick={onClick}
+      className={`cursor-pointer transition-colors ${
+        selected ? "bg-blue-50" : "hover:bg-gray-50"
+      }`}
+    >
+      {/* ITP name */}
+      <td className="px-6 py-3 max-w-0">
+        <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
+      </td>
+
+      {/* Inspection # of type */}
+      <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
+        {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : ""}
+      </td>
+
+      {/* Score */}
+      <td className="px-3 py-3 whitespace-nowrap">
+        {insp.review_status === "not_reviewed" ? (
+          <span className="text-xs text-gray-400 italic">—</span>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <span className={`text-sm font-bold ${
+              (displayScore ?? 0) >= 85 ? "text-green-600" :
+              (displayScore ?? 0) >= 70 ? "text-amber-600" :
+              (displayScore ?? 0) >= 50 ? "text-orange-500" :
+                                          "text-red-500"
+            }`}>
+              {displayScore ?? "—"}
+            </span>
+            {insp.override_score !== null && (
+              <span className="text-[10px] text-gray-400 line-through">{insp.last_score}</span>
+            )}
+          </div>
+        )}
+      </td>
+
+      {/* Band pill */}
+      <td className="px-3 py-3 whitespace-nowrap">
+        {band ? (
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${scorePillClasses(band)}`}>
+              {scoreBandLabel(band)}
+            </span>
+            {insp.override_score !== null && (
+              <span className="text-[10px] text-purple-600 font-semibold">Human</span>
+            )}
+          </div>
+        ) : (
+          <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-400">
+            Not reviewed
+          </span>
+        )}
+      </td>
+
+      {/* Status */}
+      <td className="px-3 py-3 whitespace-nowrap">
+        <span className={`text-[10px] font-semibold uppercase tracking-wide ${
+          insp.status?.toLowerCase() === "closed" ? "text-gray-400" : "text-blue-500"
+        }`}>
+          {insp.status ?? "—"}
+        </span>
+      </td>
+
+      {/* Last reviewed */}
+      <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
+        {insp.last_reviewed_at ? fmtDate(insp.last_reviewed_at) : "—"}
+        {insp.review_status === "changed" && (
+          <span className="ml-1 text-amber-500 text-[10px]">⚠</span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+// ── InspectionPanel ────────────────────────────────────────────────────────────
+
+function InspectionPanel({
+  insp,
+  companyId,
+  reviewRunning,
+  reviewError,
+  overrideScore,
+  overrideNote,
+  overrideSaving,
+  overrideError,
+  onClose,
+  onRunReview,
+  onViewFullReport,
+  onOverrideScoreChange,
+  onOverrideNoteChange,
+  onSaveOverride,
+}: {
+  insp: DashboardInspection;
+  companyId: string;
+  reviewRunning: boolean;
+  reviewError: string | null;
+  overrideScore: string;
+  overrideNote: string;
+  overrideSaving: boolean;
+  overrideError: string | null;
+  onClose: () => void;
+  onRunReview: () => void;
+  onViewFullReport: () => void;
+  onOverrideScoreChange: (v: string) => void;
+  onOverrideNoteChange: (v: string) => void;
+  onSaveOverride: () => void;
+}) {
+  const displayScore  = insp.override_score ?? insp.last_score;
+  const band          = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
+  const rd            = insp.review_data;
+  const hasOverride   = insp.override_score !== null;
+
+  return (
+    <div className="flex flex-col h-full">
+
+      {/* Panel header */}
+      <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+        <div className="min-w-0 flex-1 pr-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">ITP Detail</p>
+          <h3 className="text-sm font-bold text-gray-900 leading-snug">{insp.name}</h3>
+          {insp.inspection_number_of_type != null && (
+            <p className="text-xs text-gray-400 mt-0.5">Inspection #{insp.inspection_number_of_type}</p>
+          )}
+        </div>
+        <button
+          onClick={onClose}
+          className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+
+        {/* Score + band */}
+        {insp.review_status !== "not_reviewed" && (
+          <div className={`rounded-xl border px-4 py-3 ${
+            (displayScore ?? 0) >= 85 ? "bg-green-50 border-green-200" :
+            (displayScore ?? 0) >= 70 ? "bg-yellow-50 border-yellow-200" :
+            (displayScore ?? 0) >= 50 ? "bg-orange-50 border-orange-200" :
+                                        "bg-red-50 border-red-200"
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Score</p>
+                <div className="flex items-center gap-2">
+                  <span className={`text-3xl font-bold ${
+                    (displayScore ?? 0) >= 85 ? "text-green-600" :
+                    (displayScore ?? 0) >= 70 ? "text-amber-600" :
+                    (displayScore ?? 0) >= 50 ? "text-orange-500" :
+                                                "text-red-500"
+                  }`}>
+                    {displayScore ?? "—"}
+                  </span>
+                  {hasOverride && (
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-400 line-through">AI: {insp.last_score}</span>
+                      <span className="text-[10px] rounded-full bg-purple-100 text-purple-700 font-semibold px-2 py-0.5">
+                        Human reviewed
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {band && (
+                  <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${scorePillClasses(band)}`}>
+                    {scoreBandLabel(band)}
+                  </span>
+                )}
+              </div>
+              <div className="text-right text-xs text-gray-400">
+                <p>Reviewed {fmtDate(insp.last_reviewed_at)}</p>
+                <p className={`mt-0.5 ${insp.status?.toLowerCase() === "closed" ? "text-gray-400" : "text-blue-500 font-medium"}`}>
+                  {insp.status}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {insp.review_status === "not_reviewed" && (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-center">
+            <p className="text-sm text-gray-500">This ITP has not been reviewed yet.</p>
+          </div>
+        )}
+
+        {/* D1–D5 breakdown */}
+        {rd?.score_breakdown?.category_scores && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Score breakdown</p>
+            <div className="space-y-3">
+              {([
+                ["D1", "Engineer & inspector verification", rd.score_breakdown.category_scores.D1_engineer_verification],
+                ["D2", "Technical testing evidence",        rd.score_breakdown.category_scores.D2_technical_testing],
+                ["D3", "ITP form completeness",            rd.score_breakdown.category_scores.D3_itp_form_completeness],
+                ["D4", "Material traceability",             rd.score_breakdown.category_scores.D4_material_traceability],
+                ["D5", "Physical evidence",                 rd.score_breakdown.category_scores.D5_physical_evidence],
+              ] as [string, string, CategoryScore][]).map(([code, label, cat]) => {
+                const pct = cat.applicable_points > 0
+                  ? Math.round((cat.achieved_points / cat.applicable_points) * 100)
+                  : null;
+                return (
+                  <div key={code}>
+                    <div className="flex justify-between items-baseline mb-1">
+                      <span className="text-xs font-semibold text-gray-700">{code} — {label}</span>
+                      <span className="text-xs text-gray-400 tabular-nums">
+                        {pct !== null ? `${pct}%` : "N/A"}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      {pct !== null && (
+                        <div
+                          className={`h-full rounded-full ${scoreBarColour(pct)}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Top 3 missing evidence */}
+        {rd?.missing_evidence && rd.missing_evidence.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
+              Missing evidence
+            </p>
+            <div className="space-y-2">
+              {rd.missing_evidence.slice(0, 3).map((item, i) => (
+                <div key={i} className="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+                  <p className="text-xs font-semibold text-red-700">{item.evidence_type}</p>
+                  <p className="text-xs text-red-600 mt-0.5 leading-snug">{item.reason}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onRunReview}
+            disabled={reviewRunning}
+            className="flex-1 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {reviewRunning ? (
+              <span className="flex items-center justify-center gap-2">
+                <Spinner className="h-3 w-3 text-white" /> Running…
+              </span>
+            ) : "Run Review"}
+          </button>
+          {rd && (
+            <button
+              type="button"
+              onClick={onViewFullReport}
+              className="flex-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+            >
+              View Full Report
+            </button>
+          )}
+        </div>
+
+        {reviewError && (
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {reviewError}
+          </p>
+        )}
+
+        {/* ── Human Override ── */}
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+            Human Override
+          </p>
+
+          {hasOverride && (
+            <div className="mb-3 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] rounded-full bg-purple-100 text-purple-700 font-semibold px-2 py-0.5">
+                  Human reviewed
+                </span>
+                <span className="text-xs text-purple-700 font-medium">
+                  AI: {insp.last_score} → Override: {insp.override_score}
+                </span>
+              </div>
+              {insp.override_note && (
+                <p className="text-xs text-purple-600 mt-1 italic">"{insp.override_note}"</p>
+              )}
+              {insp.override_created_by && (
+                <p className="text-[10px] text-purple-400 mt-0.5">by {insp.override_created_by}</p>
+              )}
+            </div>
+          )}
+
+          {insp.review_record_id ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Override score (0–100)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={overrideScore}
+                  onChange={e => onOverrideScoreChange(e.target.value)}
+                  placeholder="e.g. 78"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Reason for override
+                </label>
+                <textarea
+                  value={overrideNote}
+                  onChange={e => onOverrideNoteChange(e.target.value)}
+                  placeholder="Explain why the score is being adjusted…"
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                />
+              </div>
+              {overrideError && (
+                <p className="text-xs text-red-600">{overrideError}</p>
+              )}
+              <button
+                type="button"
+                onClick={onSaveOverride}
+                disabled={overrideSaving || !overrideScore}
+                className="w-full rounded-lg bg-purple-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {overrideSaving ? "Saving…" : "Save Override"}
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 italic">
+              Run a review first to enable score overrides.
+            </p>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ── Spinner ────────────────────────────────────────────────────────────────────
+
+function Spinner({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+    </svg>
+  );
+}

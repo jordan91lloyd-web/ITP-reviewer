@@ -1,0 +1,92 @@
+// ─── /api/dashboard/override ─────────────────────────────────────────────────
+// GET  ?review_record_id=X  — fetch the latest override for a record
+// POST                      — create a new override
+
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
+
+export async function GET(request: NextRequest) {
+  const cookieStore = await cookies();
+  if (!cookieStore.get("procore_access_token")?.value) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  const recordId = request.nextUrl.searchParams.get("review_record_id");
+  if (!recordId) {
+    return NextResponse.json({ error: "review_record_id is required." }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from("score_overrides")
+    .select("*")
+    .eq("review_record_id", recordId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ override: data ?? null });
+}
+
+export async function POST(request: NextRequest) {
+  const cookieStore = await cookies();
+  if (!cookieStore.get("procore_access_token")?.value) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  let body: {
+    review_record_id: string;
+    company_id: string;
+    original_score: number;
+    override_score: number;
+    note?: string;
+    created_by?: string;
+  };
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  const { review_record_id, company_id, original_score, override_score, note, created_by } = body;
+
+  if (!review_record_id || !company_id || original_score == null || override_score == null) {
+    return NextResponse.json(
+      { error: "review_record_id, company_id, original_score, and override_score are required." },
+      { status: 400 }
+    );
+  }
+
+  if (override_score < 0 || override_score > 100) {
+    return NextResponse.json({ error: "override_score must be between 0 and 100." }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from("score_overrides")
+    .insert({
+      review_record_id,
+      company_id,
+      original_score,
+      override_score,
+      note: note ?? null,
+      created_by: created_by ?? null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ override: data });
+}

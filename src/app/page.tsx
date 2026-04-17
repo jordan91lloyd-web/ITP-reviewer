@@ -1,3 +1,4 @@
+import Link from "next/link";
 import UploadPortal from "@/components/UploadPortal";
 import ProcoreConnect from "@/components/ProcoreConnect";
 import ProcoreImport from "@/components/ProcoreImport";
@@ -18,6 +19,11 @@ export default function Home() {
           the project details automatically and tell you what&apos;s complete,
           what&apos;s missing, and what to do next.
         </p>
+        <div className="mt-4">
+          <Link href="/dashboard" className="text-sm text-blue-600 hover:underline font-medium">
+            View Dashboard →
+          </Link>
+        </div>
       </header>
 
       <div className="mb-6">
