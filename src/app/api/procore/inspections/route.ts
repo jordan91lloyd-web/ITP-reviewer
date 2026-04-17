@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
   // Enrich each with local review history
   const result: InspectionWithStatus[] = await Promise.all(
     filtered.map(async insp => {
-      const record = await findLatestForInspection(projectId, insp.id);
+      const record = await findLatestForInspection(projectId, insp.id, String(companyId));
 
       let review_status: InspectionWithStatus["review_status"] = "not_reviewed";
       if (record) {

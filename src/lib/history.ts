@@ -23,6 +23,7 @@ export interface ReviewRecord {
   // Procore identifiers (null for manual uploads)
   procore_project_id:    number | null;
   procore_inspection_id: number | null;
+  company_id:            string | null; // Procore company ID — scopes history per company
   inspection_title:      string;
 
   // Review outcome
@@ -74,17 +75,19 @@ export async function appendRecord(
 
 /**
  * Returns the most recent review for a given Procore inspection, or undefined.
- * Used to determine review_status when listing inspections.
+ * Scoped to company_id so history badges are accurate across multiple companies.
  */
 export async function findLatestForInspection(
   project_id: number,
-  inspection_id: number
+  inspection_id: number,
+  company_id: string
 ): Promise<ReviewRecord | undefined> {
   const { data, error } = await supabase
     .from("review_records")
     .select("*")
     .eq("procore_project_id", project_id)
     .eq("procore_inspection_id", inspection_id)
+    .eq("company_id", company_id)
     .order("reviewed_at", { ascending: false })
     .limit(1)
     .maybeSingle();

@@ -397,6 +397,7 @@ export async function POST(request: NextRequest) {
     source: "procore",
     procore_project_id: project_id,
     procore_inspection_id: inspection_id,
+    company_id: String(company_id),
     inspection_title: inspection.name,
     reviewed_at: new Date().toISOString(),
     score: reviewResult.total_score,
