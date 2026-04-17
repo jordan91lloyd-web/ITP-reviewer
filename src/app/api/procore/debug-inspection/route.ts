@@ -85,6 +85,19 @@ export async function GET(request: NextRequest) {
       projectInfo = { error: err instanceof Error ? err.message : String(err) };
     }
 
+    // Log the complete raw Procore response to the server console so every
+    // field is visible — useful for debugging which person/assignee fields
+    // Procore actually returns for open vs closed inspections.
+    console.log(
+      `[debug-inspection] Full raw Procore response for inspection ${inspection_id}:\n` +
+      JSON.stringify(inspection, null, 2)
+    );
+
+    // Extract the top-level metadata fields only (no items array) so we can
+    // see every person-related field without the noise of hundreds of items.
+    const { items: _items, sections: _sections, responses: _responses, ...topLevelMeta } = inspection as unknown as Record<string, unknown>;
+    void _items; void _sections; void _responses;
+
     return NextResponse.json({
       summary: {
         inspection_id,
@@ -105,16 +118,12 @@ export async function GET(request: NextRequest) {
         },
       },
       project: projectInfo,
-      // First 3 items so we can see the actual shape (without dumping MB of data)
+      // All top-level metadata fields with no trimming — every person/assignee
+      // field Procore returns will be visible here.
+      topLevelMeta,
+      // First 3 items so we can see the item shape without dumping MB of data
       firstThreeItems: (inspection.items ?? inspection.sections?.flatMap(s => s.items ?? []) ?? []).slice(0, 3),
       fallbackFirstTwo: fallbackItems.slice(0, 2),
-      // Raw inspection (trimmed to avoid huge payload — just the metadata + 1 item/response)
-      rawInspection: {
-        ...inspection,
-        items: inspection.items?.slice(0, 1),
-        sections: inspection.sections?.slice(0, 1),
-        responses: inspection.responses?.slice(0, 1),
-      },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

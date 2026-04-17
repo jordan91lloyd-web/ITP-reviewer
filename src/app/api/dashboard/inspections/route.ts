@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
     insp => insp.name?.trim().toLowerCase().startsWith("itp")
   );
 
+
   // Fetch all review records for this project + company (latest first)
   const { data: allRecords } = await supabase
     .from("review_records")
@@ -131,15 +132,15 @@ export async function GET(request: NextRequest) {
       closed_at:      insp.closed_at  ?? null,
       updated_at:     insp.updated_at ?? null,
       closed_by:      insp.closed_by?.name ?? null,
-      // `assignees` is the Procore field for the people assigned to complete
-      // the inspection. This is distinct from `responsible_contractor` (the
-      // subcontractor performing the work) — do NOT fall back to that field
-      // as it caused the wrong name to appear. `point_of_contact` is the
-      // secondary fallback since it also represents an accountable person
-      // for the inspection rather than a trade contractor.
+      // Try all person fields in priority order — the list endpoint may not
+      // populate every field depending on API version and tenant config.
+      // `responsible_contractor` is deliberately excluded: it is the
+      // subcontractor performing the work, not the inspection assignee.
       assignee:
         insp.assignees?.[0]?.name ??
+        insp.inspectors?.[0]?.name ??
         insp.point_of_contact?.name ??
+        insp.responsible_party?.name ??
         null,
       review_status,
       review_record_id:         recordId ?? null,
