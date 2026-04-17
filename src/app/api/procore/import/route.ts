@@ -393,7 +393,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 7. Save to history ─────────────────────────────────────────────────────
-  appendRecord({
+  await appendRecord({
     source: "procore",
     procore_project_id: project_id,
     procore_inspection_id: inspection_id,

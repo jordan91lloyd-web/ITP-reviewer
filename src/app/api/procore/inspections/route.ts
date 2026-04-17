@@ -97,28 +97,30 @@ export async function GET(request: NextRequest) {
   });
 
   // Enrich each with local review history
-  const result: InspectionWithStatus[] = filtered.map(insp => {
-    const record = findLatestForInspection(projectId, insp.id);
+  const result: InspectionWithStatus[] = await Promise.all(
+    filtered.map(async insp => {
+      const record = await findLatestForInspection(projectId, insp.id);
 
-    let review_status: InspectionWithStatus["review_status"] = "not_reviewed";
-    if (record) {
-      const inspUpdated  = insp.updated_at ? new Date(insp.updated_at).getTime() : 0;
-      const reviewedAt   = new Date(record.reviewed_at).getTime();
-      review_status = inspUpdated > reviewedAt ? "changed" : "reviewed";
-    }
+      let review_status: InspectionWithStatus["review_status"] = "not_reviewed";
+      if (record) {
+        const inspUpdated  = insp.updated_at ? new Date(insp.updated_at).getTime() : 0;
+        const reviewedAt   = new Date(record.reviewed_at).getTime();
+        review_status = inspUpdated > reviewedAt ? "changed" : "reviewed";
+      }
 
-    return {
-      id:                    insp.id,
-      name:                  insp.name,
-      status:                insp.status,
-      updated_at:            insp.updated_at  ?? null,
-      closed_at:             insp.closed_at   ?? null,
-      review_status,
-      last_reviewed_at:      record?.reviewed_at       ?? null,
-      last_score:            record?.score              ?? null,
-      last_package_assessment: record?.package_assessment ?? null,
-    };
-  });
+      return {
+        id:                    insp.id,
+        name:                  insp.name,
+        status:                insp.status,
+        updated_at:            insp.updated_at  ?? null,
+        closed_at:             insp.closed_at   ?? null,
+        review_status,
+        last_reviewed_at:      record?.reviewed_at         ?? null,
+        last_score:            record?.score               ?? null,
+        last_package_assessment: record?.package_assessment ?? null,
+      };
+    })
+  );
 
   return NextResponse.json({ inspections: result });
 }
