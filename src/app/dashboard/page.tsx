@@ -957,40 +957,44 @@ export default function DashboardPage() {
               {!inspectionsLoading && filteredInspections.length > 0 && (
                 <>
                   {/* Collapse / Expand All */}
-                  <div className="flex justify-start px-4 py-2 border-b border-gray-100 bg-white">
+                  <div className="flex items-center px-4 py-2 border-b border-gray-100 bg-white">
                     <button
                       type="button"
                       onClick={() => {
                         const allCollapsed = groupOrder.length > 0 && collapsedGroups.size === groupOrder.length;
                         setCollapsedGroups(allCollapsed ? new Set() : new Set(groupOrder));
                       }}
-                      className="text-[11px] font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
                     >
+                      <span className={`inline-block text-[9px] transition-transform duration-150 ${groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "" : "rotate-90"}`}>▶</span>
                       {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "Expand All" : "Collapse All"}
                     </button>
                   </div>
 
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 bg-gray-50">
-                        {/* Select-all checkbox */}
-                        <th className="px-3 py-2 w-8">
-                          <input
-                            type="checkbox"
-                            checked={allVisible}
-                            ref={el => { if (el) el.indeterminate = someVisible; }}
-                            onChange={toggleSelectAll}
-                            disabled={bulkRunning}
-                            className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
-                          />
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        {/* Master Select All — largest checkbox */}
+                        <th className="px-3 py-2.5">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={allVisible}
+                              ref={el => { if (el) el.indeterminate = someVisible; }}
+                              onChange={toggleSelectAll}
+                              disabled={bulkRunning}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed shrink-0"
+                            />
+                            <span className="text-xs font-bold text-gray-600">Select All</span>
+                          </div>
                         </th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2">ITP</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Person</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-12">#</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Score</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-36">Rating</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-20">Status</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 w-32">Reviewed</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5">ITP</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-36">Person</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-12">#</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-32">Score</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-36">Rating</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-20">Status</th>
+                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-32">Reviewed</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -1007,29 +1011,34 @@ export default function DashboardPage() {
                           // Group header row
                           <tr
                             key={`group-${groupName}`}
-                            className="bg-gray-50 hover:bg-gray-100 border-t border-gray-200 select-none"
+                            className="bg-gray-100 border-t border-gray-200 select-none"
                           >
-                            {/* Group checkbox */}
-                            <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
-                              <input
-                                type="checkbox"
-                                checked={allGroupSel}
-                                ref={el => { if (el) el.indeterminate = someGroupSel; }}
-                                onChange={() => toggleSelectGroup(group)}
-                                disabled={bulkRunning}
-                                className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
-                              />
+                            {/* Collapse arrow + group checkbox — arrow before checkbox */}
+                            <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`text-gray-500 text-[10px] transition-transform duration-150 cursor-pointer shrink-0 ${isCollapsed ? "" : "rotate-90"}`}
+                                  onClick={() => toggleGroup(groupName)}
+                                >▶</span>
+                                <input
+                                  type="checkbox"
+                                  checked={allGroupSel}
+                                  ref={el => { if (el) el.indeterminate = someGroupSel; }}
+                                  onChange={() => toggleSelectGroup(group)}
+                                  disabled={bulkRunning}
+                                  className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed shrink-0"
+                                />
+                              </div>
                             </td>
                             <td
                               colSpan={7}
-                              className="px-3 py-2 cursor-pointer"
+                              className="px-3 py-2.5 cursor-pointer"
                               onClick={() => toggleGroup(groupName)}
                             >
-                              <div className="flex items-center gap-2">
-                                <span className={`text-gray-400 text-xs transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}>▶</span>
-                                <span className={`h-2 w-2 rounded-full shrink-0 ${groupIndicatorClasses(worst)}`} />
-                                <span className="text-xs font-semibold text-gray-700">{groupName}</span>
-                                <span className="text-[10px] text-gray-400 ml-1">
+                              <div className="flex items-center gap-2.5">
+                                <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${groupIndicatorClasses(worst)}`} />
+                                <span className="text-sm font-bold text-gray-800 leading-snug">{groupName}</span>
+                                <span className="text-[10px] text-gray-400 font-normal ml-1">
                                   {reviewedInGroup}/{group.length} reviewed
                                 </span>
                               </div>
@@ -1335,24 +1344,25 @@ function InspectionRow({
   return (
     <tr
       onClick={onClick}
-      className={`cursor-pointer transition-colors ${
-        selected ? "bg-blue-50" : checked ? "bg-blue-50/50" : "hover:bg-gray-50"
+      className={`cursor-pointer transition-colors border-b border-gray-50 ${
+        selected ? "bg-blue-50" : checked ? "bg-blue-50/50" : "bg-white hover:bg-gray-50"
       }`}
     >
-      {/* Checkbox */}
-      <td className="px-3 py-3" onClick={onCheck}>
+      {/* Checkbox — smallest, indented to sit visually under group header */}
+      <td className="pl-9 pr-3 py-2.5" onClick={onCheck}>
         <input
           type="checkbox"
           checked={checked}
           onChange={() => {/* handled by onCheck */}}
           disabled={bulkRunning}
-          className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+          className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
         />
       </td>
 
-      {/* ITP name + bulk status */}
-      <td className="px-3 py-3 max-w-0">
+      {/* ITP name + dash bullet + bulk status */}
+      <td className="px-3 py-2.5 max-w-0">
         <div className="flex items-center gap-2">
+          <span className="text-gray-300 shrink-0 font-semibold text-sm select-none">–</span>
           <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
           {bulkItemStatus && (
             <BulkStatusBadge status={bulkItemStatus} />
@@ -1361,19 +1371,19 @@ function InspectionRow({
       </td>
 
       {/* Person */}
-      <td className="px-3 py-3 text-[10px] text-gray-400 whitespace-nowrap">
+      <td className="px-3 py-2.5 text-[10px] text-gray-400 whitespace-nowrap">
         {isClosed
           ? (insp.closed_by ? `Closed by ${insp.closed_by}` : "—")
           : (insp.assignee  ? `Assigned to ${insp.assignee}` : "—")}
       </td>
 
       {/* # */}
-      <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
+      <td className="px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap">
         {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : ""}
       </td>
 
       {/* Score */}
-      <td className="px-3 py-3 whitespace-nowrap">
+      <td className="px-3 py-2.5 whitespace-nowrap">
         {insp.review_status === "not_reviewed" ? (
           <span className="text-xs text-gray-400 italic">—</span>
         ) : (
@@ -1394,7 +1404,7 @@ function InspectionRow({
       </td>
 
       {/* Band pill */}
-      <td className="px-3 py-3 whitespace-nowrap">
+      <td className="px-3 py-2.5 whitespace-nowrap">
         {band ? (
           <div className="flex items-center gap-1.5">
             <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${scorePillClasses(band)}`}>
@@ -1412,7 +1422,7 @@ function InspectionRow({
       </td>
 
       {/* Status */}
-      <td className="px-3 py-3 whitespace-nowrap">
+      <td className="px-3 py-2.5 whitespace-nowrap">
         <span className={`text-[10px] font-semibold uppercase tracking-wide ${
           isClosed ? "text-gray-400" :
           insp.status?.toLowerCase() === "in_review" ? "text-blue-500" :
@@ -1423,7 +1433,7 @@ function InspectionRow({
       </td>
 
       {/* Last reviewed */}
-      <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
+      <td className="px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap">
         {insp.last_reviewed_at ? fmtDate(insp.last_reviewed_at) : "—"}
         {insp.review_status === "changed" && (
           <span className="ml-1 text-amber-500 text-[10px]">⚠</span>
