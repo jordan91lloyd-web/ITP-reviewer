@@ -45,11 +45,12 @@ export interface ReviewRecord {
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
-/** Load the full review history, ordered oldest-first. Returns [] on error. */
-export async function loadHistory(): Promise<ReviewRecord[]> {
+/** Load the full review history for a company, ordered oldest-first. Returns [] on error. */
+export async function loadHistory(company_id: string): Promise<ReviewRecord[]> {
   const { data, error } = await supabase
     .from("review_records")
     .select("*")
+    .eq("company_id", company_id)
     .order("reviewed_at", { ascending: true });
 
   if (error) {

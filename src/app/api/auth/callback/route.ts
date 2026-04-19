@@ -1,6 +1,7 @@
 // ─── GET /api/auth/callback ───────────────────────────────────────────────
 // Procore redirects here after the user authorizes the app.
-// Verifies the state param, exchanges the code for tokens, then stores
+// Verifies the state param, exchanges the code for tokens, checks that the
+// user belongs to the authorised company (FLEEK_COMPANY_ID), then stores
 // the access token in a cookie and redirects back to the homepage.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -49,6 +50,41 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       new URL(`/?auth_error=${encodeURIComponent(msg)}`, request.url)
     );
+  }
+
+  // ── Verify company membership ────────────────────────────────────────────
+  // Only users who belong to FLEEK_COMPANY_ID are permitted to use the app.
+  const fleekCompanyId = process.env.FLEEK_COMPANY_ID;
+  if (fleekCompanyId) {
+    const procoreApiBase =
+      process.env.PROCORE_API_BASE_URL ??
+      (process.env.PROCORE_ENV === "sandbox"
+        ? "https://sandbox.procore.com"
+        : "https://api.procore.com");
+
+    try {
+      const companiesRes = await fetch(`${procoreApiBase}/rest/v1.0/companies`, {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      if (!companiesRes.ok) {
+        throw new Error(`Procore /companies returned ${companiesRes.status}`);
+      }
+      const companies: { id: number }[] = await companiesRes.json();
+      const isMember = companies.some(c => String(c.id) === fleekCompanyId);
+      if (!isMember) {
+        console.warn(
+          `[auth/callback] User is not a member of company ${fleekCompanyId} — access denied`
+        );
+        return NextResponse.redirect(new URL("/?error=unauthorized", request.url));
+      }
+      console.log(`[auth/callback] Company membership confirmed for company ${fleekCompanyId}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[auth/callback] Company check failed:", msg);
+      return NextResponse.redirect(
+        new URL(`/?auth_error=${encodeURIComponent("Company verification failed: " + msg)}`, request.url)
+      );
+    }
   }
 
   // ── Store tokens in cookies ───────────────────────────────────────────────

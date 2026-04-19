@@ -3,9 +3,25 @@ import UploadPortal from "@/components/UploadPortal";
 import ProcoreConnect from "@/components/ProcoreConnect";
 import ProcoreImport from "@/components/ProcoreImport";
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const isUnauthorized = params.error === "unauthorized";
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
+
+      {isUnauthorized && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center">
+          <p className="text-sm font-semibold text-red-700">Access restricted.</p>
+          <p className="text-xs text-red-600 mt-0.5">
+            You must be a Fleek Constructions team member to use this tool.
+          </p>
+        </div>
+      )}
 
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-bold tracking-tight">
