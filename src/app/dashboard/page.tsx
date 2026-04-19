@@ -972,16 +972,16 @@ export default function DashboardPage() {
 
                   <table className="w-full text-sm shadow-sm">
                     <thead>
-                      <tr className="bg-[#1F3864]">
+                      <tr className="bg-gray-50 border-b border-gray-200">
                         {/* Checkbox column — no label; Select All lives in control bar above */}
                         <th className="px-3 py-2.5 w-10" />
-                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5">ITP</th>
-                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-12">#</th>
-                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-36">Person</th>
-                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-32">Score</th>
-                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-36">Rating</th>
-                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-24">Status</th>
-                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-32">Reviewed</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5">ITP</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-12">#</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-36">Person</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-32">Score</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-36">Rating</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-24">Status</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-32">Reviewed</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -1242,65 +1242,70 @@ function ProjectRow({
   onClick: () => void;
 }) {
   return (
-    <div className="relative border-b border-gray-50">
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full text-left px-4 py-3 transition-colors pr-14 ${
-        selected ? "bg-blue-50 border-l-2 border-l-blue-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"
-      }`}
-    >
-      <p className="text-xs font-semibold text-gray-800 leading-snug truncate">
-        {p.display_name || p.name}
-      </p>
-      {p.project_number && (
-        <p className="text-[10px] text-gray-400 mt-0.5">#{p.project_number}</p>
-      )}
-      <div className="flex flex-col gap-0.5 mt-1.5">
-        {stats ? (
-          <>
-            {stats.closedTotal > 0 && (
-              <span className="text-[10px] text-gray-400">
-                Closed: {stats.closedReviewed} reviewed / {stats.closedTotal}
-              </span>
-            )}
-            {stats.inReviewTotal > 0 && (
-              <span className="text-[10px] text-blue-400">
-                In Review: {stats.inReviewReviewed} reviewed / {stats.inReviewTotal}
-              </span>
-            )}
-            {stats.openTotal > 0 && (
-              <span className="text-[10px] text-gray-400">
-                Open: {stats.openReviewed} reviewed / {stats.openTotal}
-              </span>
-            )}
-          </>
-        ) : p.reviewed_count > 0 ? (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-400">{p.reviewed_count} reviewed</span>
-            {p.avg_score !== null && (
-              <span className={`text-[10px] font-semibold ${
-                p.avg_score >= 85 ? "text-green-600" :
-                p.avg_score >= 70 ? "text-amber-600" :
-                p.avg_score >= 50 ? "text-orange-500" :
-                                    "text-red-500"
-              }`}>
-                Avg {p.avg_score}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-[10px] text-gray-300 italic">Not reviewed</span>
+    <div className="border-b border-gray-100">
+      <button
+        type="button"
+        onClick={onClick}
+        className={`w-full text-left px-4 py-3 transition-colors ${
+          selected ? "bg-amber-50 border-l-2 border-l-amber-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"
+        }`}
+      >
+        <p className="text-xs font-semibold text-gray-800 leading-snug">
+          {p.display_name || p.name}
+        </p>
+        {p.project_number && (
+          <p className="text-[10px] text-gray-400 mt-0.5">#{p.project_number}</p>
         )}
+        <div className="flex flex-col gap-0.5 mt-1.5">
+          {stats ? (
+            <>
+              {stats.closedTotal > 0 && (
+                <span className="text-[10px] text-gray-400">
+                  Closed: {stats.closedReviewed}/{stats.closedTotal} reviewed
+                </span>
+              )}
+              {stats.inReviewTotal > 0 && (
+                <span className="text-[10px] text-amber-600">
+                  In Review: {stats.inReviewReviewed}/{stats.inReviewTotal}
+                </span>
+              )}
+              {stats.openTotal > 0 && (
+                <span className="text-[10px] text-gray-400">
+                  Open: {stats.openReviewed}/{stats.openTotal}
+                </span>
+              )}
+            </>
+          ) : p.reviewed_count > 0 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400">{p.reviewed_count} reviewed</span>
+              {p.avg_score !== null && (
+                <span className={`text-[10px] font-semibold ${
+                  p.avg_score >= 85 ? "text-green-600" :
+                  p.avg_score >= 70 ? "text-amber-600" :
+                  p.avg_score >= 50 ? "text-orange-500" :
+                                      "text-red-500"
+                }`}>
+                  Avg {p.avg_score}
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-[10px] text-gray-300 italic">Not reviewed</span>
+          )}
+        </div>
+      </button>
+      <div className="px-4 pb-2">
+        <Link
+          href={`/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`}
+          onClick={e => e.stopPropagation()}
+          className="inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-[#1F3864] transition-colors font-medium"
+        >
+          <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Audit Log
+        </Link>
       </div>
-    </button>
-    <Link
-      href={`/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`}
-      onClick={e => e.stopPropagation()}
-      className="absolute top-2 right-2 text-[10px] text-gray-300 hover:text-blue-500 transition-colors px-1 py-0.5 rounded"
-    >
-      Audit
-    </Link>
     </div>
   );
 }

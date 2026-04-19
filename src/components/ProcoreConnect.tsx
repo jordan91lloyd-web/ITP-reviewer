@@ -39,17 +39,13 @@ export default function ProcoreConnect() {
 
   if (user) {
     return (
-      <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-          <span className="font-medium text-green-800">
-            Connected to Procore as <span className="font-semibold">{user.name}</span>
-          </span>
-        </div>
-        <a
-          href="/api/auth/logout"
-          className="text-xs text-green-600 underline hover:text-green-800"
-        >
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <span className="inline-block h-2 w-2 rounded-full bg-green-500 shrink-0" />
+        <span>
+          Connected to Procore as <span className="font-medium text-gray-700">{user.name}</span>
+        </span>
+        <span className="text-gray-300">·</span>
+        <a href="/api/auth/logout" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
           Disconnect
         </a>
       </div>
