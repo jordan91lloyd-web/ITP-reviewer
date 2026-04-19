@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/lib/procore";
 import { cookies } from "next/headers";
+import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -117,5 +118,16 @@ export async function GET(request: NextRequest) {
   });
 
   console.log("[auth/callback] Tokens stored. Redirecting to homepage.");
+
+  // Fire-and-forget audit log — must not delay the redirect
+  const fleekId = process.env.FLEEK_COMPANY_ID ?? "unknown";
+  void resolveAuditUser(tokens.access_token).then(auditUser =>
+    logAuditEvent({
+      ...auditUser,
+      company_id: fleekId,
+      action: AUDIT_ACTIONS.LOGIN,
+    })
+  );
+
   return NextResponse.redirect(new URL("/?auth=success", request.url));
 }

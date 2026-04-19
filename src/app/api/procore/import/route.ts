@@ -35,6 +35,7 @@ import {
 import { runBundleReview } from "@/lib/claude";
 import { appendRecord } from "@/lib/history";
 import type { ProcessedFile } from "@/lib/types";
+import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 // Supported MIME types for direct processing.
 // Images are intentionally excluded here — Procore site photos frequently
@@ -71,6 +72,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  // Resolve audit user identity once — reused at every log point below
+  const auditUser = await resolveAuditUser(accessToken);
 
   // ── 1. Fetch inspection detail (view=extended) ─────────────────────────────
   let inspection: ProcoreInspection;
@@ -407,10 +411,22 @@ export async function POST(request: NextRequest) {
       } catch (err2) {
         const msg2 = err2 instanceof Error ? err2.message : String(err2);
         console.error("[procore/import] Retry without images also failed:", msg2);
+        void logAuditEvent({
+          ...auditUser, company_id: String(company_id), action: AUDIT_ACTIONS.REVIEW_FAILED,
+          entity_type: "inspection", entity_id: String(inspection_id), entity_name: inspection.name,
+          project_id: String(project_id), project_name: project?.name ?? undefined,
+          details: { error: msg2, file_count: processedFiles.length, files_skipped: skippedFiles.length },
+        });
         return NextResponse.json({ error: `QA review failed: ${msg2}` }, { status: 500 });
       }
     } else {
       console.error("[procore/import] Review failed:", msg);
+      void logAuditEvent({
+        ...auditUser, company_id: String(company_id), action: AUDIT_ACTIONS.REVIEW_FAILED,
+        entity_type: "inspection", entity_id: String(inspection_id), entity_name: inspection.name,
+        project_id: String(project_id), project_name: project?.name ?? undefined,
+        details: { error: msg, file_count: processedFiles.length, files_skipped: skippedFiles.length },
+      });
       return NextResponse.json({ error: `QA review failed: ${msg}` }, { status: 500 });
     }
   }
@@ -435,6 +451,18 @@ export async function POST(request: NextRequest) {
     `[procore/import] Complete. Score: ${reviewResult.total_score} ` +
     `(${reviewResult.score_band}), assessment: ${reviewResult.package_assessment}`
   );
+
+  void logAuditEvent({
+    ...auditUser, company_id: String(company_id), action: AUDIT_ACTIONS.REVIEW_RUN,
+    entity_type: "inspection", entity_id: String(inspection_id), entity_name: inspection.name,
+    project_id: String(project_id), project_name: project?.name ?? undefined,
+    details: {
+      score: reviewResult.total_score,
+      score_band: reviewResult.score_band,
+      file_count: processedFiles.length,
+      files_skipped: skippedFiles.length,
+    },
+  });
 
   // ── 8. Return ──────────────────────────────────────────────────────────────
   // Count attachments by source so the UI can surface exactly where every

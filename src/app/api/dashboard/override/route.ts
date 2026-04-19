@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,7 +60,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
-  if (!cookieStore.get("procore_access_token")?.value) {
+  const accessToken = cookieStore.get("procore_access_token")?.value;
+  if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
@@ -122,6 +124,20 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const auditUser = await resolveAuditUser(accessToken);
+  void logAuditEvent({
+    ...auditUser,
+    company_id: company_id,
+    action: AUDIT_ACTIONS.SCORE_OVERRIDE,
+    entity_type: "inspection",
+    entity_id: review_record_id,
+    details: {
+      old_score: original_score,
+      new_score: override_score,
+      note: note ?? null,
+    },
+  });
 
   return NextResponse.json({ override: data });
 }

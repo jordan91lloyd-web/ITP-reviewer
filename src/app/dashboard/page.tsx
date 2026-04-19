@@ -685,6 +685,19 @@ export default function DashboardPage() {
 
   async function handleBulkExportSeparate() {
     setExportModalOpen(false);
+    // Fire-and-forget audit log
+    if (selectedCompany) {
+      fetch("/api/dashboard/export-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id:       String(selectedCompany.id),
+          inspection_count: selectedReviewed.length,
+          export_type:      "separate",
+          inspection_names: selectedReviewed.map(i => i.name),
+        }),
+      }).catch(() => {});
+    }
     for (const insp of selectedReviewed) {
       const html = buildReportHtml(insp, true);
       const win  = window.open("", "_blank");
@@ -702,6 +715,19 @@ export default function DashboardPage() {
 
   async function handleBulkExportZip() {
     setExportRunning(true);
+    // Fire-and-forget audit log
+    if (selectedCompany) {
+      fetch("/api/dashboard/export-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id:       String(selectedCompany.id),
+          inspection_count: selectedReviewed.length,
+          export_type:      "zip",
+          inspection_names: selectedReviewed.map(i => i.name),
+        }),
+      }).catch(() => {});
+    }
     try {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
@@ -790,6 +816,10 @@ export default function DashboardPage() {
             <span className="text-yellow-400">Fleek Constructions</span>
             <span className="ml-2 font-normal text-gray-500">ITP Dashboard</span>
           </h1>
+          <span className="text-gray-200">|</span>
+          <Link href="/audit" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            Audit Log
+          </Link>
         </div>
         {companies.length > 1 && (
           <select
