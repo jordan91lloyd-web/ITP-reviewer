@@ -55,17 +55,16 @@ function scoreBandLabel(band: string): string {
 
 function scorePillClasses(band: string): string {
   return ({
-    compliant:         "bg-green-100 text-green-800",
-    minor_gaps:        "bg-yellow-100 text-yellow-800",
-    significant_gaps:  "bg-orange-100 text-orange-800",
-    critical_risk:     "bg-red-100 text-red-800",
-  } as Record<string, string>)[band] ?? "bg-gray-100 text-gray-600";
+    compliant:         "bg-green-600 text-white",
+    minor_gaps:        "bg-amber-500 text-white",
+    significant_gaps:  "bg-orange-500 text-white",
+    critical_risk:     "bg-red-600 text-white",
+  } as Record<string, string>)[band] ?? "bg-gray-200 text-gray-500";
 }
 
-function scoreBarColour(pct: number): string {
-  if (pct >= 80) return "bg-green-400";
-  if (pct >= 55) return "bg-amber-400";
-  return "bg-red-400";
+// Fleek brand: all D1-D5 bars use amber (#D97706 = amber-600)
+function scoreBarColour(_pct: number): string {
+  return "bg-amber-600";
 }
 
 function fmtDate(iso: string | null | undefined): string {
@@ -820,6 +819,10 @@ export default function DashboardPage() {
           <Link href="/audit" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
             Audit Log
           </Link>
+          <span className="text-gray-200">|</span>
+          <Link href="/how-it-works" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            How it Works
+          </Link>
         </div>
         {companies.length > 1 && (
           <select
@@ -956,45 +959,44 @@ export default function DashboardPage() {
 
               {!inspectionsLoading && filteredInspections.length > 0 && (
                 <>
-                  {/* Collapse / Expand All */}
-                  <div className="flex items-center px-4 py-2 border-b border-gray-100 bg-white">
+                  {/* Control bar: Select All (left) + Collapse All (right) */}
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-gray-100 border-b-2 border-amber-600">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={allVisible}
+                        ref={el => { if (el) el.indeterminate = someVisible; }}
+                        onChange={toggleSelectAll}
+                        disabled={bulkRunning}
+                        className="h-4 w-4 rounded border-gray-400 text-amber-600 focus:ring-amber-500 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span className="text-xs font-bold text-gray-700">Select All</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
                         const allCollapsed = groupOrder.length > 0 && collapsedGroups.size === groupOrder.length;
                         setCollapsedGroups(allCollapsed ? new Set() : new Set(groupOrder));
                       }}
-                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                      className="flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 transition-colors"
                     >
                       <span className={`inline-block text-[9px] transition-transform duration-150 ${groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "" : "rotate-90"}`}>▶</span>
                       {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "Expand All" : "Collapse All"}
                     </button>
                   </div>
 
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm shadow-sm">
                     <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        {/* Master Select All — largest checkbox */}
-                        <th className="px-3 py-2.5">
-                          <div className="flex items-center gap-2 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={allVisible}
-                              ref={el => { if (el) el.indeterminate = someVisible; }}
-                              onChange={toggleSelectAll}
-                              disabled={bulkRunning}
-                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed shrink-0"
-                            />
-                            <span className="text-xs font-bold text-gray-600">Select All</span>
-                          </div>
-                        </th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5">ITP</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-36">Person</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-12">#</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-32">Score</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-36">Rating</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-20">Status</th>
-                        <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-32">Reviewed</th>
+                      <tr className="bg-[#1F3864]">
+                        {/* Checkbox column — no label; Select All lives in control bar above */}
+                        <th className="px-3 py-2.5 w-10" />
+                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5">ITP</th>
+                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-12">#</th>
+                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-36">Person</th>
+                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-32">Score</th>
+                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-36">Rating</th>
+                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-24">Status</th>
+                        <th className="text-left text-[11px] font-semibold text-white/70 uppercase tracking-wider px-3 py-2.5 w-32">Reviewed</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -1008,16 +1010,16 @@ export default function DashboardPage() {
                         const someGroupSel   = !allGroupSel && groupIds.some(id => selectedIds.has(id));
 
                         return [
-                          // Group header row
+                          // Group header row — Fleek navy
                           <tr
                             key={`group-${groupName}`}
-                            className="bg-gray-100 border-t border-gray-200 select-none"
+                            className="bg-[#1F3864] border-t border-[#253f77] select-none"
                           >
-                            {/* Collapse arrow + group checkbox — arrow before checkbox */}
+                            {/* Collapse arrow + group checkbox */}
                             <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                               <div className="flex items-center gap-2">
                                 <span
-                                  className={`text-gray-500 text-[10px] transition-transform duration-150 cursor-pointer shrink-0 ${isCollapsed ? "" : "rotate-90"}`}
+                                  className={`text-white/60 text-[10px] transition-transform duration-150 cursor-pointer shrink-0 ${isCollapsed ? "" : "rotate-90"}`}
                                   onClick={() => toggleGroup(groupName)}
                                 >▶</span>
                                 <input
@@ -1026,19 +1028,19 @@ export default function DashboardPage() {
                                   ref={el => { if (el) el.indeterminate = someGroupSel; }}
                                   onChange={() => toggleSelectGroup(group)}
                                   disabled={bulkRunning}
-                                  className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed shrink-0"
+                                  className="h-3.5 w-3.5 rounded border-white/40 text-amber-500 focus:ring-amber-400 cursor-pointer disabled:cursor-not-allowed shrink-0 accent-amber-400"
                                 />
                               </div>
                             </td>
                             <td
                               colSpan={7}
-                              className="px-3 py-2.5 cursor-pointer"
+                              className="px-3 py-2.5 cursor-pointer hover:bg-[#253f77] transition-colors"
                               onClick={() => toggleGroup(groupName)}
                             >
                               <div className="flex items-center gap-2.5">
-                                <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${groupIndicatorClasses(worst)}`} />
-                                <span className="text-sm font-bold text-gray-800 leading-snug">{groupName}</span>
-                                <span className="text-[10px] text-gray-400 font-normal ml-1">
+                                <span className={`h-3 w-3 rounded-full shrink-0 ring-1 ring-white/20 ${groupIndicatorClasses(worst)}`} />
+                                <span className="text-sm font-bold text-white leading-snug">{groupName}</span>
+                                <span className="text-[10px] text-white/50 font-normal ml-1">
                                   {reviewedInGroup}/{group.length} reviewed
                                 </span>
                               </div>
@@ -1146,8 +1148,8 @@ function BulkActionBar({
   onClearSelection: () => void;
 }) {
   return (
-    <div className="sticky bottom-0 z-20 mx-4 mb-4 rounded-xl bg-white shadow-lg border border-gray-200 px-4 py-3 flex items-center gap-3">
-      <span className="text-xs font-semibold text-gray-700 shrink-0">
+    <div className="sticky bottom-0 z-20 mx-4 mb-4 rounded-xl bg-[#1F3864] shadow-xl px-4 py-3 flex items-center gap-3">
+      <span className="text-xs font-semibold text-white/80 shrink-0">
         {selectedCount} selected
       </span>
       <div className="flex items-center gap-2 flex-1">
@@ -1155,7 +1157,7 @@ function BulkActionBar({
           type="button"
           onClick={onRunReviews}
           disabled={bulkRunning || unreviewedCount === 0}
-          className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+          className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
         >
           {bulkRunning && <Spinner className="h-3 w-3 text-white" />}
           Run Reviews ({unreviewedCount})
@@ -1164,7 +1166,7 @@ function BulkActionBar({
           type="button"
           onClick={onExportPdfs}
           disabled={bulkRunning || reviewedCount === 0}
-          className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Export PDFs ({reviewedCount})
         </button>
@@ -1173,7 +1175,7 @@ function BulkActionBar({
         type="button"
         onClick={onClearSelection}
         disabled={bulkRunning}
-        className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-40 shrink-0"
+        className="text-xs text-white/50 hover:text-white/80 disabled:opacity-40 shrink-0 transition-colors"
       >
         Clear
       </button>
@@ -1344,30 +1346,37 @@ function InspectionRow({
   return (
     <tr
       onClick={onClick}
-      className={`cursor-pointer transition-colors border-b border-gray-50 ${
-        selected ? "bg-blue-50" : checked ? "bg-blue-50/50" : "bg-white hover:bg-gray-50"
+      className={`cursor-pointer transition-colors border-b border-gray-100 ${
+        selected ? "bg-amber-50 border-l-[3px] border-l-amber-600" :
+        checked  ? "bg-amber-50/60 border-l-[3px] border-l-amber-400" :
+                   "bg-white hover:bg-amber-50 border-l-[3px] border-l-amber-600"
       }`}
     >
-      {/* Checkbox — smallest, indented to sit visually under group header */}
+      {/* Checkbox — smallest, indented under group header */}
       <td className="pl-9 pr-3 py-2.5" onClick={onCheck}>
         <input
           type="checkbox"
           checked={checked}
           onChange={() => {/* handled by onCheck */}}
           disabled={bulkRunning}
-          className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+          className="h-3 w-3 rounded border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer disabled:cursor-not-allowed accent-amber-600"
         />
       </td>
 
-      {/* ITP name + dash bullet + bulk status */}
-      <td className="px-3 py-2.5 max-w-0">
+      {/* ITP name + dash bullet + bulk status — indented under group header */}
+      <td className="pl-10 pr-3 py-2.5 max-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-gray-300 shrink-0 font-semibold text-sm select-none">–</span>
+          <span className="text-amber-300 shrink-0 font-semibold text-sm select-none">–</span>
           <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
           {bulkItemStatus && (
             <BulkStatusBadge status={bulkItemStatus} />
           )}
         </div>
+      </td>
+
+      {/* # — now before Person */}
+      <td className="px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap">
+        {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : "—"}
       </td>
 
       {/* Person */}
@@ -1377,22 +1386,17 @@ function InspectionRow({
           : (insp.assignee  ? `Assigned to ${insp.assignee}` : "—")}
       </td>
 
-      {/* # */}
-      <td className="px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap">
-        {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : ""}
-      </td>
-
       {/* Score */}
       <td className="px-3 py-2.5 whitespace-nowrap">
         {insp.review_status === "not_reviewed" ? (
-          <span className="text-xs text-gray-400 italic">—</span>
+          <span className="text-xs text-gray-300 italic">—</span>
         ) : (
           <div className="flex items-center gap-1.5">
             <span className={`text-sm font-bold ${
               (displayScore ?? 0) >= 85 ? "text-green-600" :
               (displayScore ?? 0) >= 70 ? "text-amber-600" :
               (displayScore ?? 0) >= 50 ? "text-orange-500" :
-                                          "text-red-500"
+                                          "text-red-600"
             }`}>
               {displayScore ?? "—"}
             </span>
@@ -1407,7 +1411,7 @@ function InspectionRow({
       <td className="px-3 py-2.5 whitespace-nowrap">
         {band ? (
           <div className="flex items-center gap-1.5">
-            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${scorePillClasses(band)}`}>
+            <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${scorePillClasses(band)}`}>
               {scoreBandLabel(band)}
             </span>
             {insp.override_score !== null && (
@@ -1415,18 +1419,18 @@ function InspectionRow({
             )}
           </div>
         ) : (
-          <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-400">
+          <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-gray-200 text-gray-500">
             Not reviewed
           </span>
         )}
       </td>
 
-      {/* Status */}
+      {/* Status — pill badge */}
       <td className="px-3 py-2.5 whitespace-nowrap">
-        <span className={`text-[10px] font-semibold uppercase tracking-wide ${
-          isClosed ? "text-gray-400" :
-          insp.status?.toLowerCase() === "in_review" ? "text-blue-500" :
-          "text-emerald-500"
+        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+          isClosed                                   ? "bg-gray-100 text-gray-500" :
+          insp.status?.toLowerCase() === "in_review" ? "bg-amber-100 text-amber-700" :
+                                                       "bg-green-100 text-green-700"
         }`}>
           {insp.status ?? "—"}
         </span>
@@ -1519,15 +1523,15 @@ function InspectionPanel({
     <div className="flex flex-col h-full">
 
       {/* Panel header */}
-      <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+      <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100 shrink-0 bg-[#1F3864]">
         <div className="min-w-0 flex-1 pr-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">ITP Detail</p>
-          <h3 className="text-sm font-bold text-gray-900 leading-snug">{insp.name}</h3>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50 mb-0.5">ITP Detail</p>
+          <h3 className="text-sm font-bold text-white leading-snug">{insp.name}</h3>
           {insp.inspection_number_of_type != null && (
-            <p className="text-xs text-gray-400 mt-0.5">Inspection #{insp.inspection_number_of_type}</p>
+            <p className="text-xs text-white/50 mt-0.5">Inspection #{insp.inspection_number_of_type}</p>
           )}
         </div>
-        <button onClick={onClose} className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded">✕</button>
+        <button onClick={onClose} className="shrink-0 text-white/50 hover:text-white p-1 rounded transition-colors">✕</button>
       </div>
 
       {/* Scrollable body */}
@@ -1587,7 +1591,7 @@ function InspectionPanel({
         {/* D1–D5 breakdown */}
         {rd?.score_breakdown?.category_scores && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Score breakdown</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-3">Score breakdown</p>
             <div className="space-y-3">
               {([
                 ["D1", "Engineer & inspector verification", rd.score_breakdown.category_scores.D1_engineer_verification],
@@ -1625,7 +1629,7 @@ function InspectionPanel({
         {/* Top 3 missing evidence */}
         {rd?.missing_evidence && rd.missing_evidence.length > 0 && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Missing evidence</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-2">Missing evidence</p>
             <div className="space-y-2">
               {rd.missing_evidence.slice(0, 3).map((item, i) => (
                 <div key={i} className="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
@@ -1643,7 +1647,7 @@ function InspectionPanel({
             type="button"
             onClick={onRunReview}
             disabled={reviewRunning}
-            className="flex-1 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 rounded-lg bg-[#1F3864] px-3 py-2.5 text-xs font-semibold text-white hover:bg-[#253f77] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {reviewRunning ? (
               <span className="flex items-center justify-center gap-2">
@@ -1655,7 +1659,7 @@ function InspectionPanel({
             <button
               type="button"
               onClick={onViewFullReport}
-              className="flex-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+              className="flex-1 rounded-lg border border-[#1F3864]/30 bg-[#1F3864]/5 px-3 py-2.5 text-xs font-semibold text-[#1F3864] hover:bg-[#1F3864]/10 transition-colors"
             >
               View Full Report
             </button>
@@ -1670,7 +1674,7 @@ function InspectionPanel({
 
         {/* ── Human Override ── */}
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-3">
             Human Override
           </p>
 
@@ -1725,7 +1729,7 @@ function InspectionPanel({
                 type="button"
                 onClick={onSaveOverride}
                 disabled={overrideSaving || !overrideScore}
-                className="w-full rounded-lg bg-purple-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                className="w-full rounded-lg bg-amber-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
                 {overrideSaving ? "Saving…" : "Save Override"}
               </button>
