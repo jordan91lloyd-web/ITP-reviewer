@@ -1,9 +1,11 @@
 "use client";
 
 // ─── Audit Log Viewer ─────────────────────────────────────────────────────────
-// Displays a filterable, paginated list of audit events for the selected company.
+// Filterable, paginated audit event log with project/user/action/date filters,
+// summary stats, and CSV export.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { AuditLogRow } from "@/lib/audit";
 
@@ -43,14 +45,30 @@ const ACTION_LABEL: Record<string, string> = {
   logout:                "Logout",
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-interface Company { id: number; name: string }
+interface Company  { id: number; name: string }
+interface Project  { id: number; name: string; display_name?: string | null }
+interface AuditUser { user_id: string; user_name: string }
+interface AuditStats {
+  total_reviews:    number;
+  total_overrides:  number;
+  last_activity:    string | null;
+  most_active_user: string | null;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmtDateTime(iso: string): string {
   return new Date(iso).toLocaleString("en-AU", {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
+  });
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-AU", {
+    day: "2-digit", month: "short", year: "numeric",
   });
 }
 
@@ -76,28 +94,46 @@ function detailsSummary(row: AuditLogRow): string {
   return "";
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────────
+// ── Inner page (needs useSearchParams — must be inside Suspense) ───────────────
 
-export default function AuditPage() {
-  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [companies, setCompanies]         = useState<Company[]>([]);
+function AuditPageInner() {
+  const searchParams = useSearchParams();
+
+  // Auth + company
+  const [authenticated, setAuthenticated]     = useState<boolean | null>(null);
+  const [companies, setCompanies]             = useState<Company[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
+  // Projects + users for filter dropdowns
+  const [projects, setProjects]   = useState<Project[]>([]);
+  const [auditUsers, setAuditUsers] = useState<AuditUser[]>([]);
+
+  // Events
   const [events, setEvents]         = useState<AuditLogRow[]>([]);
   const [total, setTotal]           = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
 
-  // Filters
-  const [actionFilter, setActionFilter] = useState("");
-  const [fromDate, setFromDate]         = useState("");
-  const [toDate, setToDate]             = useState("");
-  const [page, setPage]                 = useState(1);
+  // Summary stats (shown when projectFilter is active)
+  const [stats, setStats]           = useState<AuditStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  // Export
+  const [exportLoading, setExportLoading] = useState(false);
+
+  // Filters — initialise project filter from URL params
+  const [actionFilter,  setActionFilter]  = useState("");
+  const [projectFilter, setProjectFilter] = useState(searchParams.get("project_id")   ?? "");
+  const [projectName,   setProjectName]   = useState(searchParams.get("project_name") ?? "");
+  const [userFilter,    setUserFilter]    = useState("");
+  const [fromDate,      setFromDate]      = useState("");
+  const [toDate,        setToDate]        = useState("");
+  const [page,          setPage]          = useState(1);
 
   const LIMIT = 50;
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // ── Auth + bootstrap ────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -120,7 +156,40 @@ export default function AuditPage() {
       .catch(() => setAuthenticated(false));
   }, []);
 
-  // ── Fetch events ──────────────────────────────────────────────────────────
+  // ── Load projects + users when company selected ─────────────────────────────
+
+  useEffect(() => {
+    if (!selectedCompany) return;
+
+    // Projects
+    fetch(`/api/dashboard/projects?company_id=${selectedCompany.id}`)
+      .then(r => r.json())
+      .then(d => setProjects(d.projects ?? []))
+      .catch(() => {});
+
+    // Distinct audit users
+    fetch(`/api/audit/users?company_id=${selectedCompany.id}`)
+      .then(r => r.json())
+      .then(d => setAuditUsers(d.users ?? []))
+      .catch(() => {});
+  }, [selectedCompany]);
+
+  // ── Load summary stats when project filter changes ──────────────────────────
+
+  useEffect(() => {
+    if (!selectedCompany || !projectFilter) {
+      setStats(null);
+      return;
+    }
+    setStatsLoading(true);
+    fetch(`/api/audit/stats?company_id=${selectedCompany.id}&project_id=${projectFilter}`)
+      .then(r => r.json())
+      .then(d => setStats(d))
+      .catch(() => setStats(null))
+      .finally(() => setStatsLoading(false));
+  }, [selectedCompany, projectFilter]);
+
+  // ── Fetch events ─────────────────────────────────────────────────────────────
 
   const fetchEvents = useCallback(async () => {
     if (!selectedCompany) return;
@@ -132,9 +201,11 @@ export default function AuditPage() {
         page:       String(page),
         limit:      String(LIMIT),
       });
-      if (actionFilter) params.set("action", actionFilter);
-      if (fromDate)     params.set("from",   fromDate);
-      if (toDate)       params.set("to",     toDate);
+      if (actionFilter)  params.set("action",     actionFilter);
+      if (projectFilter) params.set("project_id", projectFilter);
+      if (userFilter)    params.set("user_name",  userFilter);
+      if (fromDate)      params.set("from",        fromDate);
+      if (toDate)        params.set("to",          toDate);
 
       const res  = await fetch(`/api/audit?${params}`);
       const data = await res.json();
@@ -147,14 +218,58 @@ export default function AuditPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCompany, page, actionFilter, fromDate, toDate]);
+  }, [selectedCompany, page, actionFilter, projectFilter, userFilter, fromDate, toDate]);
 
   useEffect(() => { void fetchEvents(); }, [fetchEvents]);
 
-  // Reset to page 1 when filters change
-  function applyFilter() { setPage(1); }
+  // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  // ── Not authenticated ─────────────────────────────────────────────────────
+  function resetPage() { setPage(1); }
+
+  function clearAllFilters() {
+    setActionFilter("");
+    setProjectFilter("");
+    setProjectName("");
+    setUserFilter("");
+    setFromDate("");
+    setToDate("");
+    setPage(1);
+  }
+
+  const hasFilters = !!(actionFilter || projectFilter || userFilter || fromDate || toDate);
+
+  function buildExportUrl(): string {
+    if (!selectedCompany) return "";
+    const params = new URLSearchParams({ company_id: String(selectedCompany.id) });
+    if (actionFilter)  params.set("action",     actionFilter);
+    if (projectFilter) params.set("project_id", projectFilter);
+    if (userFilter)    params.set("user_name",  userFilter);
+    if (fromDate)      params.set("from",        fromDate);
+    if (toDate)        params.set("to",          toDate);
+    return `/api/audit/export?${params}`;
+  }
+
+  async function handleExport() {
+    if (!selectedCompany) return;
+    setExportLoading(true);
+    try {
+      const res = await fetch(buildExportUrl());
+      if (!res.ok) throw new Error("Export failed");
+      const blob     = await res.blob();
+      const url      = URL.createObjectURL(blob);
+      const a        = document.createElement("a");
+      a.href         = url;
+      a.download     = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Non-critical — just stop spinner
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  // ── Auth gates ───────────────────────────────────────────────────────────────
 
   if (authenticated === false) {
     return (
@@ -176,7 +291,7 @@ export default function AuditPage() {
     );
   }
 
-  // ── Page ──────────────────────────────────────────────────────────────────
+  // ── Page ──────────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
@@ -192,6 +307,12 @@ export default function AuditPage() {
             <span className="text-yellow-400">Fleek Constructions</span>
             <span className="ml-2 font-normal text-gray-500">Audit Log</span>
           </h1>
+          {projectName && (
+            <>
+              <span className="text-gray-200">|</span>
+              <span className="text-xs text-gray-500 font-medium">{projectName}</span>
+            </>
+          )}
         </div>
         {companies.length > 1 && (
           <select
@@ -220,60 +341,146 @@ export default function AuditPage() {
         ) : (
           <div className="max-w-7xl mx-auto px-6 py-6">
 
-            {/* Filters */}
-            <div className="flex flex-wrap items-end gap-3 mb-5">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Action</label>
-                <select
-                  value={actionFilter}
-                  onChange={e => { setActionFilter(e.target.value); applyFilter(); }}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  {ACTION_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={e => { setFromDate(e.target.value); applyFilter(); }}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
-                <input
-                  type="date"
-                  value={toDate}
-                  onChange={e => { setToDate(e.target.value); applyFilter(); }}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-              </div>
-              {(actionFilter || fromDate || toDate) && (
-                <button
-                  type="button"
-                  onClick={() => { setActionFilter(""); setFromDate(""); setToDate(""); applyFilter(); }}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
-              <div className="ml-auto text-xs text-gray-400">
-                {loading ? "Loading…" : `${total.toLocaleString()} event${total !== 1 ? "s" : ""}`}
+            {/* ── Filters ── */}
+            <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 mb-5 shadow-sm">
+              <div className="flex flex-wrap items-end gap-3">
+
+                {/* Project */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Project</label>
+                  <select
+                    value={projectFilter}
+                    onChange={e => {
+                      const pid = e.target.value;
+                      const p   = projects.find(x => String(x.id) === pid);
+                      setProjectFilter(pid);
+                      setProjectName(pid ? (p?.display_name || p?.name || "") : "");
+                      resetPage();
+                    }}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 max-w-[200px]"
+                  >
+                    <option value="">All projects</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={String(p.id)}>
+                        {p.display_name || p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* User */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">User</label>
+                  <select
+                    value={userFilter}
+                    onChange={e => { setUserFilter(e.target.value); resetPage(); }}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 max-w-[180px]"
+                  >
+                    <option value="">All users</option>
+                    {auditUsers.map(u => (
+                      <option key={u.user_id} value={u.user_name}>{u.user_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Action */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Action</label>
+                  <select
+                    value={actionFilter}
+                    onChange={e => { setActionFilter(e.target.value); resetPage(); }}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    {ACTION_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* From */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={e => { setFromDate(e.target.value); resetPage(); }}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+
+                {/* To */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={e => { setToDate(e.target.value); resetPage(); }}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+
+                {/* Clear */}
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 transition-colors self-end"
+                  >
+                    Clear filters
+                  </button>
+                )}
+
+                {/* Spacer + count + export */}
+                <div className="ml-auto flex items-end gap-3">
+                  <span className="text-xs text-gray-400 pb-1.5">
+                    {loading ? "Loading…" : `${total.toLocaleString()} event${total !== 1 ? "s" : ""}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={exportLoading || total === 0}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                  >
+                    {exportLoading ? <Spinner /> : "↓"} Export CSV
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Error */}
+            {/* ── Summary stats bar (shown when project is filtered) ── */}
+            {projectFilter && (
+              <div className={`rounded-xl border border-gray-100 bg-white px-5 py-3 mb-5 shadow-sm grid grid-cols-4 gap-4 ${statsLoading ? "opacity-60" : ""}`}>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Reviews run</p>
+                  <p className="text-xl font-bold text-gray-900">{stats?.total_reviews ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Score overrides</p>
+                  <p className="text-xl font-bold text-gray-900">{stats?.total_overrides ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Last activity</p>
+                  <p className="text-sm font-semibold text-gray-700">
+                    {stats?.last_activity ? fmtDate(stats.last_activity) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Most active user</p>
+                  <p className="text-sm font-semibold text-gray-700 truncate">
+                    {stats?.most_active_user ?? "—"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Error ── */}
             {error && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
                 {error}
               </div>
             )}
 
-            {/* Table */}
+            {/* ── Table ── */}
             <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
               {loading && events.length === 0 ? (
                 <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400">
@@ -287,7 +494,7 @@ export default function AuditPage() {
                     <tr className="border-b border-gray-100 bg-gray-50">
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-4 py-2.5 w-40">Date / Time</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-36">User</th>
-                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-40">Action</th>
+                      <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-36">Action</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5">ITP / Entity</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5 w-40">Project</th>
                       <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2.5">Details</th>
@@ -332,7 +539,7 @@ export default function AuditPage() {
               )}
             </div>
 
-            {/* Pagination */}
+            {/* ── Pagination ── */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-4">
                 <button
@@ -364,11 +571,29 @@ export default function AuditPage() {
   );
 }
 
+// ── Spinner ────────────────────────────────────────────────────────────────────
+
 function Spinner() {
   return (
     <svg className="animate-spin h-4 w-4 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
     </svg>
+  );
+}
+
+// ── Export (wraps inner in Suspense for useSearchParams) ───────────────────────
+
+export default function AuditPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Spinner />
+        </div>
+      }
+    >
+      <AuditPageInner />
+    </Suspense>
   );
 }

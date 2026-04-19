@@ -1246,10 +1246,11 @@ function ProjectRow({
   onClick: () => void;
 }) {
   return (
+    <div className="relative border-b border-gray-50">
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left px-4 py-3 border-b border-gray-50 transition-colors ${
+      className={`w-full text-left px-4 py-3 transition-colors pr-14 ${
         selected ? "bg-blue-50 border-l-2 border-l-blue-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"
       }`}
     >
@@ -1297,6 +1298,14 @@ function ProjectRow({
         )}
       </div>
     </button>
+    <Link
+      href={`/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`}
+      onClick={e => e.stopPropagation()}
+      className="absolute top-2 right-2 text-[10px] text-gray-300 hover:text-blue-500 transition-colors px-1 py-0.5 rounded"
+    >
+      Audit
+    </Link>
+    </div>
   );
 }
 

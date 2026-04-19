@@ -4,6 +4,8 @@
 // Query params:
 //   company_id  — required
 //   action      — optional filter e.g. "review_run"
+//   project_id  — optional Procore project ID filter
+//   user_name   — optional exact user_name filter
 //   from        — optional ISO date string (inclusive)
 //   to          — optional ISO date string (inclusive, treated as end-of-day)
 //   page        — 1-based page number (default 1)
@@ -30,12 +32,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id is required." }, { status: 400 });
   }
 
-  const action   = sp.get("action")  ?? null;
-  const from     = sp.get("from")    ?? null;
-  const to       = sp.get("to")      ?? null;
-  const page     = Math.max(1, parseInt(sp.get("page")  ?? "1",  10));
-  const limit    = Math.min(100, Math.max(1, parseInt(sp.get("limit") ?? "50", 10)));
-  const offset   = (page - 1) * limit;
+  const action     = sp.get("action")     ?? null;
+  const project_id = sp.get("project_id") ?? null;
+  const user_name  = sp.get("user_name")  ?? null;
+  const from       = sp.get("from")       ?? null;
+  const to         = sp.get("to")         ?? null;
+  const page       = Math.max(1, parseInt(sp.get("page")  ?? "1",  10));
+  const limit      = Math.min(100, Math.max(1, parseInt(sp.get("limit") ?? "50", 10)));
+  const offset     = (page - 1) * limit;
 
   let query = supabase
     .from("audit_log")
@@ -44,8 +48,10 @@ export async function GET(request: NextRequest) {
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (action) query = query.eq("action", action);
-  if (from)   query = query.gte("created_at", from);
+  if (action)     query = query.eq("action",     action);
+  if (project_id) query = query.eq("project_id", project_id);
+  if (user_name)  query = query.eq("user_name",  user_name);
+  if (from)       query = query.gte("created_at", from);
   if (to) {
     // Treat "to" as end-of-day by appending T23:59:59Z if no time component
     const toEnd = to.includes("T") ? to : `${to}T23:59:59Z`;
