@@ -73,21 +73,21 @@ function RatingBadge({ band, score, label, description }: {
 
 // ── Scoring document download button ──────────────────────────────────────────
 
-function ScoringDocDownload({ isAuthenticated }: { isAuthenticated: boolean }) {
+function ScoringDocDownload() {
   const [storageUrl, setStorageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]       = useState(true);
+  const [isAdmin, setIsAdmin]       = useState(false);
 
   useEffect(() => {
-    fetch("/api/documents")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        const doc = (data?.documents ?? []).find((d: { name: string; url: string }) =>
-          d.name.toLowerCase().includes("scoring")
-        );
-        if (doc) setStorageUrl(doc.url);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    // Fetch document URL and admin status in parallel
+    Promise.all([
+      fetch("/api/documents").then(r => r.ok ? r.json() : null),
+      fetch("/api/admin/check").then(r => r.ok ? r.json() : null),
+    ]).then(([docData, adminData]) => {
+      const doc = (docData?.documents ?? []).find((d: { url: string }) => d.url);
+      if (doc) setStorageUrl(doc.url);
+      setIsAdmin(!!adminData?.isAdmin);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const downloadUrl = storageUrl ?? "/documents/ITP-QA-Scoring-Guidelines-v1.0.docx";
@@ -113,7 +113,7 @@ function ScoringDocDownload({ isAuthenticated }: { isAuthenticated: boolean }) {
           This document is updated periodically. The version above reflects the current
           scoring methodology used by the tool.
         </p>
-        {isAuthenticated && (
+        {isAdmin && (
           <p className="mt-2">
             <Link href="/admin/documents" className="text-[#1F3864] hover:underline font-medium">
               Update scoring document →
@@ -130,15 +130,7 @@ function ScoringDocDownload({ isAuthenticated }: { isAuthenticated: boolean }) {
 export default function HowItWorksPage() {
   const [activeSection, setActiveSection] = useState("what-is-it");
   const [tocOpen, setTocOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.authenticated) setIsAuthenticated(true); })
-      .catch(() => {});
-  }, []);
 
   // Intersection observer for active section tracking
   useEffect(() => {
@@ -678,7 +670,7 @@ export default function HowItWorksPage() {
             <section id="reference-doc" className="scroll-mt-6">
               <Card>
                 <SectionHeading>Scoring Reference Document</SectionHeading>
-                <ScoringDocDownload isAuthenticated={isAuthenticated} />
+                <ScoringDocDownload />
               </Card>
             </section>
 

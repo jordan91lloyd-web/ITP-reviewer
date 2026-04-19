@@ -15,14 +15,15 @@ const supabase = createClient(
 // ── Action constants ───────────────────────────────────────────────────────────
 
 export const AUDIT_ACTIONS = {
-  REVIEW_RUN:              "review_run",
-  REVIEW_FAILED:           "review_failed",
-  SCORE_OVERRIDE:          "score_override",
-  PDF_EXPORTED:            "pdf_exported",
-  BULK_REVIEW_STARTED:     "bulk_review_started",
-  BULK_REVIEW_COMPLETED:   "bulk_review_completed",
-  LOGIN:                   "login",
-  LOGOUT:                  "logout",
+  REVIEW_RUN:                  "review_run",
+  REVIEW_FAILED:               "review_failed",
+  SCORE_OVERRIDE:              "score_override",
+  PDF_EXPORTED:                "pdf_exported",
+  BULK_REVIEW_STARTED:         "bulk_review_started",
+  BULK_REVIEW_COMPLETED:       "bulk_review_completed",
+  LOGIN:                       "login",
+  LOGOUT:                      "logout",
+  SCORING_DOCUMENT_UPDATED:    "scoring_document_updated",
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTIONS[keyof typeof AUDIT_ACTIONS];

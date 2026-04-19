@@ -1,7 +1,8 @@
 // ─── GET /api/documents ───────────────────────────────────────────────────────
-// Lists available documents in the Supabase Storage "documents" bucket.
-// Returns each file with its name, size, last_modified, and a public download URL.
-// Falls back gracefully if Storage is not configured.
+// Returns the company-specific scoring document from Supabase Storage.
+// Storage path: {company_id}/scoring-guidelines.docx
+// Falls back gracefully to { documents: [], configured: false } if Storage
+// is not configured, so the How it Works page can fall back to the static file.
 
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -15,8 +16,9 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey    = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const companyId   = process.env.FLEEK_COMPANY_ID ?? "default";
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ documents: [], configured: false });
@@ -24,29 +26,33 @@ export async function GET() {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const { data, error } = await supabase.storage.from(BUCKET).list("", {
-      limit: 100,
-      sortBy: { column: "updated_at", order: "desc" },
-    });
+    const storagePath = `${companyId}/scoring-guidelines.docx`;
 
-    if (error) {
-      console.error("[documents] Storage list error:", error.message);
-      return NextResponse.json({ documents: [], configured: true, error: error.message });
+    // Check whether the company-specific file exists
+    const { data: listData } = await supabase.storage
+      .from(BUCKET)
+      .list(companyId, { limit: 10 });
+
+    const file = (listData ?? []).find(f => f.name === "scoring-guidelines.docx");
+
+    if (!file) {
+      // No company-specific file yet — return empty so client uses static fallback
+      return NextResponse.json({ documents: [], configured: true, company_id: companyId });
     }
 
-    const documents = (data ?? [])
-      .filter(f => f.name !== ".emptyFolderPlaceholder")
-      .map(f => {
-        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(f.name);
-        return {
-          name:          f.name,
-          size:          f.metadata?.size ?? null,
-          last_modified: f.updated_at ?? f.created_at ?? null,
-          url:           urlData.publicUrl,
-        };
-      });
+    const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
 
-    return NextResponse.json({ documents, configured: true });
+    return NextResponse.json({
+      documents: [{
+        name:          file.name,
+        path:          storagePath,
+        size:          file.metadata?.size ?? null,
+        last_modified: file.updated_at ?? file.created_at ?? null,
+        url:           urlData.publicUrl,
+      }],
+      configured: true,
+      company_id: companyId,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ documents: [], configured: false, error: msg });
