@@ -55,11 +55,11 @@ function scoreBandLabel(band: string): string {
 
 function scorePillClasses(band: string): string {
   return ({
-    compliant:         "bg-green-600 text-white",
-    minor_gaps:        "bg-amber-500 text-white",
-    significant_gaps:  "bg-orange-500 text-white",
-    critical_risk:     "bg-red-600 text-white",
-  } as Record<string, string>)[band] ?? "bg-gray-200 text-gray-500";
+    compliant:         "bg-green-50 text-green-700 border border-green-200",
+    minor_gaps:        "bg-amber-50 text-amber-700 border border-amber-200",
+    significant_gaps:  "bg-orange-50 text-orange-700 border border-orange-200",
+    critical_risk:     "bg-red-50 text-red-700 border border-red-200",
+  } as Record<string, string>)[band] ?? "bg-gray-50 text-gray-500 border border-gray-200";
 }
 
 // Fleek brand: all D1-D5 bars use amber (#D97706 = amber-600)
@@ -753,23 +753,22 @@ export default function DashboardPage() {
 
   if (authenticated === false) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+      <div className="flex-1 bg-[#F9FAFB] flex flex-col items-center justify-center gap-4 py-24">
         <p className="text-sm text-gray-600">Connect to Procore to use the dashboard.</p>
         <a
           href="/api/auth/login"
-          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          className="rounded-lg bg-[#1F3864] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#253f77] transition-colors"
         >
           Connect to Procore
         </a>
-        <Link href="/" className="text-xs text-gray-400 hover:underline">← Back to reviews</Link>
       </div>
     );
   }
 
   if (authenticated === null) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Spinner className="h-6 w-6 text-blue-400" />
+      <div className="flex-1 bg-[#F9FAFB] flex items-center justify-center py-24">
+        <Spinner className="h-6 w-6 text-gray-400" />
       </div>
     );
   }
@@ -778,7 +777,7 @@ export default function DashboardPage() {
 
   if (fullReportInsp?.review_data) {
     return (
-      <div className="min-h-screen bg-white overflow-y-auto">
+      <div className="bg-white overflow-y-auto min-h-full">
         <div className="sticky top-0 z-10 flex items-center justify-between bg-white border-b border-gray-200 px-6 py-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
             Full Report — {fullReportInsp.name}
@@ -802,53 +801,39 @@ export default function DashboardPage() {
   const selectedCount = selectedIds.size;
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
-
-      {/* ── Header ── */}
-      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3 shrink-0 z-10">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-            ← Back to reviews
-          </Link>
-          <span className="text-gray-200">|</span>
-          <h1 className="text-sm font-bold text-gray-900">
-            <span className="text-yellow-400">Fleek Constructions</span>
-            <span className="ml-2 font-normal text-gray-500">ITP Dashboard</span>
-          </h1>
-          <span className="text-gray-200">|</span>
-          <Link href="/audit" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-            Audit Log
-          </Link>
-          <span className="text-gray-200">|</span>
-          <Link href="/how-it-works" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-            How it Works
-          </Link>
-        </div>
-        {companies.length > 1 && (
-          <select
-            value={selectedCompany?.id ?? ""}
-            onChange={e => {
-              const c = companies.find(x => x.id === Number(e.target.value));
-              if (c) setSelectedCompany(c);
-            }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <option value="">— Select company —</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        )}
-        {companies.length === 1 && selectedCompany && (
-          <span className="text-xs text-gray-500">{selectedCompany.name}</span>
-        )}
-      </header>
+    <div className="flex h-full flex-col bg-[#F9FAFB] overflow-hidden">
 
       {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left: project list ── */}
-        <aside className="w-64 shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Projects</p>
+        <aside className="w-64 shrink-0 border-r border-gray-200 bg-white overflow-y-auto flex flex-col">
+          {/* Company selector */}
+          <div className="px-4 py-3 border-b border-gray-100 shrink-0">
+            {companies.length > 1 ? (
+              <select
+                value={selectedCompany?.id ?? ""}
+                onChange={e => {
+                  const c = companies.find(x => x.id === Number(e.target.value));
+                  if (c) setSelectedCompany(c);
+                }}
+                className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="">— Select company —</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            ) : selectedCompany ? (
+              <p className="text-xs font-semibold text-[#1F3864] truncate">{selectedCompany.name}</p>
+            ) : (
+              <p className="text-xs text-gray-400 italic">Loading…</p>
+            )}
+          </div>
+          {/* Projects label + audit link */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 shrink-0">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Projects</p>
+            <Link href="/audit" className="text-[10px] text-gray-400 hover:text-[#1F3864] transition-colors font-medium">
+              Audit Log
+            </Link>
           </div>
           {!selectedCompany && (
             <p className="px-4 py-6 text-xs text-gray-400 italic">Select a company to load projects.</p>
@@ -1010,16 +995,16 @@ export default function DashboardPage() {
                         const someGroupSel   = !allGroupSel && groupIds.some(id => selectedIds.has(id));
 
                         return [
-                          // Group header row — Fleek navy
+                          // Group header row — light gray
                           <tr
                             key={`group-${groupName}`}
-                            className="bg-[#1F3864] border-t border-[#253f77] select-none"
+                            className="bg-[#F3F4F6] border-t border-gray-200 select-none"
                           >
                             {/* Collapse arrow + group checkbox */}
                             <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                               <div className="flex items-center gap-2">
                                 <span
-                                  className={`text-white/60 text-[10px] transition-transform duration-150 cursor-pointer shrink-0 ${isCollapsed ? "" : "rotate-90"}`}
+                                  className={`text-gray-500 text-[10px] transition-transform duration-150 cursor-pointer shrink-0 ${isCollapsed ? "" : "rotate-90"}`}
                                   onClick={() => toggleGroup(groupName)}
                                 >▶</span>
                                 <input
@@ -1028,19 +1013,19 @@ export default function DashboardPage() {
                                   ref={el => { if (el) el.indeterminate = someGroupSel; }}
                                   onChange={() => toggleSelectGroup(group)}
                                   disabled={bulkRunning}
-                                  className="h-3.5 w-3.5 rounded border-white/40 text-amber-500 focus:ring-amber-400 cursor-pointer disabled:cursor-not-allowed shrink-0 accent-amber-400"
+                                  className="h-3.5 w-3.5 rounded border-gray-400 text-amber-600 focus:ring-amber-500 cursor-pointer disabled:cursor-not-allowed shrink-0 accent-amber-600"
                                 />
                               </div>
                             </td>
                             <td
                               colSpan={7}
-                              className="px-3 py-2.5 cursor-pointer hover:bg-[#253f77] transition-colors"
+                              className="px-3 py-2.5 cursor-pointer hover:bg-gray-200 transition-colors"
                               onClick={() => toggleGroup(groupName)}
                             >
                               <div className="flex items-center gap-2.5">
-                                <span className={`h-3 w-3 rounded-full shrink-0 ring-1 ring-white/20 ${groupIndicatorClasses(worst)}`} />
-                                <span className="text-sm font-bold text-white leading-snug">{groupName}</span>
-                                <span className="text-[10px] text-white/50 font-normal ml-1">
+                                <span className={`h-3 w-3 rounded-full shrink-0 ring-1 ring-gray-300 ${groupIndicatorClasses(worst)}`} />
+                                <span className="text-sm font-bold text-[#1F3864] leading-snug">{groupName}</span>
+                                <span className="text-[10px] text-gray-500 font-normal ml-1">
                                   {reviewedInGroup}/{group.length} reviewed
                                 </span>
                               </div>
@@ -1523,15 +1508,15 @@ function InspectionPanel({
     <div className="flex flex-col h-full">
 
       {/* Panel header */}
-      <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100 shrink-0 bg-[#1F3864]">
+      <div className="flex items-start justify-between px-5 py-4 border-b border-gray-200 shrink-0 bg-white">
         <div className="min-w-0 flex-1 pr-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50 mb-0.5">ITP Detail</p>
-          <h3 className="text-sm font-bold text-white leading-snug">{insp.name}</h3>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">ITP Detail</p>
+          <h3 className="text-sm font-bold text-[#1F3864] leading-snug">{insp.name}</h3>
           {insp.inspection_number_of_type != null && (
-            <p className="text-xs text-white/50 mt-0.5">Inspection #{insp.inspection_number_of_type}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Inspection #{insp.inspection_number_of_type}</p>
           )}
         </div>
-        <button onClick={onClose} className="shrink-0 text-white/50 hover:text-white p-1 rounded transition-colors">✕</button>
+        <button onClick={onClose} className="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded transition-colors">✕</button>
       </div>
 
       {/* Scrollable body */}

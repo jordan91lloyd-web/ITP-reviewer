@@ -79,7 +79,7 @@ function Step({
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full bg-[#F9FAFB]">
       {/* ── Page header ── */}
       <div className="bg-[#1F3864] text-white">
         <div className="mx-auto max-w-4xl px-6 py-10">

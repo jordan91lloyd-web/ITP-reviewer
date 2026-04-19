@@ -273,19 +273,18 @@ function AuditPageInner() {
 
   if (authenticated === false) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+      <div className="flex-1 bg-[#F9FAFB] flex flex-col items-center justify-center gap-4 py-24">
         <p className="text-sm text-gray-600">Connect to Procore to view the audit log.</p>
-        <a href="/api/auth/login" className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+        <a href="/api/auth/login" className="rounded-lg bg-[#1F3864] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#253f77] transition-colors">
           Connect to Procore
         </a>
-        <Link href="/" className="text-xs text-gray-400 hover:underline">← Back</Link>
       </div>
     );
   }
 
   if (authenticated === null) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex-1 bg-[#F9FAFB] flex items-center justify-center py-24">
         <Spinner />
       </div>
     );
@@ -294,23 +293,20 @@ function AuditPageInner() {
   // ── Page ──────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
+    <div className="flex h-full flex-col bg-[#F9FAFB] overflow-hidden">
 
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3 shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-            ← Back to dashboard
+      {/* Sub-header: breadcrumb + company selector */}
+      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3 shrink-0">
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <Link href="/dashboard" className="hover:text-[#1F3864] transition-colors font-medium">
+            Dashboard
           </Link>
-          <span className="text-gray-200">|</span>
-          <h1 className="text-sm font-bold text-gray-900">
-            <span className="text-yellow-400">Fleek Constructions</span>
-            <span className="ml-2 font-normal text-gray-500">Audit Log</span>
-          </h1>
+          <span className="text-gray-300">/</span>
+          <span className="font-semibold text-[#1F3864]">Audit Log</span>
           {projectName && (
             <>
-              <span className="text-gray-200">|</span>
-              <span className="text-xs text-gray-500 font-medium">{projectName}</span>
+              <span className="text-gray-300">/</span>
+              <span className="text-gray-600">{projectName}</span>
             </>
           )}
         </div>
@@ -321,16 +317,16 @@ function AuditPageInner() {
               const c = companies.find(x => x.id === Number(e.target.value));
               if (c) { setSelectedCompany(c); setPage(1); }
             }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
             <option value="">— Select company —</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         )}
         {companies.length === 1 && selectedCompany && (
-          <span className="text-xs text-gray-500">{selectedCompany.name}</span>
+          <span className="text-xs text-gray-500 font-medium">{selectedCompany.name}</span>
         )}
-      </header>
+      </div>
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto">
@@ -588,7 +584,7 @@ export default function AuditPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex-1 bg-[#F9FAFB] flex items-center justify-center py-24">
           <Spinner />
         </div>
       }

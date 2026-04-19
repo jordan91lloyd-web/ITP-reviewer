@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import GlobalNav from "@/components/GlobalNav";
 
 export const metadata: Metadata = {
-  title: "QA Report",
+  title: "ITP QA Reviewer — Fleek Constructions",
   description: "AI-powered QA review of construction inspection and ITP document bundles",
 };
 
@@ -13,8 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-100 text-gray-900 antialiased">
-        {children}
+      <body className="flex flex-col h-screen bg-[#F9FAFB] text-[#111827] antialiased">
+        <GlobalNav />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {children}
+        </div>
       </body>
     </html>
   );
