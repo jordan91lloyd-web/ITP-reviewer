@@ -38,6 +38,8 @@ export async function runBundleReview(
   filesRaw: ProcessedFile[],
   company_id: string = "default"
 ): Promise<ReviewResult & { scoring_source: string; scoring_version_id: string | null; scoring_version_label: string }> {
+  console.log(`[claude] ── runBundleReview called ── files=${filesRaw.length} company_id="${company_id}"`);
+
   // ── Pre-flight: strip any images that exceed Claude's 5 MB per-image limit.
   // base64.length * 0.75 ≈ raw bytes (base64 encodes 3 bytes as 4 chars).
   // This guard runs before any content block is built, so the 400 error is
