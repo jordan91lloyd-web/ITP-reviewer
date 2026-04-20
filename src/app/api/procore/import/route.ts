@@ -49,6 +49,8 @@ const SUPPORTED = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
+  console.log("[procore/import] POST handler called");
+
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("procore_access_token")?.value;
 
@@ -72,10 +74,36 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // ── Top-level safety net ───────────────────────────────────────────────────
+  // Any unhandled throw below (e.g. resolveAuditUser, appendRecord, Supabase)
+  // is caught here so Next.js always returns a JSON body instead of an empty
+  // response that causes "Unexpected end of JSON input" in the browser.
+  try {
+    return await runImport(request, accessToken, project_id, inspection_id, company_id);
+  } catch (err: unknown) {
+    const msg   = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? (err.stack ?? "") : "";
+    console.error("[procore/import] ⚠ UNHANDLED ERROR — POST handler caught top-level exception:");
+    console.error("[procore/import] Error:", msg);
+    console.error("[procore/import] Stack:", stack);
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  }
+}
+
+// ── Main import logic (extracted so the top-level try/catch stays clean) ──────
+async function runImport(
+  _request: NextRequest,
+  accessToken: string,
+  project_id: number,
+  inspection_id: number,
+  company_id: number
+): Promise<NextResponse> {
   // Resolve audit user identity once — reused at every log point below
+  console.log("[procore/import] Step 1: resolving audit user");
   const auditUser = await resolveAuditUser(accessToken);
 
   // ── 1. Fetch inspection detail (view=extended) ─────────────────────────────
+  console.log(`[procore/import] Step 2: fetching inspection detail (id=${inspection_id}, project=${project_id})`);
   let inspection: ProcoreInspection;
   try {
     inspection = await getInspectionDetail(accessToken, project_id, inspection_id, company_id);
@@ -305,6 +333,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  console.log(`[procore/import] Step 5: downloading files — PDFs: ${pdfRefs.length}, images: ${imageRefs.length}`);
+
   let totalBytes = 0;
   let droppedForSize = 0;
 
@@ -414,9 +444,10 @@ export async function POST(request: NextRequest) {
 
   // ── 6. Run QA review ───────────────────────────────────────────────────────
   console.log(
-    `[procore/import] Running review on ${processedFiles.length} file(s) ` +
-    `(${skippedFiles.length} skipped)`
+    `[procore/import] Files downloaded — total size: ${(totalBytes / 1024 / 1024).toFixed(1)} MB, ` +
+    `processedFiles: ${processedFiles.length}, skipped: ${skippedFiles.length}`
   );
+  console.log(`[procore/import] Step 6: calling runBundleReview`);
 
   let reviewResult;
   try {
