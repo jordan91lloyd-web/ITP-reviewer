@@ -280,101 +280,63 @@ export async function POST(request: NextRequest) {
   // Claude's API request size limit is ~32 MB total including base64
   // overhead (~33% bigger than raw bytes). We cap raw attachment bytes at
   // 20 MB so the whole request (text + ~27 MB of base64) stays under the
-  // limit with comfortable headroom. PDFs are prioritised first because
-  // they're almost always the critical evidence (engineer sign-offs,
-  // compaction reports, form data), while item photos are high-count but
-  // often redundant — if we have to drop something, drop photos not PDFs.
+  // limit with comfortable headroom. PDFs are processed first (critical
+  // evidence). Images are downloaded separately, sorted smallest-first
+  // (small files are more likely to be document photos than site photos),
+  // and capped at 10 per review.
   const MAX_ATTACHMENT_BYTES_TOTAL = 20 * 1024 * 1024; // 20 MB combined
-  // Images are capped at 4 MB — safely under Claude's 5 MB hard limit and
-  // small enough to filter out large site photos while keeping document
-  // photos (test certificates, signed reports). PDFs have no per-file cap
-  // other than the generous 15 MB limit below.
   const MAX_IMAGE_BYTES  = 4 * 1024 * 1024;  //  4 MB — size filter for Procore images
   const MAX_PDF_BYTES    = 15 * 1024 * 1024; // 15 MB — generous PDF cap
+  const MAX_IMAGES       = 10;               // max images per review
 
-  // Sort PDFs first so they always get included before images for the budget.
-  const prioritisedRefs = [...uniqueAttachmentRefs].sort((a, b) => {
-    const aIsPdf = normaliseMime(a.content_type, a.filename) === "application/pdf" ? 0 : 1;
-    const bIsPdf = normaliseMime(b.content_type, b.filename) === "application/pdf" ? 0 : 1;
-    return aIsPdf - bIsPdf;
-  });
-
-  let totalBytes = 0;
-  let droppedForSize = 0;
-
-  for (const ref of prioritisedRefs) {
+  // Split refs by type so PDFs and images can be processed separately.
+  const pdfRefs:   typeof uniqueAttachmentRefs = [];
+  const imageRefs: typeof uniqueAttachmentRefs = [];
+  for (const ref of uniqueAttachmentRefs) {
     const mime = normaliseMime(ref.content_type, ref.filename);
-
     if (!SUPPORTED.has(mime)) {
       const reason = mime ? `Unsupported type: ${mime}` : "Unknown file type";
       console.log(`[procore/import] Skipping "${ref.filename}" — ${reason}`);
       skippedFiles.push({ filename: ref.filename, reason });
-      continue;
+    } else if (mime === "application/pdf") {
+      pdfRefs.push(ref);
+    } else {
+      imageRefs.push(ref);
     }
+  }
 
+  let totalBytes = 0;
+  let droppedForSize = 0;
+
+  // ── Phase 1: PDFs — always included first, up to per-file and total caps ──
+  for (const ref of pdfRefs) {
     try {
       const { buffer, filename, contentType } = await downloadFile(ref.url, accessToken);
-      const effectiveMime = normaliseMime(contentType || mime, filename);
+      const effectiveMime = normaliseMime(contentType || "application/pdf", filename);
 
-      // Per-file cap — images over 4 MB are skipped (likely large site photos).
-      // PDFs have no per-file restriction but we still cap them at 15 MB to
-      // avoid one massive scan-PDF consuming the entire total budget.
-      const isPdf = effectiveMime === "application/pdf";
-      const perFileCap = isPdf ? MAX_PDF_BYTES : MAX_IMAGE_BYTES;
-      if (buffer.length > perFileCap) {
+      if (buffer.length > MAX_PDF_BYTES) {
         const sizeMb = parseFloat((buffer.length / 1024 / 1024).toFixed(1));
-        const capMb  = (perFileCap / 1024 / 1024).toFixed(0);
-        const reason = isPdf
-          ? `PDF too large (${sizeMb} MB — limit is ${capMb} MB)`
-          : `Image too large (${sizeMb}MB)`;
+        const reason = `PDF too large (${sizeMb} MB — limit is ${(MAX_PDF_BYTES / 1024 / 1024).toFixed(0)} MB)`;
         console.log(`[procore/import] Skipping "${filename}" — ${reason}`);
         skippedFiles.push({ filename, reason, size_mb: sizeMb });
         droppedForSize++;
         continue;
       }
-
-      // Total-budget cap — stop adding once we'd exceed the combined limit
       if (totalBytes + buffer.length > MAX_ATTACHMENT_BYTES_TOTAL) {
         const sizeMb = parseFloat((buffer.length / 1024 / 1024).toFixed(1));
-        console.log(
-          `[procore/import] Skipping "${filename}" — would exceed total budget ` +
-          `(${sizeMb} MB, running total ${(totalBytes / 1024 / 1024).toFixed(1)} MB)`
-        );
+        console.log(`[procore/import] Skipping "${filename}" — total budget reached`);
         skippedFiles.push({ filename, reason: "Total attachment budget reached", size_mb: sizeMb });
         droppedForSize++;
         continue;
       }
 
-      if (effectiveMime === "application/pdf") {
-        // Pass PDF natively to Claude. This is the critical change:
-        // pdf-parse used to strip PDFs to text and throw away embedded
-        // photos, signatures, and stamps — meaning engineer sign-offs
-        // were invisible to the reviewer. Claude's native PDF support
-        // sees every page visually, just like a human opening the file.
-        processedFiles.push({
-          kind: "pdf",
-          filename,
-          base64: buffer.toString("base64"),
-        });
-      } else {
-        // Image — the ProcessedFile type is constrained to image/jpeg or
-        // image/png. For .tif/.heic/.gif/.webp we label as jpeg so they
-        // still get sent to the vision model (Claude will decode common
-        // variants even if the label doesn't match exactly).
-        const mediaType: "image/jpeg" | "image/png" =
-          effectiveMime === "image/png" ? "image/png" : "image/jpeg";
-        processedFiles.push({
-          kind: "image",
-          filename,
-          base64: buffer.toString("base64"),
-          mediaType,
-        });
-      }
-
+      // Pass PDF natively so Claude sees all embedded photos, signatures, and
+      // stamps — not just extracted text.
+      processedFiles.push({ kind: "pdf", filename: effectiveMime === "application/pdf" ? filename : filename, base64: buffer.toString("base64") });
       totalBytes += buffer.length;
       importedFiles.push(filename);
       console.log(
-        `[procore/import] Downloaded: ${filename} (${(buffer.length / 1024).toFixed(0)} KB, ` +
+        `[procore/import] PDF: ${filename} (${(buffer.length / 1024).toFixed(0)} KB, ` +
         `total ${(totalBytes / 1024 / 1024).toFixed(1)} MB)`
       );
     } catch (err) {
@@ -382,6 +344,72 @@ export async function POST(request: NextRequest) {
       console.warn(`[procore/import] Download failed for "${ref.filename}": ${msg}`);
       skippedFiles.push({ filename: ref.filename, reason: `Download failed: ${msg}` });
     }
+  }
+
+  // ── Phase 2: Images — download all eligible, sort smallest-first, cap at 10 ──
+  // Smaller images are more likely to be document photos (test certificates,
+  // signed reports, compliance certs) than large site photos. We download all
+  // images under 4 MB, sort by actual byte size ascending, then include only
+  // the 10 smallest — maximising the chance of capturing certificate scans
+  // over bulk construction progress photos.
+  type DownloadedImage = { filename: string; buffer: Buffer; effectiveMime: string; sizeMb: number };
+  const downloadedImages: DownloadedImage[] = [];
+
+  for (const ref of imageRefs) {
+    try {
+      const { buffer, filename, contentType } = await downloadFile(ref.url, accessToken);
+      const mime = normaliseMime(ref.content_type, ref.filename);
+      const effectiveMime = normaliseMime(contentType || mime, filename);
+      const sizeMb = parseFloat((buffer.length / 1024 / 1024).toFixed(1));
+
+      if (buffer.length > MAX_IMAGE_BYTES) {
+        const reason = `Image too large (${sizeMb}MB) — download and attach as PDF for best results`;
+        console.log(`[procore/import] Skipping "${filename}" — ${reason}`);
+        skippedFiles.push({ filename, reason, size_mb: sizeMb });
+        droppedForSize++;
+        continue;
+      }
+      downloadedImages.push({ filename, buffer, effectiveMime, sizeMb });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[procore/import] Download failed for "${ref.filename}": ${msg}`);
+      skippedFiles.push({ filename: ref.filename, reason: `Download failed: ${msg}` });
+    }
+  }
+
+  // Sort by actual file size ascending — smallest (most likely document photos) first
+  downloadedImages.sort((a, b) => a.buffer.length - b.buffer.length);
+
+  let imageCount = 0;
+  for (const img of downloadedImages) {
+    if (imageCount >= MAX_IMAGES) {
+      skippedFiles.push({
+        filename: img.filename,
+        reason: "Image limit reached — only the 10 smallest images are included to prioritise document photos over site photos",
+        size_mb: img.sizeMb,
+      });
+      droppedForSize++;
+      continue;
+    }
+    if (totalBytes + img.buffer.length > MAX_ATTACHMENT_BYTES_TOTAL) {
+      console.log(`[procore/import] Skipping image "${img.filename}" — total budget reached`);
+      skippedFiles.push({ filename: img.filename, reason: "Total attachment budget reached", size_mb: img.sizeMb });
+      droppedForSize++;
+      continue;
+    }
+
+    // Image — constrained to image/jpeg or image/png. For other variants we
+    // label as jpeg so they still reach the vision model.
+    const mediaType: "image/jpeg" | "image/png" =
+      img.effectiveMime === "image/png" ? "image/png" : "image/jpeg";
+    processedFiles.push({ kind: "image", filename: img.filename, base64: img.buffer.toString("base64"), mediaType });
+    totalBytes += img.buffer.length;
+    imageCount++;
+    importedFiles.push(img.filename);
+    console.log(
+      `[procore/import] Image ${imageCount}/${MAX_IMAGES}: ${img.filename} ` +
+      `(${(img.buffer.length / 1024).toFixed(0)} KB, total ${(totalBytes / 1024 / 1024).toFixed(1)} MB)`
+    );
   }
 
   // ── 6. Run QA review ───────────────────────────────────────────────────────
