@@ -36,6 +36,11 @@ import { runBundleReview } from "@/lib/claude";
 import { appendRecord } from "@/lib/history";
 import type { ProcessedFile, SkippedFile } from "@/lib/types";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const MsgReader = require("msgreader").default as new (buf: Buffer) => {
+  getFileData(): { error?: string; subject?: string; senderName?: string; senderEmail?: string; body?: string };
+};
+import mammoth from "mammoth";
 
 // Supported MIME types for direct processing.
 // Images under 4 MB are included — they can contain valuable evidence such
@@ -47,6 +52,48 @@ const SUPPORTED = new Set([
   "image/jpeg",
   "image/png",
 ]);
+
+// MIME types that can be converted to plain text before sending to Claude.
+// .msg (Outlook emails) — extracted via msgreader (subject + sender + body)
+// .docx (Word documents) — extracted via mammoth (raw text)
+// .doc (legacy Word) — not supported; users should re-save as .docx
+const SUPPORTED_TEXT = new Set([
+  "application/vnd.ms-outlook",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+]);
+
+/**
+ * Extract plain text from an Outlook .msg buffer.
+ * Returns "" on any failure or if the body is empty.
+ */
+function extractMsgText(buffer: Buffer): string {
+  try {
+    const reader = new MsgReader(buffer);
+    const data = reader.getFileData();
+    if (data.error) return "";
+    const parts: string[] = [];
+    if (data.subject)    parts.push(`Subject: ${data.subject}`);
+    if (data.senderName) parts.push(`From: ${data.senderName}${data.senderEmail ? ` <${data.senderEmail}>` : ""}`);
+    if (data.body)       parts.push(`\n${data.body.trim()}`);
+    return parts.join("\n").trim();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Extract plain text from a .docx buffer using mammoth.
+ * Returns "" on any failure or if the result is empty.
+ */
+async function extractDocxText(buffer: Buffer): Promise<string> {
+  try {
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
 
 export async function POST(request: NextRequest) {
   console.log("[procore/import] POST handler called");
@@ -320,20 +367,28 @@ async function runImport(
   // Split refs by type so PDFs and images can be processed separately.
   const pdfRefs:   typeof uniqueAttachmentRefs = [];
   const imageRefs: typeof uniqueAttachmentRefs = [];
+  // Also collect text-convertible refs (msg, docx) for a separate pass.
+  // .doc (application/msword) is placed here but rejected during extraction.
+  const textRefs: typeof uniqueAttachmentRefs = [];
+
   for (const ref of uniqueAttachmentRefs) {
     const mime = normaliseMime(ref.content_type, ref.filename);
-    if (!SUPPORTED.has(mime)) {
+    if (SUPPORTED.has(mime)) {
+      if (mime === "application/pdf") {
+        pdfRefs.push(ref);
+      } else {
+        imageRefs.push(ref);
+      }
+    } else if (SUPPORTED_TEXT.has(mime)) {
+      textRefs.push(ref);
+    } else {
       const reason = mime ? `Unsupported type: ${mime}` : "Unknown file type";
       console.log(`[procore/import] Skipping "${ref.filename}" — ${reason}`);
       skippedFiles.push({ filename: ref.filename, reason });
-    } else if (mime === "application/pdf") {
-      pdfRefs.push(ref);
-    } else {
-      imageRefs.push(ref);
     }
   }
 
-  console.log(`[procore/import] Step 5: downloading files — PDFs: ${pdfRefs.length}, images: ${imageRefs.length}`);
+  console.log(`[procore/import] Step 5: downloading files — PDFs: ${pdfRefs.length}, images: ${imageRefs.length}, text-convertible: ${textRefs.length}`);
 
   let totalBytes = 0;
   let droppedForSize = 0;
@@ -440,6 +495,59 @@ async function runImport(
       `[procore/import] Image ${imageCount}/${MAX_IMAGES}: ${img.filename} ` +
       `(${(img.buffer.length / 1024).toFixed(0)} KB, total ${(totalBytes / 1024 / 1024).toFixed(1)} MB)`
     );
+  }
+
+  // ── Phase 3: Text-convertible files (.msg, .docx) ─────────────────────────
+  // Each file is downloaded, converted to plain text, and added as a text
+  // ProcessedFile. They count against the total bundle budget but NOT against
+  // the image cap. .doc (legacy Word) is not supported — users should re-save
+  // as .docx.
+  for (const ref of textRefs) {
+    const mime = normaliseMime(ref.content_type, ref.filename);
+
+    // .doc: reject without downloading — tell user to re-save as .docx
+    if (mime === "application/msword") {
+      const reason = "Unsupported document type — .doc format not supported, use .docx";
+      console.log(`[procore/import] Skipping "${ref.filename}" — ${reason}`);
+      skippedFiles.push({ filename: ref.filename, reason });
+      continue;
+    }
+
+    try {
+      const { buffer, filename } = await downloadFile(ref.url, accessToken);
+      const sizeMb = parseFloat((buffer.length / 1024 / 1024).toFixed(1));
+
+      if (totalBytes + buffer.length > MAX_ATTACHMENT_BYTES_TOTAL) {
+        console.log(`[procore/import] Skipping "${filename}" — total budget reached`);
+        skippedFiles.push({ filename, reason: "Total attachment budget reached", size_mb: sizeMb });
+        continue;
+      }
+
+      let extractedText = "";
+      if (mime === "application/vnd.ms-outlook") {
+        extractedText = extractMsgText(buffer);
+      } else if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        extractedText = await extractDocxText(buffer);
+      }
+
+      if (!extractedText) {
+        console.log(`[procore/import] Skipping "${filename}" — text extraction returned empty content`);
+        skippedFiles.push({ filename, reason: "Text extraction returned empty content", size_mb: sizeMb });
+        continue;
+      }
+
+      processedFiles.push({ kind: "text", filename, text: `[${filename}]\n\n${extractedText}` });
+      totalBytes += buffer.length;
+      importedFiles.push(filename);
+      console.log(
+        `[procore/import] Text (${mime === "application/vnd.ms-outlook" ? "msg" : "docx"}): ${filename} ` +
+        `(${(buffer.length / 1024).toFixed(0)} KB, total ${(totalBytes / 1024 / 1024).toFixed(1)} MB)`
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[procore/import] Download failed for "${ref.filename}": ${msg}`);
+      skippedFiles.push({ filename: ref.filename, reason: `Download failed: ${msg}` });
+    }
   }
 
   // ── 6. Run QA review ───────────────────────────────────────────────────────
@@ -894,6 +1002,12 @@ function normaliseMime(contentType: string | null | undefined, filename: string)
       return "image/jpeg";
     case "png":
       return "image/png";
+    case "msg":
+      return "application/vnd.ms-outlook";
+    case "docx":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "doc":
+      return "application/msword";
     default:
       return ct || "";
   }
