@@ -116,7 +116,6 @@ export async function runBundleReview(
   contentBlocks.push({ type: "text", text: buildInstructions(files.length) });
   console.log(`[claude] Content blocks built: ${contentBlocks.length} blocks for ${files.length} file(s)`);
 
-  const isDev = process.env.NODE_ENV === "development";
   console.log(`[claude] Bundle: ${files.length} file(s) | model=${MODEL} | max_tokens=${MAX_TOKENS}`);
 
   let rawResponse: string;
@@ -139,11 +138,11 @@ export async function runBundleReview(
 
     rawResponse = block.text;
     stopReason = message.stop_reason;
-    console.log(`[claude] stop_reason=${stopReason} | response_length=${rawResponse.length} chars`);
 
-    if (isDev) {
-      console.log("[claude] Raw response (first 3000 chars):\n", rawResponse.slice(0, 3000));
-    }
+    // Always log these — essential for diagnosing truncation vs malformed JSON
+    console.log(`[claude] stop_reason=${stopReason} | response_length=${rawResponse.length} chars | max_tokens=${MAX_TOKENS}`);
+    console.log(`[claude] Response first 500 chars:\n${rawResponse.slice(0, 500)}`);
+    console.log(`[claude] Response last 500 chars:\n${rawResponse.slice(-500)}`);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(`Claude API error: ${msg}`);
@@ -170,15 +169,16 @@ export async function runBundleReview(
   } catch (parseErr: unknown) {
     const parseMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
     console.error(`[claude] ── JSON parse failure ─────────────────────────────────`);
-    console.error(`[claude] Error: ${parseMsg}`);
-    console.error(`[claude] Files in bundle: ${files.length} | stop_reason: ${stopReason}`);
+    console.error(`[claude] Parse error: ${parseMsg}`);
+    console.error(`[claude] Files in bundle: ${files.length} | stop_reason: ${stopReason} | max_tokens: ${MAX_TOKENS}`);
     console.error(`[claude] Response length: ${rawResponse!.length} chars`);
-    console.error(`[claude] First 200 chars:\n`, rawResponse!.slice(0, 200));
-    console.error(`[claude] Last 200 chars:\n`, rawResponse!.slice(-200));
+    console.error(`[claude] First 500 chars:\n${rawResponse!.slice(0, 500)}`);
+    console.error(`[claude] Last 500 chars:\n${rawResponse!.slice(-500)}`);
     console.error("[claude] ──────────────────────────────────────────────────────");
     throw new Error(
       `Claude returned a response that could not be parsed as JSON (${parseMsg}). ` +
-      `Response was ${rawResponse!.length} chars with stop_reason=${stopReason}. Try running the review again.`
+      `stop_reason=${stopReason}, response_length=${rawResponse!.length} chars, files=${files.length}. ` +
+      `Check server logs for the raw response. Try running the review again.`
     );
   }
 
