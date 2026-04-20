@@ -11,7 +11,7 @@ import type { DashboardInspection } from "@/app/api/dashboard/inspections/route"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type BulkItemStatus = "queued" | "processing" | "done" | "failed";
+type BulkItemStatus = "queued" | "processing" | "rate_limited" | "done" | "failed";
 
 interface Company { id: number; name: string; is_active: boolean }
 
@@ -732,13 +732,15 @@ export default function DashboardPage() {
       try {
         let res = await runImport();
 
-        // 429 rate limit — wait 15s and retry once
+        // 429 rate limit — show rate_limited state, wait 15s, retry once
         if (res.status === 429) {
+          setBulkStatus(prev => new Map(prev).set(insp.id, "rate_limited"));
           await delay(15000);
           res = await runImport();
           if (res.status === 429) {
-            throw new Error("Rate limit — retry later");
+            throw new Error("Rate limit — please retry this ITP manually");
           }
+          setBulkStatus(prev => new Map(prev).set(insp.id, "processing"));
         }
 
         const data = await res.json();
@@ -1611,6 +1613,13 @@ function BulkStatusBadge({ status }: { status: BulkItemStatus }) {
     return (
       <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">
         <Spinner className="h-2.5 w-2.5 text-blue-500" /> Processing
+      </span>
+    );
+  }
+  if (status === "rate_limited") {
+    return (
+      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+        <Spinner className="h-2.5 w-2.5 text-amber-500" /> Rate limited — retrying in 15s
       </span>
     );
   }
