@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Upload, FileText, CheckCircle, AlertCircle, RefreshCw, Clock, Users } from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle, RefreshCw, Clock, Users, Info } from "lucide-react";
 
 interface StorageDocument {
   name:          string;
@@ -175,6 +175,41 @@ export default function AdminDocumentsPage() {
             Upload a new version of the ITP QA Scoring Guidelines.
             {companyId && <span className="ml-1 text-gray-400">Company: {companyId}</span>}
           </p>
+        </div>
+
+        {/* What this document does */}
+        <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 flex gap-3">
+          <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800">
+            <p className="font-semibold">How scoring works</p>
+            <p className="mt-0.5 text-blue-700">
+              Every QA review uses a scoring guidelines document to determine tier weights, dimension
+              definitions, and scoring states. When a document is uploaded here, it replaces the
+              built-in scoring rules for all future reviews — no code change required.
+              Reviews fall back to the built-in rules if no document is uploaded.
+            </p>
+          </div>
+        </div>
+
+        {/* Active scoring source indicator */}
+        <div className="mb-6 rounded-xl border border-gray-100 bg-white shadow-sm px-4 py-3 flex items-center gap-3">
+          <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${
+            !configured
+              ? "bg-gray-300"
+              : documents.length > 0
+                ? "bg-green-500"
+                : "bg-amber-400"
+          }`} />
+          <div className="text-sm">
+            <span className="font-semibold text-gray-700">Active scoring source: </span>
+            {!configured ? (
+              <span className="text-gray-400">Supabase not configured — using built-in rules</span>
+            ) : documents.length > 0 ? (
+              <span className="text-green-700">Company document in Supabase Storage</span>
+            ) : (
+              <span className="text-amber-700">Built-in rules (no company document uploaded yet)</span>
+            )}
+          </div>
         </div>
 
         {/* Supabase not configured */}

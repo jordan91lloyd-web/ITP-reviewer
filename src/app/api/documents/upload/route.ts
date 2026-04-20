@@ -10,6 +10,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getProcoreUser } from "@/lib/procore";
 import { isCompanyAdmin } from "@/lib/admin";
 import { logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
+import { invalidateScoringCache } from "@/lib/scoring";
 
 const BUCKET        = "documents";
 const MAX_SIZE_BYTES = 52_428_800; // 50 MB
@@ -100,6 +101,9 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+
+  // Bust the in-memory scoring cache so the next review picks up the new doc
+  invalidateScoringCache(companyId);
 
   // Audit log (fire-and-forget)
   void logAuditEvent({

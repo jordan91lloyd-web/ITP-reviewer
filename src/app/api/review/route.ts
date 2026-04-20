@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
   console.log("[review] Sending bundle to Claude...");
 
   try {
-    const result = await runBundleReview(processedFiles);
+    const result = await runBundleReview(processedFiles, auditCompany);
 
     console.log(`[review] Review complete. Score: ${result.total_score} (${result.score_band}), Assessment: ${result.package_assessment}`);
     console.log("[review] ─────────────────────────────────────\n");
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       ...auditUser,
       company_id: auditCompany,
       action: AUDIT_ACTIONS.REVIEW_RUN,
-      details: { file_count: processedFiles.length, score: result.total_score, score_band: result.score_band, source: "manual" },
+      details: { file_count: processedFiles.length, score: result.total_score, score_band: result.score_band, source: "manual", scoring_source: result.scoring_source },
     });
 
     return NextResponse.json({ success: true, result });
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       ...auditUser,
       company_id: auditCompany,
       action: AUDIT_ACTIONS.REVIEW_FAILED,
-      details: { file_count: processedFiles.length, error: msg, source: "manual" },
+      details: { file_count: processedFiles.length, error: msg, source: "manual", scoring_source: "unknown" },
     });
 
     return fail(msg, 500);

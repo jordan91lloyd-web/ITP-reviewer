@@ -5,6 +5,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt, buildPreamble, buildInstructions } from "./prompt";
+import { getCompanyScoringContent } from "./scoring";
+export type { ScoringSource } from "./scoring";
 import type {
   ReviewResult,
   ProcessedFile,
@@ -26,8 +28,16 @@ const MAX_TOKENS = 16000;
 /**
  * Sends the document bundle to Claude and returns a structured ReviewResult.
  * Claude extracts the project/ITP metadata automatically from the documents.
+ *
+ * company_id: used to fetch the company-specific scoring guidelines from
+ * Supabase Storage (or fall back to local file / hardcoded). Pass the
+ * FLEEK_COMPANY_ID for manual reviews; pass the Procore company_id (as string)
+ * for Procore imports. Defaults to "default" if not provided.
  */
-export async function runBundleReview(filesRaw: ProcessedFile[]): Promise<ReviewResult> {
+export async function runBundleReview(
+  filesRaw: ProcessedFile[],
+  company_id: string = "default"
+): Promise<ReviewResult & { scoring_source: string }> {
   // ── Pre-flight: strip any images that exceed Claude's 5 MB per-image limit.
   // base64.length * 0.75 ≈ raw bytes (base64 encodes 3 bytes as 4 chars).
   // This guard runs before any content block is built, so the 400 error is
@@ -45,6 +55,11 @@ export async function runBundleReview(filesRaw: ProcessedFile[]): Promise<Review
     }
     return true;
   });
+
+  // ── Fetch company-specific scoring content ───────────────────────────────
+  const { content: scoringContent, source: scoringSource } =
+    await getCompanyScoringContent(company_id);
+  console.log(`[claude] Scoring source for company "${company_id}": ${scoringSource}`);
 
   const client = new Anthropic();
 
@@ -110,7 +125,7 @@ export async function runBundleReview(filesRaw: ProcessedFile[]): Promise<Review
     const message = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: buildSystemPrompt(),
+      system: buildSystemPrompt(scoringContent),
       messages: [
         { role: "user", content: contentBlocks },
       ],
@@ -159,7 +174,8 @@ export async function runBundleReview(filesRaw: ProcessedFile[]): Promise<Review
     );
   }
 
-  return validateResult(normalizeEnums(parsed));
+  const validated = validateResult(normalizeEnums(parsed));
+  return { ...validated, scoring_source: scoringSource };
 }
 
 /**

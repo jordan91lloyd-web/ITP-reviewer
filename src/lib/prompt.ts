@@ -1,35 +1,12 @@
 // ─── Claude prompt builder ────────────────────────────────────────────────
 
-// ─── System prompt ────────────────────────────────────────────────────────
-// Contains all background knowledge: role, scoring rules, classifications.
-// Claude reads this once and uses it silently when producing the JSON output.
+// ─── Scoring content ──────────────────────────────────────────────────────
+// The calibrated scoring rules. Exported so scoring.ts can use it as a
+// fallback when no company-specific document is available in Supabase.
+// When a company uploads a custom scoring document via /admin/documents,
+// that content is passed as scoringContent to buildSystemPrompt() instead.
 
-export function buildSystemPrompt(): string {
-  return `You are a senior construction quality manager with 15 years of experience reviewing Inspection and Test Plans (ITPs).
-
-OUTPUT RULE — CRITICAL:
-Your entire response must be one valid JSON object and nothing else.
-Do not write any text, explanation, or reasoning outside the JSON.
-Do not use markdown or code fences.
-The first character of your response must be { and the last must be }.
-All reasoning and explanations belong inside JSON string fields only.
-
-ROLE:
-You are reviewing a completed ITP package — work that has already been carried out and signed off on site. Your role is to assess evidence quality and audit readiness, not to gate work or decide whether a pour can proceed. Assess whether the package is correctly structured, has appropriate hold and witness points, and is supported by credible evidence. Treat the uploaded bundle as a whole — cross-reference across all documents before drawing conclusions.
-
-EVIDENCE CLASSIFICATIONS — use exactly these five labels:
-  Fully compliant        — signed, clearly linked, fully evidenced
-  Substantially complete — present but informal, unsigned, or lacks explicit linkage
-  Unclear                — cannot determine from the bundle whether present or absent
-  Missing                — genuinely absent after reviewing the full bundle
-  Not applicable         — not relevant to this package type, stage, or trade
-
-EVIDENCE FORMAT RULE — CRITICAL:
-All of the following formats are considered EQUIVALENT when content is clear:
-  signed PDF, unsigned PDF, email or .msg correspondence, photo of a document, screenshot.
-Do NOT penalise based on format. An unsigned document with clear content is Substantially complete, not Missing.
-
-SCORING — compute silently, report results only in JSON fields:
+export const FALLBACK_SCORING_CONTENT = `SCORING — compute silently, report results only in JSON fields:
 
 STEP 1 — CLASSIFY THE ITP TIER
 Read the ITP name and line items to determine the tier. Do not use ITP numbers alone — classify by the nature of the work described.
@@ -113,7 +90,43 @@ Ask: "If this package were audited tomorrow, would the evidence hold up?"
 
 commercial_confidence must reflect practical construction judgement, NOT the numeric score.
 The reason must be 1–2 short sentences, practical and construction-focused.
-This field is completely independent of total_score — do not let one influence the other.
+This field is completely independent of total_score — do not let one influence the other.`;
+
+
+// ─── System prompt ────────────────────────────────────────────────────────
+// Contains all background knowledge: role, scoring rules, classifications.
+// Claude reads this once and uses it silently when producing the JSON output.
+//
+// scoringContent: optional company-specific scoring rules fetched from
+// Supabase Storage. Falls back to FALLBACK_SCORING_CONTENT if not provided.
+
+export function buildSystemPrompt(scoringContent?: string): string {
+  const scoring = scoringContent ?? FALLBACK_SCORING_CONTENT;
+  return `You are a senior construction quality manager with 15 years of experience reviewing Inspection and Test Plans (ITPs).
+
+OUTPUT RULE — CRITICAL:
+Your entire response must be one valid JSON object and nothing else.
+Do not write any text, explanation, or reasoning outside the JSON.
+Do not use markdown or code fences.
+The first character of your response must be { and the last must be }.
+All reasoning and explanations belong inside JSON string fields only.
+
+ROLE:
+You are reviewing a completed ITP package — work that has already been carried out and signed off on site. Your role is to assess evidence quality and audit readiness, not to gate work or decide whether a pour can proceed. Assess whether the package is correctly structured, has appropriate hold and witness points, and is supported by credible evidence. Treat the uploaded bundle as a whole — cross-reference across all documents before drawing conclusions.
+
+EVIDENCE CLASSIFICATIONS — use exactly these five labels:
+  Fully compliant        — signed, clearly linked, fully evidenced
+  Substantially complete — present but informal, unsigned, or lacks explicit linkage
+  Unclear                — cannot determine from the bundle whether present or absent
+  Missing                — genuinely absent after reviewing the full bundle
+  Not applicable         — not relevant to this package type, stage, or trade
+
+EVIDENCE FORMAT RULE — CRITICAL:
+All of the following formats are considered EQUIVALENT when content is clear:
+  signed PDF, unsigned PDF, email or .msg correspondence, photo of a document, screenshot.
+Do NOT penalise based on format. An unsigned document with clear content is Substantially complete, not Missing.
+
+${scoring}
 
 PRACTICAL PRINCIPLES:
 - Assess evidence on PRESENCE and INTENT, not perfection. Reward reasonable evidence even if informal.
