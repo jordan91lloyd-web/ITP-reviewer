@@ -3,17 +3,54 @@
 // ─── ReviewResults ────────────────────────────────────────────────────────
 // Displays the structured QA review returned by Claude.
 //
-// Two on-screen view modes:
-//   compact     — sections are collapsible (default)
-//   full        — all sections expanded, good for detailed review / export
+// All major sections are independently collapsible. Section open/closed
+// state is held in a single `sections` object at the top level so that
+// "Collapse All / Expand All" can work with one setState call, and so the
+// print handler can save/restore the full state around window.print().
 //
-// PDF export always uses the full expanded layout regardless of current mode.
-// After the print dialog closes the on-screen mode is restored automatically.
+// PDF export: before calling window.print() we expand every section and set
+// printMode=true (which renders static, non-togglable cards so the browser
+// has a full flat DOM to paginate). After the print dialog closes we restore
+// the previous collapse state.
 
 import { useState, useEffect } from "react";
 import type { ReviewResult, ScoreBreakdown, CategoryScore, CommercialConfidence, SkippedFile } from "@/lib/types";
 
-type ViewMode = "compact" | "full";
+// ── Section keys ─────────────────────────────────────────────────────────
+
+type SectionKey =
+  | "inspection_header"
+  | "qa_status"
+  | "scores"
+  | "commercial_confidence"
+  | "summary"
+  | "score_breakdown"
+  | "missing_evidence"
+  | "key_issues"
+  | "next_actions"
+  | "document_observations"
+  | "skipped_files";
+
+const DEFAULT_SECTIONS: Record<SectionKey, boolean> = {
+  inspection_header:     true,
+  qa_status:             true,
+  scores:                true,
+  commercial_confidence: true,
+  summary:               true,
+  score_breakdown:       false,
+  missing_evidence:      false,
+  key_issues:            false,
+  next_actions:          false,
+  document_observations: false,
+  skipped_files:         false,
+};
+
+const SECTION_KEYS = Object.keys(DEFAULT_SECTIONS) as SectionKey[];
+
+const ALL_OPEN = Object.fromEntries(SECTION_KEYS.map(k => [k, true])) as Record<SectionKey, boolean>;
+const ALL_CLOSED = Object.fromEntries(SECTION_KEYS.map(k => [k, false])) as Record<SectionKey, boolean>;
+
+// ── Props & helpers ───────────────────────────────────────────────────────
 
 interface Props {
   result: ReviewResult;
@@ -23,11 +60,6 @@ interface Props {
 
 const UNIDENTIFIED = "Not confidently identified";
 
-// ── QA Status — derived from score + commercial confidence ──
-// Answers: "How does this package stand up as a completed QA record?"
-// We use commercial_confidence as the primary driver because Claude already
-// computed it as a holistic audit readiness judgement. Score is a secondary
-// check — a low score always overrides a high confidence rating.
 function getQAStatus(result: ReviewResult): "strong" | "acceptable" | "high-risk" {
   const cc = result.commercial_confidence?.rating ?? "medium";
   if (result.total_score >= 85 && cc === "high") return "strong";
@@ -35,19 +67,28 @@ function getQAStatus(result: ReviewResult): "strong" | "acceptable" | "high-risk
   return "acceptable";
 }
 
+// ── Main component ────────────────────────────────────────────────────────
+
 export default function ReviewResults({ result, onReset, skippedFiles }: Props) {
   const h = result.inspection_header;
 
-  // ── View / print mode ────────────────────────────────────────────────────
-
-  const [viewMode, setViewMode] = useState<ViewMode>("compact");
-  // printMode forces all sections open for the PDF snapshot
+  // ── View / collapse state ────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<"compact" | "full">("compact");
+  const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
   const [printMode, setPrintMode] = useState(false);
-  // printPending triggers window.print() after React re-renders with printMode=true
   const [printPending, setPrintPending] = useState(false);
 
-  const forceOpen = printMode || viewMode === "full";
+  // In full view or print mode every section is forced open regardless of sections state
+  const forced = printMode || viewMode === "full";
 
+  const toggle = (key: SectionKey) => {
+    if (forced) return;
+    setSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const allExpanded = SECTION_KEYS.every(k => sections[k]);
+
+  // ── Print ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!printPending) return;
     window.print();
@@ -55,20 +96,22 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
   }, [printPending]);
 
   const handlePrint = () => {
+    const savedSections = { ...sections };
+    // Expand all sections so the full DOM is rendered before window.print()
+    setSections(ALL_OPEN);
     setPrintMode(true);
     setPrintPending(true);
     window.onafterprint = () => {
+      setSections(savedSections);
       setPrintMode(false);
       window.onafterprint = null;
     };
   };
 
   // ── QA Status ────────────────────────────────────────────────────────────
-
   const qaStatus = getQAStatus(result);
 
   // ── Colour helpers ───────────────────────────────────────────────────────
-
   const scoreColour =
     result.total_score >= 80 ? "text-green-600" :
     result.total_score >= 55 ? "text-yellow-500" :
@@ -172,7 +215,7 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
           </div>
         </div>
 
-        {/* ── View mode toggle ── */}
+        {/* ── View mode toggle + Collapse All / Expand All ── */}
         <div className="flex items-center gap-3 print:hidden">
           <span className="text-xs text-gray-400">View as:</span>
           <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 gap-0.5">
@@ -199,11 +242,16 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
               Full Report
             </button>
           </div>
-          {viewMode === "full" && (
-            <span className="text-xs text-gray-400 italic">All sections expanded</span>
-          )}
+
+          {/* Collapse / Expand All — only meaningful in compact mode */}
           {viewMode === "compact" && (
-            <span className="text-xs text-gray-400 italic">PDF export always includes full report</span>
+            <button
+              type="button"
+              onClick={allExpanded ? () => setSections(ALL_CLOSED) : () => setSections(ALL_OPEN)}
+              className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
+            >
+              {allExpanded ? "Collapse All" : "Expand All"}
+            </button>
           )}
         </div>
 
@@ -212,8 +260,9 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
           title="Inspection Header"
           accent="blue"
           collapsible
-          defaultOpen
-          forceOpen={forceOpen}
+          open={sections.inspection_header}
+          onToggle={() => toggle("inspection_header")}
+          forced={forced}
         >
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
             <HeaderField label="Project No."           value={field(h.project_number)} />
@@ -238,72 +287,102 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
         </ResultCard>
 
         {/* ── QA Status banner ── */}
-        <div className={`rounded-xl border px-5 py-4 flex items-center gap-3 ${
-          qaStatus === "strong"     ? "bg-green-50 border-green-200" :
-          qaStatus === "acceptable" ? "bg-amber-50 border-amber-200" :
-                                      "bg-red-50 border-red-200"
-        }`}>
-          <span className={`flex h-3 w-3 rounded-full shrink-0 ${
-            qaStatus === "strong"     ? "bg-green-500" :
-            qaStatus === "acceptable" ? "bg-amber-400" :
-                                        "bg-red-500"
-          }`} />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">QA Status</p>
-            <p className={`text-lg font-bold ${
-              qaStatus === "strong"     ? "text-green-700" :
-              qaStatus === "acceptable" ? "text-amber-700" :
-                                          "text-red-700"
-            }`}>
-              {qaStatus === "strong"     ? "Strong package" :
-               qaStatus === "acceptable" ? "Acceptable with gaps" :
-                                           "High risk / incomplete"}
-            </p>
+        <SectionShell
+          label="QA Status"
+          open={sections.qa_status}
+          onToggle={() => toggle("qa_status")}
+          forced={forced}
+        >
+          <div className={`rounded-xl border px-5 py-4 flex items-center gap-3 ${
+            qaStatus === "strong"     ? "bg-green-50 border-green-200" :
+            qaStatus === "acceptable" ? "bg-amber-50 border-amber-200" :
+                                        "bg-red-50 border-red-200"
+          }`}>
+            <span className={`flex h-3 w-3 rounded-full shrink-0 ${
+              qaStatus === "strong"     ? "bg-green-500" :
+              qaStatus === "acceptable" ? "bg-amber-400" :
+                                          "bg-red-500"
+            }`} />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">QA Status</p>
+              <p className={`text-lg font-bold ${
+                qaStatus === "strong"     ? "text-green-700" :
+                qaStatus === "acceptable" ? "text-amber-700" :
+                                            "text-red-700"
+              }`}>
+                {qaStatus === "strong"     ? "Strong package" :
+                 qaStatus === "acceptable" ? "Acceptable with gaps" :
+                                             "High risk / incomplete"}
+              </p>
+            </div>
           </div>
-        </div>
+        </SectionShell>
 
-        {/* ── Score · Package · Confidence — always visible ── */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* ── Score · Package · Confidence ── */}
+        <SectionShell
+          label="Scores"
+          open={sections.scores}
+          onToggle={() => toggle("scores")}
+          forced={forced}
+        >
+          <div className="grid grid-cols-3 gap-3">
+            <div className={`rounded-xl border p-5 text-center ${scoreBgColour}`}>
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">Score</p>
+              <ScoreRing score={result.total_score} />
+              <p className="mt-1 text-xs text-gray-400">{result.achieved_points}/{result.applicable_points} pts</p>
+              <p className={`mt-2 text-xs font-medium ${scoreColour}`}>{scoreLabel[result.score_band] ?? result.score_band}</p>
+            </div>
 
-          <div className={`rounded-xl border p-5 text-center ${scoreBgColour}`}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">Score</p>
-            <ScoreRing score={result.total_score} />
-            <p className="mt-1 text-xs text-gray-400">{result.achieved_points}/{result.applicable_points} pts</p>
-            <p className={`mt-2 text-xs font-medium ${scoreColour}`}>{scoreLabel[result.score_band] ?? result.score_band}</p>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Package</p>
+              <span
+                className={`inline-block rounded-full px-3 py-1.5 text-xs font-bold leading-none ${
+                  assessmentStyle[result.package_assessment] ?? "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {assessmentLabel[result.package_assessment] ?? result.package_assessment}
+              </span>
+              <p className="mt-3 text-xs text-gray-400 leading-snug">Evidence quality rating</p>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">Confidence</p>
+              <p className={`text-2xl font-bold capitalize ${confidenceColour}`}>{result.confidence}</p>
+              <p className="mt-2 text-xs text-gray-400 leading-snug">
+                How certain Claude is about this assessment
+              </p>
+            </div>
           </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Package</p>
-            <span
-              className={`inline-block rounded-full px-3 py-1.5 text-xs font-bold leading-none ${
-                assessmentStyle[result.package_assessment] ?? "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {assessmentLabel[result.package_assessment] ?? result.package_assessment}
-            </span>
-            <p className="mt-3 text-xs text-gray-400 leading-snug">Evidence quality rating</p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">Confidence</p>
-            <p className={`text-2xl font-bold capitalize ${confidenceColour}`}>{result.confidence}</p>
-            <p className="mt-2 text-xs text-gray-400 leading-snug">
-              How certain Claude is about this assessment
-            </p>
-          </div>
-
-        </div>
+        </SectionShell>
 
         {/* ── Commercial Confidence ── */}
-        <CommercialConfidenceCard cc={result.commercial_confidence} />
+        <SectionShell
+          label="Commercial Confidence"
+          open={sections.commercial_confidence}
+          onToggle={() => toggle("commercial_confidence")}
+          forced={forced}
+        >
+          <CommercialConfidenceCard cc={result.commercial_confidence} />
+        </SectionShell>
 
         {/* ── Summary ── */}
-        <ResultCard title="Summary" collapsible defaultOpen forceOpen={forceOpen}>
+        <ResultCard
+          title="Summary"
+          collapsible
+          open={sections.summary}
+          onToggle={() => toggle("summary")}
+          forced={forced}
+        >
           <p className="text-sm text-gray-700 leading-relaxed">{result.executive_summary}</p>
         </ResultCard>
 
         {/* ── Score breakdown ── */}
-        <ScoreBreakdownCard breakdown={result.score_breakdown} forceOpen={forceOpen} />
+        <ScoreBreakdownCard
+          breakdown={result.score_breakdown}
+          open={sections.score_breakdown}
+          onToggle={() => toggle("score_breakdown")}
+          forced={forced}
+        />
 
         {/* ── Missing evidence ── */}
         {result.missing_evidence.length > 0 ? (
@@ -312,8 +391,9 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
             subtitle="Items that appear to be absent — review status before acting"
             accent="red"
             collapsible
-            defaultOpen={false}
-            forceOpen={forceOpen}
+            open={sections.missing_evidence}
+            onToggle={() => toggle("missing_evidence")}
+            forced={forced}
           >
             <div className="overflow-x-auto -mx-1">
               <table className="w-full text-sm border-collapse">
@@ -347,8 +427,9 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
             title="Missing Evidence"
             accent="green"
             collapsible
-            defaultOpen={false}
-            forceOpen={forceOpen}
+            open={sections.missing_evidence}
+            onToggle={() => toggle("missing_evidence")}
+            forced={forced}
           >
             <p className="text-sm text-green-700">No significant missing evidence identified.</p>
           </ResultCard>
@@ -361,8 +442,9 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
             subtitle="Issues and inconsistencies found in the bundle"
             accent="yellow"
             collapsible
-            defaultOpen={false}
-            forceOpen={forceOpen}
+            open={sections.key_issues}
+            onToggle={() => toggle("key_issues")}
+            forced={forced}
           >
             <div className="space-y-3">
               {result.key_issues.map((issue) => (
@@ -387,8 +469,9 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
             subtitle="Steps to close evidence gaps and improve audit readiness"
             accent="blue"
             collapsible
-            defaultOpen={false}
-            forceOpen={forceOpen}
+            open={sections.next_actions}
+            onToggle={() => toggle("next_actions")}
+            forced={forced}
           >
             <ol className="space-y-2">
               {result.next_actions.map((item, i) => (
@@ -409,8 +492,9 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
             title="Document Observations"
             subtitle="Claude's notes on each file in the bundle"
             collapsible
-            defaultOpen={false}
-            forceOpen={forceOpen}
+            open={sections.document_observations}
+            onToggle={() => toggle("document_observations")}
+            forced={forced}
           >
             <div className="space-y-3">
               {result.document_observations.map((obs, i) => (
@@ -432,8 +516,9 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
             subtitle="Files excluded from this review — not sent to Claude"
             accent="yellow"
             collapsible
-            defaultOpen={false}
-            forceOpen={forceOpen}
+            open={sections.skipped_files}
+            onToggle={() => toggle("skipped_files")}
+            forced={forced}
           >
             <div className="space-y-1.5">
               {skippedFiles.map((f, i) => (
@@ -463,6 +548,43 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
 
       </div>
     </>
+  );
+}
+
+// ─── SectionShell ─────────────────────────────────────────────────────────
+// Thin collapsible wrapper for non-card sections (QA Status banner, scores
+// grid, CommercialConfidence). Shows a small labelled header row with a
+// chevron; content appears below when open.
+
+function SectionShell({
+  label,
+  open,
+  onToggle,
+  forced = false,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  forced?: boolean;
+  children: React.ReactNode;
+}) {
+  const isOpen = forced || open;
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={forced ? undefined : onToggle}
+        className="w-full flex items-center justify-between mb-1.5 px-0.5 py-0.5 print:hidden"
+        aria-expanded={isOpen}
+      >
+        <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{label}</span>
+        <span className="text-gray-400 text-sm leading-none select-none">{isOpen ? "▾" : "▸"}</span>
+      </button>
+      <div data-section-content className={isOpen ? "" : "hidden"}>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -530,10 +652,14 @@ function CategoryBar({ label, cat, bordered }: { label: string; cat: CategorySco
 
 function ScoreBreakdownCard({
   breakdown,
-  forceOpen,
+  open,
+  onToggle,
+  forced,
 }: {
   breakdown: ScoreBreakdown;
-  forceOpen?: boolean;
+  open: boolean;
+  onToggle: () => void;
+  forced?: boolean;
 }) {
   return (
     <ResultCard
@@ -541,8 +667,9 @@ function ScoreBreakdownCard({
       subtitle="D1 Engineer verification · D2 Technical testing · D3 ITP completeness · D4 Material traceability · D5 Physical evidence"
       accent="blue"
       collapsible
-      defaultOpen={false}
-      forceOpen={forceOpen}
+      open={open}
+      onToggle={onToggle}
+      forced={forced}
     >
       {/* Point totals */}
       <div className="flex gap-4 mb-4">
@@ -626,7 +753,6 @@ function ScoreBreakdownCard({
 }
 
 // ─── ScoreRing ────────────────────────────────────────────────────────────
-// SVG circular gauge for the score card. Clean and professional.
 
 function ScoreRing({ score }: { score: number }) {
   const r = 36;
@@ -638,9 +764,7 @@ function ScoreRing({ score }: { score: number }) {
                   "#dc2626";
   return (
     <svg width="96" height="96" viewBox="0 0 96 96" className="mx-auto">
-      {/* Track */}
       <circle cx="48" cy="48" r={r} fill="none" stroke="#e5e7eb" strokeWidth="8" />
-      {/* Progress arc */}
       <circle
         cx="48" cy="48" r={r} fill="none"
         stroke={strokeColour} strokeWidth="8"
@@ -648,7 +772,6 @@ function ScoreRing({ score }: { score: number }) {
         strokeLinecap="round"
         transform="rotate(-90 48 48)"
       />
-      {/* Score number */}
       <text
         x="48" y="54"
         textAnchor="middle"
@@ -674,9 +797,9 @@ function HeaderField({ label, value }: { label: string; value: React.ReactNode }
 }
 
 // ─── ResultCard ───────────────────────────────────────────────────────────
-// collapsible=true  forceOpen=false → toggleable, state tracked internally
-// collapsible=true  forceOpen=true  → static card (all content shown, no toggle)
-// collapsible=false                 → static card (original behaviour)
+// Fully controlled when `open` + `onToggle` are provided.
+// Falls back to internal useState when neither is provided (legacy usage).
+// `forced=true` renders as a static non-togglable card (print / full mode).
 
 function ResultCard({
   title,
@@ -684,7 +807,9 @@ function ResultCard({
   accent,
   collapsible = false,
   defaultOpen = true,
-  forceOpen = false,
+  open: controlledOpen,
+  onToggle: controlledToggle,
+  forced = false,
   children,
 }: {
   title: string;
@@ -692,10 +817,22 @@ function ResultCard({
   accent?: "red" | "yellow" | "blue" | "green";
   collapsible?: boolean;
   defaultOpen?: boolean;
-  forceOpen?: boolean;
+  open?: boolean;
+  onToggle?: () => void;
+  forced?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = forced ? true : isControlled ? controlledOpen : internalOpen;
+  const handleToggle = () => {
+    if (forced) return;
+    if (isControlled && controlledToggle) {
+      controlledToggle();
+    } else {
+      setInternalOpen(o => !o);
+    }
+  };
 
   const border =
     accent === "red"    ? "border-l-red-400" :
@@ -704,8 +841,8 @@ function ResultCard({
     accent === "green"  ? "border-l-green-400" :
                           "border-l-gray-200";
 
-  // Static card — used for non-collapsible sections and when forceOpen overrides
-  if (!collapsible || forceOpen) {
+  // Non-collapsible or forced-open → static card, no toggle chrome
+  if (!collapsible || forced) {
     return (
       <div className={`rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm border-l-4 ${border}`}>
         <div className="mb-3">
@@ -722,22 +859,24 @@ function ResultCard({
     <div className={`rounded-xl border border-gray-200 bg-white shadow-sm border-l-4 ${border}`}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className="w-full flex items-center justify-between px-5 py-3.5 text-left gap-3"
+        aria-expanded={isOpen}
       >
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
           {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
         </div>
-        <span className="text-xs font-medium text-gray-400 shrink-0 select-none">
-          {open ? "▾ Hide" : "▸ Show"}
+        <span className="text-gray-400 text-sm shrink-0 select-none print:hidden">
+          {isOpen ? "▾" : "▸"}
         </span>
       </button>
-      {open && (
-        <div className="px-5 pb-4 pt-3 border-t border-gray-100">
-          {children}
-        </div>
-      )}
+      <div
+        data-section-content
+        className={isOpen ? "px-5 pb-4 pt-3 border-t border-gray-100" : "hidden"}
+      >
+        {children}
+      </div>
     </div>
   );
 }

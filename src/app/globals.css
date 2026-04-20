@@ -3,21 +3,49 @@
 @tailwind utilities;
 
 @media print {
-  body {
+  /* ── Reset height/overflow so all pages render ── */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
     font-size: 12px;
   }
+
   /* Give the content room on the page */
-  main {
+  main, #__next, [data-nextjs-scroll-focus-boundary] {
     max-width: 100% !important;
     padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
   }
-  /* Keep cards readable but remove heavy shadows */
+
+  /* Remove heavy shadows */
   .shadow-sm {
     box-shadow: none !important;
   }
-  /* Avoid breaking a card across a page */
+
+  /* Allow cards to paginate naturally — only keep headings tied to their content.
+     break-inside: avoid on large cards was cutting off content at page 1. */
   .rounded-xl {
-    break-inside: avoid;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  /* Keep section headings with the first line of their content */
+  h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Safety net: force all collapsible section content visible even if JS state
+     didn't update before print (window.print() is called after re-render so
+     this should not be needed in practice, but guards edge cases). */
+  [data-section-content] {
+    display: block !important;
+  }
+
+  /* Hide all UI chrome that shouldn't appear in the PDF */
+  .print\:hidden {
+    display: none !important;
   }
 }
