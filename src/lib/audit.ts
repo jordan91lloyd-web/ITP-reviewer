@@ -24,6 +24,8 @@ export const AUDIT_ACTIONS = {
   LOGIN:                       "login",
   LOGOUT:                      "logout",
   SCORING_DOCUMENT_UPDATED:    "scoring_document_updated",
+  PROJECT_HIDDEN:              "project_hidden",
+  PROJECT_UNHIDDEN:            "project_unhidden",
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTIONS[keyof typeof AUDIT_ACTIONS];

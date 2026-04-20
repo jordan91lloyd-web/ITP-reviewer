@@ -23,6 +23,7 @@ interface DashboardProject {
   reviewed_count: number;
   avg_score: number | null;
   last_reviewed_at: string | null;
+  is_hidden?: boolean;
 }
 
 interface InspectionStats {
@@ -350,6 +351,9 @@ export default function DashboardPage() {
   const [projects, setProjects]               = useState<DashboardProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState<DashboardProject | null>(null);
+  const [hiddenCount, setHiddenCount]         = useState(0);
+  const [showHidden, setShowHidden]           = useState(false);
+  const [hidingProject, setHidingProject]     = useState<number | null>(null);
 
   // Per-project inspection stats
   const [projectStats, setProjectStats] = useState<Map<number, InspectionStats>>(new Map());
@@ -417,7 +421,7 @@ export default function DashboardPage() {
     if (list.length === 1) setSelectedCompany(list[0]);
   }
 
-  // ── Load projects when company selected ────────────────────────────────────
+  // ── Load projects when company selected or show_hidden toggled ────────────
 
   useEffect(() => {
     if (!selectedCompany) return;
@@ -428,12 +432,16 @@ export default function DashboardPage() {
     setSelectedIds(new Set());
     setBulkStatus(new Map());
     setBulkSummary(null);
-    fetch(`/api/dashboard/projects?company_id=${selectedCompany.id}`)
+    const url = `/api/dashboard/projects?company_id=${selectedCompany.id}${showHidden ? "&show_hidden=true" : ""}`;
+    fetch(url)
       .then(r => r.json())
-      .then(data => setProjects(data.projects ?? []))
+      .then(data => {
+        setProjects(data.projects ?? []);
+        setHiddenCount(data.hidden_count ?? 0);
+      })
       .catch(() => setProjects([]))
       .finally(() => setProjectsLoading(false));
-  }, [selectedCompany]);
+  }, [selectedCompany, showHidden]);
 
   // ── Load inspections when project selected ─────────────────────────────────
 
@@ -462,6 +470,60 @@ export default function DashboardPage() {
     setBulkStatus(new Map());
     setBulkSummary(null);
     if (selectedCompany) loadInspections(project, selectedCompany);
+  }
+
+  // ── Hide / unhide project ───────────────────────────────────────────────────
+
+  async function handleHideProject(project: DashboardProject, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!selectedCompany) return;
+    setHidingProject(project.id);
+    // Optimistic: remove from list immediately
+    setProjects(prev => prev.filter(p => p.id !== project.id));
+    setHiddenCount(prev => prev + 1);
+    if (selectedProject?.id === project.id) {
+      setSelectedProject(null);
+      setPanelOpen(false);
+    }
+    try {
+      await fetch("/api/dashboard/projects/hide", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          company_id:   String(selectedCompany.id),
+          project_id:   String(project.id),
+          project_name: project.display_name || project.name,
+        }),
+      });
+    } catch {
+      // Silently ignore — optimistic update already applied
+    } finally {
+      setHidingProject(null);
+    }
+  }
+
+  async function handleUnhideProject(project: DashboardProject, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!selectedCompany) return;
+    setHidingProject(project.id);
+    // Optimistic: mark as visible immediately
+    setProjects(prev => prev.map(p => p.id === project.id ? { ...p, is_hidden: false } : p));
+    setHiddenCount(prev => Math.max(0, prev - 1));
+    try {
+      await fetch("/api/dashboard/projects/hide", {
+        method:  "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          company_id:   String(selectedCompany.id),
+          project_id:   String(project.id),
+          project_name: project.display_name || project.name,
+        }),
+      });
+    } catch {
+      // Silently ignore
+    } finally {
+      setHidingProject(null);
+    }
   }
 
   // ── Side panel ──────────────────────────────────────────────────────────────
@@ -852,9 +914,28 @@ export default function DashboardPage() {
               project={p}
               selected={selectedProject?.id === p.id}
               stats={projectStats.get(p.id) ?? null}
-              onClick={() => handleSelectProject(p)}
+              hiding={hidingProject === p.id}
+              onClick={() => !p.is_hidden && handleSelectProject(p)}
+              onHide={e => handleHideProject(p, e)}
+              onUnhide={e => handleUnhideProject(p, e)}
             />
           ))}
+
+          {/* Show hidden toggle */}
+          {selectedCompany && !projectsLoading && (
+            <div className="mt-auto border-t border-gray-100 px-4 py-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowHidden(v => !v)}
+                className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-600 transition-colors w-full"
+              >
+                <EyeOffIcon className="h-3.5 w-3.5 shrink-0" />
+                {showHidden
+                  ? "Hide hidden projects"
+                  : `Show hidden${hiddenCount > 0 ? ` (${hiddenCount})` : ""}`}
+              </button>
+            </div>
+          )}
         </aside>
 
         {/* ── Main: ITP list ── */}
@@ -1228,84 +1309,148 @@ function ExportModal({
   );
 }
 
+// ── EyeOffIcon ─────────────────────────────────────────────────────────────────
+
+function EyeOffIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+function EyeIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 // ── ProjectRow ─────────────────────────────────────────────────────────────────
 
 function ProjectRow({
   project: p,
   selected,
   stats,
+  hiding,
   onClick,
+  onHide,
+  onUnhide,
 }: {
   project: DashboardProject;
   selected: boolean;
   stats: InspectionStats | null;
+  hiding: boolean;
   onClick: () => void;
+  onHide: (e: React.MouseEvent) => void;
+  onUnhide: (e: React.MouseEvent) => void;
 }) {
+  const isHidden = p.is_hidden === true;
+
   return (
-    <div className="border-b border-gray-100">
-      <button
-        type="button"
-        onClick={onClick}
-        className={`w-full text-left px-4 py-3 transition-colors ${
-          selected ? "bg-amber-50 border-l-2 border-l-amber-500" : "hover:bg-gray-50 border-l-2 border-l-transparent"
-        }`}
-      >
-        <p className="text-xs font-semibold text-gray-800 leading-snug">
-          {p.display_name || p.name}
-        </p>
-        {p.project_number && (
-          <p className="text-[10px] text-gray-400 mt-0.5">#{p.project_number}</p>
-        )}
-        <div className="flex flex-col gap-0.5 mt-1.5">
-          {stats ? (
-            <>
-              {stats.closedTotal > 0 && (
-                <span className="text-[10px] text-gray-400">
-                  Closed: {stats.closedReviewed}/{stats.closedTotal} reviewed
-                </span>
-              )}
-              {stats.inReviewTotal > 0 && (
-                <span className="text-[10px] text-amber-600">
-                  In Review: {stats.inReviewReviewed}/{stats.inReviewTotal}
-                </span>
-              )}
-              {stats.openTotal > 0 && (
-                <span className="text-[10px] text-gray-400">
-                  Open: {stats.openReviewed}/{stats.openTotal}
-                </span>
-              )}
-            </>
-          ) : p.reviewed_count > 0 ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400">{p.reviewed_count} reviewed</span>
-              {p.avg_score !== null && (
-                <span className={`text-[10px] font-semibold ${
-                  p.avg_score >= 85 ? "text-green-600" :
-                  p.avg_score >= 70 ? "text-amber-600" :
-                  p.avg_score >= 50 ? "text-orange-500" :
-                                      "text-red-500"
-                }`}>
-                  Avg {p.avg_score}
-                </span>
+    <div className={`group border-b border-gray-100 transition-opacity duration-200 ${hiding ? "opacity-40 pointer-events-none" : ""}`}>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={isHidden}
+          className={`w-full text-left px-4 py-3 pr-8 transition-colors ${
+            isHidden
+              ? "opacity-50 cursor-default"
+              : selected
+                ? "bg-amber-50 border-l-2 border-l-amber-500"
+                : "hover:bg-gray-50 border-l-2 border-l-transparent"
+          }`}
+        >
+          <p className={`text-xs font-semibold leading-snug ${isHidden ? "text-gray-400" : "text-gray-800"}`}>
+            {p.display_name || p.name}
+          </p>
+          {p.project_number && (
+            <p className="text-[10px] text-gray-400 mt-0.5">#{p.project_number}</p>
+          )}
+          {isHidden && (
+            <p className="text-[10px] text-gray-400 italic mt-0.5">Hidden</p>
+          )}
+          {!isHidden && (
+            <div className="flex flex-col gap-0.5 mt-1.5">
+              {stats ? (
+                <>
+                  {stats.closedTotal > 0 && (
+                    <span className="text-[10px] text-gray-400">
+                      Closed: {stats.closedReviewed}/{stats.closedTotal} reviewed
+                    </span>
+                  )}
+                  {stats.inReviewTotal > 0 && (
+                    <span className="text-[10px] text-amber-600">
+                      In Review: {stats.inReviewReviewed}/{stats.inReviewTotal}
+                    </span>
+                  )}
+                  {stats.openTotal > 0 && (
+                    <span className="text-[10px] text-gray-400">
+                      Open: {stats.openReviewed}/{stats.openTotal}
+                    </span>
+                  )}
+                </>
+              ) : p.reviewed_count > 0 ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-gray-400">{p.reviewed_count} reviewed</span>
+                  {p.avg_score !== null && (
+                    <span className={`text-[10px] font-semibold ${
+                      p.avg_score >= 85 ? "text-green-600" :
+                      p.avg_score >= 70 ? "text-amber-600" :
+                      p.avg_score >= 50 ? "text-orange-500" :
+                                          "text-red-500"
+                    }`}>
+                      Avg {p.avg_score}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-[10px] text-gray-300 italic">Not reviewed</span>
               )}
             </div>
-          ) : (
-            <span className="text-[10px] text-gray-300 italic">Not reviewed</span>
           )}
-        </div>
-      </button>
-      <div className="px-4 pb-2">
-        <Link
-          href={`/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`}
-          onClick={e => e.stopPropagation()}
-          className="inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-[#1F3864] transition-colors font-medium"
-        >
-          <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Audit Log
-        </Link>
+        </button>
+
+        {/* Hide / unhide button — appears on row hover */}
+        {isHidden ? (
+          <button
+            type="button"
+            onClick={onUnhide}
+            title="Unhide project"
+            className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-gray-400 hover:text-[#1F3864] hover:bg-gray-100"
+          >
+            <EyeIcon className="h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onHide}
+            title="Hide project"
+            className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+          >
+            <EyeOffIcon className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
+
+      {!isHidden && (
+        <div className="px-4 pb-2">
+          <Link
+            href={`/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`}
+            onClick={e => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-[#1F3864] transition-colors font-medium"
+          >
+            <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Audit Log
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
