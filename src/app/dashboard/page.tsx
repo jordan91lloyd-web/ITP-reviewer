@@ -703,18 +703,19 @@ export default function DashboardPage() {
 
   async function handleBulkReview() {
     if (!selectedProject || !selectedCompany || bulkRunning) return;
-    if (selectedUnreviewed.length === 0) return;
+    const allSelected = [...selectedUnreviewed, ...selectedReviewed];
+    if (allSelected.length === 0) return;
 
     setBulkRunning(true);
     setBulkSummary(null);
     setBulkStatus(() => {
       const m = new Map<number, BulkItemStatus>();
-      selectedUnreviewed.forEach(i => m.set(i.id, "queued"));
+      allSelected.forEach(i => m.set(i.id, "queued"));
       return m;
     });
 
     let completed = 0, failed = 0;
-    for (const insp of selectedUnreviewed) {
+    for (const insp of allSelected) {
       setBulkStatus(prev => new Map(prev).set(insp.id, "processing"));
       try {
         const res = await fetch("/api/procore/import", {
@@ -1219,11 +1220,15 @@ function BulkActionBar({
         <button
           type="button"
           onClick={onRunReviews}
-          disabled={bulkRunning || unreviewedCount === 0}
+          disabled={bulkRunning}
           className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
         >
           {bulkRunning && <Spinner className="h-3 w-3 text-white" />}
-          Run Reviews ({unreviewedCount})
+          {unreviewedCount > 0 && reviewedCount === 0
+            ? `Run Reviews (${unreviewedCount})`
+            : unreviewedCount === 0 && reviewedCount > 0
+            ? `Re-run Reviews (${reviewedCount})`
+            : `Run/Re-run Reviews (${unreviewedCount + reviewedCount})`}
         </button>
         <button
           type="button"
