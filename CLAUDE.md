@@ -71,7 +71,7 @@ Dev server runs on port **3010** (`npm run dev`).
 
 App is deployed and live. Key configuration:
 
-Live URL: [LIVE URL — add here]
+Live URL: https://itp-reviewer.vercel.app
 
 ### Environment variables to set in Vercel dashboard
 ```
