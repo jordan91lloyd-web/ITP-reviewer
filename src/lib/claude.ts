@@ -120,6 +120,7 @@ export async function runBundleReview(
   console.log(`[claude] Bundle: ${files.length} file(s) | model=${MODEL} | max_tokens=${MAX_TOKENS}`);
 
   let rawResponse: string;
+  let stopReason: string | null = null;
 
   try {
     const message = await client.messages.create({
@@ -137,17 +138,8 @@ export async function runBundleReview(
     }
 
     rawResponse = block.text;
-
-    // Detect output truncation — if stop_reason is "max_tokens" the JSON will
-    // be incomplete and will always fail to parse.
-    const stopReason = message.stop_reason;
+    stopReason = message.stop_reason;
     console.log(`[claude] stop_reason=${stopReason} | response_length=${rawResponse.length} chars`);
-    if (stopReason === "max_tokens") {
-      console.error("[claude] ⚠ Response was TRUNCATED (hit max_tokens). Increase MAX_TOKENS or reduce prompt complexity.");
-      throw new Error(
-        "The review response was too long for the current token limit. Try uploading fewer files or contact support."
-      );
-    }
 
     if (isDev) {
       console.log("[claude] Raw response (first 3000 chars):\n", rawResponse.slice(0, 3000));
@@ -157,20 +149,36 @@ export async function runBundleReview(
     throw new Error(`Claude API error: ${msg}`);
   }
 
+  // Detect output truncation — checked OUTSIDE the API try/catch so it throws
+  // cleanly rather than being re-wrapped as "Claude API error: ...".
+  // When stop_reason is "max_tokens" the JSON is always incomplete and will
+  // fail to parse — surface a clear message instead of a confusing JSON error.
+  if (stopReason === "max_tokens") {
+    console.error(
+      `[claude] ⚠ Response TRUNCATED at ${rawResponse!.length} chars (hit max_tokens=${MAX_TOKENS}). ` +
+      `Files in bundle: ${files.length}. Increase MAX_TOKENS or reduce prompt complexity.`
+    );
+    throw new Error(
+      `The review response was truncated (${files.length} files produced output that exceeded the token limit). ` +
+      `Try uploading fewer files, or remove some images from the bundle.`
+    );
+  }
+
   let parsed: unknown;
-  let parseStage = "initial";
   try {
-    parseStage = "extractJson";
-    parsed = extractJson(rawResponse);
-  } catch {
-    console.error(`[claude] ── Parse failure at stage: ${parseStage} ─────────────`);
-    console.error(`[claude] Files in bundle: ${files.length}`);
-    console.error(`[claude] Response length: ${rawResponse.length} chars`);
-    console.error(`[claude] First 500 chars:\n`, rawResponse.slice(0, 500));
-    console.error(`[claude] Last 200 chars:\n`, rawResponse.slice(-200));
+    parsed = extractJson(rawResponse!);
+  } catch (parseErr: unknown) {
+    const parseMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+    console.error(`[claude] ── JSON parse failure ─────────────────────────────────`);
+    console.error(`[claude] Error: ${parseMsg}`);
+    console.error(`[claude] Files in bundle: ${files.length} | stop_reason: ${stopReason}`);
+    console.error(`[claude] Response length: ${rawResponse!.length} chars`);
+    console.error(`[claude] First 200 chars:\n`, rawResponse!.slice(0, 200));
+    console.error(`[claude] Last 200 chars:\n`, rawResponse!.slice(-200));
     console.error("[claude] ──────────────────────────────────────────────────────");
     throw new Error(
-      "Claude returned a response that could not be read as JSON. Try running the review again."
+      `Claude returned a response that could not be parsed as JSON (${parseMsg}). ` +
+      `Response was ${rawResponse!.length} chars with stop_reason=${stopReason}. Try running the review again.`
     );
   }
 

@@ -148,7 +148,7 @@ OUTPUT LENGTH — MANDATORY LIMITS (apply to every review, single or multi-file)
 - missing_evidence: 6 items maximum; combine related gaps into one entry
 - key_issues: 5 items maximum
 - next_actions: 4 items maximum
-- document_observations: one entry per file, 1 sentence each — no more
+- document_observations: one entry per file, EXACTLY 1 sentence each — this applies to images too, no exceptions
 These limits are essential. Exceeding them causes output truncation and breaks the app.
 
 IMAGE ANALYSIS:
@@ -189,10 +189,10 @@ Now produce your review. Do all scoring and reasoning internally.
 Output ONLY the JSON object below — no text before it, no text after it, no code fences.
 Replace every placeholder value with real values from your review.
 
-CRITICAL: The document_observations array must contain exactly ${fileCount} entr${fileCount === 1 ? "y" : "ies"} — one for every file in this bundle. Do not skip any file.
+CRITICAL: The document_observations array must contain exactly ${fileCount} entr${fileCount === 1 ? "y" : "ies"} — one for every file in this bundle. Do not skip any file. Each observation is ONE SENTENCE MAXIMUM — this is a hard limit, not a style guide. Exceeding it causes output truncation and breaks the app.
 
-FOR IMAGE FILES — analyse as evidence documents, not just site photos:
-Identify if this is a document photo (test certificate, signed report, compliance certificate, engineer letter, NATA-stamped result) or a site photo (physical construction progress). If it is a document photo, extract all visible text, values, signatures, and certification details. State clearly what the document shows and whether it satisfies any scoring dimension. If it is a site photo, describe the visible construction elements and whether the image supports, contradicts, or is unrelated to the checklist items.
+FOR IMAGE FILES — one sentence only, pack the key detail:
+First determine: document photo (certificate, signed report, NATA stamp, compliance cert) or site photo? Document photo: "[filename] is a [document type] showing [key value/name/date] — satisfies/does not satisfy [scoring dimension]." Site photo: "[filename] shows [visible element] and [supports/contradicts/is unrelated to] the checklist." Do not write more than one sentence per image under any circumstances.
 
 ENUM VALUES — use these exact lowercase strings, no other values:
   package_assessment: "compliant" or "minor_gaps" or "significant_gaps" or "critical_risk"
@@ -264,7 +264,7 @@ ENUM VALUES — use these exact lowercase strings, no other values:
   "document_observations": [
     {
       "filename": "exact-filename.pdf",
-      "observation": "1 sentence: what this document is and its key contribution or concern. For images: state if document photo (extract key details: values, signatures, cert type) or site photo (describe visible elements and relevance to checklist)."
+      "observation": "ONE SENTENCE ONLY — no exceptions. State document type, key detail, and scoring relevance. Never write more than one sentence here."
     }
   ],
   "commercial_confidence": {
