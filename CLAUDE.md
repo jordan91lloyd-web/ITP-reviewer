@@ -28,9 +28,9 @@ This commits all changes and pushes to GitHub (`jordan91lloyd-web/itp-reviewer`)
 - **Collapsible report sections** — all 11 sections in `ReviewResults` are independently collapsible; single `sections` state object at top level; "Collapse All / Expand All" button; print expands all sections before `window.print()` and restores state after
 - **PDF print fix** — `globals.css` sets `html, body { height: auto; overflow: visible }` for `@media print`; `break-inside: auto` on cards so large sections paginate across pages
 - **Access control** — `FLEEK_COMPANY_ID` env var gates login to Procore users belonging to Fleek's company only
+- **Vercel deployment** — app is live in production on Vercel
 
 ### Known limitations / not yet built
-- No Vercel deployment yet — app runs locally only (port 3010)
 - No email notifications
 - Manual upload does not support .msg or .docx (only the Procore import pipeline does)
 - The `how-it-works` page exists but is minimal
@@ -67,9 +67,11 @@ Dev server runs on port **3010** (`npm run dev`).
 
 ---
 
-## Deployment (Vercel)
+## Deployment (Vercel — LIVE)
 
-No `vercel.json` exists yet. Notes for when this is deployed:
+App is deployed and live. Key configuration:
+
+Live URL: [LIVE URL — add here]
 
 ### Environment variables to set in Vercel dashboard
 ```
