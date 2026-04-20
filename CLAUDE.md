@@ -114,7 +114,7 @@ The QA report UI. Two view modes: compact (collapsible sections) and full (all e
 9. Save to history via `appendRecord()`.
 10. Return result + import summary + diagnostics.
 
-Only PDFs are in `SUPPORTED` — images from Procore are skipped because site photos frequently exceed the 5 MB Claude API limit and cause failures. The inspection text bundle lists photo filenames so Claude knows they exist.
+PDFs and images (JPEG/PNG) are in `SUPPORTED`. Images under 4 MB are included — they can contain document photos (test certs, signed reports). Images over 4 MB are skipped with "Image too large (Xmb)". PDFs are prioritised first in the bundle budget. Skipped files are returned as a structured `SkippedFile[]` with filename, reason, and optional size_mb.
 
 ### `src/app/api/procore/inspections/route.ts`
 `GET /api/procore/inspections?project_id=X&company_id=Y`. Fetches all inspections, filters to `status === "closed"` AND `name.startsWith("itp")` (case-insensitive). Sorts by ITP number extracted from the name. Enriches each with `review_status` from local history.
@@ -233,4 +233,4 @@ PROCORE_REDIRECT_URI=http://localhost:3010/api/auth/callback
 
 13. **PDFs are passed natively to Claude** (not parsed to text). This is intentional — native PDF mode lets Claude see embedded photos, signatures, stamps, and scanned pages. `pdf-parse` (still in dependencies) is no longer used for this purpose.
 
-14. **Images from Procore are intentionally skipped** in the import route. Site photos frequently exceed the 5 MB Claude API limit and the inspection text bundle already lists their filenames so Claude knows they exist. Do not add image support to the import route without handling the size limit robustly.
+14. **Images from Procore are included if under 4 MB** in the import route. The 4 MB cap filters out large site photos while keeping document photos (test certificates, signed reports, compliance certs) which can satisfy scoring dimensions. Images over 4 MB are skipped with reason "Image too large (Xmb)". PDFs are always prioritised first in the bundle budget. The `SUPPORTED` set includes `image/jpeg` and `image/png`.

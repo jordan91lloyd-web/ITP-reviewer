@@ -87,3 +87,11 @@ export interface ReviewResult {
 export type ReviewResponse =
   | { success: true; result: ReviewResult }
   | { success: false; error: string };
+
+// Structured record of a file excluded from a Procore import review.
+// Returned in import_summary.skipped_files and optionally passed to ReviewResults.
+export interface SkippedFile {
+  filename: string;
+  reason: string;
+  size_mb?: number;
+}

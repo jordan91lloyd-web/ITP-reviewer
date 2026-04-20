@@ -13,7 +13,7 @@
 
 import { useState, useEffect } from "react";
 import ReviewResults from "./ReviewResults";
-import type { ReviewResult } from "@/lib/types";
+import type { ReviewResult, SkippedFile } from "@/lib/types";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -46,7 +46,7 @@ interface ImportSummary {
   inspection_title: string;
   total_files: number;
   imported_files: string[];
-  skipped_files: string[];
+  skipped_files: SkippedFile[];
 }
 
 interface ImportDiagnostics {
@@ -241,7 +241,7 @@ export default function ProcoreImport() {
         <EvidenceSummaryBar summary={importSummary} />
 
         {/* ── The actual QA report ── */}
-        <ReviewResults result={result} onReset={handleReset} />
+        <ReviewResults result={result} onReset={handleReset} skippedFiles={importSummary.skipped_files} />
 
         {/* ── Appendix divider ── */}
         <div className="flex items-center gap-3 pt-2">
@@ -738,10 +738,10 @@ function EvidenceSummaryBar({ summary: s }: { summary: ImportSummary }) {
 // Collapsible appendix panel showing all imported + skipped files. Lives at
 // the bottom of the result page so it doesn't interrupt the report flow.
 
-function groupSkippedByType(files: string[]): string {
+function groupSkippedByType(files: SkippedFile[]): string {
   const counts: Record<string, number> = {};
   for (const f of files) {
-    const ext = (f.split(".").pop() ?? "").toLowerCase();
+    const ext = (f.filename.split(".").pop() ?? "").toLowerCase();
     const type =
       /^(jpg|jpeg|png|gif|webp|heic|heif|tiff?)$/.test(ext) ? "images" :
       /^(mp4|mov|avi|mkv|wmv|m4v)$/.test(ext)               ? "videos" :
@@ -799,17 +799,25 @@ function ImportSummaryPanel({ summary: s }: { summary: ImportSummary }) {
             </div>
           )}
 
-          {/* Skipped files — grouped summary */}
+          {/* Skipped files — grouped summary + per-file reasons */}
           {s.skipped_files.length > 0 && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-              <p className="text-xs font-semibold text-amber-700 mb-0.5">
+              <p className="text-xs font-semibold text-amber-700 mb-1">
                 ⚠ {s.skipped_files.length} file{s.skipped_files.length !== 1 ? "s" : ""} skipped — not sent to Claude
               </p>
-              <p className="text-xs text-amber-700">
+              <p className="text-xs text-amber-700 mb-2">
                 {groupSkippedByType(s.skipped_files)}
               </p>
-              <p className="mt-1.5 text-[10px] text-amber-500 italic leading-relaxed">
-                Unsupported types (images, videos) and files over the size limit are excluded. PDFs are always prioritised.
+              <div className="space-y-1">
+                {s.skipped_files.map((f, i) => (
+                  <div key={i} className="flex items-start justify-between gap-3">
+                    <p className="text-[10px] text-amber-800 font-medium min-w-0 break-all">{f.filename}</p>
+                    <p className="text-[10px] text-amber-600 whitespace-nowrap shrink-0">{f.reason}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[10px] text-amber-500 italic leading-relaxed">
+                PDFs always prioritised. Images under 4 MB are included; larger images and unsupported types are excluded.
               </p>
             </div>
           )}

@@ -191,6 +191,9 @@ Replace every placeholder value with real values from your review.
 
 CRITICAL: The document_observations array must contain exactly ${fileCount} entr${fileCount === 1 ? "y" : "ies"} — one for every file in this bundle. Do not skip any file.
 
+FOR IMAGE FILES — analyse as evidence documents, not just site photos:
+Identify if this is a document photo (test certificate, signed report, compliance certificate, engineer letter, NATA-stamped result) or a site photo (physical construction progress). If it is a document photo, extract all visible text, values, signatures, and certification details. State clearly what the document shows and whether it satisfies any scoring dimension. If it is a site photo, describe the visible construction elements and whether the image supports, contradicts, or is unrelated to the checklist items.
+
 ENUM VALUES — use these exact lowercase strings, no other values:
   package_assessment: "compliant" or "minor_gaps" or "significant_gaps" or "critical_risk"
   confidence: "high" or "medium" or "low"
@@ -261,7 +264,7 @@ ENUM VALUES — use these exact lowercase strings, no other values:
   "document_observations": [
     {
       "filename": "exact-filename.pdf",
-      "observation": "1 sentence: what this document is and its key contribution or concern. For images: visible elements and whether it supports or contradicts the checklist item."
+      "observation": "1 sentence: what this document is and its key contribution or concern. For images: state if document photo (extract key details: values, signatures, cert type) or site photo (describe visible elements and relevance to checklist)."
     }
   ],
   "commercial_confidence": {

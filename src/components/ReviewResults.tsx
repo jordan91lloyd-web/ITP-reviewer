@@ -11,13 +11,14 @@
 // After the print dialog closes the on-screen mode is restored automatically.
 
 import { useState, useEffect } from "react";
-import type { ReviewResult, ScoreBreakdown, CategoryScore, CommercialConfidence } from "@/lib/types";
+import type { ReviewResult, ScoreBreakdown, CategoryScore, CommercialConfidence, SkippedFile } from "@/lib/types";
 
 type ViewMode = "compact" | "full";
 
 interface Props {
   result: ReviewResult;
   onReset: () => void;
+  skippedFiles?: SkippedFile[];
 }
 
 const UNIDENTIFIED = "Not confidently identified";
@@ -34,7 +35,7 @@ function getQAStatus(result: ReviewResult): "strong" | "acceptable" | "high-risk
   return "acceptable";
 }
 
-export default function ReviewResults({ result, onReset }: Props) {
+export default function ReviewResults({ result, onReset, skippedFiles }: Props) {
   const h = result.inspection_header;
 
   // ── View / print mode ────────────────────────────────────────────────────
@@ -418,6 +419,27 @@ export default function ReviewResults({ result, onReset }: Props) {
                     {obs.filename}
                   </p>
                   <p className="text-sm text-gray-700 leading-relaxed">{obs.observation}</p>
+                </div>
+              ))}
+            </div>
+          </ResultCard>
+        )}
+
+        {/* ── Skipped files ── */}
+        {skippedFiles && skippedFiles.length > 0 && (
+          <ResultCard
+            title={`${skippedFiles.length} file${skippedFiles.length !== 1 ? "s" : ""} skipped`}
+            subtitle="Files excluded from this review — not sent to Claude"
+            accent="yellow"
+            collapsible
+            defaultOpen={false}
+            forceOpen={forceOpen}
+          >
+            <div className="space-y-1.5">
+              {skippedFiles.map((f, i) => (
+                <div key={i} className="flex items-start justify-between gap-4 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2.5">
+                  <p className="text-xs font-medium text-gray-700 min-w-0 break-all">{f.filename}</p>
+                  <p className="text-xs text-gray-500 whitespace-nowrap shrink-0">{f.reason}</p>
                 </div>
               ))}
             </div>

@@ -34,19 +34,18 @@ import {
 } from "@/lib/procore";
 import { runBundleReview } from "@/lib/claude";
 import { appendRecord } from "@/lib/history";
-import type { ProcessedFile } from "@/lib/types";
+import type { ProcessedFile, SkippedFile } from "@/lib/types";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 // Supported MIME types for direct processing.
-// Images are intentionally excluded here — Procore site photos frequently
-// exceed Claude's 5 MB per-image API limit and cause request failures.
-// The inspection text bundle already lists every photo filename and count
-// per item, so Claude knows they exist. PDFs are the critical evidence
-// (engineer sign-offs, test certificates, compaction reports) and are
-// passed natively so Claude sees all embedded content including photos
-// and signatures stamped inside the PDF.
+// Images under 4 MB are included — they can contain valuable evidence such
+// as document photos (test certificates, signed reports, compliance certs).
+// Images over 4 MB are skipped to stay safely under Claude's per-image API
+// limit. PDFs are always prioritised first in the bundle budget.
 const SUPPORTED = new Set([
   "application/pdf",
+  "image/jpeg",
+  "image/png",
 ]);
 
 export async function POST(request: NextRequest) {
@@ -141,7 +140,7 @@ export async function POST(request: NextRequest) {
     { kind: "text", filename: `${safeTitle}.txt`, text: inspectionText },
   ];
   const importedFiles: string[] = [`${safeTitle}.txt (inspection form)`];
-  const skippedFiles: string[] = [];
+  const skippedFiles: SkippedFile[] = [];
 
   // ── 4. Collect all attachment references from every location ───────────────
   type AttachmentRef = { filename: string; url: string; content_type: string | null; source: string };
@@ -286,13 +285,14 @@ export async function POST(request: NextRequest) {
   // compaction reports, form data), while item photos are high-count but
   // often redundant — if we have to drop something, drop photos not PDFs.
   const MAX_ATTACHMENT_BYTES_TOTAL = 20 * 1024 * 1024; // 20 MB combined
-  // Claude's API enforces a hard 5 MB limit on individual image files.
-  // PDFs don't have the same per-file restriction (only the total matters).
-  const MAX_IMAGE_BYTES  = 5 * 1024 * 1024;  //  5 MB — Claude API hard limit
+  // Images are capped at 4 MB — safely under Claude's 5 MB hard limit and
+  // small enough to filter out large site photos while keeping document
+  // photos (test certificates, signed reports). PDFs have no per-file cap
+  // other than the generous 15 MB limit below.
+  const MAX_IMAGE_BYTES  = 4 * 1024 * 1024;  //  4 MB — size filter for Procore images
   const MAX_PDF_BYTES    = 15 * 1024 * 1024; // 15 MB — generous PDF cap
 
-  // Sort PDFs first so they always get included before we start dropping
-  // photos for the budget.
+  // Sort PDFs first so they always get included before images for the budget.
   const prioritisedRefs = [...uniqueAttachmentRefs].sort((a, b) => {
     const aIsPdf = normaliseMime(a.content_type, a.filename) === "application/pdf" ? 0 : 1;
     const bIsPdf = normaliseMime(b.content_type, b.filename) === "application/pdf" ? 0 : 1;
@@ -306,9 +306,9 @@ export async function POST(request: NextRequest) {
     const mime = normaliseMime(ref.content_type, ref.filename);
 
     if (!SUPPORTED.has(mime)) {
-      const reason = mime ? `unsupported type: ${mime}` : "unknown file type";
+      const reason = mime ? `Unsupported type: ${mime}` : "Unknown file type";
       console.log(`[procore/import] Skipping "${ref.filename}" — ${reason}`);
-      skippedFiles.push(`${ref.filename} (${reason})`);
+      skippedFiles.push({ filename: ref.filename, reason });
       continue;
     }
 
@@ -316,28 +316,31 @@ export async function POST(request: NextRequest) {
       const { buffer, filename, contentType } = await downloadFile(ref.url, accessToken);
       const effectiveMime = normaliseMime(contentType || mime, filename);
 
-      // Per-file cap — Claude's API enforces 5 MB per image (hard limit).
+      // Per-file cap — images over 4 MB are skipped (likely large site photos).
       // PDFs have no per-file restriction but we still cap them at 15 MB to
       // avoid one massive scan-PDF consuming the entire total budget.
       const isPdf = effectiveMime === "application/pdf";
       const perFileCap = isPdf ? MAX_PDF_BYTES : MAX_IMAGE_BYTES;
       if (buffer.length > perFileCap) {
-        const sizeMb = (buffer.length / 1024 / 1024).toFixed(1);
+        const sizeMb = parseFloat((buffer.length / 1024 / 1024).toFixed(1));
         const capMb  = (perFileCap / 1024 / 1024).toFixed(0);
-        console.log(`[procore/import] Skipping "${filename}" — ${isPdf ? "PDF" : "image"} too large (${sizeMb} MB > ${capMb} MB cap)`);
-        skippedFiles.push(`${filename} (too large: ${sizeMb} MB — ${isPdf ? "PDF" : "image"} limit is ${capMb} MB)`);
+        const reason = isPdf
+          ? `PDF too large (${sizeMb} MB — limit is ${capMb} MB)`
+          : `Image too large (${sizeMb}MB)`;
+        console.log(`[procore/import] Skipping "${filename}" — ${reason}`);
+        skippedFiles.push({ filename, reason, size_mb: sizeMb });
         droppedForSize++;
         continue;
       }
 
       // Total-budget cap — stop adding once we'd exceed the combined limit
       if (totalBytes + buffer.length > MAX_ATTACHMENT_BYTES_TOTAL) {
-        const sizeMb = (buffer.length / 1024 / 1024).toFixed(1);
+        const sizeMb = parseFloat((buffer.length / 1024 / 1024).toFixed(1));
         console.log(
           `[procore/import] Skipping "${filename}" — would exceed total budget ` +
           `(${sizeMb} MB, running total ${(totalBytes / 1024 / 1024).toFixed(1)} MB)`
         );
-        skippedFiles.push(`${filename} (skipped: total attachment budget reached — Claude API request size limit)`);
+        skippedFiles.push({ filename, reason: "Total attachment budget reached", size_mb: sizeMb });
         droppedForSize++;
         continue;
       }
@@ -377,7 +380,7 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(`[procore/import] Download failed for "${ref.filename}": ${msg}`);
-      skippedFiles.push(`${ref.filename} (download failed: ${msg})`);
+      skippedFiles.push({ filename: ref.filename, reason: `Download failed: ${msg}` });
     }
   }
 
@@ -404,7 +407,7 @@ export async function POST(request: NextRequest) {
       );
       const filesWithoutImages = processedFiles.filter(f => f.kind !== "image");
       for (const img of imageFiles) {
-        skippedFiles.push(`${img.filename} (skipped on retry: Claude API rejected the initial request)`);
+        skippedFiles.push({ filename: img.filename, reason: "Skipped on retry: Claude API rejected the initial request" });
       }
       try {
         reviewResult = await runBundleReview(filesWithoutImages, String(company_id));
