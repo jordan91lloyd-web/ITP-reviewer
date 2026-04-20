@@ -39,6 +39,10 @@ export interface ReviewRecord {
   // full-report view without re-running the review.
   review_data: ReviewResult | null;
 
+  // Scoring document version used for this review
+  scoring_version_id:    string | null;
+  scoring_version_label: string | null;
+
   // Procore change-detection
   procore_updated_at: string | null;
 }

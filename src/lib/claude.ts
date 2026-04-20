@@ -37,7 +37,7 @@ const MAX_TOKENS = 16000;
 export async function runBundleReview(
   filesRaw: ProcessedFile[],
   company_id: string = "default"
-): Promise<ReviewResult & { scoring_source: string }> {
+): Promise<ReviewResult & { scoring_source: string; scoring_version_id: string | null; scoring_version_label: string }> {
   // ── Pre-flight: strip any images that exceed Claude's 5 MB per-image limit.
   // base64.length * 0.75 ≈ raw bytes (base64 encodes 3 bytes as 4 chars).
   // This guard runs before any content block is built, so the 400 error is
@@ -57,9 +57,9 @@ export async function runBundleReview(
   });
 
   // ── Fetch company-specific scoring content ───────────────────────────────
-  const { content: scoringContent, source: scoringSource } =
+  const { content: scoringContent, source: scoringSource, version_id: scoringVersionId, version_label: scoringVersionLabel } =
     await getCompanyScoringContent(company_id);
-  console.log(`[claude] Scoring source for company "${company_id}": ${scoringSource}`);
+  console.log(`[claude] Scoring source for company "${company_id}": ${scoringSource} (${scoringVersionLabel})`);
 
   const client = new Anthropic();
 
@@ -175,7 +175,12 @@ export async function runBundleReview(
   }
 
   const validated = validateResult(normalizeEnums(parsed));
-  return { ...validated, scoring_source: scoringSource };
+  return {
+    ...validated,
+    scoring_source:        scoringSource,
+    scoring_version_id:    scoringVersionId,
+    scoring_version_label: scoringVersionLabel,
+  };
 }
 
 /**

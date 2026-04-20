@@ -432,6 +432,9 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 7. Save to history ─────────────────────────────────────────────────────
+  // Stamp version label into review_data before persisting so dashboard can display it
+  reviewResult.scoring_version_label = reviewResult.scoring_version_label;
+
   await appendRecord({
     source: "procore",
     procore_project_id: project_id,
@@ -445,6 +448,8 @@ export async function POST(request: NextRequest) {
     procore_updated_at: inspection.updated_at ?? null,
     inspection_number_of_type: reviewResult.inspection_header.inspection_number_of_type ?? null,
     review_data: reviewResult,
+    scoring_version_id:    reviewResult.scoring_version_id ?? null,
+    scoring_version_label: reviewResult.scoring_version_label ?? null,
   });
 
   console.log(
@@ -457,11 +462,12 @@ export async function POST(request: NextRequest) {
     entity_type: "inspection", entity_id: String(inspection_id), entity_name: inspection.name,
     project_id: String(project_id), project_name: project?.name ?? undefined,
     details: {
-      score: reviewResult.total_score,
-      score_band: reviewResult.score_band,
-      file_count: processedFiles.length,
-      files_skipped: skippedFiles.length,
-      scoring_source: reviewResult.scoring_source,
+      score:                 reviewResult.total_score,
+      score_band:            reviewResult.score_band,
+      file_count:            processedFiles.length,
+      files_skipped:         skippedFiles.length,
+      scoring_source:        reviewResult.scoring_source,
+      scoring_version_label: reviewResult.scoring_version_label,
     },
   });
 

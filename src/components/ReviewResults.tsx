@@ -425,10 +425,15 @@ export default function ReviewResults({ result, onReset }: Props) {
         )}
 
         {/* ── Footer ── */}
-        <div className="pt-2 text-center print:hidden">
+        <div className="pt-2 flex flex-col items-center gap-2 print:items-start">
+          {result.scoring_version_label && (
+            <p className="text-[11px] text-gray-400">
+              Scored using: <span className="font-medium">{result.scoring_version_label}</span>
+            </p>
+          )}
           <button
             onClick={onReset}
-            className="rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+            className="rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors print:hidden"
           >
             Review a different bundle
           </button>

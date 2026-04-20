@@ -80,6 +80,8 @@ export interface ReviewResult {
   next_actions: string[];
   document_observations: DocumentObservation[];
   commercial_confidence: CommercialConfidence;
+  // Stamped by the review route — not part of Claude's output
+  scoring_version_label?: string;
 }
 
 export type ReviewResponse =

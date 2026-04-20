@@ -10,7 +10,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getProcoreUser } from "@/lib/procore";
 import { isCompanyAdmin } from "@/lib/admin";
 import { logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
-import { invalidateScoringCache } from "@/lib/scoring";
+import { invalidateScoringCache, nextVersionNumber } from "@/lib/scoring";
 
 const BUCKET        = "documents";
 const MAX_SIZE_BYTES = 52_428_800; // 50 MB
@@ -105,6 +105,44 @@ export async function POST(request: NextRequest) {
   // Bust the in-memory scoring cache so the next review picks up the new doc
   invalidateScoringCache(companyId);
 
+  // ── Insert scoring version record ───────────────────────────────────────
+  let newVersionNumber = "1.0";
+  let newVersionId: string | null = null;
+  try {
+    // Find the latest version for this company to auto-increment
+    const { data: latestRow } = await supabase
+      .from("scoring_versions")
+      .select("version_number")
+      .eq("company_id", companyId)
+      .order("uploaded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    newVersionNumber = nextVersionNumber(latestRow?.version_number ?? null);
+
+    const { data: versionRow, error: versionError } = await supabase
+      .from("scoring_versions")
+      .insert({
+        company_id:        companyId,
+        version_number:    newVersionNumber,
+        uploaded_by_email: user.login,
+        uploaded_by_name:  user.name,
+        file_name:         file.name,
+        file_size:         file.size,
+        source:            "supabase",
+      })
+      .select("id")
+      .single();
+
+    if (versionError) {
+      console.error("[documents/upload] Failed to insert scoring_versions row:", versionError.message);
+    } else {
+      newVersionId = versionRow?.id ?? null;
+    }
+  } catch (err) {
+    console.error("[documents/upload] Version tracking error:", err instanceof Error ? err.message : err);
+  }
+
   // Audit log (fire-and-forget)
   void logAuditEvent({
     company_id:  companyId,
@@ -117,13 +155,17 @@ export async function POST(request: NextRequest) {
       file_size:                 file.size,
       storage_path:              storagePath,
       previous_version_existed:  previousVersionExisted,
+      version_number:            newVersionNumber,
+      version_id:                newVersionId,
     },
   });
 
   return NextResponse.json({
-    success:    true,
-    url:        urlData.publicUrl,
-    name:       storagePath,
-    company_id: companyId,
+    success:        true,
+    url:            urlData.publicUrl,
+    name:           storagePath,
+    company_id:     companyId,
+    version_number: newVersionNumber,
+    version_id:     newVersionId,
   });
 }

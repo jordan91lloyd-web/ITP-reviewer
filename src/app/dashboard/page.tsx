@@ -1702,6 +1702,11 @@ function InspectionPanel({
                 <p className={`mt-0.5 ${insp.status?.toLowerCase() === "closed" ? "text-gray-400" : "text-blue-500 font-medium"}`}>
                   {insp.status}
                 </p>
+                {insp.review_data?.scoring_version_label && (
+                  <p className="mt-1 text-[10px] text-gray-300">
+                    Scoring: {insp.review_data.scoring_version_label}
+                  </p>
+                )}
               </div>
             </div>
           </div>

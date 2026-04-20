@@ -111,8 +111,18 @@ export async function POST(request: NextRequest) {
       ...auditUser,
       company_id: auditCompany,
       action: AUDIT_ACTIONS.REVIEW_RUN,
-      details: { file_count: processedFiles.length, score: result.total_score, score_band: result.score_band, source: "manual", scoring_source: result.scoring_source },
+      details: {
+        file_count:            processedFiles.length,
+        score:                 result.total_score,
+        score_band:            result.score_band,
+        source:                "manual",
+        scoring_source:        result.scoring_source,
+        scoring_version_label: result.scoring_version_label,
+      },
     });
+
+    // Stamp the scoring version label into the result for display in ReviewResults
+    result.scoring_version_label = result.scoring_version_label;
 
     return NextResponse.json({ success: true, result });
   } catch (err: unknown) {
