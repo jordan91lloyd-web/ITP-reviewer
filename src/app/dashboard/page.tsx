@@ -714,19 +714,33 @@ export default function DashboardPage() {
       return m;
     });
 
+    const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
     let completed = 0, failed = 0;
     for (const insp of allSelected) {
+      const runImport = () => fetch("/api/procore/import", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          project_id:    selectedProject.id,
+          inspection_id: insp.id,
+          company_id:    selectedCompany.id,
+        }),
+      });
+
       setBulkStatus(prev => new Map(prev).set(insp.id, "processing"));
       try {
-        const res = await fetch("/api/procore/import", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            project_id:    selectedProject.id,
-            inspection_id: insp.id,
-            company_id:    selectedCompany.id,
-          }),
-        });
+        let res = await runImport();
+
+        // 429 rate limit — wait 15s and retry once
+        if (res.status === 429) {
+          await delay(15000);
+          res = await runImport();
+          if (res.status === 429) {
+            throw new Error("Rate limit — retry later");
+          }
+        }
+
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
         setBulkStatus(prev => new Map(prev).set(insp.id, "done"));
@@ -734,6 +748,12 @@ export default function DashboardPage() {
       } catch {
         setBulkStatus(prev => new Map(prev).set(insp.id, "failed"));
         failed++;
+      }
+
+      // 3s delay between reviews to avoid hitting the TPM rate limit.
+      // Skip the delay after the last item.
+      if (insp !== allSelected[allSelected.length - 1]) {
+        await delay(3000);
       }
     }
 
