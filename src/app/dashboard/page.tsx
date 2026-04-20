@@ -922,17 +922,14 @@ export default function DashboardPage() {
           ))}
 
           {/* Show hidden toggle */}
-          {selectedCompany && !projectsLoading && (
-            <div className="mt-auto border-t border-gray-100 px-4 py-3 shrink-0">
+          {selectedCompany && !projectsLoading && hiddenCount > 0 && (
+            <div className="border-t border-gray-100 px-3 py-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowHidden(v => !v)}
-                className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-600 transition-colors w-full"
+                className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <EyeOffIcon className="h-3.5 w-3.5 shrink-0" />
-                {showHidden
-                  ? "Hide hidden projects"
-                  : `Show hidden${hiddenCount > 0 ? ` (${hiddenCount})` : ""}`}
+                {showHidden ? "Hide hidden projects" : `${hiddenCount} hidden — show`}
               </button>
             </div>
           )}
@@ -1309,26 +1306,6 @@ function ExportModal({
   );
 }
 
-// ── EyeOffIcon ─────────────────────────────────────────────────────────────────
-
-function EyeOffIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-}
-
-function EyeIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
 // ── ProjectRow ─────────────────────────────────────────────────────────────────
 
 function ProjectRow({
@@ -1348,109 +1325,122 @@ function ProjectRow({
   onHide: (e: React.MouseEvent) => void;
   onUnhide: (e: React.MouseEvent) => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const isHidden = p.is_hidden === true;
 
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  // Dot colour: derived from avg_score as a proxy for overall project health
+  const worstBand = p.avg_score !== null ? scoreBand(p.avg_score) : null;
+
+  const dotColor = ({
+    compliant:        "bg-green-400",
+    minor_gaps:       "bg-amber-400",
+    significant_gaps: "bg-orange-400",
+    critical_risk:    "bg-red-500",
+  } as Record<string, string>)[worstBand ?? ""] ?? "bg-gray-200";
+
+  const auditHref = `/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`;
+
   return (
-    <div className={`group border-b border-gray-100 transition-opacity duration-200 ${hiding ? "opacity-40 pointer-events-none" : ""}`}>
-      <div className="relative">
+    <div className={`group relative border-b border-gray-100 transition-opacity duration-200 ${hiding ? "opacity-30 pointer-events-none" : ""}`}>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={isHidden}
+        className={`w-full text-left px-3 py-2 pr-8 transition-colors ${
+          isHidden
+            ? "cursor-default"
+            : selected
+              ? "bg-amber-50 border-l-2 border-l-amber-500"
+              : "hover:bg-gray-50 border-l-2 border-l-transparent"
+        }`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Rating dot */}
+          <span className={`shrink-0 h-2 w-2 rounded-full ${isHidden ? "bg-gray-200" : dotColor}`} />
+
+          <div className="min-w-0 flex-1">
+            {p.project_number && (
+              <p className="text-[10px] text-gray-400 leading-none mb-0.5">#{p.project_number}</p>
+            )}
+            <p className={`text-xs font-medium leading-snug truncate ${isHidden ? "text-gray-400" : "text-gray-800"}`}>
+              {p.display_name || p.name}
+            </p>
+          </div>
+
+          {/* Avg score or hidden label */}
+          {isHidden ? (
+            <span className="shrink-0 text-[10px] text-gray-400 italic">hidden</span>
+          ) : p.avg_score !== null ? (
+            <span className="shrink-0 text-[10px] font-semibold text-amber-600">
+              Avg {p.avg_score}
+            </span>
+          ) : null}
+        </div>
+      </button>
+
+      {/* ⋯ menu button — appears on row hover */}
+      <div ref={menuRef} className="absolute right-1.5 top-1/2 -translate-y-1/2">
         <button
           type="button"
-          onClick={onClick}
-          disabled={isHidden}
-          className={`w-full text-left px-4 py-3 pr-8 transition-colors ${
-            isHidden
-              ? "opacity-50 cursor-default"
-              : selected
-                ? "bg-amber-50 border-l-2 border-l-amber-500"
-                : "hover:bg-gray-50 border-l-2 border-l-transparent"
-          }`}
+          onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 leading-none text-sm font-bold"
+          title="More options"
         >
-          <p className={`text-xs font-semibold leading-snug ${isHidden ? "text-gray-400" : "text-gray-800"}`}>
-            {p.display_name || p.name}
-          </p>
-          {p.project_number && (
-            <p className="text-[10px] text-gray-400 mt-0.5">#{p.project_number}</p>
-          )}
-          {isHidden && (
-            <p className="text-[10px] text-gray-400 italic mt-0.5">Hidden</p>
-          )}
-          {!isHidden && (
-            <div className="flex flex-col gap-0.5 mt-1.5">
-              {stats ? (
-                <>
-                  {stats.closedTotal > 0 && (
-                    <span className="text-[10px] text-gray-400">
-                      Closed: {stats.closedReviewed}/{stats.closedTotal} reviewed
-                    </span>
-                  )}
-                  {stats.inReviewTotal > 0 && (
-                    <span className="text-[10px] text-amber-600">
-                      In Review: {stats.inReviewReviewed}/{stats.inReviewTotal}
-                    </span>
-                  )}
-                  {stats.openTotal > 0 && (
-                    <span className="text-[10px] text-gray-400">
-                      Open: {stats.openReviewed}/{stats.openTotal}
-                    </span>
-                  )}
-                </>
-              ) : p.reviewed_count > 0 ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-gray-400">{p.reviewed_count} reviewed</span>
-                  {p.avg_score !== null && (
-                    <span className={`text-[10px] font-semibold ${
-                      p.avg_score >= 85 ? "text-green-600" :
-                      p.avg_score >= 70 ? "text-amber-600" :
-                      p.avg_score >= 50 ? "text-orange-500" :
-                                          "text-red-500"
-                    }`}>
-                      Avg {p.avg_score}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <span className="text-[10px] text-gray-300 italic">Not reviewed</span>
-              )}
-            </div>
-          )}
+          ⋯
         </button>
 
-        {/* Hide / unhide button — appears on row hover */}
-        {isHidden ? (
-          <button
-            type="button"
-            onClick={onUnhide}
-            title="Unhide project"
-            className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-gray-400 hover:text-[#1F3864] hover:bg-gray-100"
-          >
-            <EyeIcon className="h-3.5 w-3.5" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onHide}
-            title="Hide project"
-            className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100"
-          >
-            <EyeOffIcon className="h-3.5 w-3.5" />
-          </button>
+        {menuOpen && (
+          <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-lg border border-gray-200 bg-white shadow-lg py-1 text-xs">
+            <Link
+              href={auditHref}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <svg className="h-3 w-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              View Audit Log
+            </Link>
+            {isHidden ? (
+              <button
+                type="button"
+                onClick={e => { setMenuOpen(false); onUnhide(e); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-gray-700 hover:bg-gray-50 transition-colors text-left"
+              >
+                <svg className="h-3 w-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                </svg>
+                Unhide Project
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={e => { setMenuOpen(false); onHide(e); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-gray-700 hover:bg-gray-50 transition-colors text-left"
+              >
+                <svg className="h-3 w-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+                Hide Project
+              </button>
+            )}
+          </div>
         )}
       </div>
-
-      {!isHidden && (
-        <div className="px-4 pb-2">
-          <Link
-            href={`/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`}
-            onClick={e => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-[#1F3864] transition-colors font-medium"
-          >
-            <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Audit Log
-          </Link>
-        </div>
-      )}
     </div>
   );
 }
