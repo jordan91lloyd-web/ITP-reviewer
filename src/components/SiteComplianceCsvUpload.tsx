@@ -118,8 +118,8 @@ interface LoadedFile {
 }
 
 interface Props {
-  onBriefingsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date) => void;
-  onApprovalsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date) => void;
+  onBriefingsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date, rawText: string) => void;
+  onApprovalsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date, rawText: string) => void;
 }
 
 export default function SiteComplianceCsvUpload({ onBriefingsParsed, onApprovalsParsed }: Props) {
@@ -175,10 +175,10 @@ export default function SiteComplianceCsvUpload({ onBriefingsParsed, onApprovals
 
             if (type === "briefings") {
               setBriefings({ filename: file.name, uploadTime: now });
-              onBriefingsParsed(rows, file.name, now);
+              onBriefingsParsed(rows, file.name, now, text);
             } else {
               setApprovals({ filename: file.name, uploadTime: now });
-              onApprovalsParsed(rows, file.name, now);
+              onApprovalsParsed(rows, file.name, now, text);
             }
           } catch {
             setErrors(prev => [...prev, `"${file.name}" — failed to parse`]);
