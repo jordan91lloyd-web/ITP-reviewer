@@ -453,16 +453,11 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           </div>
         )}
 
-        {/* ── CSV upload zones ── */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
-            Breadcrumb Exports
-          </p>
-          <SiteComplianceCsvUpload
-            onBriefingsParsed={handleBriefingsParsed}
-            onApprovalsParsed={handleApprovalsParsed}
-          />
-        </div>
+        {/* ── CSV upload zone ── */}
+        <SiteComplianceCsvUpload
+          onBriefingsParsed={handleBriefingsParsed}
+          onApprovalsParsed={handleApprovalsParsed}
+        />
 
         {/* ── Empty state ── */}
         {!hasData && (

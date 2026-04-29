@@ -1,9 +1,9 @@
 "use client";
 
 // ─── SiteComplianceCsvUpload ───────────────────────────────────────────────────
-// Two drag-and-drop CSV upload zones side by side.
-// Parses CSVs client-side (no dependencies) and calls onParsed.
-// Warns when data appears to be from a previous week.
+// Single unified drop zone that accepts both Breadcrumb CSV exports at once.
+// Auto-detects which file is which by inspecting column headers.
+// Parses CSVs client-side (no dependencies).
 
 import { useRef, useState, useCallback } from "react";
 import { Upload, CheckCircle, AlertTriangle } from "lucide-react";
@@ -63,94 +63,171 @@ function mostRecentDate(rows: Record<string, string>[], dateColumn: string): Dat
     const raw = row[dateColumn];
     if (!raw) continue;
     const d = new Date(raw);
-    if (!isNaN(d.getTime()) && (latest === null || d > latest)) {
-      latest = d;
-    }
+    if (!isNaN(d.getTime()) && (latest === null || d > latest)) latest = d;
   }
   return latest;
 }
 
-// ── Single zone ────────────────────────────────────────────────────────────────
-
-interface ZoneProps {
-  label: string;
-  hint: string;
-  dateColumn: string;
-  onParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date) => void;
+/** Detect which report type a CSV is from its headers. */
+function detectReportType(headers: string[]): "briefings" | "approvals" | "unknown" {
+  const set = new Set(headers.map(h => h.trim()));
+  if (set.has("Site Briefing Type")) return "briefings";
+  if (set.has("Type") && set.has("Approval Time")) return "approvals";
+  return "unknown";
 }
 
-function CsvZone({ label, hint, dateColumn, onParsed }: ZoneProps) {
-  const [isDragging, setIsDragging]     = useState(false);
-  const [filename, setFilename]         = useState<string | null>(null);
-  const [uploadTime, setUploadTime]     = useState<Date | null>(null);
-  const [staleWarning, setStaleWarning] = useState(false);
-  const [parseError, setParseError]     = useState<string | null>(null);
+/** Last-7-days date range label: "Mon DD MMM – Sun DD MMM YYYY" */
+function sevenDayRangeLabel(): string {
+  const end = new Date();
+  end.setHours(0, 0, 0, 0);
+  const start = new Date(end);
+  start.setDate(end.getDate() - 6); // 7 days inclusive
+  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  const optsYear: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+  return `${start.toLocaleDateString("en-AU", opts)} – ${end.toLocaleDateString("en-AU", optsYear)}`;
+}
+
+// ── Loaded file pill ───────────────────────────────────────────────────────────
+
+interface FilePillProps {
+  label: string;
+  filename: string;
+  uploadTime: Date;
+}
+
+function FilePill({ label, filename, uploadTime }: FilePillProps) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs min-w-0">
+      <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+      <div className="min-w-0">
+        <p className="font-semibold text-green-700 truncate">{label}</p>
+        <p className="text-gray-500 truncate">{filename}</p>
+        <p className="text-gray-400">
+          {uploadTime.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Public component ───────────────────────────────────────────────────────────
+
+interface LoadedFile {
+  filename: string;
+  uploadTime: Date;
+}
+
+interface Props {
+  onBriefingsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date) => void;
+  onApprovalsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date) => void;
+}
+
+export default function SiteComplianceCsvUpload({ onBriefingsParsed, onApprovalsParsed }: Props) {
+  const [isDragging, setIsDragging]       = useState(false);
+  const [briefings, setBriefings]         = useState<LoadedFile | null>(null);
+  const [approvals, setApprovals]         = useState<LoadedFile | null>(null);
+  const [errors, setErrors]               = useState<string[]>([]);
+  const [staleWarning, setStaleWarning]   = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(
-    (file: File) => {
-      if (!file.name.toLowerCase().endsWith(".csv")) {
-        setParseError("Please upload a .csv file.");
-        return;
-      }
-      setParseError(null);
-
-      const reader = new FileReader();
-      reader.onload = e => {
-        const text = e.target?.result as string;
-        try {
-          const rows = parseCSV(text);
-          const now  = new Date();
-          setFilename(file.name);
-          setUploadTime(now);
-
-          // Check staleness — warn if most recent date > 7 days ago.
-          const latest = mostRecentDate(rows, dateColumn);
-          if (latest) {
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            setStaleWarning(latest < sevenDaysAgo);
-          } else {
-            setStaleWarning(false);
-          }
-
-          onParsed(rows, file.name, now);
-        } catch {
-          setParseError("Failed to parse CSV — please check the file format.");
+  const processFile = useCallback(
+    (file: File): Promise<void> => {
+      return new Promise(resolve => {
+        if (!file.name.toLowerCase().endsWith(".csv")) {
+          setErrors(prev => [...prev, `"${file.name}" — not a .csv file`]);
+          resolve();
+          return;
         }
-      };
-      reader.readAsText(file);
+
+        const reader = new FileReader();
+        reader.onload = e => {
+          const text = e.target?.result as string;
+          try {
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) {
+              setErrors(prev => [...prev, `"${file.name}" — file appears empty`]);
+              resolve();
+              return;
+            }
+
+            const headers = parseCsvLine(lines[0]).map(h => h.trim());
+            const type    = detectReportType(headers);
+
+            if (type === "unknown") {
+              setErrors(prev => [
+                ...prev,
+                `"${file.name}" — unrecognised format (expected Site Briefings or Approvals report)`,
+              ]);
+              resolve();
+              return;
+            }
+
+            const rows = parseCSV(text);
+            const now  = new Date();
+
+            // Staleness check across both files combined
+            const latest = mostRecentDate(rows, "Date Submitted");
+            if (latest) {
+              const sevenDaysAgo = new Date();
+              sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+              if (latest < sevenDaysAgo) setStaleWarning(true);
+            }
+
+            if (type === "briefings") {
+              setBriefings({ filename: file.name, uploadTime: now });
+              onBriefingsParsed(rows, file.name, now);
+            } else {
+              setApprovals({ filename: file.name, uploadTime: now });
+              onApprovalsParsed(rows, file.name, now);
+            }
+          } catch {
+            setErrors(prev => [...prev, `"${file.name}" — failed to parse`]);
+          }
+          resolve();
+        };
+        reader.readAsText(file);
+      });
     },
-    [dateColumn, onParsed]
+    [onBriefingsParsed, onApprovalsParsed]
+  );
+
+  const handleFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      setErrors([]);
+      const files = Array.from(fileList);
+      for (const file of files) {
+        await processFile(file);
+      }
+    },
+    [processFile]
   );
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
   };
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
+    if (e.target.files?.length) handleFiles(e.target.files);
     e.target.value = "";
   };
 
-  const loaded = !!filename;
+  const bothLoaded  = briefings !== null && approvals !== null;
+  const eitherLoaded = briefings !== null || approvals !== null;
 
   return (
-    <div className="flex-1 min-w-0">
+    <div>
       <div
         onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={e => { e.preventDefault(); setIsDragging(false); }}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
         className={[
-          "cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-colors",
+          "cursor-pointer rounded-xl border-2 border-dashed transition-colors",
           isDragging
             ? "border-blue-500 bg-blue-50"
-            : loaded
+            : bothLoaded
               ? "border-green-300 bg-green-50 hover:border-green-400"
               : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50",
         ].join(" ")}
@@ -159,69 +236,86 @@ function CsvZone({ label, hint, dateColumn, onParsed }: ZoneProps) {
           ref={inputRef}
           type="file"
           accept=".csv"
+          multiple
           onChange={onInputChange}
           className="hidden"
         />
 
-        {loaded ? (
-          <div className="flex flex-col items-center gap-1.5">
-            <CheckCircle className="h-8 w-8 text-green-500" />
-            <p className="text-sm font-semibold text-green-700 truncate max-w-full">{filename}</p>
-            <p className="text-xs text-gray-400">
-              Uploaded {uploadTime?.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
-            </p>
-            <p className="text-xs text-blue-500 mt-1">Click or drop to replace</p>
+        <div className="px-6 py-5">
+          {/* Header row */}
+          <div className="flex items-start gap-3 mb-4">
+            <Upload className={`h-6 w-6 shrink-0 mt-0.5 ${bothLoaded ? "text-green-500" : "text-gray-400"}`} />
+            <div>
+              <p className="text-sm font-semibold text-gray-800">
+                Drop your weekly Breadcrumb exports here
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Upload both CSVs at once — Site Briefings and Approvals
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Covers the 7-day period: {sevenDayRangeLabel()}
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="flex flex-col items-center gap-1.5">
-            <Upload className="h-8 w-8 text-gray-400" />
-            <p className="text-sm font-semibold text-gray-700">{label}</p>
-            <p className="text-xs text-gray-500">{hint}</p>
-            <p className="text-xs text-blue-500 mt-1">Click or drag .csv here</p>
-          </div>
-        )}
+
+          {/* File confirmation pills */}
+          {eitherLoaded ? (
+            <div className="flex gap-3 flex-wrap">
+              {briefings ? (
+                <FilePill
+                  label="Site Briefings"
+                  filename={briefings.filename}
+                  uploadTime={briefings.uploadTime}
+                />
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                  <span className="text-amber-700 font-medium">Site Briefings still needed</span>
+                </div>
+              )}
+              {approvals ? (
+                <FilePill
+                  label="Approvals"
+                  filename={approvals.filename}
+                  uploadTime={approvals.uploadTime}
+                />
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                  <span className="text-amber-700 font-medium">Approvals report still needed</span>
+                </div>
+              )}
+              {bothLoaded && (
+                <p className="w-full text-xs text-gray-400 mt-1">Click or drop to replace files</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-blue-500">Click to browse or drag both .csv files here</p>
+          )}
+        </div>
       </div>
 
-      {parseError && (
-        <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-          {parseError}
+      {/* Parse errors */}
+      {errors.length > 0 && (
+        <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+          <p className="text-xs font-semibold text-red-700 mb-1">Some files were skipped:</p>
+          <ul className="space-y-0.5">
+            {errors.map((err, i) => (
+              <li key={i} className="text-xs text-red-700">• {err}</li>
+            ))}
+          </ul>
         </div>
       )}
 
+      {/* Stale data warning */}
       {staleWarning && (
         <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
           <p className="text-xs text-amber-700">
-            This report may be from a previous week. Upload a fresh export from Breadcrumb.
+            These reports may be from a previous week. Please upload fresh exports from Breadcrumb.
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-// ── Public component ───────────────────────────────────────────────────────────
-
-interface Props {
-  onBriefingsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date) => void;
-  onApprovalsParsed: (rows: Record<string, string>[], filename: string, uploadTime: Date) => void;
-}
-
-export default function SiteComplianceCsvUpload({ onBriefingsParsed, onApprovalsParsed }: Props) {
-  return (
-    <div className="flex gap-4">
-      <CsvZone
-        label="Site Briefings report"
-        hint="From Breadcrumb → Reports → Site Briefings"
-        dateColumn="Date Submitted"
-        onParsed={onBriefingsParsed}
-      />
-      <CsvZone
-        label="Approvals report"
-        hint="From Breadcrumb → Reports → Approvals"
-        dateColumn="Date Submitted"
-        onParsed={onApprovalsParsed}
-      />
     </div>
   );
 }
