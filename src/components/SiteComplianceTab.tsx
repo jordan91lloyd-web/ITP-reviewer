@@ -396,16 +396,34 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   // ── Compute siteRows when CSVs or mappings change ────────────────────────────
 
   const buildSiteRows = useCallback(
-    (briefings: Record<string, string>[] | null, approvals: Record<string, string>[] | null, currentMappings: SiteMapping[]) => {
+    (
+      briefings: Record<string, string>[] | null,
+      approvals: Record<string, string>[] | null,
+      currentMappings: SiteMapping[],
+      currentProjects: DashboardProject[],
+    ) => {
       const { monday, friday } = getCurrentWeekBounds();
 
       const allSites = new Set<string>();
       for (const row of briefings ?? []) if (row["Site"]) allSites.add(row["Site"]);
       for (const row of approvals ?? []) if (row["Site"]) allSites.add(row["Site"]);
 
-      const mapBySite = new Map(currentMappings.map(m => [m.breadcrumb_site_name, m.procore_project_id]));
+      const mapBySite     = new Map(currentMappings.map(m => [m.breadcrumb_site_name, m.procore_project_id]));
+      // projectOrder: Procore project id → position in the projects array
+      const projectOrder  = new Map(currentProjects.map((p, i) => [String(p.id), i]));
 
-      const rows: SiteRow[] = Array.from(allSites).sort().map(site => {
+      const sortedSites = Array.from(allSites).sort((a, b) => {
+        const pidA    = mapBySite.get(a);
+        const pidB    = mapBySite.get(b);
+        const orderA  = pidA !== undefined ? (projectOrder.get(pidA) ?? Infinity) : Infinity;
+        const orderB  = pidB !== undefined ? (projectOrder.get(pidB) ?? Infinity) : Infinity;
+        if (orderA !== Infinity && orderB !== Infinity) return orderA - orderB;
+        if (orderA !== Infinity) return -1;
+        if (orderB !== Infinity) return 1;
+        return a.localeCompare(b);
+      });
+
+      const rows: SiteRow[] = sortedSites.map(site => {
         const mappedProjectId = mapBySite.get(site) ?? null;
         return {
           site,
@@ -469,9 +487,9 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
   // Rebuild + re-fetch whenever CSVs or mappings change.
   useEffect(() => {
-    const rows = buildSiteRows(csvBriefings, csvApprovals, mappings);
+    const rows = buildSiteRows(csvBriefings, csvApprovals, mappings, projects);
     if (hasData) void loadDiariesForRows(rows);
-  }, [csvBriefings, csvApprovals, mappings, buildSiteRows, loadDiariesForRows, hasData]);
+  }, [csvBriefings, csvApprovals, mappings, projects, buildSiteRows, loadDiariesForRows, hasData]);
 
   // ── Auto-save compliance report when both CSVs are loaded ───────────────────
 
