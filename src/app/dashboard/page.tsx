@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
+import SiteComplianceTab from "@/components/SiteComplianceTab";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
 
@@ -395,6 +396,13 @@ export default function DashboardPage() {
   const [reviewRunning, setReviewRunning] = useState(false);
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
+  // Top-level tab
+  type DashboardView = "itp_reviews" | "site_compliance";
+  const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
+
+  // Admin status (used by Site Compliance tab mapping manager)
+  const [isAdmin, setIsAdmin] = useState(false);
+
   // ── Auth + company discovery ────────────────────────────────────────────────
 
   useEffect(() => {
@@ -405,6 +413,10 @@ export default function DashboardPage() {
           setAuthenticated(true);
           setUser(data.user ?? null);
           loadCompanies();
+          fetch("/api/admin/check")
+            .then(r => r.ok ? r.json() : null)
+            .then(d => setIsAdmin(!!d?.isAdmin))
+            .catch(() => {});
         } else {
           setAuthenticated(false);
         }
@@ -888,7 +900,38 @@ export default function DashboardPage() {
   return (
     <div className="flex h-full flex-col bg-[#F9FAFB] overflow-hidden">
 
-      {/* ── Body ── */}
+      {/* ── Top-level tab nav ── */}
+      <div className="shrink-0 bg-white border-b border-gray-200 px-6 flex items-center gap-0.5 h-10">
+        {([
+          ["itp_reviews",     "ITP Reviews"],
+          ["site_compliance", "Site Compliance"],
+        ] as [DashboardView, string][]).map(([view, label]) => (
+          <button
+            key={view}
+            type="button"
+            onClick={() => setDashboardView(view)}
+            className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              dashboardView === view
+                ? "bg-gray-100 text-gray-900"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Site Compliance tab ── */}
+      {dashboardView === "site_compliance" && (
+        <SiteComplianceTab
+          companyId={selectedCompany?.id ?? null}
+          projects={projects}
+          isAdmin={isAdmin}
+        />
+      )}
+
+      {/* ── ITP Reviews tab ── */}
+      {dashboardView === "itp_reviews" && (<>
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left: project list ── */}
@@ -1210,6 +1253,8 @@ export default function DashboardPage() {
           onClose={() => setExportModalOpen(false)}
         />
       )}
+      </>)} {/* end itp_reviews tab */}
+
     </div>
   );
 }
@@ -1904,6 +1949,7 @@ function InspectionPanel({
         </div>
 
       </div>
+
     </div>
   );
 }
