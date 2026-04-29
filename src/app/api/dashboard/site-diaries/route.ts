@@ -1,6 +1,12 @@
 // ─── GET /api/dashboard/site-diaries ──────────────────────────────────────────
 // Returns open site diary count for a Procore project over a date range.
 //
+// Primary source:  GET /rest/v1.0/daily_construction_report_logs
+// Fallback source: GET /rest/v1.0/notes_logs  (if primary returns 404 or empty)
+//   A day with ≥1 notes_log entry is considered "active" (not open/forgotten).
+//   The response includes { source: "daily_logs" | "notes_logs" } so the UI
+//   can display a tooltip explaining the data provenance.
+//
 // Supabase table required (create once):
 // ─────────────────────────────────────
 // CREATE TABLE breadcrumb_site_mappings (
@@ -36,8 +42,9 @@ function getWorkingDays(start: Date, end: Date): Date[] {
   return days;
 }
 
-const NULL_STATE = (totalDays: number) =>
-  NextResponse.json({ open_count: null, total_days: totalDays, entries: [] });
+function nullState(totalDays: number) {
+  return NextResponse.json({ open_count: null, total_days: totalDays, entries: [], source: null });
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,72 +54,142 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const sp         = request.nextUrl.searchParams;
-    const projectId  = sp.get("project_id");
-    const companyId  = sp.get("company_id");
-    const startDate  = sp.get("start_date");
-    const endDate    = sp.get("end_date");
+    const sp        = request.nextUrl.searchParams;
+    const projectId = sp.get("project_id");
+    const companyId = sp.get("company_id");
+    const startDate = sp.get("start_date");
+    const endDate   = sp.get("end_date");
 
     if (!projectId || !companyId || !startDate || !endDate) {
-      return NextResponse.json({ error: "project_id, company_id, start_date, end_date are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "project_id, company_id, start_date, end_date are required" },
+        { status: 400 }
+      );
     }
 
     const workingDays = getWorkingDays(new Date(startDate), new Date(endDate));
+    const authHeaders = {
+      Authorization: `Bearer ${accessToken}`,
+      "Procore-Company-Id": companyId,
+    };
 
-    const url = new URL(`${PROCORE_API_BASE}/rest/v1.0/daily_construction_report_logs`);
-    url.searchParams.set("project_id", projectId);
-    url.searchParams.set("company_id", companyId);
-    url.searchParams.set("filters[start_date]", startDate);
-    url.searchParams.set("filters[end_date]", endDate);
+    // ── Primary: daily_construction_report_logs ───────────────────────────────
 
-    const res = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Procore-Company-Id": companyId,
-      },
-    });
+    const primaryUrl = new URL(`${PROCORE_API_BASE}/rest/v1.0/daily_construction_report_logs`);
+    primaryUrl.searchParams.set("project_id", projectId);
+    primaryUrl.searchParams.set("company_id", companyId);
+    primaryUrl.searchParams.set("filters[start_date]", startDate);
+    primaryUrl.searchParams.set("filters[end_date]", endDate);
 
-    // 404 means the Daily Construction Reports tool isn't enabled for this project.
-    if (res.status === 404) return NULL_STATE(workingDays.length);
-    if (!res.ok)            return NULL_STATE(workingDays.length);
+    const primaryRes = await fetch(primaryUrl.toString(), { headers: authHeaders });
 
-    const data = await res.json();
-    // Procore returns either a top-level array or a wrapped object.
-    const logs: Record<string, unknown>[] = Array.isArray(data)
-      ? data
-      : Array.isArray(data?.daily_construction_report_logs)
-        ? (data.daily_construction_report_logs as Record<string, unknown>[])
-        : [];
+    const usePrimary = primaryRes.ok && primaryRes.status !== 404;
+    let primaryLogs: Record<string, unknown>[] = [];
 
-    // Build a date → status map.
-    const logByDate = new Map<string, string>();
-    for (const log of logs) {
-      const dateKey =
-        (log.date as string | undefined) ??
-        (log.log_date as string | undefined) ??
-        (typeof log.created_at === "string" ? log.created_at.slice(0, 10) : undefined) ??
-        null;
-      if (dateKey) {
-        logByDate.set(dateKey, (log.status as string | undefined) ?? "draft");
-      }
+    if (usePrimary) {
+      const data = await primaryRes.json();
+      primaryLogs = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.daily_construction_report_logs)
+          ? (data.daily_construction_report_logs as Record<string, unknown>[])
+          : [];
     }
 
-    const entries = workingDays.map(d => {
-      const dateStr = d.toISOString().slice(0, 10);
-      return { date: dateStr, status: logByDate.get(dateStr) ?? null };
-    });
+    // Use primary if it returned any logs.
+    if (usePrimary && primaryLogs.length > 0) {
+      return buildDailyLogResponse(workingDays, primaryLogs, "daily_logs");
+    }
 
-    // A day is "open" if no log exists OR the log is not approved/submitted.
-    const openCount = entries.filter(
-      e => e.status === null || (e.status !== "approved" && e.status !== "submitted")
-    ).length;
+    // ── Fallback: notes_logs ─────────────────────────────────────────────────
 
-    return NextResponse.json({
-      open_count:  openCount,
-      total_days:  workingDays.length,
-      entries,
-    });
+    const notesUrl = new URL(`${PROCORE_API_BASE}/rest/v1.0/notes_logs`);
+    notesUrl.searchParams.set("project_id", projectId);
+    notesUrl.searchParams.set("company_id", companyId);
+    notesUrl.searchParams.set("filters[start_date]", startDate);
+    notesUrl.searchParams.set("filters[end_date]", endDate);
+
+    const notesRes = await fetch(notesUrl.toString(), { headers: authHeaders });
+
+    if (!notesRes.ok) {
+      // Neither endpoint worked — return the null state.
+      return nullState(workingDays.length);
+    }
+
+    const notesData = await notesRes.json();
+    const notesLogs: Record<string, unknown>[] = Array.isArray(notesData)
+      ? notesData
+      : Array.isArray(notesData?.notes_logs)
+        ? (notesData.notes_logs as Record<string, unknown>[])
+        : [];
+
+    return buildNotesLogResponse(workingDays, notesLogs);
+
   } catch {
-    return NextResponse.json({ open_count: null, total_days: 5, entries: [] });
+    return NextResponse.json({ open_count: null, total_days: 5, entries: [], source: null });
   }
+}
+
+// ── Response builders ─────────────────────────────────────────────────────────
+
+function buildDailyLogResponse(
+  workingDays: Date[],
+  logs: Record<string, unknown>[],
+  source: "daily_logs"
+) {
+  const logByDate = new Map<string, string>();
+  for (const log of logs) {
+    const dateKey =
+      (log.date as string | undefined) ??
+      (log.log_date as string | undefined) ??
+      (typeof log.created_at === "string" ? log.created_at.slice(0, 10) : undefined) ??
+      null;
+    if (dateKey) {
+      logByDate.set(dateKey, (log.status as string | undefined) ?? "draft");
+    }
+  }
+
+  const entries = workingDays.map(d => {
+    const dateStr = d.toISOString().slice(0, 10);
+    return { date: dateStr, status: logByDate.get(dateStr) ?? null };
+  });
+
+  // Open = no log, or log not approved/submitted.
+  const openCount = entries.filter(
+    e => e.status === null || (e.status !== "approved" && e.status !== "submitted")
+  ).length;
+
+  return NextResponse.json({ open_count: openCount, total_days: workingDays.length, entries, source });
+}
+
+function buildNotesLogResponse(
+  workingDays: Date[],
+  logs: Record<string, unknown>[]
+) {
+  // Build a set of dates that have at least one notes_log entry.
+  const activeDates = new Set<string>();
+  for (const log of logs) {
+    const dateKey =
+      (log.date as string | undefined) ??
+      (log.log_date as string | undefined) ??
+      (typeof log.created_at === "string" ? log.created_at.slice(0, 10) : undefined) ??
+      null;
+    if (dateKey) activeDates.add(dateKey.slice(0, 10));
+  }
+
+  // For notes_logs: a day with an entry is "active" (we treat it as "submitted").
+  // A day with no entry is open.
+  const entries = workingDays.map(d => {
+    const dateStr = d.toISOString().slice(0, 10);
+    const status  = activeDates.has(dateStr) ? "submitted" : null;
+    return { date: dateStr, status };
+  });
+
+  const openCount = entries.filter(e => e.status === null).length;
+
+  return NextResponse.json({
+    open_count:  openCount,
+    total_days:  workingDays.length,
+    entries,
+    source:      "notes_logs" as const,
+  });
 }

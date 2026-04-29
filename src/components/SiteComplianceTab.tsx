@@ -4,8 +4,8 @@
 // Weekly traffic-light compliance view across all Fleek projects.
 // Combines Breadcrumb CSV exports with live Procore site diary data.
 
-import { useState, useEffect, useCallback } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { AlertTriangle, ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
 import SiteComplianceCsvUpload from "./SiteComplianceCsvUpload";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -28,6 +28,7 @@ interface DiaryResult {
   open_count: number | null;
   total_days: number;
   entries: { date: string; status: string | null }[];
+  source: "daily_logs" | "notes_logs" | null;
 }
 
 type TrafficLight = "green" | "amber" | "red" | "gray";
@@ -35,17 +36,13 @@ type TrafficLight = "green" | "amber" | "red" | "gray";
 interface SiteRow {
   site: string;
   mappedProjectId: string | null;
-  // Briefings KPIs
-  prestartCount: number;   // days this week with a prestart (of 5)
-  toolboxDone: boolean;    // at least 1 toolbox in last 7 days
-  // Approvals KPIs
+  prestartCount: number;
+  toolboxDone: boolean;
   pendingInductions: number;
   pendingDocs: number;
-  // Detail rows for expansion
   pendingInductionDetails: Array<{ title: string; supplier: string; dateSubmitted: string }>;
   pendingDocDetails: Array<{ title: string; supplier: string; dateSubmitted: string }>;
   oldestPendingDate: string | null;
-  // Procore diary (filled in async)
   diary: DiaryResult | null;
   diaryLoading: boolean;
 }
@@ -54,7 +51,7 @@ interface SiteRow {
 
 function getCurrentWeekBounds(): { monday: Date; friday: Date } {
   const today = new Date();
-  const dow = today.getDay(); // 0=Sun … 6=Sat
+  const dow = today.getDay();
   const daysToMonday = dow === 0 ? 6 : dow - 1;
   const monday = new Date(today);
   monday.setDate(today.getDate() - daysToMonday);
@@ -92,27 +89,21 @@ function prestartLight(count: number): TrafficLight {
   if (count >= 3) return "amber";
   return "red";
 }
-
-function toolboxLight(done: boolean): TrafficLight {
-  return done ? "green" : "red";
-}
-
+function toolboxLight(done: boolean): TrafficLight { return done ? "green" : "red"; }
 function countLight(count: number): TrafficLight {
   if (count === 0) return "green";
-  if (count <= 3) return "amber";
+  if (count <= 3)  return "amber";
   return "red";
 }
-
 function diaryLight(result: DiaryResult | null): TrafficLight {
   if (!result || result.open_count === null) return "gray";
-  if (result.open_count === 0) return "green";
-  if (result.open_count <= 2) return "amber";
+  if (result.open_count === 0)  return "green";
+  if (result.open_count <= 2)   return "amber";
   return "red";
 }
-
 function overallLight(lights: TrafficLight[]): TrafficLight {
   const active = lights.filter(l => l !== "gray");
-  if (active.some(l => l === "red")) return "red";
+  if (active.some(l => l === "red"))   return "red";
   if (active.some(l => l === "amber")) return "amber";
   if (active.length > 0 && active.every(l => l === "green")) return "green";
   return "gray";
@@ -126,18 +117,17 @@ function calcPrestartCount(
   monday: Date,
   friday: Date
 ): number {
-  const daysWithPrestart = new Set<string>();
+  const days = new Set<string>();
   for (const row of briefingRows) {
     if (row["Site"] !== site) continue;
-    const type = (row["Site Briefing Type"] ?? "").toLowerCase();
-    if (!type.includes("daily prestart")) continue;
+    if (!(row["Site Briefing Type"] ?? "").toLowerCase().includes("daily prestart")) continue;
     const d = new Date(row["Date Submitted"] ?? "");
     if (isNaN(d.getTime())) continue;
     if (d < monday || d > friday) continue;
     const dow = d.getDay();
-    if (dow >= 1 && dow <= 5) daysWithPrestart.add(d.toDateString());
+    if (dow >= 1 && dow <= 5) days.add(d.toDateString());
   }
-  return daysWithPrestart.size;
+  return days.size;
 }
 
 function calcToolboxDone(briefingRows: Record<string, string>[], site: string): boolean {
@@ -145,8 +135,7 @@ function calcToolboxDone(briefingRows: Record<string, string>[], site: string): 
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   return briefingRows.some(row => {
     if (row["Site"] !== site) return false;
-    const type = (row["Site Briefing Type"] ?? "").toLowerCase();
-    if (!type.includes("toolbox")) return false;
+    if (!(row["Site Briefing Type"] ?? "").toLowerCase().includes("toolbox")) return false;
     const d = new Date(row["Date Submitted"] ?? "");
     return !isNaN(d.getTime()) && d >= sevenDaysAgo;
   });
@@ -159,16 +148,13 @@ function calcApprovalKPIs(approvalRows: Record<string, string>[], site: string) 
 
   for (const row of approvalRows) {
     if (row["Site"] !== site) continue;
-    const status = (row["Status"] ?? "").toLowerCase();
-    if (status !== "pending") continue;
+    if ((row["Status"] ?? "").toLowerCase() !== "pending") continue;
 
     const dateSubmitted = row["Date Submitted"] ?? "";
     if (dateSubmitted) {
       const d = new Date(dateSubmitted);
-      if (!isNaN(d.getTime())) {
-        if (!oldestPendingDate || d < new Date(oldestPendingDate)) {
-          oldestPendingDate = dateSubmitted;
-        }
+      if (!isNaN(d.getTime()) && (!oldestPendingDate || d < new Date(oldestPendingDate))) {
+        oldestPendingDate = dateSubmitted;
       }
     }
 
@@ -181,8 +167,8 @@ function calcApprovalKPIs(approvalRows: Record<string, string>[], site: string) 
       });
     } else if (type === "sitesupplierdocument") {
       pendingDocDetails.push({
-        title:         row["Title"] ?? "—",
-        supplier:      row["Supplier"] ?? "—",
+        title:    row["Title"] ?? "—",
+        supplier: row["Supplier"] ?? "—",
         dateSubmitted,
       });
     }
@@ -197,8 +183,6 @@ function calcApprovalKPIs(approvalRows: Record<string, string>[], site: string) 
   };
 }
 
-// ── Stale data check ───────────────────────────────────────────────────────────
-
 function isDataStale(rows: Record<string, string>[], dateCol: string): boolean {
   let latest: Date | null = null;
   for (const row of rows) {
@@ -211,7 +195,7 @@ function isDataStale(rows: Record<string, string>[], dateCol: string): boolean {
   return latest < sevenDaysAgo;
 }
 
-// ── Pill component ─────────────────────────────────────────────────────────────
+// ── Small UI components ────────────────────────────────────────────────────────
 
 function Pill({ light, children }: { light: TrafficLight; children: React.ReactNode }) {
   return (
@@ -220,8 +204,6 @@ function Pill({ light, children }: { light: TrafficLight; children: React.ReactN
     </span>
   );
 }
-
-// ── Spinner ────────────────────────────────────────────────────────────────────
 
 function Spinner({ className = "h-3 w-3" }: { className?: string }) {
   return (
@@ -241,21 +223,23 @@ interface Props {
 }
 
 export default function SiteComplianceTab({ companyId, projects, isAdmin }: Props) {
-  const [csvBriefings, setCsvBriefings]         = useState<Record<string, string>[] | null>(null);
-  const [csvApprovals, setCsvApprovals]         = useState<Record<string, string>[] | null>(null);
-  const [lastUpdated, setLastUpdated]           = useState<Date | null>(null);
+  const [csvBriefings, setCsvBriefings] = useState<Record<string, string>[] | null>(null);
+  const [csvApprovals, setCsvApprovals] = useState<Record<string, string>[] | null>(null);
+  const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
 
-  const [mappings, setMappings]                 = useState<SiteMapping[]>([]);
-  const [siteRows, setSiteRows]                 = useState<SiteRow[]>([]);
-  const [expandedSite, setExpandedSite]         = useState<string | null>(null);
+  const [mappings, setMappings]         = useState<SiteMapping[]>([]);
+  const [siteRows, setSiteRows]         = useState<SiteRow[]>([]);
+  const [expandedSite, setExpandedSite] = useState<string | null>(null);
 
-  // Pending mapping selections (unsaved per-site)
-  const [pendingMaps, setPendingMaps]           = useState<Map<string, string>>(new Map());
-  const [savingMap, setSavingMap]               = useState<string | null>(null);
-  const [mapSaveError, setMapSaveError]         = useState<Map<string, string>>(new Map());
+  // Pending mapping selections (local, unsaved)
+  const [pendingMaps, setPendingMaps]   = useState<Map<string, string>>(new Map());
+  const [savingMap, setSavingMap]       = useState<string | null>(null);
+  const [mapSaveError, setMapSaveError] = useState<Map<string, string>>(new Map());
+
+  // Ref for scrolling to the mapping section
+  const mappingSectionRef = useRef<HTMLDivElement>(null);
 
   const hasData = csvBriefings !== null || csvApprovals !== null;
-  const hasBoth = csvBriefings !== null && csvApprovals !== null;
 
   // ── Load mappings on mount ───────────────────────────────────────────────────
 
@@ -273,25 +257,20 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     (briefings: Record<string, string>[] | null, approvals: Record<string, string>[] | null, currentMappings: SiteMapping[]) => {
       const { monday, friday } = getCurrentWeekBounds();
 
-      // Union of unique sites from both CSVs
       const allSites = new Set<string>();
       for (const row of briefings ?? []) if (row["Site"]) allSites.add(row["Site"]);
       for (const row of approvals ?? []) if (row["Site"]) allSites.add(row["Site"]);
 
-      const mapBySite = new Map<string, string>(
-        currentMappings.map(m => [m.breadcrumb_site_name, m.procore_project_id])
-      );
+      const mapBySite = new Map(currentMappings.map(m => [m.breadcrumb_site_name, m.procore_project_id]));
 
       const rows: SiteRow[] = Array.from(allSites).sort().map(site => {
         const mappedProjectId = mapBySite.get(site) ?? null;
-        const approvalKPIs = calcApprovalKPIs(approvals ?? [], site);
-
         return {
           site,
           mappedProjectId,
           prestartCount: calcPrestartCount(briefings ?? [], site, monday, friday),
           toolboxDone:   calcToolboxDone(briefings ?? [], site),
-          ...approvalKPIs,
+          ...calcApprovalKPIs(approvals ?? [], site),
           diary:        null,
           diaryLoading: !!mappedProjectId,
         };
@@ -303,7 +282,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     []
   );
 
-  // ── Fetch diary data for all mapped projects ─────────────────────────────────
+  // ── Fetch diary data for all mapped projects simultaneously ──────────────────
 
   const loadDiaries = useCallback(
     async (rows: SiteRow[]) => {
@@ -312,13 +291,11 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       const startDate = toDateString(monday);
       const endDate   = toDateString(friday);
 
-      // De-duplicate project IDs (multiple sites can map to same project)
       const projectIds = Array.from(
         new Set(rows.filter(r => r.mappedProjectId).map(r => r.mappedProjectId!))
       );
       if (projectIds.length === 0) return;
 
-      // Fetch all simultaneously
       const results = await Promise.all(
         projectIds.map(async pid => {
           try {
@@ -327,10 +304,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             );
             const data: DiaryResult = res.ok
               ? await res.json()
-              : { open_count: null, total_days: 5, entries: [] };
+              : { open_count: null, total_days: 5, entries: [], source: null };
             return { pid, data };
           } catch {
-            return { pid, data: { open_count: null, total_days: 5, entries: [] } as DiaryResult };
+            return { pid, data: { open_count: null, total_days: 5, entries: [], source: null } as DiaryResult };
           }
         })
       );
@@ -348,7 +325,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     [companyId]
   );
 
-  // When both CSVs loaded or mappings change, rebuild + fetch diaries
+  // Rebuild + re-fetch whenever CSVs or mappings change.
+  // This means saving a new mapping auto-triggers diary re-fetch for the new project.
   useEffect(() => {
     const rows = buildSiteRows(csvBriefings, csvApprovals, mappings);
     if (hasData) void loadDiaries(rows);
@@ -366,7 +344,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     setLastUpdated(prev => (!prev || uploadTime > prev) ? uploadTime : prev);
   }
 
-  // ── Mapping save ─────────────────────────────────────────────────────────────
+  // ── Mapping save (admin only) ────────────────────────────────────────────────
 
   async function handleSaveMapping(site: string) {
     const projectId = pendingMaps.get(site);
@@ -380,9 +358,9 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          company_id:            String(companyId),
-          breadcrumb_site_name:  site,
-          procore_project_id:    projectId,
+          company_id:           String(companyId),
+          breadcrumb_site_name: site,
+          procore_project_id:   projectId,
         }),
       });
       if (!res.ok) {
@@ -390,7 +368,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         setMapSaveError(prev => new Map(prev).set(site, data.error ?? "Save failed"));
         return;
       }
-      // Refresh mappings
+      // Refresh mappings — this also triggers diary re-fetch via the useEffect above.
       const updatedRes = await fetch(`/api/dashboard/site-mappings?company_id=${companyId}`);
       const data = await updatedRes.json();
       setMappings(data?.mappings ?? []);
@@ -401,28 +379,32 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     }
   }
 
-  // ── Summary stats ────────────────────────────────────────────────────────────
+  // ── Derived summary stats ────────────────────────────────────────────────────
 
-  const trackedSites = siteRows.length;
-
-  const siteLights = siteRows.map(row => {
-    const lights: TrafficLight[] = [
+  const siteLights = siteRows.map(row =>
+    overallLight([
       prestartLight(row.prestartCount),
       toolboxLight(row.toolboxDone),
       countLight(row.pendingInductions),
       countLight(row.pendingDocs),
       diaryLight(row.diary),
-    ];
-    return overallLight(lights);
-  });
+    ])
+  );
 
-  const actionRequired = siteLights.filter(l => l === "red").length;
-  const onTrack        = siteLights.filter(l => l === "green" || l === "amber").length;
-  const totalPending   = siteRows.reduce((s, r) => s + r.pendingInductions + r.pendingDocs, 0);
+  const trackedSites    = siteRows.length;
+  const actionRequired  = siteLights.filter(l => l === "red").length;
+  const onTrack         = siteLights.filter(l => l === "green" || l === "amber").length;
+  const totalPending    = siteRows.reduce((s, r) => s + r.pendingInductions + r.pendingDocs, 0);
+  const unmappedCount   = siteRows.filter(r => !r.mappedProjectId).length;
 
   const isStale =
     (csvBriefings && isDataStale(csvBriefings, "Date Submitted")) ||
     (csvApprovals && isDataStale(csvApprovals, "Date Submitted"));
+
+  function scrollToMapping(e: React.MouseEvent) {
+    e.stopPropagation();
+    mappingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
@@ -431,16 +413,14 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       <div className="mx-auto max-w-7xl px-6 py-6 space-y-6">
 
         {/* ── Header ── */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Site Compliance</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{fmtWeekLabel()}</p>
-            {lastUpdated && (
-              <p className="text-xs text-gray-400 mt-0.5">
-                Last updated {lastUpdated.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
-              </p>
-            )}
-          </div>
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">Site Compliance</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{fmtWeekLabel()}</p>
+          {lastUpdated && (
+            <p className="text-xs text-gray-400 mt-0.5">
+              Last updated {lastUpdated.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
         </div>
 
         {/* ── Stale data warning ── */}
@@ -465,20 +445,19 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             <p className="text-sm font-medium text-gray-700">
               Upload your weekly Breadcrumb exports to populate the compliance report.
             </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Procore data loads automatically.
-            </p>
+            <p className="text-xs text-gray-400 mt-1">Procore data loads automatically.</p>
           </div>
         )}
 
-        {/* ── Summary stat cards ── */}
-        {hasData && (
+        {hasData && siteRows.length > 0 && (<>
+
+          {/* ── Summary stat cards ── */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
-              { label: "Sites tracked",       value: trackedSites,  note: "from CSV" },
-              { label: "Action required",     value: actionRequired, note: "1+ red KPI", highlight: actionRequired > 0 },
-              { label: "Total pending approvals", value: totalPending, note: "inductions + docs" },
-              { label: "On track",            value: onTrack,       note: "no red KPIs" },
+              { label: "Sites tracked",          value: trackedSites,   note: "from CSV" },
+              { label: "Action required",        value: actionRequired, note: "1+ red KPI",        highlight: actionRequired > 0 },
+              { label: "Total pending approvals", value: totalPending,   note: "inductions + docs" },
+              { label: "On track",               value: onTrack,        note: "no red KPIs" },
             ].map(({ label, value, note, highlight }) => (
               <div key={label} className={`rounded-xl border bg-white px-5 py-4 ${highlight ? "border-red-200" : "border-gray-200"}`}>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</p>
@@ -487,15 +466,102 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
               </div>
             ))}
           </div>
-        )}
 
-        {/* ── Compliance table ── */}
-        {hasData && siteRows.length > 0 && (
+          {/* ── Site → Project mapping (visible to all; editable by admins only) ── */}
+          <div ref={mappingSectionRef} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="border-b border-gray-200 px-5 py-4 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Connect sites to Procore projects
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Linking each Breadcrumb site to its Procore project enables the Open Site Diaries column.
+                    {!isAdmin && " Contact an admin to update mappings."}
+                  </p>
+                </div>
+                {unmappedCount > 0 && (
+                  <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                    {unmappedCount} unmapped
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="divide-y divide-gray-100">
+              {siteRows.map(row => {
+                const currentMapping = mappings.find(m => m.breadcrumb_site_name === row.site);
+                const isMapped       = !!currentMapping;
+                const pendingValue   = pendingMaps.get(row.site) ?? currentMapping?.procore_project_id ?? "";
+                const hasChange      = isAdmin && pendingValue !== (currentMapping?.procore_project_id ?? "");
+                const isSaving       = savingMap === row.site;
+                const saveErr        = mapSaveError.get(row.site);
+
+                const mappedProject = isMapped
+                  ? projects.find(p => String(p.id) === currentMapping.procore_project_id)
+                  : null;
+
+                return (
+                  <div key={row.site} className="px-5 py-3 flex items-center gap-3">
+                    {/* Mapped indicator */}
+                    <div className="shrink-0">
+                      {isMapped
+                        ? <CheckCircle className="h-4 w-4 text-green-500" />
+                        : <div className="h-4 w-4 rounded-full border-2 border-gray-300" />}
+                    </div>
+
+                    {/* Site name */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-800 truncate">{row.site}</p>
+                      {saveErr && <p className="text-xs text-red-500 mt-0.5">{saveErr}</p>}
+                    </div>
+
+                    {/* Admin: dropdown + save button */}
+                    {isAdmin ? (
+                      <>
+                        <select
+                          value={pendingValue}
+                          onChange={e => setPendingMaps(prev => new Map(prev).set(row.site, e.target.value))}
+                          disabled={isSaving}
+                          className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 min-w-[200px]"
+                        >
+                          <option value="">— No mapping —</option>
+                          {projects.map(p => (
+                            <option key={p.id} value={String(p.id)}>
+                              {p.display_name || p.name}
+                              {p.project_number ? ` (#${p.project_number})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          disabled={!hasChange || isSaving || !pendingValue}
+                          onClick={() => handleSaveMapping(row.site)}
+                          className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {isSaving ? "Saving…" : "Save"}
+                        </button>
+                      </>
+                    ) : (
+                      /* Non-admin: read-only display */
+                      <p className="text-xs text-gray-500 truncate max-w-[260px]">
+                        {mappedProject
+                          ? (mappedProject.display_name || mappedProject.name)
+                          : <span className="italic text-gray-400">Not mapped</span>}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Compliance table ── */}
           <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400 w-48">Site</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400 w-44">Site</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Daily Prestart</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Toolbox Talk</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending Inductions</th>
@@ -506,18 +572,20 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {siteRows.map((row, idx) => {
-                  const preLight    = prestartLight(row.prestartCount);
-                  const tbLight     = toolboxLight(row.toolboxDone);
-                  const indLight    = countLight(row.pendingInductions);
-                  const docLight    = countLight(row.pendingDocs);
-                  const dLight      = diaryLight(row.diary);
-                  const overall     = overallLight([preLight, tbLight, indLight, docLight, dLight]);
-                  const isExpanded  = expandedSite === row.site;
+                {siteRows.map(row => {
+                  const preLight   = prestartLight(row.prestartCount);
+                  const tbLight    = toolboxLight(row.toolboxDone);
+                  const indLight   = countLight(row.pendingInductions);
+                  const docLight   = countLight(row.pendingDocs);
+                  const dLight     = diaryLight(row.diary);
+                  const overall    = overallLight([preLight, tbLight, indLight, docLight, dLight]);
+                  const isExpanded = expandedSite === row.site;
 
                   const project = row.mappedProjectId
                     ? projects.find(p => String(p.id) === row.mappedProjectId) ?? null
                     : null;
+
+                  const diaryIsUnmapped = !row.diaryLoading && !row.mappedProjectId;
 
                   return (
                     <>
@@ -526,6 +594,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                         className="hover:bg-gray-50 cursor-pointer transition-colors"
                         onClick={() => setExpandedSite(isExpanded ? null : row.site)}
                       >
+                        {/* Site name */}
                         <td className="px-4 py-3">
                           <div className="font-medium text-gray-900 text-xs leading-tight">{row.site}</div>
                           {project && (
@@ -534,12 +603,9 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          <Pill light={preLight}>{row.prestartCount}/5</Pill>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Pill light={tbLight}>{row.toolboxDone ? "Done" : "Missing"}</Pill>
-                        </td>
+
+                        <td className="px-4 py-3"><Pill light={preLight}>{row.prestartCount}/5</Pill></td>
+                        <td className="px-4 py-3"><Pill light={tbLight}>{row.toolboxDone ? "Done" : "Missing"}</Pill></td>
                         <td className="px-4 py-3">
                           <Pill light={indLight}>
                             {row.pendingInductions === 0 ? "Clear" : `${row.pendingInductions} pending`}
@@ -550,30 +616,48 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                             {row.pendingDocs === 0 ? "Clear" : `${row.pendingDocs} pending`}
                           </Pill>
                         </td>
+
+                        {/* Open Site Diaries */}
                         <td className="px-4 py-3">
                           {row.diaryLoading ? (
                             <Spinner />
+                          ) : diaryIsUnmapped ? (
+                            <div className="flex flex-col gap-1">
+                              <Pill light="gray">—</Pill>
+                              <button
+                                onClick={scrollToMapping}
+                                className="text-[10px] text-amber-600 hover:text-amber-700 font-medium text-left underline-offset-2 hover:underline"
+                              >
+                                Map site →
+                              </button>
+                            </div>
                           ) : row.diary === null ? (
                             <Pill light="gray">—</Pill>
                           ) : (
-                            <Pill light={dLight}>
-                              {row.diary.open_count === null
-                                ? "—"
-                                : row.diary.open_count === 0
-                                  ? "All closed"
-                                  : `${row.diary.open_count} open`}
-                            </Pill>
+                            <div>
+                              <Pill light={dLight}>
+                                {row.diary.open_count === null
+                                  ? "—"
+                                  : row.diary.open_count === 0
+                                    ? "All closed"
+                                    : `${row.diary.open_count} open`}
+                              </Pill>
+                              {row.diary.source === "notes_logs" && (
+                                <p className="text-[10px] text-gray-400 mt-0.5" title="Daily Construction Reports not enabled; using Notes Logs as proxy">
+                                  via notes
+                                </p>
+                              )}
+                            </div>
                           )}
                         </td>
+
                         <td className="px-4 py-3">
                           <Pill light={overall}>
                             {{ green: "On track", amber: "Attention", red: "Action needed", gray: "—" }[overall]}
                           </Pill>
                         </td>
                         <td className="px-4 py-3 text-gray-400">
-                          {isExpanded
-                            ? <ChevronUp className="h-4 w-4" />
-                            : <ChevronDown className="h-4 w-4" />}
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </td>
                       </tr>
 
@@ -583,7 +667,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                           <td colSpan={8} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-                              {/* Pending inductions */}
                               {row.pendingInductionDetails.length > 0 && (
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
@@ -600,7 +683,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                                 </div>
                               )}
 
-                              {/* Pending SWMS/Docs */}
                               {row.pendingDocDetails.length > 0 && (
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
@@ -617,11 +699,15 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                                 </div>
                               )}
 
-                              {/* Site diary entries */}
                               {row.diary && row.diary.entries.length > 0 && (
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
                                     Site Diary — This Week
+                                    {row.diary.source === "notes_logs" && (
+                                      <span className="ml-1.5 normal-case font-normal text-gray-400">
+                                        (via Notes Logs — Daily Reports not enabled)
+                                      </span>
+                                    )}
                                   </p>
                                   <ul className="space-y-1">
                                     {row.diary.entries.map(entry => {
@@ -635,9 +721,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                                             })}
                                           </span>
                                           <span className={`rounded-full px-2 py-0.5 font-medium ${
-                                            isOpen
-                                              ? "bg-red-100 text-red-700"
-                                              : "bg-green-100 text-green-700"
+                                            isOpen ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
                                           }`}>
                                             {entry.status ?? "Missing"}
                                           </span>
@@ -648,7 +732,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                                 </div>
                               )}
 
-                              {/* Oldest pending */}
                               {row.oldestPendingDate && (
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
@@ -662,7 +745,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                                 </div>
                               )}
 
-                              {/* No detail content */}
                               {row.pendingInductionDetails.length === 0 &&
                                row.pendingDocDetails.length === 0 &&
                                (!row.diary || row.diary.entries.length === 0) && (
@@ -678,61 +760,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
               </tbody>
             </table>
           </div>
-        )}
 
-        {/* ── Site mapping manager (admin only) ── */}
-        {isAdmin && hasData && siteRows.length > 0 && (
-          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div className="border-b border-gray-200 px-5 py-3 bg-gray-50">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-                Site → Project Mapping
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Map each Breadcrumb site address to its Procore project to enable site diary tracking.
-              </p>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {siteRows.map(row => {
-                const currentMapping = mappings.find(m => m.breadcrumb_site_name === row.site);
-                const pendingValue   = pendingMaps.get(row.site) ?? currentMapping?.procore_project_id ?? "";
-                const hasChange      = pendingValue !== (currentMapping?.procore_project_id ?? "");
-                const isSaving       = savingMap === row.site;
-                const saveErr        = mapSaveError.get(row.site);
-
-                return (
-                  <div key={row.site} className="px-5 py-3 flex items-center gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{row.site}</p>
-                      {saveErr && <p className="text-xs text-red-500 mt-0.5">{saveErr}</p>}
-                    </div>
-                    <select
-                      value={pendingValue}
-                      onChange={e => setPendingMaps(prev => new Map(prev).set(row.site, e.target.value))}
-                      disabled={isSaving}
-                      className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 min-w-[220px]"
-                    >
-                      <option value="">— No mapping —</option>
-                      {projects.map(p => (
-                        <option key={p.id} value={String(p.id)}>
-                          {p.display_name || p.name}
-                          {p.project_number ? ` (#${p.project_number})` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      disabled={!hasChange || isSaving || !pendingValue}
-                      onClick={() => handleSaveMapping(row.site)}
-                      className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {isSaving ? "Saving…" : "Save"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        </>)}
 
       </div>
     </div>
