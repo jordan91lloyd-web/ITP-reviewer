@@ -16,7 +16,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
-const PAGE_SIZE = 500;
+const PAGE_SIZE          = 500;   // form-report: API returns all records regardless
+const APPROVAL_PAGE_SIZE = 100;   // approval-report: silently returns [] when pageSize > ~100
 
 // ── Excluded sites ─────────────────────────────────────────────────────────────
 // Sandbox / overhead / completed-project siteReferences that should never
@@ -66,13 +67,15 @@ function computeCurrentMondayAest(): Date {
   return monday;                                 // Mon 00:00:00 AEST as UTC
 }
 
-// Format as "YYYY-MM-DDThh:mm:ss+10:00" for Breadcrumb date range params.
+// Format as "YYYY-MM-DDThh:mm:ss" (no timezone suffix) for Breadcrumb date range
+// params. The debug endpoint confirmed the API accepts plain local datetimes;
+// including "+10:00" causes it to silently ignore the filter and return all records.
 function aestDatetime(d: Date, endOfDay = false): string {
   const y  = d.getUTCFullYear();
   const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
   const dy = String(d.getUTCDate()).padStart(2, "0");
   const time = endOfDay ? "23:59:59" : "00:00:00";
-  return `${y}-${mo}-${dy}T${time}+10:00`;
+  return `${y}-${mo}-${dy}T${time}`;
 }
 
 // YYYY-MM-DD in AEST local date (for weekday list used to match fillDate values).
@@ -116,6 +119,7 @@ function isoDate(d: Date): string {
 async function fetchAllPages<T>(
   endpoint: string,
   body: Record<string, unknown>,
+  pageSize = PAGE_SIZE,
 ): Promise<T[]> {
   let pageNumber = 1;
   const allResults: T[] = [];
@@ -127,7 +131,7 @@ async function fetchAllPages<T>(
         "X-Api-Key": API_KEY!,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ ...body, pagingInfo: { pageSize: PAGE_SIZE, pageNumber } }),
+      body: JSON.stringify({ ...body, pagingInfo: { pageSize, pageNumber } }),
       signal: AbortSignal.timeout(20_000),
     });
 
@@ -245,12 +249,12 @@ export async function GET(request: NextRequest) {
       approveStatusList:     [0],
       approveEntityTypeList: [1],
       // No date filter — fetch ALL pending inductions regardless of submission date
-    }),
+    }, APPROVAL_PAGE_SIZE),
     fetchAllPages<ApprovalRecord>("/integration/v2/report/approval-report", {
       approveStatusList:     [0],
       approveEntityTypeList: [2],
       // No date filter — fetch ALL pending SWMS/docs regardless of submission date
-    }),
+    }, APPROVAL_PAGE_SIZE),
     fetchAllPages<SupplierDocRecord>("/integration/v2/report/supplier-document-report", {
       statusList: [1],
       convertDateTimeToLocalTimezone: true,
