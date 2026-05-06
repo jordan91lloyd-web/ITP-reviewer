@@ -16,8 +16,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
-const PAGE_SIZE          = 500;   // form-report: API returns all records regardless
-const APPROVAL_PAGE_SIZE = 100;   // approval-report: silently returns [] when pageSize > ~100
+// All Breadcrumb endpoints silently return [] when pageSize exceeds ~100.
+// Use 100 universally and paginate properly.
+const PAGE_SIZE  = 100;
+const MAX_PAGES  = 20;   // safety cap — 20 × 100 = 2000 records max per endpoint
 
 // ── Excluded sites ─────────────────────────────────────────────────────────────
 // Sandbox / overhead / completed-project siteReferences that should never
@@ -119,19 +121,18 @@ function isoDate(d: Date): string {
 async function fetchAllPages<T>(
   endpoint: string,
   body: Record<string, unknown>,
-  pageSize = PAGE_SIZE,
 ): Promise<T[]> {
   let pageNumber = 1;
   const allResults: T[] = [];
 
-  while (true) {
+  while (pageNumber <= MAX_PAGES) {
     const res = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
       headers: {
         "X-Api-Key": API_KEY!,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ ...body, pagingInfo: { pageSize, pageNumber } }),
+      body: JSON.stringify({ ...body, pagingInfo: { pageSize: PAGE_SIZE, pageNumber } }),
       signal: AbortSignal.timeout(20_000),
     });
 
@@ -146,8 +147,16 @@ async function fetchAllPages<T>(
         ? data
         : [];
 
+    console.log(`[compliance-data] ${endpoint} page ${pageNumber}: ${results.length} records`);
+    if (pageNumber === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      console.log(`[compliance-data] ${endpoint} sample dates:`,
+        (results as any[]).slice(0, 3).map((r: any) => r.fillDate ?? r.submittedDateTime ?? r.submittedDate ?? "(no date)"));
+    }
+
     allResults.push(...results);
 
+    // Stop if this page was not full — no more pages
     if (results.length < PAGE_SIZE) break;
     pageNumber++;
   }
@@ -220,6 +229,12 @@ export async function GET(request: NextRequest) {
   const toolboxFromDt = aestDatetime(sevenDaysAgo, false);
   const toolboxToDt   = aestDatetime(nowInAest(), true);
 
+  console.log('[compliance-data] week range being sent to Breadcrumb:', {
+    from:      weekFromDt,
+    to:        weekToDt,
+    todayAest: aestDatetime(nowInAest(), false),
+  });
+
   const errors: string[] = [];
 
   // ── Fetch all data sources in parallel ────────────────────────────────────
@@ -249,12 +264,12 @@ export async function GET(request: NextRequest) {
       approveStatusList:     [0],
       approveEntityTypeList: [1],
       // No date filter — fetch ALL pending inductions regardless of submission date
-    }, APPROVAL_PAGE_SIZE),
+    }),
     fetchAllPages<ApprovalRecord>("/integration/v2/report/approval-report", {
       approveStatusList:     [0],
       approveEntityTypeList: [2],
       // No date filter — fetch ALL pending SWMS/docs regardless of submission date
-    }, APPROVAL_PAGE_SIZE),
+    }),
     fetchAllPages<SupplierDocRecord>("/integration/v2/report/supplier-document-report", {
       statusList: [1],
       convertDateTimeToLocalTimezone: true,
@@ -268,8 +283,9 @@ export async function GET(request: NextRequest) {
   const swmsApprovals: ApprovalRecord[]   = swmsResult.status           === "fulfilled" ? swmsResult.value           : [];
   const supplierDocs:  SupplierDocRecord[] = supplierDocsResult.status  === "fulfilled" ? supplierDocsResult.value  : [];
 
-  console.log('[compliance-data] form results count:', weekForms.length);
-  console.log('[compliance-data] first 3 form results:', JSON.stringify(weekForms.slice(0, 3)));
+  console.log('[compliance-data] form date range:', weekFromDt, 'to', weekToDt);
+  console.log('[compliance-data] raw form results count:', weekForms.length);
+  console.log('[compliance-data] sample fillDates:', weekForms.slice(0, 3).map(r => r.fillDate));
   console.log('[compliance-data] approval results count:', inductions.length + swmsApprovals.length);
   console.log('[compliance-data] first 3 approval results:', JSON.stringify([...inductions, ...swmsApprovals].slice(0, 3)));
 
