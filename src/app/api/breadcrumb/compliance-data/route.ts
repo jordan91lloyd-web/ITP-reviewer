@@ -264,6 +264,11 @@ export async function GET(request: NextRequest) {
   const swmsApprovals: ApprovalRecord[]   = swmsResult.status           === "fulfilled" ? swmsResult.value           : [];
   const supplierDocs:  SupplierDocRecord[] = supplierDocsResult.status  === "fulfilled" ? supplierDocsResult.value  : [];
 
+  console.log('[compliance-data] form results count:', weekForms.length);
+  console.log('[compliance-data] first 3 form results:', JSON.stringify(weekForms.slice(0, 3)));
+  console.log('[compliance-data] approval results count:', inductions.length + swmsApprovals.length);
+  console.log('[compliance-data] first 3 approval results:', JSON.stringify([...inductions, ...swmsApprovals].slice(0, 3)));
+
   if (sitesResult.status         === "rejected") errors.push(`site/list: ${sitesResult.reason}`);
   if (weekFormsResult.status     === "rejected") errors.push(`form-report (week): ${weekFormsResult.reason}`);
   if (toolboxFormsResult.status  === "rejected") errors.push(`form-report (toolbox): ${toolboxFormsResult.reason}`);
@@ -449,6 +454,14 @@ export async function GET(request: NextRequest) {
       },
     };
   });
+
+  console.log('[compliance-data] site rows built:', JSON.stringify(sites.map(r => ({
+    site:       r.siteName,
+    prestarts:  r.dailyPrestarts.count,
+    toolbox:    r.toolboxTalk.submitted,
+    inductions: r.pendingInductions.count,
+    docs:       r.pendingDocs.count,
+  }))));
 
   return NextResponse.json({
     weekStart:  aestIsoDate(monday),
