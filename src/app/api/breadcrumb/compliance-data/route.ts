@@ -46,37 +46,65 @@ function isExcluded(siteReference: string, siteName: string): boolean {
 
 // ── Week / date helpers ────────────────────────────────────────────────────────
 
-function getWeekBounds(weekStartParam: string | null): {
-  monday: Date;
-  sunday: Date;
-  weekdays: string[];  // Mon–Fri ISO date strings
-} {
-  const monday = weekStartParam
-    ? (() => { const d = new Date(weekStartParam + "T00:00:00"); return isNaN(d.getTime()) ? computeCurrentMonday() : d; })()
-    : computeCurrentMonday();
+// AEST is UTC+10. We use a fixed +10 offset (not AEDT +11) to be consistent —
+// Breadcrumb timestamps arrive with explicit offsets so local parsing is fine.
+const AEST_OFFSET_MINUTES = 10 * 60;
 
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+// Returns the current date/time expressed as if it were UTC but shifted to AEST.
+// All .getUTC*() calls on the returned Date give AEST wall-clock values.
+function nowInAest(): Date {
+  return new Date(Date.now() + AEST_OFFSET_MINUTES * 60_000);
+}
+
+function computeCurrentMondayAest(): Date {
+  const aestNow  = nowInAest();
+  const dow      = aestNow.getUTCDay();          // 0=Sun, 1=Mon … 6=Sat
+  const daysBack = dow === 0 ? 6 : dow - 1;
+  const monday   = new Date(aestNow);
+  monday.setUTCDate(aestNow.getUTCDate() - daysBack);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday;                                 // Mon 00:00:00 AEST as UTC
+}
+
+// Format as "YYYY-MM-DDThh:mm:ss+10:00" for Breadcrumb date range params.
+function aestDatetime(d: Date, endOfDay = false): string {
+  const y  = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dy = String(d.getUTCDate()).padStart(2, "0");
+  const time = endOfDay ? "23:59:59" : "00:00:00";
+  return `${y}-${mo}-${dy}T${time}+10:00`;
+}
+
+// YYYY-MM-DD in AEST local date (for weekday list used to match fillDate values).
+function aestIsoDate(d: Date): string {
+  const y  = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dy = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${mo}-${dy}`;
+}
+
+function getWeekBounds(weekStartParam: string | null): {
+  monday: Date;          // Mon 00:00:00 AEST (stored as UTC-shifted)
+  weekdays: string[];    // Mon–Fri YYYY-MM-DD in AEST
+} {
+  let monday: Date;
+  if (weekStartParam) {
+    // weekStartParam is YYYY-MM-DD from the client; interpret as AEST local date
+    const [y, m, d] = weekStartParam.split("-").map(Number);
+    const candidate = new Date(Date.UTC(y, m - 1, d));
+    monday = isNaN(candidate.getTime()) ? computeCurrentMondayAest() : candidate;
+  } else {
+    monday = computeCurrentMondayAest();
+  }
 
   const weekdays: string[] = [];
   for (let i = 0; i < 5; i++) {
     const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    weekdays.push(isoDate(d));
+    d.setUTCDate(monday.getUTCDate() + i);
+    weekdays.push(aestIsoDate(d));
   }
 
-  return { monday, sunday, weekdays };
-}
-
-function computeCurrentMonday(): Date {
-  const today = new Date();
-  const dow = today.getDay();
-  const daysToMonday = dow === 0 ? 6 : dow - 1;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - daysToMonday);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
+  return { monday, weekdays };
 }
 
 function isoDate(d: Date): string {
@@ -174,17 +202,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id is required" }, { status: 400 });
   }
 
-  const { monday, sunday, weekdays } = getWeekBounds(weekStartP);
+  const { monday, weekdays } = getWeekBounds(weekStartP);
 
-  // Form report: Mon–Sun of current week (full week, not cut off at today)
-  const weekFromDt = `${isoDate(monday)}T00:00:00`;
-  const weekToDt   = `${isoDate(sunday)}T23:59:59`;
+  // Form report: Mon 00:00:00 AEST – Sun 23:59:59 AEST of current week
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const weekFromDt = aestDatetime(monday, false);
+  const weekToDt   = aestDatetime(sunday, true);
 
-  // Toolbox: rolling 7-day window (may overlap previous week)
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const toolboxFromDt = `${isoDate(sevenDaysAgo)}T00:00:00`;
-  const toolboxToDt   = `${isoDate(new Date())}T23:59:59`;
+  // Toolbox: rolling 7-day window in AEST
+  const sevenDaysAgo = nowInAest();
+  sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+  const toolboxFromDt = aestDatetime(sevenDaysAgo, false);
+  const toolboxToDt   = aestDatetime(nowInAest(), true);
 
   const errors: string[] = [];
 
@@ -214,12 +244,12 @@ export async function GET(request: NextRequest) {
     fetchAllPages<ApprovalRecord>("/integration/v2/report/approval-report", {
       approveStatusList:     [0],
       approveEntityTypeList: [1],
-      convertDateTimeToLocalTimezone: true,
+      // No date filter — fetch ALL pending inductions regardless of submission date
     }),
     fetchAllPages<ApprovalRecord>("/integration/v2/report/approval-report", {
       approveStatusList:     [0],
       approveEntityTypeList: [2],
-      convertDateTimeToLocalTimezone: true,
+      // No date filter — fetch ALL pending SWMS/docs regardless of submission date
     }),
     fetchAllPages<SupplierDocRecord>("/integration/v2/report/supplier-document-report", {
       statusList: [1],
@@ -359,12 +389,13 @@ export async function GET(request: NextRequest) {
 
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
     // ── Daily Prestarts: distinct Mon-Fri dates with at least one prestart form
+    // fillDate arrives with +10:00 offset; shift to AEST to get the local date.
     const prestartDays = new Set<string>();
     for (const r of weekFormsBySite.get(siteReference) ?? []) {
       if (!(r.formName ?? "").toLowerCase().includes("daily prestart")) continue;
       const d = new Date(r.fillDate ?? "");
       if (isNaN(d.getTime())) continue;
-      const ds = isoDate(d);
+      const ds = aestIsoDate(new Date(d.getTime() + AEST_OFFSET_MINUTES * 60_000));
       if (weekdays.includes(ds)) prestartDays.add(ds);
     }
 
@@ -375,7 +406,8 @@ export async function GET(request: NextRequest) {
       if (!(r.formName ?? "").toLowerCase().includes("toolbox")) continue;
       const d = new Date(r.fillDate ?? "");
       if (isNaN(d.getTime())) continue;
-      if (d >= sevenDaysAgo) toolboxSubmitted = true;
+      // sevenDaysAgo is already AEST-shifted; compare UTC instants directly
+      if (d.getTime() >= sevenDaysAgo.getTime() - AEST_OFFSET_MINUTES * 60_000) toolboxSubmitted = true;
       if (!lastToolbox || d > new Date(lastToolbox)) lastToolbox = r.fillDate ?? null;
     }
 
@@ -418,12 +450,9 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  const weekEnd = new Date(monday);
-  weekEnd.setDate(monday.getDate() + 6);
-
   return NextResponse.json({
-    weekStart:  isoDate(monday),
-    weekEnd:    isoDate(weekEnd),
+    weekStart:  aestIsoDate(monday),
+    weekEnd:    aestIsoDate(sunday),
     fetchedAt:  new Date().toISOString(),
     source:     "breadcrumb_api",
     sites,

@@ -315,6 +315,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const [reportSaveError, setReportSaveError]   = useState<string | null>(null);
 
   const mappingSectionRef = useRef<HTMLDivElement>(null);
+  const [mappingOpen, setMappingOpen] = useState(false);
 
   // ── Build SiteRows from API compliance-data response ─────────────────────────
 
@@ -989,30 +990,37 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             ))}
           </div>
 
-          {/* ── Site → Project mapping (visible to all; editable by admins) ── */}
+          {/* ── Site → Project mapping (collapsible; editable by admins) ── */}
           <div ref={mappingSectionRef} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div className="border-b border-gray-200 px-5 py-4 bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Connect sites to Procore projects
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {mode === "api"
-                      ? "Sites with a Procore project configured in Breadcrumb are auto-mapped. Admins can override."
-                      : "Linking each Breadcrumb site to its Procore project enables the Open Site Diaries column."}
-                    {!isAdmin && " Contact an admin to update mappings."}
-                  </p>
-                </div>
+            <button
+              type="button"
+              onClick={() => setMappingOpen(o => !o)}
+              className="w-full px-5 py-4 bg-gray-50 flex items-center justify-between gap-3 hover:bg-gray-100 transition-colors text-left"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900">
+                  Site mappings ({trackedSites - unmappedCount} auto-mapped)
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {mode === "api"
+                    ? "Sites are auto-mapped via Breadcrumb. Admins can override."
+                    : "Link each Breadcrumb site to its Procore project for the Site Diaries column."}
+                  {!isAdmin && " Contact an admin to update mappings."}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
                 {unmappedCount > 0 && (
-                  <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
                     {unmappedCount} unmapped
                   </span>
                 )}
+                {mappingOpen
+                  ? <ChevronUp className="h-4 w-4 text-gray-400" />
+                  : <ChevronDown className="h-4 w-4 text-gray-400" />}
               </div>
-            </div>
+            </button>
 
-            <div className="divide-y divide-gray-100">
+            {mappingOpen && <div className="divide-y divide-gray-100 border-t border-gray-200">
               {siteRows.map(row => {
                 const currentMapping = mappings.find(m => m.breadcrumb_site_name === row.site);
                 const isMapped       = !!row.mappedProjectId;
@@ -1076,7 +1084,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                   </div>
                 );
               })}
-            </div>
+            </div>}
           </div>
 
           {/* ── Compliance table ── */}
