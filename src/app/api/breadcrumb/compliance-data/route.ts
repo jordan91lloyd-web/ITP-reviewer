@@ -189,9 +189,6 @@ export async function GET(request: NextRequest) {
 
   const { monday, weekdays } = getWeekBounds(weekStartP);
 
-  console.log('[week] monday:', monday.toISOString());
-  console.log('[week] days array:', getWeekDays(monday));
-
   const errors: string[] = [];
 
   // ── Fetch all data sources in parallel ────────────────────────────────────
@@ -229,16 +226,6 @@ export async function GET(request: NextRequest) {
   const inductions:    ApprovalRecord[]    = inductionsResult.status  === "fulfilled" ? inductionsResult.value  : [];
   const swmsApprovals: ApprovalRecord[]    = swmsResult.status        === "fulfilled" ? swmsResult.value        : [];
   const supplierDocs:  SupplierDocRecord[] = supplierDocsResult.status === "fulfilled" ? supplierDocsResult.value : [];
-
-  console.log('[week] william st prestart dates found:',
-    allForms
-      .filter(r => r.siteReference === "010" &&
-        r.formName?.trim().toLowerCase().includes("prestart"))
-      .map(r => ({
-        fillDate:    r.fillDate,
-        sydneyDate:  getSydneyDateString(r.fillDate ?? ""),
-      }))
-  );
 
   if (sitesResult.status         === "rejected") errors.push(`site/list: ${sitesResult.reason}`);
   if (allFormsResult.status      === "rejected") errors.push(`form-report: ${allFormsResult.reason}`);
