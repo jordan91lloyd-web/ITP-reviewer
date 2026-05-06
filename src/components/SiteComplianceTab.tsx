@@ -2,11 +2,14 @@
 
 // ─── SiteComplianceTab ─────────────────────────────────────────────────────────
 // Weekly traffic-light compliance view across all Fleek projects.
-// Combines Breadcrumb CSV exports (or live Breadcrumb API) with live Procore
-// site diary data. Saves and loads reports from Supabase.
+// When BREADCRUMB_API_KEY is configured, data loads automatically from the
+// Breadcrumb API on mount. Falls back to CSV upload if the key is missing.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, CheckCircle, Clock } from "lucide-react";
+import {
+  AlertTriangle, ChevronDown, ChevronUp,
+  CheckCircle, Clock, RefreshCw,
+} from "lucide-react";
 import SiteComplianceCsvUpload from "./SiteComplianceCsvUpload";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -64,6 +67,37 @@ interface SavedReportMeta {
   report_week_start: string;
   report_week_end: string;
   uploaded_at: string;
+}
+
+// Breadcrumb API compliance-data response types
+interface ApiDailyPrestarts {
+  count: number;
+  total: number;
+  days: string[];
+}
+interface ApiToolboxTalk {
+  submitted: boolean;
+  lastSubmitted: string | null;
+}
+interface ApiInductionItem {
+  name: string;
+  supplier: string;
+  submittedDate: string;
+  title: string;
+}
+interface ApiDocItem {
+  documentTitle: string;
+  supplier: string;
+  submittedDate: string;
+}
+interface ApiSiteData {
+  siteReference: string;
+  siteName: string;
+  procoreProjectId: string | null;
+  dailyPrestarts: ApiDailyPrestarts;
+  toolboxTalk: ApiToolboxTalk;
+  pendingInductions: { count: number; items: ApiInductionItem[] };
+  pendingDocs: { count: number; items: ApiDocItem[] };
 }
 
 // ── Week helpers ───────────────────────────────────────────────────────────────
@@ -133,7 +167,7 @@ function overallLight(lights: TrafficLight[]): TrafficLight {
   return "gray";
 }
 
-// ── KPI calculation ────────────────────────────────────────────────────────────
+// ── CSV KPI calculation (used in fallback CSV mode only) ──────────────────────
 
 function calcPrestartCount(
   briefingRows: Record<string, string>[],
@@ -246,203 +280,145 @@ interface Props {
   isAdmin: boolean;
 }
 
-// Stable key for deduplicating auto-saves: "{briefingsFilename}|{approvalsFilename}"
-function csvSaveKey(briefings: string | null, approvals: string | null): string {
-  return `${briefings ?? ""}|${approvals ?? ""}`;
-}
-
 export default function SiteComplianceTab({ companyId, projects, isAdmin }: Props) {
+  // ── Mode: "checking" | "api" | "csv"
+  const [mode, setMode] = useState<"checking" | "api" | "csv">("checking");
+
+  // ── API mode state
+  const [isLoading, setIsLoading]   = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const lastApiSaveRef = useRef<string>("");   // prevents duplicate saves per week
+
+  // ── CSV fallback state
   const [csvBriefings, setCsvBriefings] = useState<Record<string, string>[] | null>(null);
   const [csvApprovals, setCsvApprovals] = useState<Record<string, string>[] | null>(null);
-  const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
+  const [rawBriefingsCsv, setRawBriefingsCsv]   = useState<string | null>(null);
+  const [rawApprovalsCsv, setRawApprovalsCsv]   = useState<string | null>(null);
+  const [briefingsFilename, setBriefingsFilename] = useState<string | null>(null);
+  const [approvalsFilename, setApprovalsFilename] = useState<string | null>(null);
+  const lastCsvSaveKey = useRef<string>("");
 
-  // Raw CSV text for Supabase persistence
-  const [rawBriefingsCsv, setRawBriefingsCsv]       = useState<string | null>(null);
-  const [rawApprovalsCsv, setRawApprovalsCsv]        = useState<string | null>(null);
-  const [briefingsFilename, setBriefingsFilename]     = useState<string | null>(null);
-  const [approvalsFilename, setApprovalsFilename]     = useState<string | null>(null);
-
-  // Saved report state
-  const [savedReportMeta, setSavedReportMeta]         = useState<SavedReportMeta | null>(null);
-  const [reportHistory, setReportHistory]             = useState<ReportHistoryItem[]>([]);
-  const [historyOpen, setHistoryOpen]                 = useState(false);
-  const [isSavingReport, setIsSavingReport]           = useState(false);
-  const [reportSaveError, setReportSaveError]         = useState<string | null>(null);
-  const lastSavedCsvKey = useRef<string>("");
-
-  // Breadcrumb API mode
-  const [breadcrumbMode, setBreadcrumbMode]           = useState<"csv" | "api" | "checking">("checking");
-
-  const [mappings, setMappings]         = useState<SiteMapping[]>([]);
+  // ── Shared state
   const [siteRows, setSiteRows]         = useState<SiteRow[]>([]);
+  const [mappings, setMappings]         = useState<SiteMapping[]>([]);
   const [expandedSite, setExpandedSite] = useState<string | null>(null);
 
-  // Pending mapping selections (local, unsaved)
   const [pendingMaps, setPendingMaps]   = useState<Map<string, string>>(new Map());
   const [savingMap, setSavingMap]       = useState<string | null>(null);
   const [mapSaveError, setMapSaveError] = useState<Map<string, string>>(new Map());
 
-  // Ref for scrolling to the mapping section
+  const [savedReportMeta, setSavedReportMeta]   = useState<SavedReportMeta | null>(null);
+  const [reportHistory, setReportHistory]       = useState<ReportHistoryItem[]>([]);
+  const [historyOpen, setHistoryOpen]           = useState(false);
+  const [isSavingReport, setIsSavingReport]     = useState(false);
+  const [reportSaveError, setReportSaveError]   = useState<string | null>(null);
+
   const mappingSectionRef = useRef<HTMLDivElement>(null);
 
-  const hasData = csvBriefings !== null || csvApprovals !== null;
+  // ── Build SiteRows from API compliance-data response ─────────────────────────
 
-  // ── On-mount: check Breadcrumb API, load mappings, load saved report & history
+  const buildApiSiteRows = useCallback(
+    (apiSites: ApiSiteData[], currentMappings: SiteMapping[], currentProjects: DashboardProject[]): SiteRow[] => {
+      const mapBySiteName = new Map(currentMappings.map(m => [m.breadcrumb_site_name, m.procore_project_id]));
+      const projectOrder  = new Map(currentProjects.map((p, i) => [String(p.id), i]));
 
-  useEffect(() => {
-    if (!companyId) return;
+      const rows: SiteRow[] = apiSites.map(s => {
+        // Manual DB mapping overrides Breadcrumb's procoreProjectId
+        const mappedProjectId = mapBySiteName.get(s.siteName) ?? s.procoreProjectId ?? null;
 
-    // Check whether the Breadcrumb API is configured by calling one of the
-    // scaffold routes. If it returns source=env_missing we stay in CSV mode.
-    fetch(`/api/breadcrumb/site-briefings?company_id=${companyId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.source === "breadcrumb_api") {
-          setBreadcrumbMode("api");
-          // Populate CSVs from live API data so KPI logic re-uses the same
-          // calculation functions without changes.
-          if (Array.isArray(data.rows) && data.rows.length > 0) {
-            setCsvBriefings(data.rows);
-            setLastUpdated(new Date());
+        const allDates = [
+          ...s.pendingInductions.items.map(i => i.submittedDate),
+          ...s.pendingDocs.items.map(i => i.submittedDate),
+        ].filter(Boolean);
+
+        let oldestPendingDate: string | null = null;
+        for (const ds of allDates) {
+          const d = new Date(ds);
+          if (!isNaN(d.getTime()) && (!oldestPendingDate || d < new Date(oldestPendingDate))) {
+            oldestPendingDate = ds;
           }
-        } else {
-          setBreadcrumbMode("csv");
-        }
-      })
-      .catch(() => setBreadcrumbMode("csv"));
-
-    // Load site mappings
-    fetch(`/api/dashboard/site-mappings?company_id=${companyId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => setMappings(data?.mappings ?? []))
-      .catch(() => {});
-
-    // Load most recent saved compliance report (metadata only for banner)
-    fetch(`/api/dashboard/compliance-reports?company_id=${companyId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.report) {
-          setSavedReportMeta({
-            id:                data.report.id,
-            report_week_start: data.report.report_week_start,
-            report_week_end:   data.report.report_week_end,
-            uploaded_at:       data.report.uploaded_at,
-          });
-        }
-      })
-      .catch(() => {});
-
-    // Load report history for the dropdown
-    fetch(`/api/dashboard/compliance-reports/history?company_id=${companyId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => setReportHistory(data?.history ?? []))
-      .catch(() => {});
-  }, [companyId]);
-
-  // If in Breadcrumb API mode, also fetch approvals
-  useEffect(() => {
-    if (breadcrumbMode !== "api" || !companyId) return;
-    fetch(`/api/breadcrumb/approvals?company_id=${companyId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (Array.isArray(data?.rows) && data.rows.length > 0) {
-          setCsvApprovals(data.rows);
-        }
-      })
-      .catch(() => {});
-  }, [breadcrumbMode, companyId]);
-
-  // ── Load a historical report by ID ──────────────────────────────────────────
-
-  const loadFromSavedReport = useCallback(
-    async (reportId: string) => {
-      if (!companyId) return;
-      try {
-        const res = await fetch(
-          `/api/dashboard/compliance-reports?company_id=${companyId}&report_id=${reportId}`
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data.report) return;
-
-        const report = data.report;
-
-        // Restore site_data as siteRows (without live diary data — they'll refetch)
-        if (Array.isArray(report.site_data)) {
-          const restored: SiteRow[] = (report.site_data as SiteRow[]).map(r => ({
-            ...r,
-            diary:        null,
-            diaryLoading: !!r.mappedProjectId,
-          }));
-          setSiteRows(restored);
-          void loadDiariesForRows(restored);
         }
 
-        setSavedReportMeta({
-          id:                report.id,
-          report_week_start: report.report_week_start,
-          report_week_end:   report.report_week_end,
-          uploaded_at:       report.uploaded_at,
-        });
-        setHistoryOpen(false);
-      } catch {
-        // ignore
-      }
+        return {
+          site:          s.siteName,
+          mappedProjectId,
+          prestartCount: s.dailyPrestarts.count,
+          toolboxDone:   s.toolboxTalk.submitted,
+          pendingInductions: s.pendingInductions.count,
+          pendingDocs:       s.pendingDocs.count,
+          pendingInductionDetails: s.pendingInductions.items.map(i => ({
+            title:         i.title,
+            supplier:      i.supplier,
+            dateSubmitted: i.submittedDate,
+          })),
+          pendingDocDetails: s.pendingDocs.items.map(i => ({
+            title:         i.documentTitle,
+            supplier:      i.supplier,
+            dateSubmitted: i.submittedDate,
+          })),
+          oldestPendingDate,
+          diary:        null,
+          diaryLoading: !!mappedProjectId,
+        };
+      });
+
+      // Sort: mapped sites by Procore project order, unmapped alphabetically at bottom
+      return rows.sort((a, b) => {
+        const oA = a.mappedProjectId ? (projectOrder.get(a.mappedProjectId) ?? Infinity) : Infinity;
+        const oB = b.mappedProjectId ? (projectOrder.get(b.mappedProjectId) ?? Infinity) : Infinity;
+        if (oA !== Infinity && oB !== Infinity) return oA - oB;
+        if (oA !== Infinity) return -1;
+        if (oB !== Infinity) return 1;
+        return a.site.localeCompare(b.site);
+      });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [companyId]
+    []
   );
 
-  // ── Compute siteRows when CSVs or mappings change ────────────────────────────
+  // ── Build SiteRows from CSV data (fallback mode) ─────────────────────────────
 
-  const buildSiteRows = useCallback(
+  const buildCsvSiteRows = useCallback(
     (
       briefings: Record<string, string>[] | null,
       approvals: Record<string, string>[] | null,
       currentMappings: SiteMapping[],
       currentProjects: DashboardProject[],
-    ) => {
+    ): SiteRow[] => {
       const { monday, friday } = getCurrentWeekBounds();
 
       const allSites = new Set<string>();
       for (const row of briefings ?? []) if (row["Site"]) allSites.add(row["Site"]);
       for (const row of approvals ?? []) if (row["Site"]) allSites.add(row["Site"]);
 
-      const mapBySite     = new Map(currentMappings.map(m => [m.breadcrumb_site_name, m.procore_project_id]));
-      // projectOrder: Procore project id → position in the projects array
-      const projectOrder  = new Map(currentProjects.map((p, i) => [String(p.id), i]));
+      const mapBySite    = new Map(currentMappings.map(m => [m.breadcrumb_site_name, m.procore_project_id]));
+      const projectOrder = new Map(currentProjects.map((p, i) => [String(p.id), i]));
 
       const sortedSites = Array.from(allSites).sort((a, b) => {
-        const pidA    = mapBySite.get(a);
-        const pidB    = mapBySite.get(b);
-        const orderA  = pidA !== undefined ? (projectOrder.get(pidA) ?? Infinity) : Infinity;
-        const orderB  = pidB !== undefined ? (projectOrder.get(pidB) ?? Infinity) : Infinity;
+        const pidA   = mapBySite.get(a);
+        const pidB   = mapBySite.get(b);
+        const orderA = pidA !== undefined ? (projectOrder.get(pidA) ?? Infinity) : Infinity;
+        const orderB = pidB !== undefined ? (projectOrder.get(pidB) ?? Infinity) : Infinity;
         if (orderA !== Infinity && orderB !== Infinity) return orderA - orderB;
         if (orderA !== Infinity) return -1;
         if (orderB !== Infinity) return 1;
         return a.localeCompare(b);
       });
 
-      const rows: SiteRow[] = sortedSites.map(site => {
-        const mappedProjectId = mapBySite.get(site) ?? null;
-        return {
-          site,
-          mappedProjectId,
-          prestartCount: calcPrestartCount(briefings ?? [], site, monday, friday),
-          toolboxDone:   calcToolboxDone(briefings ?? [], site),
-          ...calcApprovalKPIs(approvals ?? [], site),
-          diary:        null,
-          diaryLoading: !!mappedProjectId,
-        };
-      });
-
-      setSiteRows(rows);
-      return rows;
+      return sortedSites.map(site => ({
+        site,
+        mappedProjectId: mapBySite.get(site) ?? null,
+        prestartCount: calcPrestartCount(briefings ?? [], site, monday, friday),
+        toolboxDone:   calcToolboxDone(briefings ?? [], site),
+        ...calcApprovalKPIs(approvals ?? [], site),
+        diary:        null,
+        diaryLoading: !!(mapBySite.get(site)),
+      }));
     },
     []
   );
 
-  // ── Fetch diary data for a given set of rows ─────────────────────────────────
+  // ── Fetch diary data ──────────────────────────────────────────────────────────
 
   const loadDiariesForRows = useCallback(
     async (rows: SiteRow[]) => {
@@ -485,23 +461,19 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     [companyId]
   );
 
-  // Rebuild + re-fetch whenever CSVs or mappings change.
-  useEffect(() => {
-    const rows = buildSiteRows(csvBriefings, csvApprovals, mappings, projects);
-    if (hasData) void loadDiariesForRows(rows);
-  }, [csvBriefings, csvApprovals, mappings, projects, buildSiteRows, loadDiariesForRows, hasData]);
-
-  // ── Auto-save compliance report when both CSVs are loaded ───────────────────
+  // ── Save compliance report ────────────────────────────────────────────────────
 
   const saveComplianceReport = useCallback(
-    async (rows: SiteRow[]) => {
+    async (
+      rows: SiteRow[],
+      opts?: { briefingsFile?: string | null; approvalsFile?: string | null; source?: string }
+    ) => {
       if (!companyId || rows.length === 0) return;
       setIsSavingReport(true);
       setReportSaveError(null);
 
       const { monday, friday } = getCurrentWeekBounds();
 
-      // Serialise rows without diary (diary is live Procore data, not archival)
       const siteData = rows.map(r => ({
         site:              r.site,
         mappedProjectId:   r.mappedProjectId,
@@ -514,19 +486,22 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         oldestPendingDate:       r.oldestPendingDate,
       }));
 
+      const bFile = opts?.briefingsFile !== undefined ? opts.briefingsFile : briefingsFilename;
+      const aFile = opts?.approvalsFile !== undefined ? opts.approvalsFile : approvalsFilename;
+
       try {
         const res = await fetch("/api/dashboard/compliance-reports", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
+          body: JSON.stringify({
             company_id:              String(companyId),
             report_week_start:       toDateString(monday),
             report_week_end:         toDateString(friday),
-            site_briefings_filename: briefingsFilename,
-            approvals_filename:      approvalsFilename,
+            site_briefings_filename: bFile,
+            approvals_filename:      aFile,
             site_data:               siteData,
-            raw_briefings_csv:       rawBriefingsCsv,
-            raw_approvals_csv:       rawApprovalsCsv,
+            raw_briefings_csv:       opts?.source === "api" ? null : rawBriefingsCsv,
+            raw_approvals_csv:       opts?.source === "api" ? null : rawApprovalsCsv,
           }),
         });
 
@@ -537,7 +512,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         }
 
         const body = await res.json();
-
         setSavedReportMeta({
           id:                body.id ?? "",
           report_week_start: toDateString(monday),
@@ -545,7 +519,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           uploaded_at:       new Date().toISOString(),
         });
 
-        // Refresh history list
         fetch(`/api/dashboard/compliance-reports/history?company_id=${companyId}`)
           .then(r => r.ok ? r.json() : null)
           .then(data => setReportHistory(data?.history ?? []))
@@ -559,32 +532,194 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     [companyId, briefingsFilename, approvalsFilename, rawBriefingsCsv, rawApprovalsCsv]
   );
 
-  // Trigger auto-save when both CSVs are present and the combination is new.
-  useEffect(() => {
-    if (!csvBriefings || !csvApprovals || siteRows.length === 0) return;
-    const key = csvSaveKey(briefingsFilename, approvalsFilename);
-    if (key === lastSavedCsvKey.current || key === "|") return;
-    lastSavedCsvKey.current = key;
-    void saveComplianceReport(siteRows);
-  }, [csvBriefings, csvApprovals, siteRows, briefingsFilename, approvalsFilename, saveComplianceReport]);
+  // ── Fetch API compliance data ─────────────────────────────────────────────────
 
-  // ── CSV handlers ─────────────────────────────────────────────────────────────
+  const fetchApiData = useCallback(
+    async (currentMappings: SiteMapping[]) => {
+      if (!companyId) return;
+      setIsLoading(true);
+      setFetchError(null);
+
+      const { monday } = getCurrentWeekBounds();
+      const weekStart  = toDateString(monday);
+
+      try {
+        const res = await fetch(
+          `/api/breadcrumb/compliance-data?company_id=${companyId}&week_start=${weekStart}`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const apiSites: ApiSiteData[] = data.sites ?? [];
+
+        const rows = buildApiSiteRows(apiSites, currentMappings, projects);
+        setSiteRows(rows);
+        setLastFetched(new Date());
+        void loadDiariesForRows(rows);
+
+        // Auto-save once per week (keyed by week start)
+        if (weekStart !== lastApiSaveRef.current) {
+          lastApiSaveRef.current = weekStart;
+          void saveComplianceReport(rows, { briefingsFile: "breadcrumb_api", approvalsFile: null, source: "api" });
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to load compliance data";
+        setFetchError(msg);
+        // Attempt to load last cached report from Supabase
+        try {
+          const cached = await fetch(`/api/dashboard/compliance-reports?company_id=${companyId}`);
+          if (cached.ok) {
+            const cData = await cached.json();
+            if (cData?.report && Array.isArray(cData.report.site_data)) {
+              const restored: SiteRow[] = (cData.report.site_data as SiteRow[]).map(r => ({
+                ...r, diary: null, diaryLoading: !!r.mappedProjectId,
+              }));
+              setSiteRows(restored);
+              void loadDiariesForRows(restored);
+            }
+          }
+        } catch {
+          // ignore — no cached data to restore
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [companyId, projects, buildApiSiteRows, loadDiariesForRows, saveComplianceReport]
+  );
+
+  // ── On-mount: check API, load mappings, load history ─────────────────────────
+
+  useEffect(() => {
+    if (!companyId) return;
+
+    // Kick off mappings + mode detection in parallel
+    Promise.all([
+      fetch(`/api/breadcrumb/sites?company_id=${companyId}`).then(r => r.ok ? r.json() : null),
+      fetch(`/api/dashboard/site-mappings?company_id=${companyId}`).then(r => r.ok ? r.json() : null),
+    ]).then(([sitesData, mappingsData]) => {
+      const loadedMappings: SiteMapping[] = mappingsData?.mappings ?? [];
+      setMappings(loadedMappings);
+
+      if (sitesData?.fallback === true) {
+        setMode("csv");
+        return;
+      }
+
+      // API is configured
+      setMode("api");
+      void fetchApiData(loadedMappings);
+    }).catch(() => setMode("csv"));
+
+    // Load saved report meta (for banner)
+    fetch(`/api/dashboard/compliance-reports?company_id=${companyId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.report) {
+          setSavedReportMeta({
+            id:                data.report.id,
+            report_week_start: data.report.report_week_start,
+            report_week_end:   data.report.report_week_end,
+            uploaded_at:       data.report.uploaded_at,
+          });
+        }
+      })
+      .catch(() => {});
+
+    // Load report history
+    fetch(`/api/dashboard/compliance-reports/history?company_id=${companyId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setReportHistory(data?.history ?? []))
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId]);
+
+  // ── Rebuild CSV rows when CSVs or mappings change (CSV mode only) ─────────────
+
+  useEffect(() => {
+    if (mode !== "csv") return;
+    if (!csvBriefings && !csvApprovals) return;
+    const rows = buildCsvSiteRows(csvBriefings, csvApprovals, mappings, projects);
+    setSiteRows(rows);
+    void loadDiariesForRows(rows);
+  }, [csvBriefings, csvApprovals, mappings, projects, mode, buildCsvSiteRows, loadDiariesForRows]);
+
+  // ── Auto-save when CSV data is present (CSV mode only) ───────────────────────
+
+  useEffect(() => {
+    if (mode !== "csv") return;
+    if (!csvBriefings || !csvApprovals || siteRows.length === 0) return;
+    const key = `${briefingsFilename ?? ""}|${approvalsFilename ?? ""}`;
+    if (key === lastCsvSaveKey.current || key === "|") return;
+    lastCsvSaveKey.current = key;
+    void saveComplianceReport(siteRows);
+  }, [mode, csvBriefings, csvApprovals, siteRows, briefingsFilename, approvalsFilename, saveComplianceReport]);
+
+  // ── Manual refresh (API mode) ─────────────────────────────────────────────────
+
+  const handleRefresh = useCallback(async () => {
+    if (!companyId || mode !== "api") return;
+    const mappingsRes = await fetch(`/api/dashboard/site-mappings?company_id=${companyId}`).catch(() => null);
+    const mappingsData = mappingsRes?.ok ? await mappingsRes.json().catch(() => null) : null;
+    const currentMappings: SiteMapping[] = mappingsData?.mappings ?? mappings;
+    if (mappingsData) setMappings(currentMappings);
+    lastApiSaveRef.current = "";   // force re-save on manual refresh
+    void fetchApiData(currentMappings);
+  }, [companyId, mode, mappings, fetchApiData]);
+
+  // ── Load historical report by ID ──────────────────────────────────────────────
+
+  const loadFromSavedReport = useCallback(
+    async (reportId: string) => {
+      if (!companyId) return;
+      try {
+        const res = await fetch(
+          `/api/dashboard/compliance-reports?company_id=${companyId}&report_id=${reportId}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.report) return;
+
+        const report = data.report;
+
+        if (Array.isArray(report.site_data)) {
+          const restored: SiteRow[] = (report.site_data as SiteRow[]).map(r => ({
+            ...r, diary: null, diaryLoading: !!r.mappedProjectId,
+          }));
+          setSiteRows(restored);
+          void loadDiariesForRows(restored);
+        }
+
+        setSavedReportMeta({
+          id:                report.id,
+          report_week_start: report.report_week_start,
+          report_week_end:   report.report_week_end,
+          uploaded_at:       report.uploaded_at,
+        });
+        setHistoryOpen(false);
+      } catch {
+        // ignore
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [companyId]
+  );
+
+  // ── CSV handlers (fallback mode) ──────────────────────────────────────────────
 
   function handleBriefingsParsed(rows: Record<string, string>[], name: string, uploadTime: Date, rawText: string) {
     setCsvBriefings(rows);
     setBriefingsFilename(name);
     setRawBriefingsCsv(rawText);
-    setLastUpdated(prev => (!prev || uploadTime > prev) ? uploadTime : prev);
   }
 
-  function handleApprovalsParsed(rows: Record<string, string>[], name: string, uploadTime: Date, rawText: string) {
+  function handleApprovalsParsed(rows: Record<string, string>[], name: string, _uploadTime: Date, rawText: string) {
     setCsvApprovals(rows);
     setApprovalsFilename(name);
     setRawApprovalsCsv(rawText);
-    setLastUpdated(prev => (!prev || uploadTime > prev) ? uploadTime : prev);
   }
 
-  // ── Mapping save (admin only) ────────────────────────────────────────────────
+  // ── Mapping save ──────────────────────────────────────────────────────────────
 
   async function handleSaveMapping(site: string) {
     const projectId = pendingMaps.get(site);
@@ -597,7 +732,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       const res = await fetch("/api/dashboard/site-mappings", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
+        body: JSON.stringify({
           company_id:           String(companyId),
           breadcrumb_site_name: site,
           procore_project_id:   projectId,
@@ -608,7 +743,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         setMapSaveError(prev => new Map(prev).set(site, data.error ?? "Save failed"));
         return;
       }
-      // Refresh mappings — this also triggers diary re-fetch via the useEffect above.
       const updatedRes = await fetch(`/api/dashboard/site-mappings?company_id=${companyId}`);
       const data = await updatedRes.json();
       setMappings(data?.mappings ?? []);
@@ -619,7 +753,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     }
   }
 
-  // ── Derived summary stats ────────────────────────────────────────────────────
+  // ── Derived stats ─────────────────────────────────────────────────────────────
 
   const siteLights = siteRows.map(row =>
     overallLight([
@@ -631,17 +765,19 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     ])
   );
 
-  const trackedSites    = siteRows.length;
-  const actionRequired  = siteLights.filter(l => l === "red").length;
-  const onTrack         = siteLights.filter(l => l === "green" || l === "amber").length;
-  const totalPending    = siteRows.reduce((s, r) => s + r.pendingInductions + r.pendingDocs, 0);
-  const unmappedCount   = siteRows.filter(r => !r.mappedProjectId).length;
+  const trackedSites   = siteRows.length;
+  const actionRequired = siteLights.filter(l => l === "red").length;
+  const onTrack        = siteLights.filter(l => l === "green" || l === "amber").length;
+  const totalPending   = siteRows.reduce((s, r) => s + r.pendingInductions + r.pendingDocs, 0);
+  const unmappedCount  = siteRows.filter(r => !r.mappedProjectId).length;
+
+  const hasData = siteRows.length > 0;
 
   const isStale =
-    (csvBriefings && isDataStale(csvBriefings, "Date Submitted")) ||
-    (csvApprovals && isDataStale(csvApprovals, "Date Submitted"));
+    mode === "csv" &&
+    ((csvBriefings && isDataStale(csvBriefings, "Date Submitted")) ||
+     (csvApprovals && isDataStale(csvApprovals, "Date Submitted")));
 
-  // Sorted projects for the mapping dropdown
   const sortedProjects = [...projects].sort((a, b) =>
     (a.name || a.display_name).localeCompare(b.name || b.display_name)
   );
@@ -651,7 +787,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     mappingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -662,55 +798,78 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           <div>
             <h1 className="text-lg font-bold text-gray-900">Site Compliance</h1>
             <p className="text-sm text-gray-500 mt-0.5">{fmtWeekLabel()}</p>
-            {lastUpdated && (
+            {mode === "api" && lastFetched && (
               <p className="text-xs text-gray-400 mt-0.5">
-                Last updated {lastUpdated.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
+                Fetched {lastFetched.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
               </p>
             )}
           </div>
 
-          {/* ── Report history dropdown ── */}
-          {reportHistory.length > 0 && (
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setHistoryOpen(o => !o)}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <Clock className="h-3.5 w-3.5 text-gray-400" />
-                Report history
-                {historyOpen ? <ChevronUp className="h-3.5 w-3.5 text-gray-400" /> : <ChevronDown className="h-3.5 w-3.5 text-gray-400" />}
-              </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* ── API mode: refresh button + live badge ── */}
+            {mode === "api" && (
+              <>
+                <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                  <CheckCircle className="h-3 w-3" />
+                  Live via Breadcrumb API
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  {isLoading
+                    ? <Spinner className="h-3 w-3" />
+                    : <RefreshCw className="h-3.5 w-3.5 text-gray-400" />}
+                  Refresh
+                </button>
+              </>
+            )}
 
-              {historyOpen && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-72 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-gray-400 border-b border-gray-100">
-                    Saved reports
-                  </p>
-                  <ul className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
-                    {reportHistory.map(item => (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          onClick={() => loadFromSavedReport(item.id)}
-                          className="w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors"
-                        >
-                          <p className="text-xs font-semibold text-gray-800">
-                            Week of {fmtDateLabel(item.report_week_start)}
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">
-                            {item.site_count} sites · saved{" "}
-                            {new Date(item.uploaded_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                            {item.uploaded_by ? ` by ${item.uploaded_by}` : ""}
-                          </p>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
+            {/* ── Report history dropdown ── */}
+            {reportHistory.length > 0 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setHistoryOpen(o => !o)}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Clock className="h-3.5 w-3.5 text-gray-400" />
+                  Report history
+                  {historyOpen ? <ChevronUp className="h-3.5 w-3.5 text-gray-400" /> : <ChevronDown className="h-3.5 w-3.5 text-gray-400" />}
+                </button>
+
+                {historyOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-20 w-72 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                    <p className="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-gray-400 border-b border-gray-100">
+                      Saved reports
+                    </p>
+                    <ul className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+                      {reportHistory.map(item => (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => loadFromSavedReport(item.id)}
+                            className="w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors"
+                          >
+                            <p className="text-xs font-semibold text-gray-800">
+                              Week of {fmtDateLabel(item.report_week_start)}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {item.site_count} sites · saved{" "}
+                              {new Date(item.uploaded_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+                              {item.uploaded_by ? ` by ${item.uploaded_by}` : ""}
+                            </p>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Saved report banner ── */}
@@ -725,9 +884,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                 hour: "2-digit", minute: "2-digit",
               })}
             </p>
-            {isSavingReport && (
-              <Spinner className="h-3.5 w-3.5 ml-auto" />
-            )}
+            {isSavingReport && <Spinner className="h-3.5 w-3.5 ml-auto" />}
           </div>
         )}
         {isSavingReport && !savedReportMeta && (
@@ -743,7 +900,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           </div>
         )}
 
-        {/* ── Stale data warning ── */}
+        {/* ── Stale data warning (CSV mode only) ── */}
         {isStale && (
           <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
@@ -753,43 +910,76 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           </div>
         )}
 
-        {/* ── CSV upload zone (hidden in API mode) ── */}
-        {breadcrumbMode === "api" ? (
-          <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-            <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
-            <p className="text-xs text-green-700 font-medium">
-              Live data via Breadcrumb API — no CSV upload needed.
-            </p>
+        {/* ── API fetch error ── */}
+        {mode === "api" && fetchError && (
+          <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-red-700 font-medium">Failed to fetch live data — {fetchError}</p>
+              {siteRows.length > 0 && (
+                <p className="text-xs text-red-500 mt-0.5">Showing last saved report instead.</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 transition-colors"
+            >
+              Retry
+            </button>
           </div>
-        ) : breadcrumbMode === "csv" ? (
-          <SiteComplianceCsvUpload
-            onBriefingsParsed={handleBriefingsParsed}
-            onApprovalsParsed={handleApprovalsParsed}
-          />
-        ) : (
-          /* checking — show nothing while we probe the API */
-          null
+        )}
+
+        {/* ── Loading state ── */}
+        {mode === "api" && isLoading && siteRows.length === 0 && (
+          <div className="flex items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-8 py-16">
+            <Spinner className="h-5 w-5" />
+            <p className="text-sm text-gray-500">Loading compliance data…</p>
+          </div>
+        )}
+
+        {/* ── CSV fallback mode ── */}
+        {mode === "csv" && (
+          <>
+            <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+              <p className="text-xs text-amber-700">
+                Breadcrumb API not configured — using CSV upload mode.{" "}
+                Add <code className="font-mono bg-amber-100 px-1 rounded">BREADCRUMB_API_KEY</code> to enable live data.
+              </p>
+            </div>
+            <SiteComplianceCsvUpload
+              onBriefingsParsed={handleBriefingsParsed}
+              onApprovalsParsed={handleApprovalsParsed}
+            />
+          </>
         )}
 
         {/* ── Empty state ── */}
-        {!hasData && breadcrumbMode !== "checking" && (
+        {!hasData && mode !== "checking" && !(mode === "api" && isLoading) && (
           <div className="rounded-xl border border-gray-200 bg-white px-8 py-16 text-center">
-            <p className="text-sm font-medium text-gray-700">
-              Upload your weekly Breadcrumb exports to populate the compliance report.
-            </p>
-            <p className="text-xs text-gray-400 mt-1">Procore data loads automatically.</p>
+            {mode === "csv" ? (
+              <>
+                <p className="text-sm font-medium text-gray-700">
+                  Upload your weekly Breadcrumb exports to populate the compliance report.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Procore data loads automatically.</p>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">No site data returned from Breadcrumb API.</p>
+            )}
           </div>
         )}
 
-        {hasData && siteRows.length > 0 && (<>
+        {hasData && (<>
 
           {/* ── Summary stat cards ── */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
-              { label: "Sites tracked",          value: trackedSites,   note: "from CSV" },
-              { label: "Action required",        value: actionRequired, note: "1+ red KPI",        highlight: actionRequired > 0 },
-              { label: "Total pending approvals", value: totalPending,   note: "inductions + docs" },
-              { label: "On track",               value: onTrack,        note: "no red KPIs" },
+              { label: "Sites tracked",           value: trackedSites,   note: mode === "api" ? "from Breadcrumb" : "from CSV" },
+              { label: "Action required",          value: actionRequired, note: "1+ red KPI",        highlight: actionRequired > 0 },
+              { label: "Total pending approvals",  value: totalPending,   note: "inductions + docs" },
+              { label: "On track",                 value: onTrack,        note: "no red KPIs" },
             ].map(({ label, value, note, highlight }) => (
               <div key={label} className={`rounded-xl border bg-white px-5 py-4 ${highlight ? "border-red-200" : "border-gray-200"}`}>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</p>
@@ -799,7 +989,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             ))}
           </div>
 
-          {/* ── Site → Project mapping (visible to all; editable by admins only) ── */}
+          {/* ── Site → Project mapping (visible to all; editable by admins) ── */}
           <div ref={mappingSectionRef} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <div className="border-b border-gray-200 px-5 py-4 bg-gray-50">
               <div className="flex items-center justify-between">
@@ -808,7 +998,9 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                     Connect sites to Procore projects
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Linking each Breadcrumb site to its Procore project enables the Open Site Diaries column.
+                    {mode === "api"
+                      ? "Sites with a Procore project configured in Breadcrumb are auto-mapped. Admins can override."
+                      : "Linking each Breadcrumb site to its Procore project enables the Open Site Diaries column."}
                     {!isAdmin && " Contact an admin to update mappings."}
                   </p>
                 </div>
@@ -823,32 +1015,33 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             <div className="divide-y divide-gray-100">
               {siteRows.map(row => {
                 const currentMapping = mappings.find(m => m.breadcrumb_site_name === row.site);
-                const isMapped       = !!currentMapping;
+                const isMapped       = !!row.mappedProjectId;
+                const isAutoMapped   = mode === "api" && isMapped && !currentMapping;
                 const pendingValue   = pendingMaps.get(row.site) ?? currentMapping?.procore_project_id ?? "";
                 const hasChange      = isAdmin && pendingValue !== (currentMapping?.procore_project_id ?? "");
                 const isSaving       = savingMap === row.site;
                 const saveErr        = mapSaveError.get(row.site);
 
                 const mappedProject = isMapped
-                  ? projects.find(p => String(p.id) === currentMapping.procore_project_id)
+                  ? projects.find(p => String(p.id) === row.mappedProjectId)
                   : null;
 
                 return (
                   <div key={row.site} className="px-5 py-3 flex items-center gap-3">
-                    {/* Mapped indicator */}
                     <div className="shrink-0">
                       {isMapped
                         ? <CheckCircle className="h-4 w-4 text-green-500" />
                         : <div className="h-4 w-4 rounded-full border-2 border-gray-300" />}
                     </div>
 
-                    {/* Site name */}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-800 truncate">{row.site}</p>
+                      {isAutoMapped && (
+                        <p className="text-[10px] text-green-600 mt-0.5">Auto-mapped via Breadcrumb</p>
+                      )}
                       {saveErr && <p className="text-xs text-red-500 mt-0.5">{saveErr}</p>}
                     </div>
 
-                    {/* Admin: dropdown + save button */}
                     {isAdmin ? (
                       <>
                         <select
@@ -860,8 +1053,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                           <option value="">— No mapping —</option>
                           {sortedProjects.map(p => (
                             <option key={p.id} value={String(p.id)}>
-                              {p.name}
-                              {p.project_number ? ` (#${p.project_number})` : ""}
+                              {p.name}{p.project_number ? ` (#${p.project_number})` : ""}
                             </option>
                           ))}
                         </select>
@@ -875,7 +1067,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                         </button>
                       </>
                     ) : (
-                      /* Non-admin: read-only display */
                       <p className="text-xs text-gray-500 truncate max-w-[260px]">
                         {mappedProject
                           ? mappedProject.name
@@ -926,13 +1117,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                         className="hover:bg-gray-50 cursor-pointer transition-colors"
                         onClick={() => setExpandedSite(isExpanded ? null : row.site)}
                       >
-                        {/* Site name */}
                         <td className="px-4 py-3">
                           <div className="font-medium text-gray-900 text-xs leading-tight">{row.site}</div>
                           {project && (
-                            <div className="text-[10px] text-gray-400 mt-0.5 truncate">
-                              {project.name}
-                            </div>
+                            <div className="text-[10px] text-gray-400 mt-0.5 truncate">{project.name}</div>
                           )}
                         </td>
 
@@ -949,7 +1137,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                           </Pill>
                         </td>
 
-                        {/* Open Site Diaries */}
                         <td className="px-4 py-3">
                           {row.diaryLoading ? (
                             <Spinner />

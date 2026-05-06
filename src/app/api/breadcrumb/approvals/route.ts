@@ -1,66 +1,70 @@
 // ─── GET /api/breadcrumb/approvals ────────────────────────────────────────────
-// Fetches approvals (inductions + SWMS/docs) from the Breadcrumb API.
+// Fetches pending approvals (inductions + SWMS/supplier docs) from Breadcrumb.
 //
-// This route requires the BREADCRUMB_API_KEY and BREADCRUMB_API_BASE_URL env
-// vars to be set. If they are absent, it returns { source: "env_missing" }
-// so the UI can fall back to the CSV upload flow without showing an error.
+// Returns { source: "breadcrumb_api", rows } on success.
+// Returns { source: "env_missing", rows: [] } if BREADCRUMB_API_KEY is not set.
 //
 // Query params:
-//   company_id  (required — used for audit purposes)
-//   days        (optional — number of days to look back, default 7)
+//   company_id  (required)
 
 import { NextRequest, NextResponse } from "next/server";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
-const BASE_URL = process.env.BREADCRUMB_API_BASE_URL;
+const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
+const PAGE_SIZE = 500;
+
+async function fetchApprovalType(entityType: number): Promise<Record<string, unknown>[]> {
+  let pageNumber = 1;
+  const all: Record<string, unknown>[] = [];
+
+  while (true) {
+    const res = await fetch(`${BASE_URL}/integration/v2/report/approval-report`, {
+      method: "POST",
+      headers: { "X-Api-Key": API_KEY!, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        approveStatusList:     [0],
+        approveEntityTypeList: [entityType],
+        convertDateTimeToLocalTimezone: true,
+        pagingInfo: { pageSize: PAGE_SIZE, pageNumber },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!res.ok) throw new Error(`Breadcrumb approval-report (type ${entityType}) returned ${res.status}`);
+
+    const data = await res.json();
+    const results: Record<string, unknown>[] = Array.isArray(data?.result) ? data.result : [];
+    all.push(...results);
+
+    if (results.length < PAGE_SIZE) break;
+    pageNumber++;
+  }
+
+  return all;
+}
 
 export async function GET(request: NextRequest) {
-  // If the integration is not configured, signal graceful degradation.
-  if (!API_KEY || !BASE_URL) {
+  if (!API_KEY) {
     return NextResponse.json({ source: "env_missing", rows: [] });
   }
 
-  const sp        = request.nextUrl.searchParams;
-  const companyId = sp.get("company_id");
-  const days      = Math.min(parseInt(sp.get("days") ?? "7", 10) || 7, 31);
-
+  const companyId = request.nextUrl.searchParams.get("company_id");
   if (!companyId) {
     return NextResponse.json({ error: "company_id is required" }, { status: 400 });
   }
 
   try {
-    const endDate   = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - (days - 1));
+    // Fetch inductions (type 1) and supplier docs (type 2) in parallel
+    const [inductions, swmsDocs] = await Promise.all([
+      fetchApprovalType(1),
+      fetchApprovalType(2),
+    ]);
 
-    const url = new URL(`${BASE_URL}/approvals`);
-    url.searchParams.set("start_date", startDate.toISOString().slice(0, 10));
-    url.searchParams.set("end_date",   endDate.toISOString().slice(0, 10));
-    // Include pending approvals regardless of age for the KPI count.
-    url.searchParams.set("status", "pending");
-
-    const res = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      signal: AbortSignal.timeout(10_000),
-    });
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { source: "api_error", error: `Breadcrumb API returned ${res.status}`, rows: [] },
-        { status: 502 }
-      );
-    }
-
-    const data = await res.json();
-
-    const rows: Record<string, string>[] = Array.isArray(data)
-      ? data
-      : Array.isArray(data?.results)
-        ? data.results
-        : [];
+    // Combine into a single rows array
+    const rows = [
+      ...inductions.map(r => ({ ...r, _type: "induction" })),
+      ...swmsDocs.map(r =>   ({ ...r, _type: "sitesupplierdocument" })),
+    ];
 
     return NextResponse.json({ source: "breadcrumb_api", rows });
   } catch (err) {

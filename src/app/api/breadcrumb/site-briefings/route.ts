@@ -1,22 +1,46 @@
 // ─── GET /api/breadcrumb/site-briefings ───────────────────────────────────────
-// Fetches site briefings data from the Breadcrumb API.
+// Fetches form-report data (Daily Prestarts + Toolbox Talks) from Breadcrumb.
 //
-// This route requires the BREADCRUMB_API_KEY and BREADCRUMB_API_BASE_URL env
-// vars to be set. If they are absent, it returns { source: "env_missing" }
-// so the UI can fall back to the CSV upload flow without showing an error.
+// Returns { source: "breadcrumb_api", rows } on success.
+// Returns { source: "env_missing", rows: [] } if BREADCRUMB_API_KEY is not set.
 //
 // Query params:
-//   company_id  (required — used for audit purposes)
-//   days        (optional — number of days to look back, default 7)
+//   company_id  (required)
+//   days        (optional — days to look back, default 7, max 31)
 
 import { NextRequest, NextResponse } from "next/server";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
-const BASE_URL = process.env.BREADCRUMB_API_BASE_URL;
+const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
+const PAGE_SIZE = 500;
+
+async function fetchAllPages(body: Record<string, unknown>): Promise<Record<string, unknown>[]> {
+  let pageNumber = 1;
+  const all: Record<string, unknown>[] = [];
+
+  while (true) {
+    const res = await fetch(`${BASE_URL}/integration/v2/report/form-report`, {
+      method: "POST",
+      headers: { "X-Api-Key": API_KEY!, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, pagingInfo: { pageSize: PAGE_SIZE, pageNumber } }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!res.ok) throw new Error(`Breadcrumb form-report returned ${res.status}`);
+
+    const data = await res.json();
+    const results: Record<string, unknown>[] = Array.isArray(data?.result) ? data.result : [];
+    all.push(...results);
+
+    if (results.length < PAGE_SIZE) break;
+    pageNumber++;
+  }
+
+  return all;
+}
 
 export async function GET(request: NextRequest) {
-  // If the integration is not configured, signal graceful degradation.
-  if (!API_KEY || !BASE_URL) {
+  if (!API_KEY) {
     return NextResponse.json({ source: "env_missing", rows: [] });
   }
 
@@ -33,35 +57,13 @@ export async function GET(request: NextRequest) {
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - (days - 1));
 
-    const url = new URL(`${BASE_URL}/site-briefings`);
-    url.searchParams.set("start_date", startDate.toISOString().slice(0, 10));
-    url.searchParams.set("end_date",   endDate.toISOString().slice(0, 10));
+    const fromDt = `${startDate.toISOString().slice(0, 10)}T00:00:00`;
+    const toDt   = `${endDate.toISOString().slice(0, 10)}T23:59:59`;
 
-    const res = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      // 10 second timeout via AbortController
-      signal: AbortSignal.timeout(10_000),
+    const rows = await fetchAllPages({
+      sumbittedDateRange: { from: fromDt, to: toDt },
+      convertDateTimeToLocalTimezone: true,
     });
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { source: "api_error", error: `Breadcrumb API returned ${res.status}`, rows: [] },
-        { status: 502 }
-      );
-    }
-
-    const data = await res.json();
-
-    // Normalise to a flat row array — the exact shape depends on the
-    // Breadcrumb API; adjust the extraction here once the API schema is known.
-    const rows: Record<string, string>[] = Array.isArray(data)
-      ? data
-      : Array.isArray(data?.results)
-        ? data.results
-        : [];
 
     return NextResponse.json({ source: "breadcrumb_api", rows });
   } catch (err) {
