@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  AlertTriangle, ChevronDown, ChevronUp,
+  AlertTriangle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   CheckCircle, Clock, RefreshCw,
 } from "lucide-react";
 import SiteComplianceCsvUpload from "./SiteComplianceCsvUpload";
@@ -129,6 +129,19 @@ function fmtDateLabel(dateStr: string): string {
 
 function toDateString(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+function addDays(d: Date, n: number): Date {
+  const result = new Date(d);
+  result.setDate(result.getDate() + n);
+  return result;
+}
+
+function fmtWeekLabelFromMonday(monday: Date): string {
+  const friday = addDays(monday, 4);
+  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  const optsYear: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+  return `Week of ${monday.toLocaleDateString("en-AU", opts)} – ${friday.toLocaleDateString("en-AU", optsYear)}`;
 }
 
 // ── Traffic light helpers ──────────────────────────────────────────────────────
@@ -290,6 +303,9 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
   const lastApiSaveRef = useRef<string>("");   // prevents duplicate saves per week
 
+  // ── Selected week (defaults to current Monday; navigation updates this)
+  const [selectedMonday, setSelectedMonday] = useState<Date>(() => getCurrentWeekBounds().monday);
+
   // ── CSV fallback state
   const [csvBriefings, setCsvBriefings] = useState<Record<string, string>[] | null>(null);
   const [csvApprovals, setCsvApprovals] = useState<Record<string, string>[] | null>(null);
@@ -422,11 +438,11 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   // ── Fetch diary data ──────────────────────────────────────────────────────────
 
   const loadDiariesForRows = useCallback(
-    async (rows: SiteRow[]) => {
+    async (rows: SiteRow[], weekMonday?: Date) => {
       if (!companyId) return;
-      const { monday, friday } = getCurrentWeekBounds();
-      const startDate = toDateString(monday);
-      const endDate   = toDateString(friday);
+      const effectiveMonday = weekMonday ?? getCurrentWeekBounds().monday;
+      const startDate = toDateString(effectiveMonday);
+      const endDate   = toDateString(addDays(effectiveMonday, 4));
 
       const projectIds = Array.from(
         new Set(rows.filter(r => r.mappedProjectId).map(r => r.mappedProjectId!))
@@ -467,13 +483,15 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const saveComplianceReport = useCallback(
     async (
       rows: SiteRow[],
-      opts?: { briefingsFile?: string | null; approvalsFile?: string | null; source?: string }
+      opts?: { briefingsFile?: string | null; approvalsFile?: string | null; source?: string; weekMonday?: Date }
     ) => {
       if (!companyId || rows.length === 0) return;
       setIsSavingReport(true);
       setReportSaveError(null);
 
-      const { monday, friday } = getCurrentWeekBounds();
+      const effectiveMonday = opts?.weekMonday ?? getCurrentWeekBounds().monday;
+      const monday = effectiveMonday;
+      const friday = addDays(effectiveMonday, 4);
 
       const siteData = rows.map(r => ({
         site:              r.site,
@@ -536,13 +554,13 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   // ── Fetch API compliance data ─────────────────────────────────────────────────
 
   const fetchApiData = useCallback(
-    async (currentMappings: SiteMapping[]) => {
+    async (currentMappings: SiteMapping[], weekMonday?: Date) => {
       if (!companyId) return;
       setIsLoading(true);
       setFetchError(null);
 
-      const { monday } = getCurrentWeekBounds();
-      const weekStart  = toDateString(monday);
+      const effectiveMonday = weekMonday ?? selectedMonday;
+      const weekStart = toDateString(effectiveMonday);
 
       try {
         const res = await fetch(
@@ -556,12 +574,12 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         const rows = buildApiSiteRows(apiSites, currentMappings, projects);
         setSiteRows(rows);
         setLastFetched(new Date());
-        void loadDiariesForRows(rows);
+        void loadDiariesForRows(rows, effectiveMonday);
 
         // Auto-save once per week (keyed by week start)
         if (weekStart !== lastApiSaveRef.current) {
           lastApiSaveRef.current = weekStart;
-          void saveComplianceReport(rows, { briefingsFile: "breadcrumb_api", approvalsFile: null, source: "api" });
+          void saveComplianceReport(rows, { briefingsFile: "breadcrumb_api", approvalsFile: null, source: "api", weekMonday: effectiveMonday });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to load compliance data";
@@ -586,7 +604,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         setIsLoading(false);
       }
     },
-    [companyId, projects, buildApiSiteRows, loadDiariesForRows, saveComplianceReport]
+    [companyId, selectedMonday, projects, buildApiSiteRows, loadDiariesForRows, saveComplianceReport]
   );
 
   // ── On-mount: check API, load mappings, load history ─────────────────────────
@@ -665,8 +683,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     const currentMappings: SiteMapping[] = mappingsData?.mappings ?? mappings;
     if (mappingsData) setMappings(currentMappings);
     lastApiSaveRef.current = "";   // force re-save on manual refresh
-    void fetchApiData(currentMappings);
-  }, [companyId, mode, mappings, fetchApiData]);
+    void fetchApiData(currentMappings, selectedMonday);
+  }, [companyId, mode, mappings, selectedMonday, fetchApiData]);
 
   // ── Load historical report by ID ──────────────────────────────────────────────
 
@@ -754,6 +772,22 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     }
   }
 
+  // ── Week navigation ────────────────────────────────────────────────────────────
+
+  const isCurrentWeek = toDateString(selectedMonday) === toDateString(getCurrentWeekBounds().monday);
+
+  const handleWeekNav = useCallback((direction: -1 | 1) => {
+    const newMonday = addDays(selectedMonday, direction * 7);
+    setSelectedMonday(newMonday);
+    void fetchApiData(mappings, newMonday);
+  }, [selectedMonday, mappings, fetchApiData]);
+
+  const handleGoToCurrentWeek = useCallback(() => {
+    const monday = getCurrentWeekBounds().monday;
+    setSelectedMonday(monday);
+    void fetchApiData(mappings, monday);
+  }, [mappings, fetchApiData]);
+
   // ── Derived stats ─────────────────────────────────────────────────────────────
 
   const siteLights = siteRows.map(row =>
@@ -798,8 +832,43 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900">Site Compliance</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{fmtWeekLabel()}</p>
-            {mode === "api" && lastFetched && (
+            <div className="flex items-center gap-0.5 mt-1">
+              <button
+                type="button"
+                onClick={() => handleWeekNav(-1)}
+                disabled={isLoading}
+                aria-label="Previous week"
+                className="rounded p-0.5 hover:bg-gray-100 transition-colors disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4 text-gray-500" />
+              </button>
+              <span className="text-sm text-gray-600 font-medium px-1">
+                {fmtWeekLabelFromMonday(selectedMonday)}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleWeekNav(1)}
+                disabled={isLoading || isCurrentWeek}
+                aria-label="Next week"
+                className="rounded p-0.5 hover:bg-gray-100 transition-colors disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4 text-gray-500" />
+              </button>
+              {!isCurrentWeek && (
+                <button
+                  type="button"
+                  onClick={handleGoToCurrentWeek}
+                  disabled={isLoading}
+                  className="ml-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 transition-colors disabled:opacity-40"
+                >
+                  This week
+                </button>
+              )}
+              {mode === "api" && isLoading && (
+                <Spinner className="h-3.5 w-3.5 ml-2" />
+              )}
+            </div>
+            {mode === "api" && lastFetched && !isLoading && (
               <p className="text-xs text-gray-400 mt-0.5">
                 Fetched {lastFetched.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
               </p>

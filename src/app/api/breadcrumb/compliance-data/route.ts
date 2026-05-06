@@ -217,23 +217,41 @@ export async function GET(request: NextRequest) {
 
   const { monday, weekdays } = getWeekBounds(weekStartP);
 
-  // Form report: Mon 00:00:00 AEST – Sun 23:59:59 AEST of current week
+  // Week bounds for client-side filtering
   const sunday = new Date(monday);
   sunday.setUTCDate(monday.getUTCDate() + 6);
-  const weekFromDt = aestDatetime(monday, false);
-  const weekToDt   = aestDatetime(sunday, true);
 
-  // Toolbox: rolling 7-day window in AEST
+  // Toolbox: rolling 7-day window — compute threshold for client-side filter
   const sevenDaysAgo = nowInAest();
   sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
-  const toolboxFromDt = aestDatetime(sevenDaysAgo, false);
-  const toolboxToDt   = aestDatetime(nowInAest(), true);
 
-  console.log('[compliance-data] week range being sent to Breadcrumb:', {
-    from:      weekFromDt,
-    to:        weekToDt,
-    todayAest: aestDatetime(nowInAest(), false),
-  });
+  // TEMP DEBUG — three date format variants to find what Breadcrumb accepts
+  {
+    const headers = { "Content-Type": "application/json", "X-Api-Key": API_KEY! };
+    const base = { pagingInfo: { pageSize: 100, pageNumber: 1 }, convertDateTimeToLocalTimezone: true };
+
+    const [t1, t2, t3] = await Promise.all([
+      fetch(`${BASE_URL}/integration/v2/report/form-report`, {
+        method: "POST", headers,
+        body: JSON.stringify({ ...base, sumbittedDateRange: { from: "2026-05-04T00:00:00", to: "2026-05-06T23:59:59" } }),
+        signal: AbortSignal.timeout(15_000),
+      }).then(r => r.json()),
+      fetch(`${BASE_URL}/integration/v2/report/form-report`, {
+        method: "POST", headers,
+        body: JSON.stringify({ ...base, sumbittedDateRange: { from: "2026-05-04", to: "2026-05-06" } }),
+        signal: AbortSignal.timeout(15_000),
+      }).then(r => r.json()),
+      fetch(`${BASE_URL}/integration/v2/report/form-report`, {
+        method: "POST", headers,
+        body: JSON.stringify({ ...base, sumbittedDateRange: { from: "2026-05-03T14:00:00", to: "2026-05-06T13:59:59" } }),
+        signal: AbortSignal.timeout(15_000),
+      }).then(r => r.json()),
+    ]);
+
+    console.log("[DEBUG t1] plain datetime (no tz)  count:", t1.result?.length, " first fillDate:", t1.result?.[0]?.fillDate);
+    console.log("[DEBUG t2] date-only format          count:", t2.result?.length, " first fillDate:", t2.result?.[0]?.fillDate);
+    console.log("[DEBUG t3] UTC offset for AEST       count:", t3.result?.length, " first fillDate:", t3.result?.[0]?.fillDate);
+  }
 
   const errors: string[] = [];
 
@@ -243,32 +261,28 @@ export async function GET(request: NextRequest) {
   //   2. 7-day rolling → for toolbox talk detection
   // Both calls are cheap and paginated the same way.
 
+  // NOTE: Breadcrumb's sumbittedDateRange filter does not work — the API returns
+  // all records regardless of any date param. We fetch everything once and filter
+  // client-side by fillDate. Both prestart (weekly) and toolbox (7-day) logic
+  // uses the same allForms array.
   const [
     sitesResult,
-    weekFormsResult,
-    toolboxFormsResult,
+    allFormsResult,
     inductionsResult,
     swmsResult,
     supplierDocsResult,
   ] = await Promise.allSettled([
     fetchAllPages<SiteRecord>("/integration/site/list", {}),
     fetchAllPages<FormRecord>("/integration/v2/report/form-report", {
-      sumbittedDateRange: { from: weekFromDt, to: weekToDt },
-      convertDateTimeToLocalTimezone: true,
-    }),
-    fetchAllPages<FormRecord>("/integration/v2/report/form-report", {
-      sumbittedDateRange: { from: toolboxFromDt, to: toolboxToDt },
       convertDateTimeToLocalTimezone: true,
     }),
     fetchAllPages<ApprovalRecord>("/integration/v2/report/approval-report", {
       approveStatusList:     [0],
       approveEntityTypeList: [1],
-      // No date filter — fetch ALL pending inductions regardless of submission date
     }),
     fetchAllPages<ApprovalRecord>("/integration/v2/report/approval-report", {
       approveStatusList:     [0],
       approveEntityTypeList: [2],
-      // No date filter — fetch ALL pending SWMS/docs regardless of submission date
     }),
     fetchAllPages<SupplierDocRecord>("/integration/v2/report/supplier-document-report", {
       statusList: [1],
@@ -276,22 +290,19 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const siteList:      SiteRecord[]       = sitesResult.status         === "fulfilled" ? sitesResult.value         : [];
-  const weekForms:     FormRecord[]       = weekFormsResult.status      === "fulfilled" ? weekFormsResult.value      : [];
-  const toolboxForms:  FormRecord[]       = toolboxFormsResult.status   === "fulfilled" ? toolboxFormsResult.value   : [];
-  const inductions:    ApprovalRecord[]   = inductionsResult.status     === "fulfilled" ? inductionsResult.value     : [];
-  const swmsApprovals: ApprovalRecord[]   = swmsResult.status           === "fulfilled" ? swmsResult.value           : [];
-  const supplierDocs:  SupplierDocRecord[] = supplierDocsResult.status  === "fulfilled" ? supplierDocsResult.value  : [];
+  const siteList:      SiteRecord[]        = sitesResult.status      === "fulfilled" ? sitesResult.value      : [];
+  const allForms:      FormRecord[]        = allFormsResult.status    === "fulfilled" ? allFormsResult.value    : [];
+  const inductions:    ApprovalRecord[]    = inductionsResult.status  === "fulfilled" ? inductionsResult.value  : [];
+  const swmsApprovals: ApprovalRecord[]    = swmsResult.status        === "fulfilled" ? swmsResult.value        : [];
+  const supplierDocs:  SupplierDocRecord[] = supplierDocsResult.status === "fulfilled" ? supplierDocsResult.value : [];
 
-  console.log('[compliance-data] form date range:', weekFromDt, 'to', weekToDt);
-  console.log('[compliance-data] raw form results count:', weekForms.length);
-  console.log('[compliance-data] sample fillDates:', weekForms.slice(0, 3).map(r => r.fillDate));
+  console.log('[compliance-data] total form records (all time):', allForms.length);
+  console.log('[compliance-data] sample fillDates:', allForms.slice(0, 3).map(r => r.fillDate));
+  console.log('[compliance-data] weekdays filter:', weekdays);
   console.log('[compliance-data] approval results count:', inductions.length + swmsApprovals.length);
-  console.log('[compliance-data] first 3 approval results:', JSON.stringify([...inductions, ...swmsApprovals].slice(0, 3)));
 
   if (sitesResult.status         === "rejected") errors.push(`site/list: ${sitesResult.reason}`);
-  if (weekFormsResult.status     === "rejected") errors.push(`form-report (week): ${weekFormsResult.reason}`);
-  if (toolboxFormsResult.status  === "rejected") errors.push(`form-report (toolbox): ${toolboxFormsResult.reason}`);
+  if (allFormsResult.status      === "rejected") errors.push(`form-report: ${allFormsResult.reason}`);
   if (inductionsResult.status    === "rejected") errors.push(`approval-report (inductions): ${inductionsResult.reason}`);
   if (swmsResult.status          === "rejected") errors.push(`approval-report (SWMS): ${swmsResult.reason}`);
   if (supplierDocsResult.status  === "rejected") errors.push(`supplier-document-report: ${supplierDocsResult.reason}`);
@@ -301,7 +312,7 @@ export async function GET(request: NextRequest) {
   // Take the first non-null value seen per siteReference.
 
   const procoreIdFromForms = new Map<string, string>();
-  for (const r of [...weekForms, ...toolboxForms]) {
+  for (const r of allForms) {
     const ref = r.siteReference ?? "";
     if (!ref || procoreIdFromForms.has(ref)) continue;
     if (r.procoreProjectId != null && r.procoreProjectId !== "") {
@@ -326,7 +337,7 @@ export async function GET(request: NextRequest) {
   // Ensure sites that appear in form/approval records but not site/list are included
   // (provides resilience if site/list call failed)
   const allRecords = [
-    ...weekForms, ...toolboxForms,
+    ...allForms,
     ...inductions, ...swmsApprovals,
     ...(supplierDocs as Array<{ siteReference?: string; siteName?: string }>),
   ];
@@ -340,24 +351,16 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // ── Group week forms by siteReference ────────────────────────────────────
+  // ── Group all forms by siteReference ─────────────────────────────────────
+  // Both prestart (weekly) and toolbox (7-day) use the same set; date filtering
+  // is done client-side per record since the API's sumbittedDateRange is ignored.
 
-  const weekFormsBySite = new Map<string, FormRecord[]>();
-  for (const r of weekForms) {
+  const formsBySite = new Map<string, FormRecord[]>();
+  for (const r of allForms) {
     const ref = r.siteReference ?? "";
     if (!ref) continue;
-    if (!weekFormsBySite.has(ref)) weekFormsBySite.set(ref, []);
-    weekFormsBySite.get(ref)!.push(r);
-  }
-
-  // ── Group toolbox forms by siteReference ─────────────────────────────────
-
-  const toolboxFormsBySite = new Map<string, FormRecord[]>();
-  for (const r of toolboxForms) {
-    const ref = r.siteReference ?? "";
-    if (!ref) continue;
-    if (!toolboxFormsBySite.has(ref)) toolboxFormsBySite.set(ref, []);
-    toolboxFormsBySite.get(ref)!.push(r);
+    if (!formsBySite.has(ref)) formsBySite.set(ref, []);
+    formsBySite.get(ref)!.push(r);
   }
 
   // ── Group inductions by siteReference ────────────────────────────────────
@@ -416,7 +419,7 @@ export async function GET(request: NextRequest) {
     // ── Daily Prestarts: distinct Mon-Fri dates with at least one prestart form
     // fillDate arrives with +10:00 offset; shift to AEST to get the local date.
     const prestartDays = new Set<string>();
-    for (const r of weekFormsBySite.get(siteReference) ?? []) {
+    for (const r of formsBySite.get(siteReference) ?? []) {
       if (!(r.formName ?? "").toLowerCase().includes("daily prestart")) continue;
       const d = new Date(r.fillDate ?? "");
       if (isNaN(d.getTime())) continue;
@@ -427,11 +430,11 @@ export async function GET(request: NextRequest) {
     // ── Toolbox Talk: any toolbox form in the last 7 rolling days
     let lastToolbox: string | null = null;
     let toolboxSubmitted = false;
-    for (const r of toolboxFormsBySite.get(siteReference) ?? []) {
+    for (const r of formsBySite.get(siteReference) ?? []) {
       if (!(r.formName ?? "").toLowerCase().includes("toolbox")) continue;
       const d = new Date(r.fillDate ?? "");
       if (isNaN(d.getTime())) continue;
-      // sevenDaysAgo is already AEST-shifted; compare UTC instants directly
+      // sevenDaysAgo is AEST-shifted; subtract offset to get real UTC threshold
       if (d.getTime() >= sevenDaysAgo.getTime() - AEST_OFFSET_MINUTES * 60_000) toolboxSubmitted = true;
       if (!lastToolbox || d > new Date(lastToolbox)) lastToolbox = r.fillDate ?? null;
     }
@@ -483,6 +486,17 @@ export async function GET(request: NextRequest) {
     docs:       r.pendingDocs.count,
   }))));
 
+  // TEMP DEBUG — expose diagnostic info in response body
+  const uniqueFormNames = [...new Set(allForms.map(r => r.formName ?? "(null)"))];
+  const mayRecords = allForms.filter(r => (r.fillDate ?? "").startsWith("2026-05"));
+  const prestartRecordsThisWeek = allForms.filter(r => {
+    if (!(r.formName ?? "").toLowerCase().includes("daily prestart")) return false;
+    const d = new Date(r.fillDate ?? "");
+    if (isNaN(d.getTime())) return false;
+    const ds = aestIsoDate(new Date(d.getTime() + AEST_OFFSET_MINUTES * 60_000));
+    return weekdays.includes(ds);
+  });
+
   return NextResponse.json({
     weekStart:  aestIsoDate(monday),
     weekEnd:    aestIsoDate(sunday),
@@ -490,5 +504,16 @@ export async function GET(request: NextRequest) {
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
+    _debug: {
+      serverUtcNow:             new Date().toISOString(),
+      weekdays,
+      allFormsCount:            allForms.length,
+      uniqueFormNames,
+      mayRecordsCount:          mayRecords.length,
+      mayRecordsSample:         mayRecords.slice(0, 5).map(r => ({ fillDate: r.fillDate, formName: r.formName, site: r.siteReference })),
+      prestartThisWeekCount:    prestartRecordsThisWeek.length,
+      prestartThisWeekSample:   prestartRecordsThisWeek.slice(0, 3).map(r => ({ fillDate: r.fillDate, site: r.siteReference })),
+      latestFillDates:          [...allForms].sort((a, b) => (b.fillDate ?? "").localeCompare(a.fillDate ?? "")).slice(0, 5).map(r => ({ fillDate: r.fillDate, formName: r.formName, site: r.siteReference })),
+    },
   });
 }
