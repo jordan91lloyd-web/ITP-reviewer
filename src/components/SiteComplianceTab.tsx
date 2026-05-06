@@ -302,6 +302,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
   const lastApiSaveRef = useRef<string>("");   // prevents duplicate saves per week
+  const isManualRefreshRef = useRef(false);   // prevents stale Supabase load from overwriting fresh API data
 
   // ── Selected week (defaults to current Monday; navigation updates this)
   const [selectedMonday, setSelectedMonday] = useState<Date>(() => getCurrentWeekBounds().monday);
@@ -531,11 +532,22 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         }
 
         const body = await res.json();
-        setSavedReportMeta({
+        const newMeta: SavedReportMeta = {
           id:                body.id ?? "",
           report_week_start: toDateString(monday),
           report_week_end:   toDateString(friday),
           uploaded_at:       new Date().toISOString(),
+        };
+        setSavedReportMeta(newMeta);
+
+        // Update siteRows with the freshly-saved data, preserving any diary data already loaded
+        setSiteRows(prev => {
+          const diaryBySite = new Map(prev.map(r => [r.site, { diary: r.diary, diaryLoading: r.diaryLoading }]));
+          return rows.map(r => ({
+            ...r,
+            diary:        diaryBySite.get(r.site)?.diary ?? null,
+            diaryLoading: diaryBySite.get(r.site)?.diaryLoading ?? r.diaryLoading,
+          }));
         });
 
         fetch(`/api/dashboard/compliance-reports/history?company_id=${companyId}`)
@@ -630,10 +642,12 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       void fetchApiData(loadedMappings);
     }).catch(() => setMode("csv"));
 
-    // Load saved report meta (for banner)
+    // Load saved report meta (for banner) — only on initial mount, not after manual refresh
     fetch(`/api/dashboard/compliance-reports?company_id=${companyId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
+        // If a manual refresh has already run, don't let this stale fetch overwrite the fresh meta
+        if (isManualRefreshRef.current) return;
         if (data?.report) {
           setSavedReportMeta({
             id:                data.report.id,
@@ -682,7 +696,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     const mappingsData = mappingsRes?.ok ? await mappingsRes.json().catch(() => null) : null;
     const currentMappings: SiteMapping[] = mappingsData?.mappings ?? mappings;
     if (mappingsData) setMappings(currentMappings);
-    lastApiSaveRef.current = "";   // force re-save on manual refresh
+    isManualRefreshRef.current = true;   // prevent stale mount fetch from overwriting fresh data
+    lastApiSaveRef.current = "";         // force re-save on manual refresh
     void fetchApiData(currentMappings, selectedMonday);
   }, [companyId, mode, mappings, selectedMonday, fetchApiData]);
 
