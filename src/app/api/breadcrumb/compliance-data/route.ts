@@ -189,26 +189,16 @@ export async function GET(request: NextRequest) {
 
   const { monday, weekdays } = getWeekBounds(weekStartP);
 
-  // Toolbox: 7-day window in Sydney time (today + 6 prior days, inclusive).
-  const todaySydney        = getSydneyDateString(new Date().toISOString());
-  const [ty, tm, td]       = todaySydney.split("-").map(Number);
-  const todayUtc           = new Date(Date.UTC(ty, tm - 1, td));
-  const sixDaysAgoUtc      = new Date(todayUtc);
-  sixDaysAgoUtc.setUTCDate(sixDaysAgoUtc.getUTCDate() - 6);
-  const toolboxWindowStart = sixDaysAgoUtc.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
+  console.log('[week] monday:', monday.toISOString());
+  console.log('[week] days array:', getWeekDays(monday));
 
   const errors: string[] = [];
 
   // ── Fetch all data sources in parallel ────────────────────────────────────
-  // form-report is called twice:
-  //   1. weekly range  → for daily prestart counting (Mon–Sun)
-  //   2. 7-day rolling → for toolbox talk detection
-  // Both calls are cheap and paginated the same way.
-
-  // NOTE: Breadcrumb's sumbittedDateRange filter does not work — the API returns
-  // all records regardless of any date param. We fetch everything once and filter
-  // client-side by fillDate. Both prestart (weekly) and toolbox (7-day) logic
-  // uses the same allForms array.
+  // NOTE: Breadcrumb's sumbittedDateRange filter is ignored by the API — all
+  // records are returned regardless of any date param. We fetch once and filter
+  // client-side by fillDate. Prestarts and toolbox both use the same allForms
+  // array, filtered against the selected week's Mon–Fri Sydney date array.
   const [
     sitesResult,
     allFormsResult,
@@ -239,6 +229,16 @@ export async function GET(request: NextRequest) {
   const inductions:    ApprovalRecord[]    = inductionsResult.status  === "fulfilled" ? inductionsResult.value  : [];
   const swmsApprovals: ApprovalRecord[]    = swmsResult.status        === "fulfilled" ? swmsResult.value        : [];
   const supplierDocs:  SupplierDocRecord[] = supplierDocsResult.status === "fulfilled" ? supplierDocsResult.value : [];
+
+  console.log('[week] william st prestart dates found:',
+    allForms
+      .filter(r => r.siteReference === "010" &&
+        r.formName?.trim().toLowerCase().includes("prestart"))
+      .map(r => ({
+        fillDate:    r.fillDate,
+        sydneyDate:  getSydneyDateString(r.fillDate ?? ""),
+      }))
+  );
 
   if (sitesResult.status         === "rejected") errors.push(`site/list: ${sitesResult.reason}`);
   if (allFormsResult.status      === "rejected") errors.push(`form-report: ${allFormsResult.reason}`);
@@ -358,7 +358,7 @@ export async function GET(request: NextRequest) {
     // ── Daily Prestarts: distinct Mon-Fri Sydney-timezone dates with ≥1 prestart form
     const prestartDays = new Set<string>();
     for (const r of formsBySite.get(siteReference) ?? []) {
-      const name = (r.formName ?? "").toLowerCase();
+      const name = (r.formName ?? "").trim().toLowerCase();
       if (!name.includes("daily prestart") && !name.includes("daily pre-start") &&
           !name.includes("prestart") && !name.includes("pre start")) continue;
       if (!r.fillDate) continue;
@@ -366,16 +366,17 @@ export async function GET(request: NextRequest) {
       if (weekdays.includes(ds)) prestartDays.add(ds);
     }
 
-    // ── Toolbox Talk: any toolbox form within the last 7 Sydney calendar days
+    // ── Toolbox Talk: any toolbox form submitted during the selected week (Mon–Fri)
+    // lastToolbox tracks the most recent submission ever (informational; no date filter).
     let lastToolbox: string | null = null;
     let toolboxSubmitted = false;
     for (const r of formsBySite.get(siteReference) ?? []) {
-      const name = (r.formName ?? "").toLowerCase();
+      const name = (r.formName ?? "").trim().toLowerCase();
       if (!name.includes("toolbox") && !name.includes("tool box") &&
           !name.includes("tbm") && !name.includes("tbt")) continue;
       if (!r.fillDate) continue;
       const ds = getSydneyDateString(r.fillDate);
-      if (ds >= toolboxWindowStart) toolboxSubmitted = true;
+      if (weekdays.includes(ds)) toolboxSubmitted = true;
       if (!lastToolbox || r.fillDate > lastToolbox) lastToolbox = r.fillDate;
     }
 
