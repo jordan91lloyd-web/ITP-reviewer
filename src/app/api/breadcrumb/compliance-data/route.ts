@@ -49,71 +49,50 @@ function isExcluded(siteReference: string, siteName: string): boolean {
 
 // ── Week / date helpers ────────────────────────────────────────────────────────
 
-// AEST is UTC+10. We use a fixed +10 offset (not AEDT +11) to be consistent —
-// Breadcrumb timestamps arrive with explicit offsets so local parsing is fine.
-const AEST_OFFSET_MINUTES = 10 * 60;
-
-// Returns the current date/time expressed as if it were UTC but shifted to AEST.
-// All .getUTC*() calls on the returned Date give AEST wall-clock values.
-function nowInAest(): Date {
-  return new Date(Date.now() + AEST_OFFSET_MINUTES * 60_000);
+// Convert any ISO date string to its YYYY-MM-DD calendar date in Sydney timezone.
+// Uses Australia/Sydney so DST (AEST +10 / AEDT +11) is handled automatically.
+function getSydneyDateString(fillDate: string): string {
+  return new Date(fillDate).toLocaleDateString("en-CA", {
+    timeZone: "Australia/Sydney",
+  });
 }
 
-function computeCurrentMondayAest(): Date {
-  const aestNow  = nowInAest();
-  const dow      = aestNow.getUTCDay();          // 0=Sun, 1=Mon … 6=Sat
-  const daysBack = dow === 0 ? 6 : dow - 1;
-  const monday   = new Date(aestNow);
-  monday.setUTCDate(aestNow.getUTCDate() - daysBack);
-  monday.setUTCHours(0, 0, 0, 0);
-  return monday;                                 // Mon 00:00:00 AEST as UTC
-}
-
-// Format as "YYYY-MM-DDThh:mm:ss" (no timezone suffix) for Breadcrumb date range
-// params. The debug endpoint confirmed the API accepts plain local datetimes;
-// including "+10:00" causes it to silently ignore the filter and return all records.
-function aestDatetime(d: Date, endOfDay = false): string {
-  const y  = d.getUTCFullYear();
-  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const dy = String(d.getUTCDate()).padStart(2, "0");
-  const time = endOfDay ? "23:59:59" : "00:00:00";
-  return `${y}-${mo}-${dy}T${time}`;
-}
-
-// YYYY-MM-DD in AEST local date (for weekday list used to match fillDate values).
-function aestIsoDate(d: Date): string {
-  const y  = d.getUTCFullYear();
-  const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const dy = String(d.getUTCDate()).padStart(2, "0");
-  return `${y}-${mo}-${dy}`;
-}
-
-function getWeekBounds(weekStartParam: string | null): {
-  monday: Date;          // Mon 00:00:00 AEST (stored as UTC-shifted)
-  weekdays: string[];    // Mon–Fri YYYY-MM-DD in AEST
-} {
-  let monday: Date;
-  if (weekStartParam) {
-    // weekStartParam is YYYY-MM-DD from the client; interpret as AEST local date
-    const [y, m, d] = weekStartParam.split("-").map(Number);
-    const candidate = new Date(Date.UTC(y, m - 1, d));
-    monday = isNaN(candidate.getTime()) ? computeCurrentMondayAest() : candidate;
-  } else {
-    monday = computeCurrentMondayAest();
-  }
-
-  const weekdays: string[] = [];
+// Generate Mon–Fri YYYY-MM-DD strings for the given Monday in Sydney timezone.
+function getWeekDays(monday: Date): string[] {
+  const days: string[] = [];
   for (let i = 0; i < 5; i++) {
     const d = new Date(monday);
     d.setUTCDate(monday.getUTCDate() + i);
-    weekdays.push(aestIsoDate(d));
+    days.push(d.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" }));
   }
-
-  return { monday, weekdays };
+  return days;
 }
 
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+// Returns the Monday of the current week as midnight UTC for that Sydney calendar date.
+function getSydneyMonday(): Date {
+  const now           = new Date();
+  const sydneyDateStr = now.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
+  const [year, month, day] = sydneyDateStr.split("-").map(Number);
+  const sydneyDate    = new Date(Date.UTC(year, month - 1, day));
+  const dow           = sydneyDate.getUTCDay();   // 0=Sun, 1=Mon … 6=Sat
+  const daysToMon     = dow === 0 ? 6 : dow - 1;
+  sydneyDate.setUTCDate(sydneyDate.getUTCDate() - daysToMon);
+  return sydneyDate;
+}
+
+function getWeekBounds(weekStartParam: string | null): {
+  monday: Date;
+  weekdays: string[];   // Mon–Fri YYYY-MM-DD in Sydney timezone
+} {
+  let monday: Date;
+  if (weekStartParam) {
+    const [y, m, d] = weekStartParam.split("-").map(Number);
+    const candidate = new Date(Date.UTC(y, m - 1, d));
+    monday = isNaN(candidate.getTime()) ? getSydneyMonday() : candidate;
+  } else {
+    monday = getSydneyMonday();
+  }
+  return { monday, weekdays: getWeekDays(monday) };
 }
 
 // ── Paginated fetch ────────────────────────────────────────────────────────────
@@ -146,13 +125,6 @@ async function fetchAllPages<T>(
       : Array.isArray(data)
         ? data
         : [];
-
-    console.log(`[compliance-data] ${endpoint} page ${pageNumber}: ${results.length} records`);
-    if (pageNumber === 1) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      console.log(`[compliance-data] ${endpoint} sample dates:`,
-        (results as any[]).slice(0, 3).map((r: any) => r.fillDate ?? r.submittedDateTime ?? r.submittedDate ?? "(no date)"));
-    }
 
     allResults.push(...results);
 
@@ -217,41 +189,13 @@ export async function GET(request: NextRequest) {
 
   const { monday, weekdays } = getWeekBounds(weekStartP);
 
-  // Week bounds for client-side filtering
-  const sunday = new Date(monday);
-  sunday.setUTCDate(monday.getUTCDate() + 6);
-
-  // Toolbox: rolling 7-day window — compute threshold for client-side filter
-  const sevenDaysAgo = nowInAest();
-  sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
-
-  // TEMP DEBUG — three date format variants to find what Breadcrumb accepts
-  {
-    const headers = { "Content-Type": "application/json", "X-Api-Key": API_KEY! };
-    const base = { pagingInfo: { pageSize: 100, pageNumber: 1 }, convertDateTimeToLocalTimezone: true };
-
-    const [t1, t2, t3] = await Promise.all([
-      fetch(`${BASE_URL}/integration/v2/report/form-report`, {
-        method: "POST", headers,
-        body: JSON.stringify({ ...base, sumbittedDateRange: { from: "2026-05-04T00:00:00", to: "2026-05-06T23:59:59" } }),
-        signal: AbortSignal.timeout(15_000),
-      }).then(r => r.json()),
-      fetch(`${BASE_URL}/integration/v2/report/form-report`, {
-        method: "POST", headers,
-        body: JSON.stringify({ ...base, sumbittedDateRange: { from: "2026-05-04", to: "2026-05-06" } }),
-        signal: AbortSignal.timeout(15_000),
-      }).then(r => r.json()),
-      fetch(`${BASE_URL}/integration/v2/report/form-report`, {
-        method: "POST", headers,
-        body: JSON.stringify({ ...base, sumbittedDateRange: { from: "2026-05-03T14:00:00", to: "2026-05-06T13:59:59" } }),
-        signal: AbortSignal.timeout(15_000),
-      }).then(r => r.json()),
-    ]);
-
-    console.log("[DEBUG t1] plain datetime (no tz)  count:", t1.result?.length, " first fillDate:", t1.result?.[0]?.fillDate);
-    console.log("[DEBUG t2] date-only format          count:", t2.result?.length, " first fillDate:", t2.result?.[0]?.fillDate);
-    console.log("[DEBUG t3] UTC offset for AEST       count:", t3.result?.length, " first fillDate:", t3.result?.[0]?.fillDate);
-  }
+  // Toolbox: 7-day window in Sydney time (today + 6 prior days, inclusive).
+  const todaySydney        = getSydneyDateString(new Date().toISOString());
+  const [ty, tm, td]       = todaySydney.split("-").map(Number);
+  const todayUtc           = new Date(Date.UTC(ty, tm - 1, td));
+  const sixDaysAgoUtc      = new Date(todayUtc);
+  sixDaysAgoUtc.setUTCDate(sixDaysAgoUtc.getUTCDate() - 6);
+  const toolboxWindowStart = sixDaysAgoUtc.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
 
   const errors: string[] = [];
 
@@ -295,11 +239,6 @@ export async function GET(request: NextRequest) {
   const inductions:    ApprovalRecord[]    = inductionsResult.status  === "fulfilled" ? inductionsResult.value  : [];
   const swmsApprovals: ApprovalRecord[]    = swmsResult.status        === "fulfilled" ? swmsResult.value        : [];
   const supplierDocs:  SupplierDocRecord[] = supplierDocsResult.status === "fulfilled" ? supplierDocsResult.value : [];
-
-  console.log('[compliance-data] total form records (all time):', allForms.length);
-  console.log('[compliance-data] sample fillDates:', allForms.slice(0, 3).map(r => r.fillDate));
-  console.log('[compliance-data] weekdays filter:', weekdays);
-  console.log('[compliance-data] approval results count:', inductions.length + swmsApprovals.length);
 
   if (sitesResult.status         === "rejected") errors.push(`site/list: ${sitesResult.reason}`);
   if (allFormsResult.status      === "rejected") errors.push(`form-report: ${allFormsResult.reason}`);
@@ -416,27 +355,28 @@ export async function GET(request: NextRequest) {
   // ── Build per-site output ─────────────────────────────────────────────────
 
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
-    // ── Daily Prestarts: distinct Mon-Fri dates with at least one prestart form
-    // fillDate arrives with +10:00 offset; shift to AEST to get the local date.
+    // ── Daily Prestarts: distinct Mon-Fri Sydney-timezone dates with ≥1 prestart form
     const prestartDays = new Set<string>();
     for (const r of formsBySite.get(siteReference) ?? []) {
-      if (!(r.formName ?? "").toLowerCase().includes("daily prestart")) continue;
-      const d = new Date(r.fillDate ?? "");
-      if (isNaN(d.getTime())) continue;
-      const ds = aestIsoDate(new Date(d.getTime() + AEST_OFFSET_MINUTES * 60_000));
+      const name = (r.formName ?? "").toLowerCase();
+      if (!name.includes("daily prestart") && !name.includes("daily pre-start") &&
+          !name.includes("prestart") && !name.includes("pre start")) continue;
+      if (!r.fillDate) continue;
+      const ds = getSydneyDateString(r.fillDate);
       if (weekdays.includes(ds)) prestartDays.add(ds);
     }
 
-    // ── Toolbox Talk: any toolbox form in the last 7 rolling days
+    // ── Toolbox Talk: any toolbox form within the last 7 Sydney calendar days
     let lastToolbox: string | null = null;
     let toolboxSubmitted = false;
     for (const r of formsBySite.get(siteReference) ?? []) {
-      if (!(r.formName ?? "").toLowerCase().includes("toolbox")) continue;
-      const d = new Date(r.fillDate ?? "");
-      if (isNaN(d.getTime())) continue;
-      // sevenDaysAgo is AEST-shifted; subtract offset to get real UTC threshold
-      if (d.getTime() >= sevenDaysAgo.getTime() - AEST_OFFSET_MINUTES * 60_000) toolboxSubmitted = true;
-      if (!lastToolbox || d > new Date(lastToolbox)) lastToolbox = r.fillDate ?? null;
+      const name = (r.formName ?? "").toLowerCase();
+      if (!name.includes("toolbox") && !name.includes("tool box") &&
+          !name.includes("tbm") && !name.includes("tbt")) continue;
+      if (!r.fillDate) continue;
+      const ds = getSydneyDateString(r.fillDate);
+      if (ds >= toolboxWindowStart) toolboxSubmitted = true;
+      if (!lastToolbox || r.fillDate > lastToolbox) lastToolbox = r.fillDate;
     }
 
     // ── Inductions
@@ -478,42 +418,15 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  console.log('[compliance-data] site rows built:', JSON.stringify(sites.map(r => ({
-    site:       r.siteName,
-    prestarts:  r.dailyPrestarts.count,
-    toolbox:    r.toolboxTalk.submitted,
-    inductions: r.pendingInductions.count,
-    docs:       r.pendingDocs.count,
-  }))));
-
-  // TEMP DEBUG — expose diagnostic info in response body
-  const uniqueFormNames = [...new Set(allForms.map(r => r.formName ?? "(null)"))];
-  const mayRecords = allForms.filter(r => (r.fillDate ?? "").startsWith("2026-05"));
-  const prestartRecordsThisWeek = allForms.filter(r => {
-    if (!(r.formName ?? "").toLowerCase().includes("daily prestart")) return false;
-    const d = new Date(r.fillDate ?? "");
-    if (isNaN(d.getTime())) return false;
-    const ds = aestIsoDate(new Date(d.getTime() + AEST_OFFSET_MINUTES * 60_000));
-    return weekdays.includes(ds);
-  });
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
 
   return NextResponse.json({
-    weekStart:  aestIsoDate(monday),
-    weekEnd:    aestIsoDate(sunday),
+    weekStart:  getSydneyDateString(monday.toISOString()),
+    weekEnd:    getSydneyDateString(sunday.toISOString()),
     fetchedAt:  new Date().toISOString(),
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
-    _debug: {
-      serverUtcNow:             new Date().toISOString(),
-      weekdays,
-      allFormsCount:            allForms.length,
-      uniqueFormNames,
-      mayRecordsCount:          mayRecords.length,
-      mayRecordsSample:         mayRecords.slice(0, 5).map(r => ({ fillDate: r.fillDate, formName: r.formName, site: r.siteReference })),
-      prestartThisWeekCount:    prestartRecordsThisWeek.length,
-      prestartThisWeekSample:   prestartRecordsThisWeek.slice(0, 3).map(r => ({ fillDate: r.fillDate, site: r.siteReference })),
-      latestFillDates:          [...allForms].sort((a, b) => (b.fillDate ?? "").localeCompare(a.fillDate ?? "")).slice(0, 5).map(r => ({ fillDate: r.fillDate, formName: r.formName, site: r.siteReference })),
-    },
   });
 }
