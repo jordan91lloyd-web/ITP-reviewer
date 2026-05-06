@@ -1,6 +1,6 @@
 // ─── GET /api/breadcrumb/sites ────────────────────────────────────────────────
-// Returns all Breadcrumb sites for the company, including procoreProjectId
-// when available (set on the Breadcrumb side via their Procore integration).
+// Returns all active Breadcrumb sites for the company.
+// Sandbox / overhead / completed-project sites are filtered out.
 //
 // If BREADCRUMB_API_KEY is not set, returns { fallback: true, sites: [] } so
 // the UI can degrade gracefully to CSV upload mode.
@@ -12,6 +12,29 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
+
+// Keep in sync with compliance-data/route.ts
+const EXCLUDED_SITE_REFERENCES = new Set([
+  "BC3477059474",
+  "xxxx",
+  "XXX",
+  "0000",
+  "999",
+  "001",
+]);
+
+const EXCLUDED_NAME_PREFIXES = [
+  "do not use",
+  "eoi",
+  "company",
+  "microniche",
+];
+
+function isExcluded(siteReference: string, siteName: string): boolean {
+  if (EXCLUDED_SITE_REFERENCES.has(siteReference)) return true;
+  const lower = siteName.toLowerCase();
+  return EXCLUDED_NAME_PREFIXES.some(prefix => lower.startsWith(prefix));
+}
 
 export async function GET(request: NextRequest) {
   if (!API_KEY) {
@@ -30,7 +53,7 @@ export async function GET(request: NextRequest) {
         "X-Api-Key": API_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ IncludeProcoreEntities: true }),
+      body: JSON.stringify({}),
       signal: AbortSignal.timeout(10_000),
     });
 
@@ -48,15 +71,12 @@ export async function GET(request: NextRequest) {
         ? data
         : [];
 
-    const sites = raw.map(s => ({
-      siteReference:    String(s.siteReference ?? s.SiteReference ?? s.site_reference ?? ""),
-      siteName:         String(s.siteName ?? s.SiteName ?? s.site_name ?? ""),
-      procoreProjectId: s.procoreProjectId
-        ? String(s.procoreProjectId)
-        : s.ProcoreProjectId
-          ? String(s.ProcoreProjectId)
-          : null,
-    })).filter(s => s.siteReference && s.siteName);
+    const sites = raw
+      .map(s => ({
+        siteReference: String(s.siteReference ?? ""),
+        siteName:      String(s.name ?? ""),  // confirmed: "name" not "siteName"
+      }))
+      .filter(s => s.siteReference && s.siteName && !isExcluded(s.siteReference, s.siteName));
 
     return NextResponse.json({ sites });
   } catch (err) {
