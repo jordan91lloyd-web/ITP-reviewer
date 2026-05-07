@@ -1206,7 +1206,7 @@ export default function DashboardPage() {
           onRefresh={() => {
             if (selectedCompany) fetchCompanyStats(selectedCompany, companyDateRange);
           }}
-          onSelectProject={(project) => {
+          onViewProject={(project) => {
             setDashboardView("itp_reviews");
             handleSelectProject(project);
           }}
@@ -1836,6 +1836,9 @@ function ProjectRow({
 
 // ── CompanyTab ─────────────────────────────────────────────────────────────────
 
+type ProjectCountResult = { open: number; in_review: number; closed: number; total: number };
+type ProjectCountState  = ProjectCountResult | "loading" | "error";
+
 function CompanyTab({
   companies,
   selectedCompany,
@@ -1849,7 +1852,7 @@ function CompanyTab({
   inspections,
   onDateRangeChange,
   onRefresh,
-  onSelectProject,
+  onViewProject,
 }: {
   companies: Company[];
   selectedCompany: Company | null;
@@ -1863,10 +1866,55 @@ function CompanyTab({
   inspections: DashboardInspection[];
   onDateRangeChange: (r: DateRange) => void;
   onRefresh: () => void;
-  onSelectProject: (p: DashboardProject) => void;
+  onViewProject: (p: DashboardProject) => void;
 }) {
   const statsMap = new Map(companyStats.map(s => [s.procore_project_id, s]));
   const visibleProjects = projects.filter(p => !p.is_hidden);
+
+  // Accordion state — only one row expanded at a time
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  // Progressive Procore counts, keyed by project id
+  const [projectCounts, setProjectCounts] = useState<Map<number, ProjectCountState>>(new Map());
+
+  // Start background fetch loop whenever companyStats arrives or company changes
+  useEffect(() => {
+    if (!selectedCompany || companyStats.length === 0) return;
+    const companyId = selectedCompany.id;
+    let cancelled = false;
+    setProjectCounts(new Map()); // reset on new data
+
+    const prjs = projects.filter(p => !p.is_hidden);
+
+    async function fetchAll() {
+      for (let i = 0; i < prjs.length; i++) {
+        if (cancelled) break;
+        const p = prjs[i];
+        setProjectCounts(prev => new Map(prev).set(p.id, "loading"));
+        try {
+          const res  = await fetch(
+            `/api/dashboard/project-counts?project_id=${p.id}&company_id=${companyId}`
+          );
+          if (cancelled) break;
+          if (!res.ok) throw new Error("Failed");
+          const data: ProjectCountResult = await res.json();
+          if (!cancelled) setProjectCounts(prev => new Map(prev).set(p.id, data));
+        } catch {
+          if (!cancelled) setProjectCounts(prev => new Map(prev).set(p.id, "error"));
+        }
+        if (i < prjs.length - 1 && !cancelled) {
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }
+    }
+
+    fetchAll();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyStats, selectedCompany]);
+
+  // Collapse expanded row when company-stats refreshes
+  useEffect(() => { setExpandedId(null); }, [companyStats]);
 
   const totalReviewed = companyStats.reduce((s, x) => s + x.review_count, 0);
   const reviewedWithScore = companyStats.filter(x => x.avg_score !== null);
@@ -1883,32 +1931,15 @@ function CompanyTab({
     ? (projects.find(p => p.id === worstProject.procore_project_id)?.display_name ?? "—")
     : "—";
 
-  // Ready to close: open ITPs with score ≥ 75 in the currently loaded project
-  const openInspections = inspections.filter(i => {
-    const s = i.status?.toLowerCase();
-    return s !== "closed" && s !== "in_review";
-  });
-  const readyToCloseCount = openInspections.filter(
-    i => i.review_status !== "not_reviewed" && (i.override_score ?? i.last_score ?? 0) >= 75
-  ).length;
-  const hasInspectionData = selectedProject !== null && inspections.length > 0;
-
   const DATE_RANGE_LABELS: Record<DateRange, string> = {
     all: "All time", "30d": "Last 30 days", "90d": "Last 90 days", ytd: "This year",
   };
 
-  // Status pill based on avg score — simpler thresholds than score bands
   function companyStatusPill(score: number | null) {
-    if (score === null) {
-      return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-400">No reviews</span>;
-    }
-    if (score >= 75) {
-      return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">On track</span>;
-    }
-    if (score >= 60) {
-      return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Attention</span>;
-    }
-    return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-600 border border-red-200">Action needed</span>;
+    if (score === null)  return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-400">No reviews</span>;
+    if (score >= 75)     return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">On track</span>;
+    if (score >= 60)     return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Attention</span>;
+    return               <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-600 border border-red-200">Action needed</span>;
   }
 
   function scoreColor(score: number | null): string {
@@ -1916,6 +1947,14 @@ function CompanyTab({
     if (score >= 75) return "text-green-700";
     if (score >= 60) return "text-amber-700";
     return "text-red-600";
+  }
+
+  // Tiny inline count cell — shows spinner / dash / number
+  function CountCell({ state }: { state: ProjectCountState | undefined }) {
+    if (!state)              return <span className="text-xs text-gray-300">—</span>;
+    if (state === "error")   return <span className="text-xs text-gray-300">—</span>;
+    if (state === "loading") return <Spinner className="h-3 w-3 text-gray-300 mx-auto" />;
+    return null; // caller renders the value
   }
 
   function handleExportPdf() {
@@ -1933,13 +1972,11 @@ function CompanyTab({
     <div className="flex-1 overflow-y-auto bg-[#F9FAFB]">
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
 
-        {/* Header row */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Company Overview</h2>
-            {selectedCompany && (
-              <p className="text-xs text-gray-400 mt-0.5">{selectedCompany.name}</p>
-            )}
+            {selectedCompany && <p className="text-xs text-gray-400 mt-0.5">{selectedCompany.name}</p>}
           </div>
           <div className="flex items-center gap-2">
             {companies.length > 1 && (
@@ -1999,30 +2036,18 @@ function CompanyTab({
 
         {/* Summary cards */}
         <div className="grid grid-cols-4 gap-4">
-          {/* Total Projects */}
           <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Total Projects</p>
             <p className="text-3xl font-bold text-gray-900">{visibleProjects.length}</p>
-            {hasInspectionData && readyToCloseCount > 0 && (
-              <p className="text-[10px] text-green-600 font-semibold mt-1">
-                {readyToCloseCount} ready to close ({selectedProject?.display_name || selectedProject?.name})
-              </p>
-            )}
           </div>
-
-          {/* ITPs Reviewed */}
           <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">ITPs Reviewed</p>
             <p className="text-3xl font-bold text-gray-900">{totalReviewed}</p>
           </div>
-
-          {/* Average Score */}
           <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Average Score</p>
             <p className={`text-3xl font-bold ${scoreColor(overallAvg)}`}>{overallAvg ?? "—"}</p>
           </div>
-
-          {/* Worst Performing */}
           <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Worst Performing</p>
             <p className={`text-3xl font-bold ${scoreColor(worstProject?.avg_score ?? null)}`}>
@@ -2046,116 +2071,159 @@ function CompanyTab({
             No projects found.
           </div>
         ) : (
-          <>
-            {hasInspectionData && (
-              <p className="text-[10px] text-gray-400 -mb-3">
-                Open / Closed / Unreviewed counts shown for <span className="font-semibold text-gray-600">{selectedProject?.display_name || selectedProject?.name}</span> only — click any row to load another project.
-              </p>
-            )}
-            <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Project</th>
-                    <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-20">Open</th>
-                    <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-20">Closed</th>
-                    <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-24">Unreviewed</th>
-                    <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-24">Reviewed</th>
-                    <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-28">Avg Score</th>
-                    <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-28">Last Reviewed</th>
-                    <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-32">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {visibleProjects.map(p => {
-                    const s     = statsMap.get(p.id);
-                    const score = s?.avg_score ?? null;
-                    const isSelected = selectedProject?.id === p.id;
+          <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Project</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-20">Open</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-24">In Review</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-20">Closed</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-24">Reviewed</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-28">Avg Score</th>
+                  <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-28">Last Reviewed</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-32">Status</th>
+                  <th className="w-8" />
+                </tr>
+              </thead>
+              <tbody>
+                {visibleProjects.map(p => {
+                  const s        = statsMap.get(p.id);
+                  const score    = s?.avg_score ?? null;
+                  const counts   = projectCounts.get(p.id);
+                  const isExpanded = expandedId === p.id;
 
-                    // Counts only available for the currently loaded project
-                    let openCount: number | null = null;
-                    let closedCount: number | null = null;
-                    let unreviewedCount: number | null = null;
-                    let readyCount: number | null = null;
+                  // Ready-to-close only available for the project whose inspections are loaded
+                  const isLoadedProject = selectedProject?.id === p.id && inspections.length > 0;
+                  const loadedOpen   = isLoadedProject ? inspections.filter(i => { const st = i.status?.toLowerCase(); return st !== "closed" && st !== "in_review"; }) : null;
+                  const unreviewedOpen = loadedOpen?.filter(i => i.review_status === "not_reviewed") ?? null;
+                  const readyToClose   = loadedOpen?.filter(i => i.review_status !== "not_reviewed" && (i.override_score ?? i.last_score ?? 0) >= 75) ?? null;
 
-                    if (isSelected && inspections.length > 0) {
-                      const open   = inspections.filter(i => { const s2 = i.status?.toLowerCase(); return s2 !== "closed" && s2 !== "in_review"; });
-                      const closed = inspections.filter(i => i.status?.toLowerCase() === "closed");
-                      const unreviewed = open.filter(i => i.review_status === "not_reviewed");
-                      const ready  = open.filter(i => i.review_status !== "not_reviewed" && (i.override_score ?? i.last_score ?? 0) >= 75);
-                      openCount      = open.length;
-                      closedCount    = closed.length;
-                      unreviewedCount = unreviewed.length;
-                      readyCount     = ready.length;
-                    }
+                  const countsReady = counts && counts !== "loading" && counts !== "error" ? counts : null;
 
-                    return (
-                      <tr
-                        key={p.id}
-                        onClick={() => onSelectProject(p)}
-                        className={`cursor-pointer transition-colors ${isSelected ? "bg-amber-50" : "hover:bg-amber-50"}`}
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            {isSelected && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-amber-500" />}
-                            <div>
-                              <p className="text-sm font-semibold text-[#1F3864]">{p.display_name || p.name}</p>
-                              {p.project_number && <p className="text-[10px] text-gray-400">#{p.project_number}</p>}
+                  return [
+                    // ── Main row ──
+                    <tr
+                      key={`row-${p.id}`}
+                      onClick={() => setExpandedId(prev => prev === p.id ? null : p.id)}
+                      className={`cursor-pointer transition-colors border-b border-gray-100 ${
+                        isExpanded ? "bg-amber-50 border-b-0" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {/* Project name */}
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-semibold text-[#1F3864]">{p.display_name || p.name}</p>
+                        {p.project_number && <p className="text-[10px] text-gray-400">#{p.project_number}</p>}
+                      </td>
+
+                      {/* Open */}
+                      <td className="px-3 py-3 text-center">
+                        {countsReady
+                          ? <span className="text-sm font-medium text-gray-700">{countsReady.open}</span>
+                          : <CountCell state={counts} />
+                        }
+                      </td>
+
+                      {/* In Review */}
+                      <td className="px-3 py-3 text-center">
+                        {countsReady
+                          ? <span className="text-sm font-medium text-gray-700">{countsReady.in_review}</span>
+                          : <CountCell state={counts} />
+                        }
+                      </td>
+
+                      {/* Closed */}
+                      <td className="px-3 py-3 text-center">
+                        {countsReady
+                          ? <span className="text-sm font-medium text-gray-700">{countsReady.closed}</span>
+                          : <CountCell state={counts} />
+                        }
+                      </td>
+
+                      {/* Reviewed (from Supabase) */}
+                      <td className="px-3 py-3 text-center text-sm font-medium text-gray-700">
+                        {s?.review_count ?? 0}
+                      </td>
+
+                      {/* Avg Score */}
+                      <td className="px-3 py-3 text-center">
+                        <span className={`text-base font-bold ${scoreColor(score)}`}>{score ?? "—"}</span>
+                      </td>
+
+                      {/* Last Reviewed */}
+                      <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
+                        {s?.last_reviewed_at ? fmtDate(s.last_reviewed_at) : "—"}
+                      </td>
+
+                      {/* Status pill */}
+                      <td className="px-3 py-3 text-center">{companyStatusPill(score)}</td>
+
+                      {/* Chevron */}
+                      <td className="px-2 py-3 text-center text-gray-400">
+                        <svg
+                          className={`h-4 w-4 mx-auto transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </td>
+                    </tr>,
+
+                    // ── Expanded detail panel ──
+                    ...(isExpanded ? [
+                      <tr key={`expand-${p.id}`} className="border-b border-gray-200">
+                        <td colSpan={9} className="px-4 pb-4 pt-0 bg-amber-50">
+                          <div className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm">
+                            {/* Count grid */}
+                            <div className="grid grid-cols-5 gap-4 mb-4">
+                              {([
+                                { label: "Open",      value: countsReady?.open      ?? null, loading: counts === "loading", color: "text-gray-800" },
+                                { label: "In Review", value: countsReady?.in_review ?? null, loading: counts === "loading", color: "text-amber-700" },
+                                { label: "Closed",    value: countsReady?.closed    ?? null, loading: counts === "loading", color: "text-gray-800" },
+                                { label: "Reviewed",  value: s?.review_count ?? 0,           loading: false,               color: "text-gray-800" },
+                                {
+                                  label: "Unreviewed",
+                                  value: unreviewedOpen !== null ? unreviewedOpen.length : null,
+                                  loading: false,
+                                  color: (unreviewedOpen?.length ?? 0) > 0 ? "text-amber-600" : "text-gray-400",
+                                  sub: unreviewedOpen === null ? "select in ITP tab" : undefined,
+                                },
+                              ] as { label: string; value: number | null; loading: boolean; color: string; sub?: string }[]).map(card => (
+                                <div key={card.label} className="text-center">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">{card.label}</p>
+                                  {card.loading
+                                    ? <Spinner className="h-4 w-4 text-gray-300 mx-auto" />
+                                    : <p className={`text-2xl font-bold ${card.color}`}>{card.value ?? "—"}</p>
+                                  }
+                                  {card.sub && <p className="text-[9px] text-gray-300 mt-0.5">{card.sub}</p>}
+                                </div>
+                              ))}
                             </div>
+
+                            {/* Ready to close — only when ITP data loaded */}
+                            {readyToClose !== null && readyToClose.length > 0 && (
+                              <p className="text-xs text-green-600 font-semibold mb-3">
+                                ✓ {readyToClose.length} open ITP{readyToClose.length !== 1 ? "s" : ""} ready to close (score ≥ 75)
+                              </p>
+                            )}
+
+                            {/* View ITPs button */}
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); onViewProject(p); }}
+                              className="rounded-lg bg-[#1F3864] px-4 py-2 text-xs font-semibold text-white hover:bg-[#253f77] transition-colors"
+                            >
+                              View ITPs →
+                            </button>
                           </div>
                         </td>
-                        {/* Open */}
-                        <td className="px-3 py-3 text-center">
-                          {openCount !== null ? (
-                            <div>
-                              <span className="text-sm font-medium text-gray-700">{openCount}</span>
-                              {readyCount !== null && readyCount > 0 && (
-                                <p className="text-[10px] text-green-600 font-semibold">{readyCount} ready</p>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-300">—</span>
-                          )}
-                        </td>
-                        {/* Closed */}
-                        <td className="px-3 py-3 text-center text-sm font-medium text-gray-700">
-                          {closedCount !== null ? closedCount : <span className="text-xs text-gray-300">—</span>}
-                        </td>
-                        {/* Unreviewed */}
-                        <td className="px-3 py-3 text-center">
-                          {unreviewedCount !== null ? (
-                            <span className={`text-sm font-medium ${unreviewedCount > 0 ? "text-amber-600" : "text-gray-400"}`}>
-                              {unreviewedCount}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-300">—</span>
-                          )}
-                        </td>
-                        {/* Reviewed */}
-                        <td className="px-3 py-3 text-center text-sm font-medium text-gray-700">
-                          {s?.review_count ?? 0}
-                        </td>
-                        {/* Avg Score */}
-                        <td className="px-3 py-3 text-center">
-                          <span className={`text-base font-bold ${scoreColor(score)}`}>
-                            {score ?? "—"}
-                          </span>
-                        </td>
-                        {/* Last Reviewed */}
-                        <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
-                          {s?.last_reviewed_at ? fmtDate(s.last_reviewed_at) : "—"}
-                        </td>
-                        {/* Status */}
-                        <td className="px-3 py-3 text-center">
-                          {companyStatusPill(score)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
+                      </tr>,
+                    ] : []),
+                  ];
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
