@@ -392,6 +392,7 @@ export default function DashboardPage() {
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [statusFilter, setStatusFilter]             = useState<StatusFilter>("closed");
   const [openSortOrder, setOpenSortOrder]           = useState<"default" | "score_desc" | "score_asc">("default");
+  const [closedSortOrder, setClosedSortOrder]       = useState<"default" | "score_desc" | "score_asc">("default");
 
   // ITP group collapse state
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -683,15 +684,16 @@ export default function DashboardPage() {
     groupMap.get(insp.name)!.push(insp);
   }
 
-  // Apply score sort on the Open tab
-  if (statusFilter === "open" && openSortOrder !== "default") {
+  // Apply score sort on Open or Closed tab
+  const activeSortOrder = statusFilter === "open" ? openSortOrder : statusFilter === "closed" ? closedSortOrder : "default";
+  if (activeSortOrder !== "default") {
     const scoreOf = (i: DashboardInspection) => i.override_score ?? i.last_score;
     const cmp = (a: DashboardInspection, b: DashboardInspection) => {
       const sa = scoreOf(a), sb = scoreOf(b);
       if (sa === null && sb === null) return 0;
       if (sa === null) return 1;   // unreviewed always at bottom
       if (sb === null) return -1;
-      return openSortOrder === "score_desc" ? sb - sa : sa - sb;
+      return activeSortOrder === "score_desc" ? sb - sa : sa - sb;
     };
     for (const group of groupMap.values()) group.sort(cmp);
     const bestScore = (name: string) =>
@@ -704,7 +706,7 @@ export default function DashboardPage() {
       if (ba === null && bb === null) return 0;
       if (ba === null) return 1;
       if (bb === null) return -1;
-      return openSortOrder === "score_desc" ? bb - ba : ba - bb;
+      return activeSortOrder === "score_desc" ? bb - ba : ba - bb;
     });
   }
 
@@ -1176,7 +1178,7 @@ export default function DashboardPage() {
                       <button
                         key={s}
                         type="button"
-                        onClick={() => { setStatusFilter(s); setOpenSortOrder("default"); setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
+                        onClick={() => { setStatusFilter(s); setOpenSortOrder("default"); setClosedSortOrder("default"); setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
                         className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           statusFilter === s
                             ? "bg-white text-gray-900 shadow-sm border border-gray-100"
@@ -1231,15 +1233,18 @@ export default function DashboardPage() {
                       <span className="text-xs font-bold text-gray-700">Select All</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {statusFilter === "open" && (
+                      {(statusFilter === "open" || statusFilter === "closed") && (
                         <button
                           type="button"
-                          onClick={() => setOpenSortOrder(o => o === "default" ? "score_desc" : o === "score_desc" ? "score_asc" : "default")}
-                          className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${openSortOrder !== "default" ? "text-amber-600 hover:text-amber-700" : "text-gray-500 hover:text-gray-700"}`}
+                          onClick={() => {
+                            if (statusFilter === "open") setOpenSortOrder(o => o === "default" ? "score_desc" : o === "score_desc" ? "score_asc" : "default");
+                            else setClosedSortOrder(o => o === "default" ? "score_desc" : o === "score_desc" ? "score_asc" : "default");
+                          }}
+                          className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${activeSortOrder !== "default" ? "text-amber-600 hover:text-amber-700" : "text-gray-500 hover:text-gray-700"}`}
                           title="Sort by score"
                         >
-                          {openSortOrder === "score_desc" ? <ArrowDown className="h-3.5 w-3.5" /> : openSortOrder === "score_asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5" />}
-                          {openSortOrder === "score_desc" ? "Score ↓" : openSortOrder === "score_asc" ? "Score ↑" : "Sort"}
+                          {activeSortOrder === "score_desc" ? <ArrowDown className="h-3.5 w-3.5" /> : activeSortOrder === "score_asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5" />}
+                          {activeSortOrder === "score_desc" ? "Score ↓" : activeSortOrder === "score_asc" ? "Score ↑" : "Sort"}
                         </button>
                       )}
                       <button
