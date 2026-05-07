@@ -39,6 +39,16 @@ interface InspectionStats {
 
 type StatusFilter = "closed" | "open" | "in_review";
 
+type DateRange = "all" | "30d" | "90d" | "ytd";
+
+interface CompanyProjectStat {
+  procore_project_id: number;
+  review_count: number;
+  avg_score: number | null;
+  last_reviewed_at: string | null;
+  last_closed_by: string | null;
+}
+
 // ── Score helpers ──────────────────────────────────────────────────────────────
 
 function scoreBand(score: number | null): string {
@@ -367,6 +377,103 @@ ${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</sc
 </html>`;
 }
 
+// ── Company tab helpers ────────────────────────────────────────────────────────
+
+function getDateParams(range: DateRange): string {
+  if (range === "all") return "";
+  const now  = new Date();
+  const from = new Date(now);
+  if (range === "30d")  from.setDate(now.getDate() - 30);
+  if (range === "90d")  from.setDate(now.getDate() - 90);
+  if (range === "ytd")  from.setMonth(0, 1);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  return `&date_from=${fmt(from)}&date_to=${fmt(now)}`;
+}
+
+function buildCompanyReportHtml(
+  projects: DashboardProject[],
+  stats: CompanyProjectStat[],
+  companyName: string,
+  dateRange: DateRange,
+  autoPrint = false
+): string {
+  const statsMap = new Map(stats.map(s => [s.procore_project_id, s]));
+  const visibleProjects = projects.filter(p => !p.is_hidden);
+
+  const totalReviewed = stats.reduce((s, x) => s + x.review_count, 0);
+  const reviewedWithScore = stats.filter(x => x.avg_score !== null);
+  const overallAvg = reviewedWithScore.length > 0
+    ? Math.round(reviewedWithScore.reduce((s, x) => s + (x.avg_score ?? 0), 0) / reviewedWithScore.length)
+    : null;
+
+  const dateRangeLabel = ({ all: "All time", "30d": "Last 30 days", "90d": "Last 90 days", ytd: "This year" } as Record<DateRange, string>)[dateRange];
+
+  const rows = visibleProjects.map(p => {
+    const s = statsMap.get(p.id);
+    const score = s?.avg_score ?? null;
+    const band = score !== null ? scoreBand(score) : null;
+    const bandColor = ({ compliant: "#16a34a", minor_gaps: "#d97706", significant_gaps: "#ea580c", critical_risk: "#dc2626" } as Record<string, string>)[band ?? ""] ?? "#6b7280";
+    return `<tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:8px 10px;font-size:12px;font-weight:600;color:#1f2937">${esc(p.display_name || p.name)}</td>
+      <td style="padding:8px 10px;font-size:11px;color:#6b7280;white-space:nowrap">${p.project_number ? `#${p.project_number}` : "—"}</td>
+      <td style="padding:8px 10px;font-size:12px;text-align:center">${s?.review_count ?? 0}</td>
+      <td style="padding:8px 10px;font-size:13px;font-weight:700;color:${bandColor};text-align:center">${score ?? "—"}</td>
+      <td style="padding:8px 10px;font-size:11px;color:#6b7280;white-space:nowrap">${s?.last_reviewed_at ? fmtDate(s.last_reviewed_at) : "—"}</td>
+      <td style="padding:8px 10px;font-size:11px;text-align:center">
+        ${band ? `<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:${({ compliant: "#f0fdf4", minor_gaps: "#fffbeb", significant_gaps: "#fff7ed", critical_risk: "#fef2f2" } as Record<string, string>)[band] ?? "#f9fafb"};color:${bandColor}">${scoreBandLabel(band)}</span>` : '<span style="color:#9ca3af">—</span>'}
+      </td>
+    </tr>`;
+  }).join("");
+
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>${esc(companyName)} — Company Overview</title>
+<style>
+  @page { margin: 18mm 20mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a1a1a; margin: 0; padding: 0; }
+  table { width: 100%; border-collapse: collapse; }
+</style>
+</head><body>
+<div style="border-bottom:2px solid #1d4ed8;padding-bottom:12px;margin-bottom:20px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:4px">Fleek Constructions — Company Overview</div>
+  <h2 style="margin:0 0 4px 0;font-size:16px;font-weight:700">${esc(companyName)}</h2>
+  <div style="font-size:10px;color:#6b7280">Period: ${esc(dateRangeLabel)} · Generated ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
+</div>
+
+<div style="display:flex;gap:16px;margin-bottom:20px">
+  <div style="flex:1;padding:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;text-align:center">
+    <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:4px">Total Projects</div>
+    <div style="font-size:24px;font-weight:700;color:#1f2937">${visibleProjects.length}</div>
+  </div>
+  <div style="flex:1;padding:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;text-align:center">
+    <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:4px">ITPs Reviewed</div>
+    <div style="font-size:24px;font-weight:700;color:#1f2937">${totalReviewed}</div>
+  </div>
+  <div style="flex:1;padding:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;text-align:center">
+    <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:4px">Average Score</div>
+    <div style="font-size:24px;font-weight:700;color:${overallAvg !== null ? (overallAvg >= 85 ? "#16a34a" : overallAvg >= 70 ? "#d97706" : overallAvg >= 50 ? "#ea580c" : "#dc2626") : "#9ca3af"}">${overallAvg ?? "—"}</div>
+  </div>
+</div>
+
+<h3 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin:0 0 10px 0">Project Breakdown</h3>
+<table>
+  <thead>
+    <tr style="background:#f3f4f6">
+      <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase">Project</th>
+      <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase">Number</th>
+      <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase">Reviewed</th>
+      <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase">Avg Score</th>
+      <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase">Last Reviewed</th>
+      <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase">Status</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</script>" : ""}
+</body></html>`;
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -427,8 +534,14 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "itp_reviews" | "site_compliance";
+  type DashboardView = "company" | "itp_reviews" | "site_compliance";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
+
+  // Company tab
+  const [companyStats, setCompanyStats]           = useState<CompanyProjectStat[]>([]);
+  const [companyStatsLoading, setCompanyStatsLoading] = useState(false);
+  const [companyDateRange, setCompanyDateRange]   = useState<DateRange>("all");
+  const [companyStatsFetched, setCompanyStatsFetched] = useState(false);
 
   // Admin status (used by Site Compliance tab mapping manager)
   const [isAdmin, setIsAdmin] = useState(false);
@@ -501,6 +614,21 @@ export default function DashboardPage() {
       setInspections([]);
     } finally {
       setInspectionsLoading(false);
+    }
+  }, []);
+
+  const fetchCompanyStats = useCallback(async (company: Company, range: DateRange) => {
+    setCompanyStatsLoading(true);
+    try {
+      const url = `/api/dashboard/company-stats?company_id=${company.id}${getDateParams(range)}`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      setCompanyStats(data.stats ?? []);
+      setCompanyStatsFetched(true);
+    } catch {
+      setCompanyStats([]);
+    } finally {
+      setCompanyStatsLoading(false);
     }
   }, []);
 
@@ -1034,13 +1162,19 @@ export default function DashboardPage() {
       {/* ── Top-level tab nav ── */}
       <div className="shrink-0 bg-white border-b border-gray-200 px-6 flex items-center gap-0.5 h-10">
         {([
+          ["company",         "Company"],
           ["itp_reviews",     "ITP Reviews"],
           ["site_compliance", "Site Compliance"],
         ] as [DashboardView, string][]).map(([view, label]) => (
           <button
             key={view}
             type="button"
-            onClick={() => setDashboardView(view)}
+            onClick={() => {
+              setDashboardView(view);
+              if (view === "company" && !companyStatsFetched && selectedCompany) {
+                fetchCompanyStats(selectedCompany, companyDateRange);
+              }
+            }}
             className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
               dashboardView === view
                 ? "bg-gray-100 text-gray-900"
@@ -1051,6 +1185,31 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
+
+      {/* ── Company tab ── */}
+      {dashboardView === "company" && (
+        <CompanyTab
+          companies={companies}
+          selectedCompany={selectedCompany}
+          onSelectCompany={setSelectedCompany}
+          projects={projects}
+          projectsLoading={projectsLoading}
+          companyStats={companyStats}
+          companyStatsLoading={companyStatsLoading}
+          companyDateRange={companyDateRange}
+          onDateRangeChange={(range) => {
+            setCompanyDateRange(range);
+            if (selectedCompany) fetchCompanyStats(selectedCompany, range);
+          }}
+          onRefresh={() => {
+            if (selectedCompany) fetchCompanyStats(selectedCompany, companyDateRange);
+          }}
+          onSelectProject={(project) => {
+            setDashboardView("itp_reviews");
+            handleSelectProject(project);
+          }}
+        />
+      )}
 
       {/* ── Site Compliance tab ── */}
       {dashboardView === "site_compliance" && (
@@ -1666,6 +1825,243 @@ function ProjectRow({
                 Hide Project
               </button>
             )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── CompanyTab ─────────────────────────────────────────────────────────────────
+
+function CompanyTab({
+  companies,
+  selectedCompany,
+  onSelectCompany,
+  projects,
+  projectsLoading,
+  companyStats,
+  companyStatsLoading,
+  companyDateRange,
+  onDateRangeChange,
+  onRefresh,
+  onSelectProject,
+}: {
+  companies: Company[];
+  selectedCompany: Company | null;
+  onSelectCompany: (c: Company) => void;
+  projects: DashboardProject[];
+  projectsLoading: boolean;
+  companyStats: CompanyProjectStat[];
+  companyStatsLoading: boolean;
+  companyDateRange: DateRange;
+  onDateRangeChange: (r: DateRange) => void;
+  onRefresh: () => void;
+  onSelectProject: (p: DashboardProject) => void;
+}) {
+  const statsMap = new Map(companyStats.map(s => [s.procore_project_id, s]));
+  const visibleProjects = projects.filter(p => !p.is_hidden);
+
+  const totalReviewed = companyStats.reduce((s, x) => s + x.review_count, 0);
+  const reviewedWithScore = companyStats.filter(x => x.avg_score !== null);
+  const overallAvg = reviewedWithScore.length > 0
+    ? Math.round(reviewedWithScore.reduce((s, x) => s + (x.avg_score ?? 0), 0) / reviewedWithScore.length)
+    : null;
+
+  const worstProject = reviewedWithScore.length > 0
+    ? reviewedWithScore.reduce((worst, x) =>
+        (x.avg_score ?? 999) < (worst.avg_score ?? 999) ? x : worst
+      )
+    : null;
+  const worstProjectName = worstProject
+    ? (projects.find(p => p.id === worstProject.procore_project_id)?.display_name ?? "—")
+    : "—";
+
+  const DATE_RANGE_LABELS: Record<DateRange, string> = {
+    all: "All time", "30d": "Last 30 days", "90d": "Last 90 days", ytd: "This year",
+  };
+
+  function handleExportPdf() {
+    if (!selectedCompany) return;
+    const html = buildCompanyReportHtml(projects, companyStats, selectedCompany.name, companyDateRange, true);
+    const win  = window.open("", "_blank");
+    if (!win) { alert("Popup blocked — please allow popups and try again."); return; }
+    win.document.write(html);
+    win.document.close();
+  }
+
+  const loading = projectsLoading || companyStatsLoading;
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-[#F9FAFB]">
+      <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+
+        {/* Header row */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Company Overview</h2>
+            {selectedCompany && (
+              <p className="text-xs text-gray-400 mt-0.5">{selectedCompany.name}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {companies.length > 1 && (
+              <select
+                value={selectedCompany?.id ?? ""}
+                onChange={e => {
+                  const c = companies.find(x => x.id === Number(e.target.value));
+                  if (c) onSelectCompany(c);
+                }}
+                className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="">— Select company —</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={loading}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+            >
+              {loading
+                ? <Spinner className="h-3 w-3 text-gray-400" />
+                : <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114.93-2.69M20 15a8 8 0 01-14.93 2.69" /></svg>
+              }
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={loading || visibleProjects.length === 0}
+              className="flex items-center gap-1.5 rounded-lg bg-[#1F3864] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#253f77] disabled:opacity-40 transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export PDF
+            </button>
+          </div>
+        </div>
+
+        {/* Date range filter */}
+        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 gap-0.5 shadow-sm">
+          {(["all", "30d", "90d", "ytd"] as DateRange[]).map(range => (
+            <button
+              key={range}
+              type="button"
+              onClick={() => onDateRangeChange(range)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                companyDateRange === range
+                  ? "bg-gray-100 text-gray-900 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {DATE_RANGE_LABELS[range]}
+            </button>
+          ))}
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: "Total Projects",      value: visibleProjects.length, color: "text-gray-900" },
+            { label: "ITPs Reviewed",       value: totalReviewed,          color: "text-gray-900" },
+            {
+              label: "Average Score",
+              value: overallAvg ?? "—",
+              color: overallAvg === null ? "text-gray-400"
+                   : overallAvg >= 85  ? "text-green-600"
+                   : overallAvg >= 70  ? "text-amber-600"
+                   : overallAvg >= 50  ? "text-orange-500"
+                   : "text-red-600",
+            },
+            { label: "Worst Performing",    value: worstProject ? (worstProject.avg_score ?? "—") : "—",
+              color: !worstProject ? "text-gray-400" : (worstProject.avg_score ?? 999) >= 70 ? "text-amber-600" : "text-red-600",
+              sub: worstProject ? worstProjectName : undefined },
+          ].map(card => (
+            <div key={card.label} className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{card.label}</p>
+              <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
+              {card.sub && <p className="text-[10px] text-gray-400 mt-1 truncate">{card.sub}</p>}
+            </div>
+          ))}
+        </div>
+
+        {/* Project breakdown table */}
+        {!selectedCompany ? (
+          <div className="rounded-xl bg-white border border-gray-200 px-6 py-10 text-center text-sm text-gray-400">
+            Select a company to load project data.
+          </div>
+        ) : loading ? (
+          <div className="flex items-center gap-2 px-4 py-8 text-sm text-gray-400">
+            <Spinner className="h-4 w-4 text-blue-400" /> Loading…
+          </div>
+        ) : visibleProjects.length === 0 ? (
+          <div className="rounded-xl bg-white border border-gray-200 px-6 py-10 text-center text-sm text-gray-400">
+            No projects found.
+          </div>
+        ) : (
+          <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Project</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-24">Reviewed</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-28">Avg Score</th>
+                  <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-32">Last Reviewed</th>
+                  <th className="text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-3 w-36">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {visibleProjects.map(p => {
+                  const s    = statsMap.get(p.id);
+                  const score = s?.avg_score ?? null;
+                  const band  = score !== null ? scoreBand(score) : null;
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => onSelectProject(p)}
+                      className="cursor-pointer hover:bg-amber-50 transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-semibold text-[#1F3864]">{p.display_name || p.name}</p>
+                        {p.project_number && <p className="text-[10px] text-gray-400">#{p.project_number}</p>}
+                      </td>
+                      <td className="px-3 py-3 text-center text-sm font-medium text-gray-700">
+                        {s?.review_count ?? 0}
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        {score !== null ? (
+                          <span className={`text-base font-bold ${
+                            score >= 85 ? "text-green-600" :
+                            score >= 70 ? "text-amber-600" :
+                            score >= 50 ? "text-orange-500" :
+                                          "text-red-600"
+                          }`}>
+                            {score}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-300 italic">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
+                        {s?.last_reviewed_at ? fmtDate(s.last_reviewed_at) : "—"}
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        {band ? (
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${scorePillClasses(band)}`}>
+                            {scoreBandLabel(band)}
+                          </span>
+                        ) : (
+                          <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-400">
+                            No reviews
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
