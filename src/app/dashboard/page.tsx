@@ -4,6 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Download } from "lucide-react";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
@@ -62,6 +63,33 @@ function scorePillClasses(band: string): string {
     significant_gaps:  "bg-orange-50 text-orange-700 border border-orange-200",
     critical_risk:     "bg-red-50 text-red-700 border border-red-200",
   } as Record<string, string>)[band] ?? "bg-gray-50 text-gray-500 border border-gray-200";
+}
+
+// ── CSV export helpers ─────────────────────────────────────────────────────────
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/\n+/g, " ")
+    .trim();
+}
+
+function buildIssuesSummary(insp: DashboardInspection): string {
+  if (insp.review_status === "not_reviewed" || !insp.review_data) return "Not yet reviewed";
+  const rd = insp.review_data;
+  if (rd.executive_summary) {
+    const clean = stripMarkdown(rd.executive_summary);
+    return clean.length > 200 ? clean.slice(0, 197) + "…" : clean;
+  }
+  if (rd.key_issues?.length) {
+    return rd.key_issues.map(i => stripMarkdown(i.title)).join("; ");
+  }
+  if (rd.missing_evidence?.length) {
+    return `${rd.missing_evidence.length} missing evidence item${rd.missing_evidence.length === 1 ? "" : "s"}`;
+  }
+  return "Reviewed — no issues noted";
 }
 
 // Fleek brand: all D1-D5 bars use amber (#D97706 = amber-600)
@@ -863,6 +891,64 @@ export default function DashboardPage() {
     }
   }
 
+  // ── CSV export ──────────────────────────────────────────────────────────────
+
+  function handleExportCsv() {
+    if (!selectedProject || filteredInspections.length === 0) return;
+
+    const isClosed   = statusFilter === "closed";
+    const tabLabel   = statusFilter === "closed" ? "closed" : statusFilter === "open" ? "open" : "in-review";
+    const safeName   = (selectedProject.display_name || selectedProject.name)
+      .replace(/[^a-z0-9]/gi, "-")
+      .replace(/-+/g, "-")
+      .toLowerCase();
+    const dateStr    = new Date().toISOString().slice(0, 10);
+    const filename   = `${tabLabel}-itps-${safeName}-${dateStr}.csv`;
+
+    function csvField(value: string | null | undefined): string {
+      return `"${(value ?? "").replace(/"/g, '""')}"`;
+    }
+
+    const projectLabel = selectedProject.display_name || selectedProject.name;
+
+    const headers = isClosed
+      ? ["ITP Number", "ITP Name", "Project", "Status", "Score", "Band", "Closed By", "Issues / Missing"]
+      : ["ITP Number", "ITP Name", "Project", "Status", "Score", "Band", "Issues / Missing"];
+
+    const rows = filteredInspections.map(insp => {
+      const displayScore = insp.override_score ?? insp.last_score;
+      const band         = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
+      const bandLabel    = band ? scoreBandLabel(band) : "Not reviewed";
+      const scoreStr     = displayScore !== null ? String(displayScore) : "—";
+      const issues       = buildIssuesSummary(insp);
+      const itpNumber    = insp.inspection_number_of_type != null
+        ? `#${insp.inspection_number_of_type}`
+        : "—";
+
+      const base = [
+        csvField(itpNumber),
+        csvField(insp.name),
+        csvField(projectLabel),
+        csvField(insp.status ?? ""),
+        csvField(scoreStr),
+        csvField(bandLabel),
+      ];
+
+      return isClosed
+        ? [...base, csvField(insp.closed_by), csvField(issues)].join(",")
+        : [...base, csvField(issues)].join(",");
+    });
+
+    const csv = [headers.map(h => csvField(h)).join(","), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ── Not authenticated ───────────────────────────────────────────────────────
 
   if (authenticated === false) {
@@ -1118,17 +1204,28 @@ export default function DashboardPage() {
                       />
                       <span className="text-xs font-bold text-gray-700">Select All</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const allCollapsed = groupOrder.length > 0 && collapsedGroups.size === groupOrder.length;
-                        setCollapsedGroups(allCollapsed ? new Set() : new Set(groupOrder));
-                      }}
-                      className="flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 transition-colors"
-                    >
-                      <span className={`inline-block text-[9px] transition-transform duration-150 ${groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "" : "rotate-90"}`}>▶</span>
-                      {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "Expand All" : "Collapse All"}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleExportCsv}
+                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Export visible ITPs to CSV"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Export CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allCollapsed = groupOrder.length > 0 && collapsedGroups.size === groupOrder.length;
+                          setCollapsedGroups(allCollapsed ? new Set() : new Set(groupOrder));
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 transition-colors"
+                      >
+                        <span className={`inline-block text-[9px] transition-transform duration-150 ${groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "" : "rotate-90"}`}>▶</span>
+                        {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "Expand All" : "Collapse All"}
+                      </button>
+                    </div>
                   </div>
 
                   <table className="w-full text-sm shadow-sm">
