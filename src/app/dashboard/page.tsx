@@ -759,6 +759,23 @@ export default function DashboardPage() {
         if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
         setBulkStatus(prev => new Map(prev).set(insp.id, "done"));
         completed++;
+
+        // Immediately update this row's score without waiting for the full batch
+        try {
+          const updated = await fetch(
+            `/api/dashboard/inspections?project_id=${selectedProject.id}&company_id=${selectedCompany.id}&inspection_id=${insp.id}`
+          );
+          if (updated.ok) {
+            const updatedData = await updated.json();
+            if (updatedData.inspections?.length > 0) {
+              setInspections(prev => prev.map(i =>
+                i.id === insp.id ? { ...i, ...updatedData.inspections[0] } : i
+              ));
+            }
+          }
+        } catch {
+          // non-fatal — score will still show on final reload
+        }
       } catch {
         setBulkStatus(prev => new Map(prev).set(insp.id, "failed"));
         failed++;

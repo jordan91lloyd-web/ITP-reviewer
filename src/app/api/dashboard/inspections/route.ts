@@ -50,16 +50,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
   }
 
-  const projectIdParam = request.nextUrl.searchParams.get("project_id");
-  const companyIdParam = request.nextUrl.searchParams.get("company_id");
+  const projectIdParam    = request.nextUrl.searchParams.get("project_id");
+  const companyIdParam    = request.nextUrl.searchParams.get("company_id");
+  const inspectionIdParam = request.nextUrl.searchParams.get("inspection_id");
   if (!projectIdParam || isNaN(Number(projectIdParam))) {
     return NextResponse.json({ error: "project_id is required." }, { status: 400 });
   }
   if (!companyIdParam || isNaN(Number(companyIdParam))) {
     return NextResponse.json({ error: "company_id is required." }, { status: 400 });
   }
-  const projectId = Number(projectIdParam);
-  const companyId = Number(companyIdParam);
+  const projectId    = Number(projectIdParam);
+  const companyId    = Number(companyIdParam);
+  const inspectionId = inspectionIdParam ? Number(inspectionIdParam) : null;
 
   // Fetch all inspections from Procore (both open and closed)
   let allInspections;
@@ -70,19 +72,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 502 });
   }
 
-  // Filter to ITP-named only (both statuses)
-  const itpInspections = allInspections.filter(
-    insp => insp.name?.trim().toLowerCase().startsWith("itp")
-  );
+  // Filter to ITP-named only (both statuses); narrow to single inspection when requested
+  const itpInspections = allInspections.filter(insp => {
+    if (!insp.name?.trim().toLowerCase().startsWith("itp")) return false;
+    if (inspectionId !== null) return insp.id === inspectionId;
+    return true;
+  });
 
 
-  // Fetch all review records for this project + company (latest first)
-  const { data: allRecords } = await supabase
+  // Fetch review records for this project + company (latest first).
+  // When a single inspection_id is requested, narrow the query for speed.
+  const recordsQuery = supabase
     .from("review_records")
     .select("*")
     .eq("company_id", String(companyId))
     .eq("procore_project_id", projectId)
     .order("reviewed_at", { ascending: false });
+
+  if (inspectionId !== null) {
+    recordsQuery.eq("procore_inspection_id", inspectionId);
+  }
+
+  const { data: allRecords } = await recordsQuery;
 
   // Group records by inspection_id — first entry is latest
   const latestByInspection = new Map<number, Record<string, unknown>>();
