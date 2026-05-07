@@ -904,7 +904,7 @@ export default function DashboardPage() {
           </button>
         </div>
         <div className="mx-auto max-w-2xl px-4 py-8">
-          <ReviewResults result={fullReportInsp.review_data} onReset={() => setFullReportInsp(null)} />
+          <ReviewResults result={fullReportInsp.review_data} onReset={() => setFullReportInsp(null)} description={fullReportInsp.description} />
         </div>
       </div>
     );

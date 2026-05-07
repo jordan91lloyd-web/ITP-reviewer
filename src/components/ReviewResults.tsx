@@ -56,6 +56,7 @@ interface Props {
   result: ReviewResult;
   onReset: () => void;
   skippedFiles?: SkippedFile[];
+  description?: string | null;
 }
 
 const UNIDENTIFIED = "Not confidently identified";
@@ -69,7 +70,7 @@ function getQAStatus(result: ReviewResult): "strong" | "acceptable" | "high-risk
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export default function ReviewResults({ result, onReset, skippedFiles }: Props) {
+export default function ReviewResults({ result, onReset, skippedFiles, description }: Props) {
   const h = result.inspection_header;
 
   // ── View / collapse state ────────────────────────────────────────────────
@@ -277,6 +278,12 @@ export default function ReviewResults({ result, onReset, skippedFiles }: Props) 
               label="Tier"
               value={field(h.tier ? (h.tier_subgroup ? `${h.tier} — ${h.tier_subgroup}` : h.tier) : null)}
             />
+            {description && (
+              <div className="col-span-2 sm:col-span-3">
+                <dt className="text-xs text-gray-400 mb-0.5">Description</dt>
+                <dd className="text-sm whitespace-pre-wrap">{description}</dd>
+              </div>
+            )}
           </dl>
           <p className="mt-3 text-xs text-gray-400 print:hidden">
             Extraction confidence:{" "}
