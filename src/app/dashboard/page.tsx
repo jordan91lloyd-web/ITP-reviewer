@@ -4,7 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
@@ -391,6 +391,7 @@ export default function DashboardPage() {
   const [inspections, setInspections]               = useState<DashboardInspection[]>([]);
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [statusFilter, setStatusFilter]             = useState<StatusFilter>("closed");
+  const [openSortOrder, setOpenSortOrder]           = useState<"default" | "score_desc" | "score_asc">("default");
 
   // ITP group collapse state
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -680,6 +681,31 @@ export default function DashboardPage() {
       groupMap.set(insp.name, []);
     }
     groupMap.get(insp.name)!.push(insp);
+  }
+
+  // Apply score sort on the Open tab
+  if (statusFilter === "open" && openSortOrder !== "default") {
+    const scoreOf = (i: DashboardInspection) => i.override_score ?? i.last_score;
+    const cmp = (a: DashboardInspection, b: DashboardInspection) => {
+      const sa = scoreOf(a), sb = scoreOf(b);
+      if (sa === null && sb === null) return 0;
+      if (sa === null) return 1;   // unreviewed always at bottom
+      if (sb === null) return -1;
+      return openSortOrder === "score_desc" ? sb - sa : sa - sb;
+    };
+    for (const group of groupMap.values()) group.sort(cmp);
+    const bestScore = (name: string) =>
+      groupMap.get(name)!.reduce<number | null>((max, i) => {
+        const s = scoreOf(i);
+        return s === null ? max : max === null ? s : Math.max(max, s);
+      }, null);
+    groupOrder.sort((a, b) => {
+      const ba = bestScore(a), bb = bestScore(b);
+      if (ba === null && bb === null) return 0;
+      if (ba === null) return 1;
+      if (bb === null) return -1;
+      return openSortOrder === "score_desc" ? bb - ba : ba - bb;
+    });
   }
 
   function toggleGroup(name: string) {
@@ -1150,7 +1176,7 @@ export default function DashboardPage() {
                       <button
                         key={s}
                         type="button"
-                        onClick={() => { setStatusFilter(s); setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
+                        onClick={() => { setStatusFilter(s); setOpenSortOrder("default"); setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
                         className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           statusFilter === s
                             ? "bg-white text-gray-900 shadow-sm border border-gray-100"
@@ -1205,6 +1231,17 @@ export default function DashboardPage() {
                       <span className="text-xs font-bold text-gray-700">Select All</span>
                     </div>
                     <div className="flex items-center gap-3">
+                      {statusFilter === "open" && (
+                        <button
+                          type="button"
+                          onClick={() => setOpenSortOrder(o => o === "default" ? "score_desc" : o === "score_desc" ? "score_asc" : "default")}
+                          className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${openSortOrder !== "default" ? "text-amber-600 hover:text-amber-700" : "text-gray-500 hover:text-gray-700"}`}
+                          title="Sort by score"
+                        >
+                          {openSortOrder === "score_desc" ? <ArrowDown className="h-3.5 w-3.5" /> : openSortOrder === "score_asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5" />}
+                          {openSortOrder === "score_desc" ? "Score ↓" : openSortOrder === "score_asc" ? "Score ↑" : "Sort"}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={handleExportCsv}
@@ -1655,6 +1692,12 @@ function InspectionRow({
   const isClosed = insp.status?.toLowerCase() === "closed";
   const [popoverOpen, setPopoverOpen] = useState(false);
 
+  const daysOpen = !isClosed && insp.created_at
+    ? Math.floor((Date.now() - new Date(insp.created_at).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const readyToClose = !isClosed && (displayScore ?? 0) >= 75;
+
   const hasInfo = !!(insp.description || insp.location || insp.created_by);
 
   return (
@@ -1681,7 +1724,14 @@ function InspectionRow({
       <td className="pl-10 pr-3 py-2.5 max-w-0">
         <div className="flex items-center gap-2">
           <span className="text-amber-300 shrink-0 font-semibold text-sm select-none">–</span>
-          <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
+            {daysOpen !== null && (
+              <p className={`text-[10px] mt-0.5 ${daysOpen > 30 ? "text-red-500" : daysOpen >= 14 ? "text-amber-500" : "text-gray-400"}`}>
+                {daysOpen} days open
+              </p>
+            )}
+          </div>
           {bulkItemStatus && (
             <BulkStatusBadge status={bulkItemStatus} />
           )}
@@ -1759,12 +1809,17 @@ function InspectionRow({
       {/* Band pill */}
       <td className="px-3 py-2.5 whitespace-nowrap">
         {band ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${scorePillClasses(band)}`}>
               {scoreBandLabel(band)}
             </span>
             {insp.override_score !== null && (
               <span className="text-[10px] text-purple-600 font-semibold">Human</span>
+            )}
+            {readyToClose && (
+              <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">
+                Ready to close
+              </span>
             )}
           </div>
         ) : (

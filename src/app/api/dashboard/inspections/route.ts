@@ -45,6 +45,7 @@ export interface DashboardInspection {
   description: string | null;
   location: string | null;    // location.name, flattened
   created_by: string | null;  // created_by.name, flattened
+  created_at: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -175,6 +176,7 @@ export async function GET(request: NextRequest) {
       description:              insp.description ?? null,
       location:                 insp.location?.name ?? null,
       created_by:               insp.created_by?.name ?? null,
+      created_at:               insp.created_at ?? null,
     };
   });
 
