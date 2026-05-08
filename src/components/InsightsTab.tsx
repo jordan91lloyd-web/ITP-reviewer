@@ -143,25 +143,29 @@ export default function InsightsTab({
 
       setCardStates(prev => new Map(prev).set(pid, "fetching_summary"));
 
-      // 2. Build open ITPs — use loaded inspections if this is the selected project
-      let openItps: OpenItpSummary[] = [];
+      // 2. Get all ITPs for this project (all statuses)
+      let allInspections: DashboardInspection[] = [];
       if (selectedProject?.id === project.id && inspections.length > 0) {
-        openItps = toOpenItpSummaries(inspections);
+        allInspections = inspections;
       } else {
-        // Fetch inspections for this project (lightweight — open tab only)
         try {
           const inspRes  = await fetch(
             `/api/dashboard/inspections?project_id=${project.id}&company_id=${companyId}`
           );
           const inspData = await inspRes.json();
-          const all: DashboardInspection[] = inspData.inspections ?? [];
-          openItps = toOpenItpSummaries(all);
+          allInspections = inspData.inspections ?? [];
         } catch {
-          // non-fatal — generate summary with empty ITP list
+          // non-fatal — generate summary with empty ITP lists
         }
       }
 
+      const openItps   = toOpenItpSummaries(allInspections);
+
       // 3. POST to AI site-summary
+      const closedItps = allInspections
+        .filter(i => i.status?.toLowerCase() === "closed" && i.name)
+        .map(i => ({ name: i.name, score: i.override_score ?? i.last_score }));
+
       const sumRes = await fetch("/api/ai/site-summary", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -172,6 +176,7 @@ export default function InsightsTab({
           contract_sum:   finData.contract_sum ?? null,
           active_trades:  finData.active_trades ?? [],
           open_itps:      openItps,
+          closed_itps:    closedItps,
           company_id:     String(companyId),
         }),
       });

@@ -53,6 +53,11 @@ interface OpenItp {
   days_open?: number | null;
 }
 
+interface ClosedItp {
+  name:  string;
+  score: number | null;
+}
+
 interface MissingItp {
   itp:    string;
   name:   string;
@@ -68,10 +73,11 @@ export async function POST(request: NextRequest) {
       contract_sum:   number | null;
       active_trades:  ActiveTrade[];
       open_itps:      OpenItp[];
+      closed_itps:    ClosedItp[];
       company_id:     string;
     };
 
-    const { project_id, project_name, completion_pct, contract_sum, active_trades, open_itps, company_id } = body;
+    const { project_id, project_name, completion_pct, contract_sum, active_trades, open_itps, closed_itps, company_id } = body;
 
     if (!project_id || !project_name || !company_id) {
       return NextResponse.json({ error: "project_id, project_name, company_id are required." }, { status: 400 });
@@ -88,6 +94,10 @@ export async function POST(request: NextRequest) {
       ? open_itps.map(i => `  - ${i.name} [${i.status}${i.score != null ? `, score ${i.score}` : ""}${i.days_open != null ? `, ${i.days_open}d open` : ""}]`).join("\n")
       : "  None";
 
+    const closedText = closed_itps.length > 0
+      ? closed_itps.map(i => `${i.name}${i.score != null ? ` (score: ${i.score})` : ""}`).join(", ")
+      : "None loaded";
+
     const completionLine = completion_pct != null
       ? `Subcontract progress: ${completion_pct}% of total subcontract value certified and paid${contract_sum != null ? ` (head contract value: ${fmtValue(contract_sum)})` : ""}`
       : "Subcontract progress: Unknown";
@@ -98,6 +108,10 @@ Active subcontracts (last 90 days):
 ${tradesText}
 Open ITPs in Procore right now:
 ${itpsText}
+Closed ITPs (completed work stages):
+${closedText}
+
+Use closed ITPs to confirm which construction stages are definitively complete. A closed ITP means that work is done and signed off.
 
 ${ITP_SCHEDULE}
 
@@ -113,7 +127,11 @@ Respond with ONLY a valid JSON object in this exact format, no other text:
   "itp_gaps": ["ITP-034", "ITP-037"]
 }
 
-missing_itps: ITPs that SHOULD be open right now based on active trades but are NOT in the open ITP list. Max 6 items.
+When identifying missing_itps, cross-reference:
+1. Active subcontract trades (primary signal)
+2. Closed ITPs — if a trade's ITP is already closed, do NOT flag it as missing even if the subcontractor is still active (they may be doing defects or variations)
+3. Open ITPs already in Procore — do not flag these as missing
+missing_itps: ITPs that SHOULD be open right now based on active trades but are NOT already open or closed. Max 6 items.
 coming_up: ITPs likely needed in next 2-4 weeks based on construction sequence. Max 4 items.
 stage: max 15 words.
 itp_gaps: just the ITP numbers from missing_itps.`;
