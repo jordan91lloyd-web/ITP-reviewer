@@ -7,7 +7,7 @@ export interface ProjectSnapshot {
   project_name:       string;
   project_number:     string | null;
   completion_pct:     number | null;
-  active_trades:      { name: string; vendor_name?: string; last_claim_date: string; amount_this_period?: number }[];
+  active_trades:      { name: string; last_activity: string; percentage_paid: number; contract_value: number }[];
   summary:            string | null;
   itp_gaps:           string[];
   generated_at:       string | null;
@@ -29,14 +29,6 @@ interface Props {
   errorMsg:     string | null;
   onGenerate:   () => void;                      // tap to generate / re-generate
   onViewItps:   () => void;                      // navigate to Open tab
-}
-
-function fmt(n: number): string {
-  return n >= 1_000_000
-    ? `$${(n / 1_000_000).toFixed(1)}M`
-    : n >= 1_000
-    ? `$${(n / 1_000).toFixed(0)}k`
-    : `$${n.toFixed(0)}`;
 }
 
 function fmtDate(iso: string | null | undefined): string {
@@ -119,8 +111,8 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
         <div className="px-4 pb-2 flex flex-wrap gap-1.5">
           {snapshot.active_trades.slice(0, 8).map((t, i) => (
             <span key={i} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-              {t.name.replace(/^ITP-\d+\s*/i, "").trim() || t.vendor_name || t.name}
-              {t.amount_this_period ? ` · ${fmt(t.amount_this_period)}` : ""}
+              {t.name.replace(/^ITP-\d+\s*/i, "").trim() || t.name}
+              {` (${Math.round(t.percentage_paid)}%)`}
             </span>
           ))}
           {snapshot.active_trades.length > 8 && (

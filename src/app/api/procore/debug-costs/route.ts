@@ -88,14 +88,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const base = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}`;
+    const base   = `${PROCORE_BASE}/rest/v1.0`;
+    const common = `project_id=${projectId}&company_id=${companyId}`;
 
-    const [budgetLineItems, requisitions, commitmentContracts, primeContracts] =
+    const urls = {
+      prime_contracts:                    `${base}/prime_contracts?${common}`,
+      work_order_contracts:               `${base}/work_order_contracts?${common}&view=default`,
+      budget_line_items:                  `${base}/budget_line_items?${common}`,
+      payment_applications_owner_invoices: `${base}/payment_applications_owner_invoices?${common}`,
+    };
+
+    const [primeContracts, workOrderContracts, budgetLineItems, ownerInvoices] =
       await Promise.all([
-        probEndpoint(`${base}/budget_line_items?per_page=5`,       accessToken, companyId),
-        probEndpoint(`${base}/requisitions?per_page=5`,            accessToken, companyId),
-        probEndpoint(`${base}/commitment_contracts?per_page=5`,    accessToken, companyId),
-        probEndpoint(`${base}/prime_contracts?per_page=1`,         accessToken, companyId),
+        probEndpoint(urls.prime_contracts,                     accessToken, companyId),
+        probEndpoint(urls.work_order_contracts,                accessToken, companyId),
+        probEndpoint(urls.budget_line_items,                   accessToken, companyId),
+        probEndpoint(urls.payment_applications_owner_invoices, accessToken, companyId),
       ]);
 
     return NextResponse.json({
@@ -103,10 +111,10 @@ export async function GET(request: NextRequest) {
       company_id: companyId,
       procore_env: process.env.PROCORE_ENV ?? "sandbox",
       endpoints: {
-        budget_line_items:    { url: `${base}/budget_line_items`,    ...budgetLineItems },
-        requisitions:         { url: `${base}/requisitions`,         ...requisitions },
-        commitment_contracts: { url: `${base}/commitment_contracts`, ...commitmentContracts },
-        prime_contracts:      { url: `${base}/prime_contracts`,      ...primeContracts },
+        prime_contracts:                    { url: urls.prime_contracts,                     ...primeContracts },
+        work_order_contracts:               { url: urls.work_order_contracts,                ...workOrderContracts },
+        budget_line_items:                  { url: urls.budget_line_items,                   ...budgetLineItems },
+        payment_applications_owner_invoices: { url: urls.payment_applications_owner_invoices, ...ownerInvoices },
       },
     });
   } catch (err) {

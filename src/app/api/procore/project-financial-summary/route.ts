@@ -1,11 +1,11 @@
 // ─── GET /api/procore/project-financial-summary?project_id=X&company_id=Y ────
-// Fetches prime contract, work-order subcontracts, and recent payment
-// applications for a project, then computes financial completion metrics.
+// Fetches prime contract and work-order subcontracts for a project, then
+// computes financial completion metrics.
 //
 // Returns:
 //   {
 //     project_id, contract_sum, total_claimed, completion_pct,
-//     active_trades: [{ name, vendor_name, last_claim_date, amount_this_period }],
+//     active_trades: [{ name, last_activity, percentage_paid, contract_value }],
 //     fetched_at, errors
 //   }
 //
@@ -58,146 +58,93 @@ export async function GET(request: NextRequest) {
 
   const errors: string[] = [];
 
-  // ── A. Prime contract ──────────────────────────────────────────────────────
+  // ── A. Prime contract + B. Work-order subcontracts (parallel) ────────────
 
-  let contractSum: number | null = null;
+  const [primeRes, woRes] = await Promise.all([
+    procoreGet(
+      `/rest/v1.0/prime_contracts?project_id=${projectId}&company_id=${companyId}`,
+      accessToken, companyId,
+    ),
+    procoreGet(
+      `/rest/v1.0/work_order_contracts?project_id=${projectId}&company_id=${companyId}&view=default`,
+      accessToken, companyId,
+    ),
+  ]);
 
-  const primeRes = await procoreGet(
-    `/rest/v1.0/prime_contracts?project_id=${projectId}&company_id=${companyId}`,
-    accessToken, companyId,
-  );
+  // ── Extract prime contract fields ─────────────────────────────────────────
+
+  let contractSum:   number | null = null;
+  let totalClaimed:  number | null = null;
+  let completionPct: number | null = null;
 
   if (primeRes.ok && Array.isArray(primeRes.data) && primeRes.data.length > 0) {
     const pc = primeRes.data[0] as Record<string, unknown>;
-    contractSum =
-      (typeof pc.contract_sum_including_changes === "number" ? pc.contract_sum_including_changes : null) ??
-      (typeof pc.original_contract_sum           === "number" ? pc.original_contract_sum           : null) ??
-      (typeof pc.grand_total                     === "number" ? pc.grand_total                     : null);
+    contractSum  = typeof pc.revised_contract_amount === "number" ? pc.revised_contract_amount : null;
+    totalClaimed = pc.total_payments != null ? parseFloat(String(pc.total_payments)) : null;
+    completionPct = pc.percentage_paid != null ? parseFloat(String(pc.percentage_paid)) : null;
+    if (isNaN(totalClaimed  ?? NaN)) totalClaimed  = null;
+    if (isNaN(completionPct ?? NaN)) completionPct = null;
   } else if (!primeRes.ok) {
-    // Fallback: singular endpoint
-    const singRes = await procoreGet(
-      `/rest/v1.0/projects/${projectId}/prime_contract?company_id=${companyId}`,
-      accessToken, companyId,
-    );
-    if (singRes.ok && singRes.data) {
-      const pc = singRes.data as Record<string, unknown>;
-      contractSum =
-        (typeof pc.contract_sum_including_changes === "number" ? pc.contract_sum_including_changes : null) ??
-        (typeof pc.original_contract_sum           === "number" ? pc.original_contract_sum           : null) ??
-        (typeof pc.grand_total                     === "number" ? pc.grand_total                     : null);
-    } else {
-      errors.push(`Prime contract: ${singRes.error ?? primeRes.error}`);
-    }
+    errors.push(`Prime contract: ${primeRes.error}`);
   }
 
-  // ── B. Work-order subcontracts ─────────────────────────────────────────────
+  // ── Extract work order contracts ──────────────────────────────────────────
 
   interface Subcontract {
-    id: number;
-    title: string;
-    vendor_name: string;
-    executed_contract_amount: number | null;
-    status: string;
+    id:               number;
+    title:            string;
+    vendor_company:   string;
+    percentage_paid:  number;
+    contract_value:   number;
+    updated_at:       string;
+    has_requisitions: boolean;
   }
 
   let subcontracts: Subcontract[] = [];
 
-  const woRes = await procoreGet(
-    `/rest/v1.0/work_order_contracts?project_id=${projectId}&company_id=${companyId}&view=default&per_page=15`,
-    accessToken, companyId,
-  );
-
   if (woRes.ok && Array.isArray(woRes.data)) {
-    subcontracts = (woRes.data as Record<string, unknown>[]).slice(0, 15).map(c => ({
-      id:                       Number(c.id),
-      title:                    String(c.title ?? c.number ?? ""),
-      vendor_name:              String((c.vendor as Record<string, unknown>)?.name ?? c.vendor_name ?? ""),
-      executed_contract_amount: typeof c.executed_contract_amount === "number" ? c.executed_contract_amount : null,
-      status:                   String(c.status ?? ""),
-    }));
+    subcontracts = (woRes.data as Record<string, unknown>[]).map(c => {
+      const vendor = c.vendor as Record<string, unknown> | null | undefined;
+      const pctPaid = parseFloat(String(c.percentage_paid ?? "0"));
+      const reqAmt  = parseFloat(String(c.total_requisitions_amount ?? "0"));
+      return {
+        id:               Number(c.id),
+        title:            String(c.title ?? c.number ?? ""),
+        vendor_company:   String(vendor?.company ?? c.title ?? ""),
+        percentage_paid:  isNaN(pctPaid) ? 0 : pctPaid,
+        contract_value:   typeof c.revised_contract === "number" ? c.revised_contract : 0,
+        updated_at:       String(c.updated_at ?? ""),
+        has_requisitions: !isNaN(reqAmt) && reqAmt > 0,
+      };
+    });
   } else if (!woRes.ok) {
     errors.push(`Work order contracts: ${woRes.error}`);
   }
 
-  // ── C. Payment applications per subcontract (parallel) ────────────────────
+  // ── Determine active trades (no extra API calls) ──────────────────────────
+  // Active = updated within last 60 days AND percentage_paid > 5 AND < 99
 
-  interface PayApp {
-    subcontract_id: number;
-    subcontract_title: string;
-    vendor_name: string;
-    billing_period_end_date: string | null;
-    status: string;
-    work_completed_this_period: number;
-    work_completed_from_start: number;
-    created_at: string | null;
-  }
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const payAppResults = await Promise.all(
-    subcontracts.map(async sub => {
-      const paRes = await procoreGet(
-        `/rest/v1.0/work_order_contracts/${sub.id}/payment_applications?company_id=${companyId}&per_page=10`,
-        accessToken, companyId,
-      );
-      if (!paRes.ok || !Array.isArray(paRes.data)) return [];
-
-      return (paRes.data as Record<string, unknown>[])
-        .filter(pa => {
-          if (!pa.created_at) return true; // include if no date
-          return new Date(String(pa.created_at)) >= thirtyDaysAgo;
-        })
-        .map(pa => ({
-          subcontract_id:            sub.id,
-          subcontract_title:         sub.title,
-          vendor_name:               sub.vendor_name,
-          billing_period_end_date:   pa.billing_period_end_date ? String(pa.billing_period_end_date) : null,
-          status:                    String(pa.status ?? ""),
-          work_completed_this_period: typeof pa.work_completed_this_period === "number" ? pa.work_completed_this_period : 0,
-          work_completed_from_start:  typeof pa.work_completed_from_start  === "number" ? pa.work_completed_from_start  : 0,
-          created_at:                pa.created_at ? String(pa.created_at) : null,
-        } satisfies PayApp));
+  const activeTrades = subcontracts
+    .filter(sub => {
+      if (sub.percentage_paid <= 5 || sub.percentage_paid >= 99) return false;
+      if (!sub.updated_at) return sub.has_requisitions;
+      return new Date(sub.updated_at) >= sixtyDaysAgo;
     })
-  );
-
-  const allPayApps = payAppResults.flat();
-
-  // Latest pay app per subcontract
-  const latestBySubMap = new Map<number, PayApp>();
-  for (const pa of allPayApps) {
-    const existing = latestBySubMap.get(pa.subcontract_id);
-    if (!existing || (pa.created_at ?? "") > (existing.created_at ?? "")) {
-      latestBySubMap.set(pa.subcontract_id, pa);
-    }
-  }
-
-  // ── Compute financial summary ───────────────────────────────────────────────
-
-  const latestPayApps = Array.from(latestBySubMap.values());
-  const totalClaimed  = latestPayApps.reduce((s, pa) => s + pa.work_completed_from_start, 0);
-  const completionPct = contractSum && contractSum > 0
-    ? Math.round((totalClaimed / contractSum) * 100 * 10) / 10
-    : null;
-
-  // Active trades = subs with a payment app in the last 30 days
-  const activeTrades = latestPayApps
-    .filter(pa => {
-      if (!pa.created_at) return false;
-      return new Date(pa.created_at) >= thirtyDaysAgo;
-    })
-    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
-    .map(pa => ({
-      name:               pa.subcontract_title,
-      vendor_name:        pa.vendor_name,
-      last_claim_date:    pa.billing_period_end_date ?? pa.created_at ?? "",
-      amount_this_period: pa.work_completed_this_period,
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    .map(sub => ({
+      name:             sub.vendor_company || sub.title,
+      last_activity:    sub.updated_at,
+      percentage_paid:  sub.percentage_paid,
+      contract_value:   sub.contract_value,
     }));
 
   return NextResponse.json({
     project_id:     projectId,
     contract_sum:   contractSum,
-    total_claimed:  totalClaimed > 0 ? totalClaimed : null,
+    total_claimed:  totalClaimed,
     completion_pct: completionPct,
     active_trades:  activeTrades,
     fetched_at:     new Date().toISOString(),
