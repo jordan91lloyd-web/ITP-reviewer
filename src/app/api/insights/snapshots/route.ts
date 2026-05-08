@@ -1,6 +1,6 @@
 // ─── GET /api/insights/snapshots?company_id=X ─────────────────────────────────
-// Returns all project_financial_snapshots for today for a given company.
-// Used by the Insights tab on first load to show cached data without API calls.
+// Returns the most recent snapshot per project for a given company,
+// regardless of date. Used by the Insights tab on mount to show cached data.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -16,18 +16,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id is required." }, { status: 400 });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
+  // Fetch all snapshots ordered newest first, then deduplicate by project
+  // (DISTINCT ON is not available via the JS client, so we do it in JS).
   const { data, error } = await supabase
     .from("project_financial_snapshots")
     .select("*")
     .eq("company_id", companyId)
-    .eq("snapshot_date", today)
+    .order("snapshot_date", { ascending: false })
     .order("generated_at", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message, snapshots: [] }, { status: 500 });
   }
 
-  return NextResponse.json({ snapshots: data ?? [] });
+  // Keep only the most recent row per procore_project_id
+  const seen    = new Set<string>();
+  const latest  = (data ?? []).filter(row => {
+    const pid = String(row.procore_project_id);
+    if (seen.has(pid)) return false;
+    seen.add(pid);
+    return true;
+  });
+
+  return NextResponse.json({ snapshots: latest });
 }

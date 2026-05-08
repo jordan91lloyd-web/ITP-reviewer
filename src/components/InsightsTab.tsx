@@ -29,6 +29,17 @@ function fmtTime(iso: string | null | undefined): string {
   return new Date(iso).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
 }
 
+function fmtAge(iso: string | null | undefined): string {
+  if (!iso) return "unknown";
+  const diffMs   = Date.now() - new Date(iso).getTime();
+  const diffHrs  = diffMs / 3_600_000;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffHrs < 1)   return `today at ${fmtTime(iso)}`;
+  if (diffDays === 0) return `today at ${fmtTime(iso)}`;
+  if (diffDays === 1) return `yesterday at ${fmtTime(iso)}`;
+  return `${diffDays} days ago`;
+}
+
 // Build open ITP summaries from loaded inspections
 function toOpenItpSummaries(inspections: DashboardInspection[]): OpenItpSummary[] {
   return inspections
@@ -228,6 +239,25 @@ export default function InsightsTab({
     setRefreshProgress(null);
   }, [companyId, refreshing, visibleProjects, generateForProject]);
 
+  // ── Staleness ─────────────────────────────────────────────────────────────
+
+  const oldestSnap = snapshots.size > 0
+    ? Array.from(snapshots.values()).reduce((oldest, s) =>
+        (s.generated_at ?? "") < (oldest.generated_at ?? "") ? s : oldest
+      )
+    : null;
+  const newestSnap = snapshots.size > 0
+    ? Array.from(snapshots.values()).reduce((newest, s) =>
+        (s.generated_at ?? "") > (newest.generated_at ?? "") ? s : newest
+      )
+    : null;
+  const isStale = oldestSnap?.generated_at
+    ? Date.now() - new Date(oldestSnap.generated_at).getTime() > 24 * 3_600_000
+    : false;
+  const allToday = newestSnap?.generated_at
+    ? new Date(newestSnap.generated_at).toDateString() === new Date().toDateString()
+    : false;
+
   // ── Needs attention ───────────────────────────────────────────────────────
 
   const attentionProjects = visibleProjects.filter(p => {
@@ -261,9 +291,6 @@ export default function InsightsTab({
             <p className="text-xs text-gray-400 mt-0.5">AI-powered morning briefing — updated daily</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {lastRefreshed && !refreshing && (
-              <p className="text-[10px] text-gray-400">Last updated {fmtTime(lastRefreshed)}</p>
-            )}
             {refreshing && refreshProgress && (
               <p className="text-xs text-blue-600 font-medium">
                 Generating {refreshProgress.current} of {refreshProgress.total}…
@@ -299,19 +326,36 @@ export default function InsightsTab({
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty state — no projects */}
         {!isLoading && visibleProjects.length === 0 && (
           <div className="rounded-xl bg-white border border-gray-200 px-6 py-12 text-center">
             <p className="text-sm text-gray-400">No projects loaded. Select a company first.</p>
           </div>
         )}
 
-        {/* No snapshots yet */}
-        {!isLoading && visibleProjects.length > 0 && snapshots.size === 0 && !refreshing && (
-          <div className="rounded-xl bg-amber-50 border border-amber-200 px-6 py-8 text-center">
-            <p className="text-sm font-medium text-amber-800 mb-1">No summaries for today yet</p>
-            <p className="text-xs text-amber-600">Click "Refresh All" to generate AI insights for all projects.</p>
-          </div>
+        {/* Freshness banner */}
+        {!isLoading && !refreshing && visibleProjects.length > 0 && (
+          snapshots.size === 0 ? (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-6 py-4 text-center">
+              <p className="text-sm font-medium text-amber-800">No data yet</p>
+              <p className="text-xs text-amber-600 mt-0.5">Tap "Refresh All" to generate AI insights for all projects.</p>
+            </div>
+          ) : isStale ? (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 flex items-center gap-2">
+              <span className="text-amber-600 text-sm">⚠</span>
+              <p className="text-xs text-amber-800">
+                Showing data from <span className="font-semibold">{fmtAge(oldestSnap?.generated_at)}</span>
+                {" "}— tap Refresh All to update.
+              </p>
+            </div>
+          ) : allToday ? (
+            <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2.5 flex items-center gap-2">
+              <span className="text-green-600 text-sm">✓</span>
+              <p className="text-xs text-green-800">
+                Up to date · Refreshed today at <span className="font-semibold">{fmtTime(newestSnap?.generated_at)}</span>
+              </p>
+            </div>
+          ) : null
         )}
 
         {/* Needs attention */}
