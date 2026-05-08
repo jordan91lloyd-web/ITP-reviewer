@@ -4,10 +4,11 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles } from "lucide-react";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
+import InsightsTab from "@/components/InsightsTab";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
 
@@ -22,9 +23,9 @@ interface DashboardProject {
   name: string;
   display_name: string;
   project_number: string | null;
-  reviewed_count: number;
-  avg_score: number | null;
-  last_reviewed_at: string | null;
+  reviewed_count?: number;
+  avg_score?: number | null;
+  last_reviewed_at?: string | null;
   is_hidden?: boolean;
 }
 
@@ -534,8 +535,9 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "itp_reviews" | "site_compliance";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
+  const [insightsFetched, setInsightsFetched] = useState(false);
 
   // Company tab
   const [companyStats, setCompanyStats]           = useState<CompanyProjectStat[]>([]);
@@ -1162,10 +1164,11 @@ export default function DashboardPage() {
       {/* ── Top-level tab nav ── */}
       <div className="shrink-0 bg-white border-b border-gray-200 px-6 flex items-center gap-0.5 h-10">
         {([
-          ["company",         "Company"],
-          ["itp_reviews",     "ITP Reviews"],
-          ["site_compliance", "Site Compliance"],
-        ] as [DashboardView, string][]).map(([view, label]) => (
+          ["company",         "Company",         null],
+          ["insights",        "Insights",        "sparkles"],
+          ["itp_reviews",     "ITP Reviews",     null],
+          ["site_compliance", "Site Compliance", null],
+        ] as [DashboardView, string, string | null][]).map(([view, label, icon]) => (
           <button
             key={view}
             type="button"
@@ -1174,13 +1177,15 @@ export default function DashboardPage() {
               if (view === "company" && !companyStatsFetched && selectedCompany) {
                 fetchCompanyStats(selectedCompany, companyDateRange);
               }
+              if (view === "insights") setInsightsFetched(true);
             }}
-            className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
               dashboardView === view
                 ? "bg-gray-100 text-gray-900"
                 : "text-gray-400 hover:text-gray-700"
             }`}
           >
+            {icon === "sparkles" && <Sparkles className="h-3 w-3" />}
             {label}
           </button>
         ))}
@@ -1208,6 +1213,22 @@ export default function DashboardPage() {
           }}
           onViewProject={(project) => {
             setDashboardView("itp_reviews");
+            handleSelectProject(project);
+          }}
+        />
+      )}
+
+      {/* ── Insights tab ── */}
+      {dashboardView === "insights" && (
+        <InsightsTab
+          companyId={selectedCompany?.id ?? null}
+          projects={projects}
+          projectsLoading={projectsLoading}
+          inspections={inspections}
+          selectedProject={selectedProject}
+          onViewProject={(project) => {
+            setDashboardView("itp_reviews");
+            setStatusFilter("open");
             handleSelectProject(project);
           }}
         />
@@ -1315,11 +1336,11 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-gray-500">
-                    {selectedProject.reviewed_count > 0 && (
+                    {(selectedProject.reviewed_count ?? 0) > 0 && (
                       <>
                         <span>{selectedProject.reviewed_count} reviewed</span>
-                        {selectedProject.avg_score !== null && (
-                          <span className={`font-bold ${selectedProject.avg_score >= 85 ? "text-green-600" : selectedProject.avg_score >= 70 ? "text-amber-600" : selectedProject.avg_score >= 50 ? "text-orange-500" : "text-red-500"}`}>
+                        {(selectedProject.avg_score ?? null) !== null && (
+                          <span className={`font-bold ${(selectedProject.avg_score ?? 0) >= 85 ? "text-green-600" : (selectedProject.avg_score ?? 0) >= 70 ? "text-amber-600" : (selectedProject.avg_score ?? 0) >= 50 ? "text-orange-500" : "text-red-500"}`}>
                             Avg {selectedProject.avg_score}
                           </span>
                         )}
@@ -1731,7 +1752,7 @@ function ProjectRow({
   }, [menuOpen]);
 
   // Dot colour: derived from avg_score as a proxy for overall project health
-  const worstBand = p.avg_score !== null ? scoreBand(p.avg_score) : null;
+  const worstBand = (p.avg_score ?? null) !== null ? scoreBand(p.avg_score!) : null;
 
   const dotColor = ({
     compliant:        "bg-green-400",
