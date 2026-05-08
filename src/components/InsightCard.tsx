@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+export interface MissingItp {
+  itp:    string;
+  name:   string;
+  reason: string;
+}
 
 export interface ProjectSnapshot {
   procore_project_id: string;
   project_name:       string;
   project_number:     string | null;
   completion_pct:     number | null;
+  contract_sum:       number | null;
   active_trades:      { name: string; last_activity: string; percentage_paid: number; contract_value: number }[];
-  summary:            string | null;
+  stage:              string | null;
+  missing_itps:       MissingItp[];
+  coming_up:          MissingItp[];
   itp_gaps:           string[];
   generated_at:       string | null;
 }
@@ -23,12 +30,18 @@ export interface OpenItpSummary {
 export type CardState = "idle" | "fetching_financial" | "fetching_summary" | "done" | "error";
 
 interface Props {
-  snapshot:     ProjectSnapshot | null;          // null = no snapshot yet today
-  openItps:     OpenItpSummary[];                // from inspections state (may be empty)
-  cardState:    CardState;
-  errorMsg:     string | null;
-  onGenerate:   () => void;                      // tap to generate / re-generate
-  onViewItps:   () => void;                      // navigate to Open tab
+  snapshot:   ProjectSnapshot | null;
+  openItps:   OpenItpSummary[];
+  cardState:  CardState;
+  errorMsg:   string | null;
+  onGenerate: () => void;
+  onViewItps: () => void;
+}
+
+function fmtValue(n: number): string {
+  return n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(1)}M`
+    : `$${Math.round(n / 1_000)}k`;
 }
 
 function fmtDate(iso: string | null | undefined): string {
@@ -51,22 +64,17 @@ function statusDot(snap: ProjectSnapshot | null): string {
 }
 
 export default function InsightCard({ snapshot, openItps, cardState, errorMsg, onGenerate, onViewItps }: Props) {
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
-
   const loading = cardState === "fetching_financial" || cardState === "fetching_summary";
-  const hasSnap = snapshot !== null && snapshot.summary !== null;
+  const hasSnap = snapshot !== null && snapshot.stage !== null;
 
   const unreviewedCount = openItps.filter(i => i.score === null).length;
   const readyToClose    = openItps.filter(i => (i.score ?? 0) >= 75).length;
 
-  // Last reviewed = most recent non-null last_reviewed_at across open ITPs
-  // We don't have last_reviewed_at here — use generated_at as proxy
-  const lastUpdated = snapshot?.generated_at
-    ? `Updated ${fmtDate(snapshot.generated_at)}`
-    : null;
+  const lastUpdated = snapshot?.generated_at ? `Updated ${fmtDate(snapshot.generated_at)}` : null;
 
   return (
     <div className={`relative bg-white rounded-xl border border-gray-200 border-l-4 shadow-sm overflow-hidden transition-all ${borderColor(snapshot)}`}>
+
       {/* Header */}
       <div className="flex items-start justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -81,11 +89,16 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
           </div>
         </div>
 
-        {/* Completion % */}
-        {snapshot?.completion_pct != null && (
+        {/* Completion + head contract value */}
+        {(snapshot?.completion_pct != null || snapshot?.contract_sum != null) && (
           <div className="shrink-0 text-right">
-            <p className="text-xs font-bold text-gray-700">{snapshot.completion_pct}%</p>
-            <p className="text-[10px] text-gray-400">claimed</p>
+            <p className="text-xs font-bold text-gray-700">
+              {snapshot.completion_pct != null ? `${snapshot.completion_pct}%` : "—"}
+              {snapshot.contract_sum != null && (
+                <span className="font-normal text-gray-400 ml-1">· {fmtValue(snapshot.contract_sum)}</span>
+              )}
+            </p>
+            <p className="text-[10px] text-gray-400">subcontract progress</p>
           </div>
         )}
       </div>
@@ -106,7 +119,7 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
         </div>
       )}
 
-      {/* Active trades */}
+      {/* Active trades chips */}
       {snapshot && snapshot.active_trades.length > 0 && (
         <div className="px-4 pb-2 flex flex-wrap gap-1.5">
           {snapshot.active_trades.slice(0, 8).map((t, i) => (
@@ -118,15 +131,6 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
           {snapshot.active_trades.length > 8 && (
             <span className="text-[10px] text-gray-400">+{snapshot.active_trades.length - 8} more</span>
           )}
-        </div>
-      )}
-
-      {/* ITP gap warnings */}
-      {snapshot && snapshot.itp_gaps.length > 0 && (
-        <div className="px-4 pb-2">
-          <p className="text-xs text-amber-700 font-medium">
-            ⚠ Missing ITPs: {snapshot.itp_gaps.join(", ")}
-          </p>
         </div>
       )}
 
@@ -162,7 +166,7 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
         </div>
       )}
 
-      {/* No snapshot yet — tap to generate */}
+      {/* No snapshot yet */}
       {!hasSnap && cardState === "idle" && (
         <div className="px-4 pb-3">
           <button
@@ -175,26 +179,52 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
         </div>
       )}
 
-      {/* AI Summary (collapsible) */}
-      {hasSnap && snapshot.summary && (
-        <div className="px-4 pb-3">
-          <button
-            type="button"
-            onClick={() => setSummaryExpanded(v => !v)}
-            className="text-[10px] font-medium text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
-          >
-            <span className={`inline-block transition-transform duration-150 ${summaryExpanded ? "rotate-180" : ""}`}>▾</span>
-            {summaryExpanded ? "Hide summary" : "Show summary"}
-          </button>
-          {summaryExpanded && (
-            <div className="mt-2 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2.5">
-              <p className="text-[11px] text-gray-600 leading-relaxed italic">{snapshot.summary}</p>
+      {/* AI structured sections */}
+      {hasSnap && (
+        <div className="pb-1">
+
+          {/* ⚠ Missing ITPs */}
+          {snapshot.missing_itps.length > 0 && (
+            <div className="mx-4 mb-2 rounded-lg bg-amber-50 border border-amber-200 border-l-[3px] border-l-red-500 overflow-hidden">
+              <div className="px-3 py-1.5 border-b border-amber-100">
+                <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wide">⚠ Missing ITPs — should be open now</p>
+              </div>
+              <ul className="px-3 py-1.5 space-y-0.5">
+                {snapshot.missing_itps.map((m, i) => (
+                  <li key={i} className="text-[11px] text-amber-800 leading-snug">
+                    <span className="font-semibold">{m.itp} {m.name}</span>
+                    {m.reason && <span className="text-amber-600"> — {m.reason}</span>}
+                  </li>
+                ))}
+              </ul>
             </div>
+          )}
+
+          {/* 📋 Coming up */}
+          {snapshot.coming_up.length > 0 && (
+            <div className="mx-4 mb-2 rounded-lg bg-blue-50 border border-blue-100 overflow-hidden">
+              <div className="px-3 py-1.5 border-b border-blue-100">
+                <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wide">📋 Coming up — next 2–4 weeks</p>
+              </div>
+              <ul className="px-3 py-1.5 space-y-0.5">
+                {snapshot.coming_up.map((m, i) => (
+                  <li key={i} className="text-[11px] text-blue-800 leading-snug">
+                    <span className="font-semibold">{m.itp} {m.name}</span>
+                    {m.reason && <span className="text-blue-500"> — {m.reason}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 💬 Stage */}
+          {snapshot.stage && (
+            <p className="px-4 pb-2 text-[11px] text-gray-500 italic">{snapshot.stage}</p>
           )}
         </div>
       )}
 
-      {/* Footer actions */}
+      {/* Footer */}
       <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 bg-gray-50">
         <button
           type="button"

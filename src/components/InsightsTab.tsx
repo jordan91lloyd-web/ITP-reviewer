@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import InsightCard, { type ProjectSnapshot, type OpenItpSummary, type CardState } from "./InsightCard";
+import InsightCard, { type ProjectSnapshot, type MissingItp, type OpenItpSummary, type CardState } from "./InsightCard";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
 
 interface DashboardProject {
@@ -73,16 +73,38 @@ export default function InsightsTab({
     try {
       const res  = await fetch(`/api/insights/snapshots?company_id=${companyId}`);
       const data = await res.json();
-      const snaps: ProjectSnapshot[] = (data.snapshots ?? []).map((s: Record<string, unknown>) => ({
-        procore_project_id: String(s.procore_project_id),
-        project_name:       String(s.project_name ?? ""),
-        project_number:     s.project_number ? String(s.project_number) : null,
-        completion_pct:     typeof s.completion_pct === "number" ? s.completion_pct : null,
-        active_trades:      Array.isArray(s.active_trades) ? s.active_trades : [],
-        summary:            s.summary ? String(s.summary) : null,
-        itp_gaps:           Array.isArray(s.itp_gaps) ? s.itp_gaps as string[] : [],
-        generated_at:       s.generated_at ? String(s.generated_at) : null,
-      }));
+      const snaps: ProjectSnapshot[] = (data.snapshots ?? []).map((s: Record<string, unknown>) => {
+        // summary stores JSON — parse to restore structured fields.
+        // If parse fails (old text format), treat as no cache.
+        let stage:        string | null  = null;
+        let missingItps:  MissingItp[]   = [];
+        let comingUp:     MissingItp[]   = [];
+        let contractSum:  number | null  = null;
+        if (s.summary) {
+          try {
+            const parsed = JSON.parse(String(s.summary)) as Record<string, unknown>;
+            stage       = typeof parsed.stage === "string" ? parsed.stage : null;
+            missingItps = Array.isArray(parsed.missing_itps) ? parsed.missing_itps as MissingItp[] : [];
+            comingUp    = Array.isArray(parsed.coming_up)    ? parsed.coming_up    as MissingItp[] : [];
+            contractSum = typeof parsed.contract_sum === "number" ? parsed.contract_sum : null;
+          } catch {
+            // old text format — leave all null/empty, card will show "Generate"
+          }
+        }
+        return {
+          procore_project_id: String(s.procore_project_id),
+          project_name:       String(s.project_name ?? ""),
+          project_number:     s.project_number ? String(s.project_number) : null,
+          completion_pct:     typeof s.completion_pct === "number" ? s.completion_pct : null,
+          contract_sum:       contractSum,
+          active_trades:      Array.isArray(s.active_trades) ? s.active_trades : [],
+          stage,
+          missing_itps:       missingItps,
+          coming_up:          comingUp,
+          itp_gaps:           Array.isArray(s.itp_gaps) ? s.itp_gaps as string[] : [],
+          generated_at:       s.generated_at ? String(s.generated_at) : null,
+        };
+      });
       setSnapshots(new Map(snaps.map(s => [s.procore_project_id, s])));
       if (snaps.length > 0) {
         const latest = snaps.reduce((a, b) =>
@@ -162,8 +184,11 @@ export default function InsightsTab({
         project_name:       project.display_name || project.name,
         project_number:     project.project_number,
         completion_pct:     finData.completion_pct ?? null,
+        contract_sum:       finData.contract_sum ?? null,
         active_trades:      finData.active_trades ?? [],
-        summary:            sumData.summary ?? null,
+        stage:              sumData.stage ?? null,
+        missing_itps:       sumData.missing_itps ?? [],
+        coming_up:          sumData.coming_up ?? [],
         itp_gaps:           sumData.itp_gaps ?? [],
         generated_at:       sumData.generated_at ?? new Date().toISOString(),
       };
@@ -345,8 +370,11 @@ export default function InsightsTab({
                     project_name:       project.display_name || project.name,
                     project_number:     project.project_number,
                     completion_pct:     null,
+                    contract_sum:       null,
                     active_trades:      [],
-                    summary:            null,
+                    stage:              null,
+                    missing_itps:       [],
+                    coming_up:          [],
                     itp_gaps:           [],
                     generated_at:       null,
                   };
