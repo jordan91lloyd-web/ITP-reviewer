@@ -38,10 +38,10 @@ Mechanical: ITP-047 Duct Work, ITP-048 Plant, ITP-049 PAC Units
 Lifts: ITP-050 Lift`;
 
 interface ActiveTrade {
-  name: string;
-  vendor_name?: string;
-  last_claim_date: string;
-  amount_this_period?: number;
+  name:            string;
+  last_activity:   string;
+  percentage_paid: number;
+  contract_value:  number;
 }
 
 interface OpenItp {
@@ -57,28 +57,36 @@ export async function POST(request: NextRequest) {
       project_id:     string;
       project_name:   string;
       completion_pct: number | null;
+      contract_sum:   number | null;
       active_trades:  ActiveTrade[];
       open_itps:      OpenItp[];
       company_id:     string;
     };
 
-    const { project_id, project_name, completion_pct, active_trades, open_itps, company_id } = body;
+    const { project_id, project_name, completion_pct, contract_sum: contractSum, active_trades, open_itps, company_id } = body;
 
     if (!project_id || !project_name || !company_id) {
       return NextResponse.json({ error: "project_id, project_name, company_id are required." }, { status: 400 });
     }
 
+    const fmtValue = (n: number) =>
+      n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${Math.round(n / 1_000)}k`;
+
     const tradesText = active_trades.length > 0
-      ? active_trades.map(t => `  - ${t.name}${t.vendor_name ? ` (${t.vendor_name})` : ""} — last claim ${t.last_claim_date}`).join("\n")
-      : "  None recorded in last 30 days";
+      ? active_trades.map(t => `  - ${t.name} — ${Math.round(t.percentage_paid)}% paid${t.contract_value > 0 ? ` (contract ${fmtValue(t.contract_value)})` : ""}`).join("\n")
+      : "  None recorded in last 90 days";
 
     const itpsText = open_itps.length > 0
       ? open_itps.map(i => `  - ${i.name} [${i.status}${i.score != null ? `, score ${i.score}` : ""}${i.days_open != null ? `, ${i.days_open}d open` : ""}]`).join("\n")
       : "  None";
 
+    const completionLine = completion_pct != null
+      ? `Subcontract progress: ${completion_pct}% of total subcontract value certified and paid${contractSum != null ? ` (head contract value: ${fmtValue(contractSum)})` : ""}`
+      : "Subcontract progress: Unknown";
+
     const userPrompt = `Project: ${project_name}
-Contract completion: ${completion_pct != null ? `${completion_pct}%` : "Unknown"} of contract sum claimed
-Active subcontracts last 30 days:
+${completionLine}
+Active subcontracts (last 90 days):
 ${tradesText}
 Open ITPs in Procore right now:
 ${itpsText}

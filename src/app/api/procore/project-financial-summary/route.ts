@@ -71,19 +71,17 @@ export async function GET(request: NextRequest) {
     ),
   ]);
 
-  // ── Extract prime contract fields ─────────────────────────────────────────
+  // ── Extract prime contract fields (head contract value only) ─────────────
+  // Sum across all prime contracts — some projects have multiple.
 
-  let contractSum:   number | null = null;
-  let totalClaimed:  number | null = null;
-  let completionPct: number | null = null;
+  let contractSum: number | null = null;
 
   if (primeRes.ok && Array.isArray(primeRes.data) && primeRes.data.length > 0) {
-    const pc = primeRes.data[0] as Record<string, unknown>;
-    contractSum  = typeof pc.revised_contract_amount === "number" ? pc.revised_contract_amount : null;
-    totalClaimed = pc.total_payments != null ? parseFloat(String(pc.total_payments)) : null;
-    completionPct = pc.percentage_paid != null ? parseFloat(String(pc.percentage_paid)) : null;
-    if (isNaN(totalClaimed  ?? NaN)) totalClaimed  = null;
-    if (isNaN(completionPct ?? NaN)) completionPct = null;
+    const total = (primeRes.data as Record<string, unknown>[]).reduce((sum, pc) => {
+      const v = parseFloat(String(pc.revised_contract_amount ?? "0"));
+      return sum + (isNaN(v) ? 0 : v);
+    }, 0);
+    contractSum = total > 0 ? total : null;
   } else if (!primeRes.ok) {
     errors.push(`Prime contract: ${primeRes.error}`);
   }
@@ -95,6 +93,7 @@ export async function GET(request: NextRequest) {
     title:            string;
     vendor_company:   string;
     percentage_paid:  number;
+    total_payments:   number;
     contract_value:   number;
     updated_at:       string;
     has_requisitions: boolean;
@@ -104,15 +103,17 @@ export async function GET(request: NextRequest) {
 
   if (woRes.ok && Array.isArray(woRes.data)) {
     subcontracts = (woRes.data as Record<string, unknown>[]).map(c => {
-      const vendor = c.vendor as Record<string, unknown> | null | undefined;
-      const pctPaid = parseFloat(String(c.percentage_paid ?? "0"));
-      const reqAmt  = parseFloat(String(c.total_requisitions_amount ?? "0"));
+      const vendor    = c.vendor as Record<string, unknown> | null | undefined;
+      const pctPaid   = parseFloat(String(c.percentage_paid ?? "0"));
+      const totalPaid = parseFloat(String(c.total_payments ?? "0"));
+      const reqAmt    = parseFloat(String(c.total_requisitions_amount ?? "0"));
       return {
         id:               Number(c.id),
         title:            String(c.title ?? c.number ?? ""),
         vendor_company:   String(vendor?.company ?? c.title ?? ""),
-        percentage_paid:  isNaN(pctPaid) ? 0 : pctPaid,
-        contract_value:   typeof c.revised_contract === "number" ? c.revised_contract : 0,
+        percentage_paid:  isNaN(pctPaid)   ? 0 : pctPaid,
+        total_payments:   isNaN(totalPaid) ? 0 : totalPaid,
+        contract_value:   (() => { const v = parseFloat(String(c.revised_contract ?? "0")); return isNaN(v) ? 0 : v; })(),
         updated_at:       String(c.updated_at ?? ""),
         has_requisitions: !isNaN(reqAmt) && reqAmt > 0,
       };
@@ -121,17 +122,33 @@ export async function GET(request: NextRequest) {
     errors.push(`Work order contracts: ${woRes.error}`);
   }
 
-  // ── Determine active trades (no extra API calls) ──────────────────────────
-  // Active = updated within last 60 days AND percentage_paid > 5 AND < 99
+  // ── Compute completion from work order contracts ──────────────────────────
+  // More reliable than prime contract percentage_paid (which reflects owner
+  // payments received, not construction progress).
 
-  const sixtyDaysAgo = new Date();
-  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  let totalClaimed:  number | null = null;
+  let completionPct: number | null = null;
+
+  if (subcontracts.length > 0) {
+    const sumPayments  = subcontracts.reduce((s, sub) => s + sub.total_payments, 0);
+    const sumContracts = subcontracts.reduce((s, sub) => s + sub.contract_value, 0);
+    totalClaimed  = sumPayments > 0 ? sumPayments : null;
+    completionPct = sumContracts > 0 && sumPayments > 0
+      ? Math.round((sumPayments / sumContracts) * 1000) / 10  // 1 decimal place
+      : null;
+  }
+
+  // ── Determine active trades ───────────────────────────────────────────────
+  // Active = updated within last 90 days AND percentage_paid > 5
+
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
   const activeTrades = subcontracts
     .filter(sub => {
-      if (sub.percentage_paid <= 5 || sub.percentage_paid >= 99) return false;
+      if (sub.percentage_paid <= 5) return false;
       if (!sub.updated_at) return sub.has_requisitions;
-      return new Date(sub.updated_at) >= sixtyDaysAgo;
+      return new Date(sub.updated_at) >= ninetyDaysAgo;
     })
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
     .map(sub => ({

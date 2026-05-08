@@ -147,6 +147,7 @@ export default function InsightsTab({
           project_id:     String(project.id),
           project_name:   project.display_name || project.name,
           completion_pct: finData.completion_pct ?? null,
+          contract_sum:   finData.contract_sum ?? null,
           active_trades:  finData.active_trades ?? [],
           open_itps:      openItps,
           company_id:     String(companyId),
