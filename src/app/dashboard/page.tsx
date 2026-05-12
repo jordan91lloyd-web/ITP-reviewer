@@ -289,7 +289,7 @@ function buildReportHtml(insp: DashboardInspection, autoPrint = false, companyId
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:4px">Fleek Constructions — ITP QA Report</div>
       <h2>${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — Inspection #${insp.inspection_number_of_type}` : ""}</h2>
       <div style="font-size:10px;color:#6b7280;margin-top:2px">Generated ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
-      ${companyId > 0 && projectId > 0 ? `<div style="font-size:10px;color:#2563eb;margin-top:2px">View in Procore: https://app.procore.com/${companyId}/project/${projectId}/inspections/${insp.id}</div>` : ""}
+      ${companyId > 0 && projectId > 0 ? `<div style="font-size:10px;color:#2563eb;margin-top:2px">View in Procore: https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}</div>` : ""}
     </div>
     <div style="text-align:right">
       <div style="font-size:36px;font-weight:700;color:${bandColor};line-height:1">${displayScore ?? "—"}</div>
@@ -765,7 +765,10 @@ export default function DashboardPage() {
       if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
       await loadInspections(selectedProject, selectedCompany);
 
-      // Fire-and-forget — never awaited, never blocks UI
+      // Fire-and-forget — never awaited, never blocks UI.
+      // On success, patch action_items into React state immediately so the panel
+      // shows them without requiring a page reload.
+      const inspIdForActionItems = selectedInsp.id;
       fetch("/api/procore/generate-action-items", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -780,7 +783,27 @@ export default function DashboardPage() {
           score_band:       data.result?.score_band ?? "",
           itp_name:         selectedInsp.name,
         }),
-      }).catch(() => {});
+      })
+        .then(r => r.json())
+        .then(aiData => {
+          console.log("[action-items] response:", aiData);
+          if (aiData.action_items?.length > 0) {
+            setInspections(prev => prev.map(i => {
+              if (i.id !== inspIdForActionItems) return i;
+              return {
+                ...i,
+                review_data: i.review_data
+                  ? { ...i.review_data, action_items: aiData.action_items }
+                  : i.review_data,
+              };
+            }));
+            setSelectedInsp(prev => prev && prev.id === inspIdForActionItems && prev.review_data
+              ? { ...prev, review_data: { ...prev.review_data, action_items: aiData.action_items } }
+              : prev
+            );
+          }
+        })
+        .catch(e => console.log("[action-items] fetch error:", e));
 
       setInspections(prev => {
         const updated = prev.find(i => i.id === selectedInsp.id);
@@ -995,7 +1018,9 @@ export default function DashboardPage() {
         setBulkStatus(prev => new Map(prev).set(insp.id, "done"));
         completed++;
 
-        // Fire-and-forget — never awaited, never blocks bulk review UI
+        // Fire-and-forget — never awaited, never blocks bulk review UI.
+        // On success, patch action_items into React state immediately.
+        const bulkInspId = insp.id;
         fetch("/api/procore/generate-action-items", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
@@ -1010,7 +1035,23 @@ export default function DashboardPage() {
             score_band:       data.result?.score_band ?? "",
             itp_name:         insp.name,
           }),
-        }).catch(() => {});
+        })
+          .then(r => r.json())
+          .then(aiData => {
+            console.log("[action-items] response:", aiData);
+            if (aiData.action_items?.length > 0) {
+              setInspections(prev => prev.map(i => {
+                if (i.id !== bulkInspId) return i;
+                return {
+                  ...i,
+                  review_data: i.review_data
+                    ? { ...i.review_data, action_items: aiData.action_items }
+                    : i.review_data,
+                };
+              }));
+            }
+          })
+          .catch(e => console.log("[action-items] fetch error:", e));
 
         // Immediately update this row's score without waiting for the full batch
         try {
@@ -2507,7 +2548,7 @@ function InspectionRow({
           </span>
           {!bulkRunning && companyId > 0 && projectId > 0 && (
             <a
-              href={`https://app.procore.com/${companyId}/project/${projectId}/inspections/${insp.id}`}
+              href={`https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={e => e.stopPropagation()}
@@ -2676,7 +2717,7 @@ function InspectionPanel({
   const [descExpanded, setDescExpanded] = useState(false);
 
   const procoreUrl = companyId > 0 && projectId > 0
-    ? `https://app.procore.com/${companyId}/project/${projectId}/inspections/${insp.id}`
+    ? `https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}`
     : null;
 
   const isLongDesc = (insp.description?.length ?? 0) > 100;
@@ -2858,6 +2899,7 @@ function InspectionPanel({
         )}
 
         {/* Action items */}
+        {(() => { console.log("[action-items] rd.action_items:", rd?.action_items); return null; })()}
         {rd?.action_items && rd.action_items.length > 0 && (
           <ActionItemsSection items={rd.action_items} />
         )}
