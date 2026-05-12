@@ -17,6 +17,7 @@ import type {
   CategoryScore,
   ScoreBand,
   CommercialConfidence,
+  ActionItem,
 } from "./types";
 
 const MODEL = "claude-sonnet-4-6";
@@ -37,7 +38,7 @@ const MAX_TOKENS = 16000;
 export async function runBundleReview(
   filesRaw: ProcessedFile[],
   company_id: string = "default"
-): Promise<ReviewResult & { scoring_source: string; scoring_version_id: string | null; scoring_version_label: string }> {
+): Promise<ReviewResult & { scoring_source: string; scoring_version_id: string | null; scoring_version_label: string; action_items: ActionItem[] }> {
   console.log(`[claude] ── runBundleReview called ── files=${filesRaw.length} company_id="${company_id}"`);
 
   // ── Pre-flight: strip any images that exceed Claude's 5 MB per-image limit.
@@ -116,6 +117,27 @@ export async function runBundleReview(
 
   // Closing instructions (passes file count so prompt can require one observation per file)
   contentBlocks.push({ type: "text", text: buildInstructions(files.length) });
+
+  // Action items instruction — Claude outputs this AFTER the closing "}" of the JSON,
+  // as a separate line. We parse it out of rawResponse independently so the main
+  // JSON parser is unaffected. This keeps action_items out of the validated schema
+  // while still being returned alongside the ReviewResult.
+  contentBlocks.push({
+    type: "text",
+    text: `
+
+After the closing "}" of the JSON above, add this on a new line — outside the JSON:
+
+ACTION_ITEMS: [{"priority":"...","action":"...","category":"..."}]
+
+Rules:
+- priority: "high" | "medium" | "low"
+- category: "evidence" (attach/upload a missing doc), "signoff" (obtain required sign-off or hold point), "deficiency" (rectify a deficient item), "close" (ITP is complete, recommend close)
+- Generate 2–5 items maximum, based only on actual gaps found in the review
+- Reference specific inspection item numbers in the action text where possible
+- If the ITP is fully complete and well-documented, output exactly one item with category "close"
+- Output the ACTION_ITEMS line AFTER the JSON "}" — do not place it inside the JSON object`,
+  });
   console.log(`[claude] Content blocks built: ${contentBlocks.length} blocks for ${files.length} file(s)`);
 
   console.log(`[claude] Bundle: ${files.length} file(s) | model=${MODEL} | max_tokens=${MAX_TOKENS}`);
@@ -185,12 +207,44 @@ export async function runBundleReview(
   }
 
   const validated = validateResult(normalizeEnums(parsed));
+  const actionItems = extractActionItems(rawResponse!);
+  if (actionItems.length > 0) {
+    console.log(`[claude] Extracted ${actionItems.length} action item(s) from response`);
+  }
   return {
     ...validated,
+    action_items:          actionItems,
     scoring_source:        scoringSource,
     scoring_version_id:    scoringVersionId,
     scoring_version_label: scoringVersionLabel,
   };
+}
+
+/**
+ * Extracts the ACTION_ITEMS array appended by Claude after the main JSON block.
+ * Returns an empty array on any parse failure — never throws.
+ */
+function extractActionItems(raw: string): ActionItem[] {
+  const match = raw.match(/ACTION_ITEMS:\s*(\[[\s\S]*?\])/);
+  if (!match) return [];
+  try {
+    const arr: unknown = JSON.parse(match[1]);
+    if (!Array.isArray(arr)) return [];
+    const validPriority = ["high", "medium", "low"] as const;
+    const validCategory = ["evidence", "signoff", "close", "deficiency"] as const;
+    return arr
+      .filter((item): item is ActionItem =>
+        item !== null &&
+        typeof item === "object" &&
+        validPriority.includes((item as Record<string, unknown>).priority as typeof validPriority[number]) &&
+        typeof (item as Record<string, unknown>).action === "string" &&
+        ((item as Record<string, unknown>).action as string).trim().length > 0 &&
+        validCategory.includes((item as Record<string, unknown>).category as typeof validCategory[number])
+      )
+      .slice(0, 5);
+  } catch {
+    return [];
+  }
 }
 
 /**
