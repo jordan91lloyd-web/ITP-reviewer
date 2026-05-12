@@ -4,7 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
@@ -405,6 +405,130 @@ ${(rd.action_items ?? []).length > 0 ? (() => {
 })() : ""}
 
 ${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</script>" : ""}
+</body>
+</html>`;
+}
+
+// ── Action Report PDF builder ──────────────────────────────────────────────────
+
+function buildActionReportHtml(
+  inspections: DashboardInspection[],
+  projectName: string,
+  companyId: number,
+  projectId: number,
+  userName: string | null,
+): string {
+  const reviewed = inspections.filter(i => i.review_data != null && (i.override_score ?? i.last_score) !== null);
+  const total    = inspections.length;
+
+  const sections = reviewed.map(insp => {
+    const rd           = insp.review_data!;
+    const displayScore = insp.override_score ?? insp.last_score;
+    const band         = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
+    const bandLabel    = band ? scoreBandLabel(band) : "—";
+
+    const bandColor = ({
+      compliant: "#16a34a", minor_gaps: "#d97706",
+      significant_gaps: "#ea580c", critical_risk: "#dc2626",
+    } as Record<string, string>)[band ?? ""] ?? "#6b7280";
+
+    const procoreUrl = `https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}`;
+
+    const summary = rd.executive_summary
+      ? stripMarkdown(rd.executive_summary).slice(0, 200) + (rd.executive_summary.length > 200 ? "…" : "")
+      : "";
+
+    const missingItems = (rd.missing_evidence ?? []).slice(0, 4).map(m =>
+      `<li style="margin:2px 0;font-size:11px;color:#374151">· ${esc(m.evidence_type)}</li>`
+    ).join("");
+
+    const actionItems = rd.action_items ?? [];
+    const actionRows = actionItems.map(item => {
+      const pColor = item.priority === "high" ? "#dc2626" : item.priority === "medium" ? "#d97706" : "#9ca3af";
+      const pLabel = item.priority.toUpperCase();
+      return `<tr>
+        <td style="padding:4px 8px;vertical-align:top;white-space:nowrap;width:80px">
+          <span style="font-size:10px;font-weight:700;color:${pColor}">${esc(pLabel)}</span>
+        </td>
+        <td style="padding:4px 8px;font-size:11px;color:#1f2937;vertical-align:top">☐ ${esc(item.action)}</td>
+      </tr>`;
+    }).join("");
+
+    const statusLabel = insp.status ?? "—";
+
+    return `
+<div style="page-break-before:always;padding-top:16px">
+  <div style="border-top:2px solid #e5e7eb;padding-top:12px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1f2937">${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — #${insp.inspection_number_of_type}` : ""}</div>
+        <div style="font-size:10px;color:#6b7280;margin-top:2px">
+          Score: <strong style="color:${bandColor}">${displayScore ?? "—"}/100</strong>
+          &nbsp;·&nbsp;<strong style="color:${bandColor}">${esc(bandLabel)}</strong>
+          &nbsp;·&nbsp;${esc(statusLabel)}
+        </div>
+        <div style="font-size:10px;color:#2563eb;margin-top:2px">
+          View in Procore: ${esc(procoreUrl)}
+        </div>
+        ${insp.override_score != null ? `<div style="font-size:10px;color:#7c3aed;margin-top:2px">Override applied (AI: ${insp.last_score})</div>` : ""}
+      </div>
+    </div>
+  </div>
+
+  ${summary ? `
+  <div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:4px">Key Findings</div>
+    <div style="font-size:11px;color:#374151;line-height:1.5;padding:8px 10px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:0 4px 4px 0">${esc(summary)}</div>
+  </div>` : ""}
+
+  ${missingItems ? `
+  <div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:4px">Missing Evidence</div>
+    <ul style="margin:0;padding:0;list-style:none">${missingItems}</ul>
+  </div>` : ""}
+
+  <div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:4px">Action Items</div>
+    ${actionItems.length > 0 ? `
+    <table style="width:100%;border-collapse:collapse">
+      <tbody>${actionRows}</tbody>
+    </table>` : `<div style="font-size:11px;color:#9ca3af;font-style:italic">Run a fresh review to generate action items.</div>`}
+  </div>
+</div>`;
+  }).join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${esc(projectName)} — QA Action Report</title>
+<style>
+  @page { margin: 18mm 20mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a1a1a; margin: 0; padding: 0; }
+  @media print { .no-print { display: none; } }
+</style>
+</head>
+<body>
+<!-- Cover header (no page break before first section) -->
+<div style="border-bottom:3px solid #1d4ed8;padding-bottom:16px;margin-bottom:0">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:6px">Fleek Constructions</div>
+  <div style="font-size:18px;font-weight:700;color:#1f2937;margin-bottom:6px">QA Action Report</div>
+  <div style="font-size:11px;color:#374151">Project: ${esc(projectName)}</div>
+  <div style="font-size:11px;color:#374151">Generated: ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
+  ${userName ? `<div style="font-size:11px;color:#374151">Prepared by: ${esc(userName)}</div>` : ""}
+  <div style="font-size:11px;color:#374151">${reviewed.length} of ${total} ITP${total !== 1 ? "s" : ""} included</div>
+</div>
+
+${reviewed.length === 0
+  ? '<p style="color:#9ca3af;font-style:italic;margin-top:20px">No reviewed ITPs in the current selection.</p>'
+  : sections}
+
+<div style="margin-top:40px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center">
+  Fleek Constructions Pty Ltd — Confidential
+</div>
+
+<script>window.addEventListener("load", () => { window.print(); })</script>
 </body>
 </html>`;
 }
@@ -1231,6 +1355,37 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   }
 
+  // ── Export Action Report ────────────────────────────────────────────────────
+
+  function handleExportActionReport() {
+    if (!selectedProject || !selectedCompany) return;
+
+    // Use checkbox selection if anything is selected; otherwise all reviewed in current tab
+    const reviewedSelected = filteredInspections.filter(
+      i => selectedIds.has(i.id) && i.review_data != null && (i.override_score ?? i.last_score) !== null
+    );
+    const source = reviewedSelected.length > 0
+      ? reviewedSelected
+      : filteredInspections.filter(i => i.review_data != null && (i.override_score ?? i.last_score) !== null);
+
+    if (source.length === 0) return;
+
+    const html = buildActionReportHtml(
+      source,
+      selectedProject.display_name || selectedProject.name,
+      selectedCompany.id,
+      selectedProject.id,
+      user?.name ?? null,
+    );
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert("Popup blocked — please allow popups and try again.");
+      return;
+    }
+    win.document.write(html);
+    win.document.close();
+  }
+
   // ── Not authenticated ───────────────────────────────────────────────────────
 
   if (authenticated === false) {
@@ -1561,6 +1716,16 @@ export default function DashboardPage() {
                       >
                         <Download className="h-3.5 w-3.5" />
                         Export CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleExportActionReport}
+                        disabled={filteredInspections.filter(i => i.review_data != null).length === 0}
+                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        title={selectedIds.size > 0 ? "Export action report for selected ITPs" : "Export action report for all reviewed ITPs in this view"}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Action Report
                       </button>
                       <button
                         type="button"
