@@ -4,7 +4,8 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown } from "lucide-react";
+import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
@@ -180,7 +181,7 @@ function esc(s: string | null | undefined): string {
     .replace(/"/g, "&quot;");
 }
 
-function buildReportHtml(insp: DashboardInspection, autoPrint = false): string {
+function buildReportHtml(insp: DashboardInspection, autoPrint = false, companyId = 0, projectId = 0): string {
   const rd           = insp.review_data!;
   const displayScore = insp.override_score ?? insp.last_score;
   const band         = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
@@ -288,6 +289,7 @@ function buildReportHtml(insp: DashboardInspection, autoPrint = false): string {
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:4px">Fleek Constructions — ITP QA Report</div>
       <h2>${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — Inspection #${insp.inspection_number_of_type}` : ""}</h2>
       <div style="font-size:10px;color:#6b7280;margin-top:2px">Generated ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
+      ${companyId > 0 && projectId > 0 ? `<div style="font-size:10px;color:#2563eb;margin-top:2px">View in Procore: https://app.procore.com/${companyId}/project/${projectId}/inspections/${insp.id}</div>` : ""}
     </div>
     <div style="text-align:right">
       <div style="font-size:36px;font-weight:700;color:${bandColor};line-height:1">${displayScore ?? "—"}</div>
@@ -372,6 +374,35 @@ ${docObs ? `
     <tbody>${docObs}</tbody>
   </table>
 </div>` : ""}
+
+<!-- Action items for site manager -->
+${(rd.action_items ?? []).length > 0 ? (() => {
+  const rows = (rd.action_items ?? []).map(item => {
+    const pBg  = item.priority === "high" ? "#fee2e2" : item.priority === "medium" ? "#fef9c3" : "#f3f4f6";
+    const pClr = item.priority === "high" ? "#b91c1c" : item.priority === "medium" ? "#92400e" : "#6b7280";
+    const icon = item.category === "evidence" ? "📎" : item.category === "signoff" ? "✍" : item.category === "close" ? "✓" : "⚠";
+    return `<tr>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;vertical-align:top">
+        <span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:${pBg};color:${pClr}">${item.priority.toUpperCase()}</span>
+      </td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:11px;color:#1a1a1a;vertical-align:top">${icon} ${esc(item.action)}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:11px;color:#6b7280;vertical-align:top;white-space:nowrap">${esc(item.category)}</td>
+    </tr>`;
+  }).join("");
+  return `<div style="margin-bottom:16px">
+  <h3>Action Items for Site Manager</h3>
+  <table style="font-size:12px">
+    <thead>
+      <tr style="background:#f3f4f6">
+        <th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;width:14%">Priority</th>
+        <th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em">Action</th>
+        <th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;width:14%">Category</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</div>`;
+})() : ""}
 
 ${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</script>" : ""}
 </body>
@@ -733,6 +764,24 @@ export default function DashboardPage() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
       await loadInspections(selectedProject, selectedCompany);
+
+      // Fire-and-forget — never awaited, never blocks UI
+      fetch("/api/procore/generate-action-items", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          inspection_id:    String(selectedInsp.id),
+          project_id:       String(selectedProject.id),
+          company_id:       String(selectedCompany.id),
+          review_summary:   data.result?.executive_summary ?? "",
+          key_issues:       (data.result?.key_issues ?? []).map((i: { title: string }) => i.title),
+          missing_evidence: (data.result?.missing_evidence ?? []).map((m: { evidence_type: string }) => m.evidence_type),
+          score:            data.result?.total_score ?? 0,
+          score_band:       data.result?.score_band ?? "",
+          itp_name:         selectedInsp.name,
+        }),
+      }).catch(() => {});
+
       setInspections(prev => {
         const updated = prev.find(i => i.id === selectedInsp.id);
         if (updated) {
@@ -946,6 +995,23 @@ export default function DashboardPage() {
         setBulkStatus(prev => new Map(prev).set(insp.id, "done"));
         completed++;
 
+        // Fire-and-forget — never awaited, never blocks bulk review UI
+        fetch("/api/procore/generate-action-items", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            inspection_id:    String(insp.id),
+            project_id:       String(selectedProject.id),
+            company_id:       String(selectedCompany.id),
+            review_summary:   data.result?.executive_summary ?? "",
+            key_issues:       (data.result?.key_issues ?? []).map((i: { title: string }) => i.title),
+            missing_evidence: (data.result?.missing_evidence ?? []).map((m: { evidence_type: string }) => m.evidence_type),
+            score:            data.result?.total_score ?? 0,
+            score_band:       data.result?.score_band ?? "",
+            itp_name:         insp.name,
+          }),
+        }).catch(() => {});
+
         // Immediately update this row's score without waiting for the full batch
         try {
           const updated = await fetch(
@@ -998,7 +1064,7 @@ export default function DashboardPage() {
       }).catch(() => {});
     }
     for (const insp of selectedReviewed) {
-      const html = buildReportHtml(insp, true);
+      const html = buildReportHtml(insp, true, selectedCompany?.id ?? 0, selectedProject?.id ?? 0);
       const win  = window.open("", "_blank");
       if (!win) {
         alert("Popup blocked. Please allow popups for this site and try again.");
@@ -1031,7 +1097,7 @@ export default function DashboardPage() {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       for (const insp of selectedReviewed) {
-        const html     = buildReportHtml(insp, false);
+        const html     = buildReportHtml(insp, false, selectedCompany?.id ?? 0, selectedProject?.id ?? 0);
         const filename = buildFilename(insp) + ".html";
         zip.file(filename, html);
       }
@@ -2496,6 +2562,78 @@ function BulkStatusBadge({ status }: { status: BulkItemStatus }) {
   );
 }
 
+// ── ActionItemsSection ─────────────────────────────────────────────────────────
+
+function ActionItemsSection({ items }: { items: ActionItem[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const [checked,  setChecked]  = useState<Set<number>>(new Set());
+
+  function toggle(i: number) {
+    setChecked(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  }
+
+  const categoryIcon = (c: ActionItem["category"]) => {
+    if (c === "evidence")   return <Paperclip    className="h-3 w-3 shrink-0 text-gray-400" />;
+    if (c === "signoff")    return <PenLine       className="h-3 w-3 shrink-0 text-gray-400" />;
+    if (c === "close")      return <CheckCircle   className="h-3 w-3 shrink-0 text-gray-400" />;
+    return                         <AlertTriangle className="h-3 w-3 shrink-0 text-gray-400" />;
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-2"
+      >
+        Action Items
+        <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-150 ${expanded ? "rotate-180" : ""}`} />
+      </button>
+      {expanded && (
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-2 cursor-pointer"
+              onClick={() => toggle(i)}
+            >
+              <input
+                type="checkbox"
+                checked={checked.has(i)}
+                onChange={() => toggle(i)}
+                onClick={e => e.stopPropagation()}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-gray-300 accent-amber-600 cursor-pointer"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    item.priority === "high"   ? "bg-red-100 text-red-600"   :
+                    item.priority === "medium" ? "bg-amber-100 text-amber-600" :
+                                                "bg-gray-100 text-gray-500"
+                  }`}>
+                    {item.priority.toUpperCase()}
+                  </span>
+                  {categoryIcon(item.category)}
+                </div>
+                <p className={`text-xs leading-snug ${
+                  checked.has(i) ? "line-through text-gray-400" : "text-gray-700"
+                }`}>
+                  {item.action}
+                </p>
+              </div>
+            </div>
+          ))}
+          <p className="mt-1 text-[10px] text-gray-300 italic">Scratch pad only — checkboxes reset on navigation.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── InspectionPanel ────────────────────────────────────────────────────────────
 
 function InspectionPanel({
@@ -2717,6 +2855,11 @@ function InspectionPanel({
               ))}
             </div>
           </div>
+        )}
+
+        {/* Action items */}
+        {rd?.action_items && rd.action_items.length > 0 && (
+          <ActionItemsSection items={rd.action_items} />
         )}
 
         {/* Action buttons */}
