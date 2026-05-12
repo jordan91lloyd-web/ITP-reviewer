@@ -765,47 +765,53 @@ export default function DashboardPage() {
       if (!res.ok || !data.success) throw new Error(data.error ?? "Review failed");
       await loadInspections(selectedProject, selectedCompany);
 
-      // Fire-and-forget — never awaited, never blocks UI.
-      // On success, patch action_items into React state immediately so the panel
-      // shows them without requiring a page reload.
+      // Awaited for debugging — convert back to fire-and-forget once working.
       const inspIdForActionItems = selectedInsp.id;
-      fetch("/api/procore/generate-action-items", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          inspection_id:    String(selectedInsp.id),
-          project_id:       String(selectedProject.id),
-          company_id:       String(selectedCompany.id),
-          review_summary:   data.result?.executive_summary ?? "",
-          key_issues:       (data.result?.key_issues ?? []).map((i: { title: string }) => i.title),
-          missing_evidence: (data.result?.missing_evidence ?? []).map((m: { evidence_type: string }) => m.evidence_type),
-          score:            data.result?.total_score ?? 0,
-          score_band:       data.result?.score_band ?? "",
-          itp_name:         selectedInsp.name,
-        }),
-      })
-        .then(r => r.json())
-        .then(aiData => {
-          console.log("[action-items] response:", aiData);
-          if (aiData.action_items?.length > 0) {
-            setInspections(prev => prev.map(i => {
-              if (i.id !== inspIdForActionItems) return i;
-              return {
-                ...i,
-                review_data: i.review_data
-                  ? { ...i.review_data, action_items: aiData.action_items }
-                  : i.review_data,
-              };
-            }));
-            setSelectedInsp(prev => prev && prev.id === inspIdForActionItems && prev.review_data
-              ? { ...prev, review_data: { ...prev.review_data, action_items: aiData.action_items } }
-              : prev
-            );
-          } else {
-            console.log("[action-items] empty or failed:", aiData);
-          }
-        })
-        .catch(e => console.log("[action-items] fetch error:", e));
+      console.log("[action-items] triggering with:", {
+        name:           selectedInsp.name,
+        score:          data.result?.total_score,
+        summary_length: data.result?.executive_summary?.length,
+        issues:         data.result?.key_issues?.length,
+        missing:        data.result?.missing_evidence?.length,
+      });
+      try {
+        const aiRes  = await fetch("/api/procore/generate-action-items", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            inspection_id:    String(selectedInsp.id),
+            project_id:       String(selectedProject.id),
+            company_id:       String(selectedCompany.id),
+            review_summary:   data.result?.executive_summary ?? "",
+            key_issues:       (data.result?.key_issues ?? []).map((i: { title: string }) => i.title),
+            missing_evidence: (data.result?.missing_evidence ?? []).map((m: { evidence_type: string }) => m.evidence_type),
+            score:            data.result?.total_score ?? 0,
+            score_band:       data.result?.score_band ?? "",
+            itp_name:         selectedInsp.name,
+          }),
+        });
+        const aiData = await aiRes.json();
+        console.log("[action-items] full response:", aiData);
+        if (aiData.action_items?.length > 0) {
+          setInspections(prev => prev.map(i => {
+            if (i.id !== inspIdForActionItems) return i;
+            return {
+              ...i,
+              review_data: i.review_data
+                ? { ...i.review_data, action_items: aiData.action_items }
+                : i.review_data,
+            };
+          }));
+          setSelectedInsp(prev => prev && prev.id === inspIdForActionItems && prev.review_data
+            ? { ...prev, review_data: { ...prev.review_data, action_items: aiData.action_items } }
+            : prev
+          );
+        } else {
+          console.log("[action-items] empty or failed:", aiData);
+        }
+      } catch (e) {
+        console.log("[action-items] error:", e);
+      }
 
       setInspections(prev => {
         const updated = prev.find(i => i.id === selectedInsp.id);
@@ -1020,42 +1026,49 @@ export default function DashboardPage() {
         setBulkStatus(prev => new Map(prev).set(insp.id, "done"));
         completed++;
 
-        // Fire-and-forget — never awaited, never blocks bulk review UI.
-        // On success, patch action_items into React state immediately.
+        // Awaited for debugging — convert back to fire-and-forget once working.
         const bulkInspId = insp.id;
-        fetch("/api/procore/generate-action-items", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            inspection_id:    String(insp.id),
-            project_id:       String(selectedProject.id),
-            company_id:       String(selectedCompany.id),
-            review_summary:   data.result?.executive_summary ?? "",
-            key_issues:       (data.result?.key_issues ?? []).map((i: { title: string }) => i.title),
-            missing_evidence: (data.result?.missing_evidence ?? []).map((m: { evidence_type: string }) => m.evidence_type),
-            score:            data.result?.total_score ?? 0,
-            score_band:       data.result?.score_band ?? "",
-            itp_name:         insp.name,
-          }),
-        })
-          .then(r => r.json())
-          .then(aiData => {
-            console.log("[action-items] response:", aiData);
-            if (aiData.action_items?.length > 0) {
-              setInspections(prev => prev.map(i => {
-                if (i.id !== bulkInspId) return i;
-                return {
-                  ...i,
-                  review_data: i.review_data
-                    ? { ...i.review_data, action_items: aiData.action_items }
-                    : i.review_data,
-                };
-              }));
-            } else {
-              console.log("[action-items] empty or failed:", aiData);
-            }
-          })
-          .catch(e => console.log("[action-items] fetch error:", e));
+        console.log("[action-items] triggering with:", {
+          name:           insp.name,
+          score:          data.result?.total_score,
+          summary_length: data.result?.executive_summary?.length,
+          issues:         data.result?.key_issues?.length,
+          missing:        data.result?.missing_evidence?.length,
+        });
+        try {
+          const aiRes  = await fetch("/api/procore/generate-action-items", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({
+              inspection_id:    String(insp.id),
+              project_id:       String(selectedProject.id),
+              company_id:       String(selectedCompany.id),
+              review_summary:   data.result?.executive_summary ?? "",
+              key_issues:       (data.result?.key_issues ?? []).map((i: { title: string }) => i.title),
+              missing_evidence: (data.result?.missing_evidence ?? []).map((m: { evidence_type: string }) => m.evidence_type),
+              score:            data.result?.total_score ?? 0,
+              score_band:       data.result?.score_band ?? "",
+              itp_name:         insp.name,
+            }),
+          });
+          const aiData = await aiRes.json();
+          console.log("[action-items] full response:", aiData);
+          if (aiData.action_items?.length > 0) {
+            setInspections(prev => prev.map(i => {
+              if (i.id !== bulkInspId) return i;
+              return {
+                ...i,
+                review_data: i.review_data
+                  ? { ...i.review_data, action_items: aiData.action_items }
+                  : i.review_data,
+              };
+            }));
+          } else {
+            console.log("[action-items] empty or failed:", aiData);
+          }
+        } catch (e) {
+          console.log("[action-items] error:", e);
+        }
 
         // Immediately update this row's score without waiting for the full batch
         try {
