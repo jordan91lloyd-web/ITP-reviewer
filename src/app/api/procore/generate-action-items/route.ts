@@ -93,7 +93,7 @@ Respond with ONLY a JSON array, nothing else:
   try {
     const message = await anthropic.messages.create({
       model:      "claude-sonnet-4-6",
-      max_tokens: 300,
+      max_tokens: 800,
       system:     "You are a construction QA assistant. Generate specific actionable items for a site manager. Respond only with a JSON array.",
       messages: [{ role: "user", content: userPrompt }],
     });
