@@ -1,10 +1,3 @@
-// ─── SQL to run in Supabase (one-time migration) ──────────────────────────────
-// ALTER TABLE review_records
-//   ADD COLUMN IF NOT EXISTS action_items jsonb DEFAULT '[]';
-// NOTE: action_items are stored inside review_data (ReviewResult JSON) automatically.
-// The separate column is optional — only needed for server-side queries on action items.
-// ─────────────────────────────────────────────────────────────────────────────
-
 // ─── POST /api/procore/import ─────────────────────────────────────────────────
 // Imports a Procore inspection into the existing QA review engine.
 //

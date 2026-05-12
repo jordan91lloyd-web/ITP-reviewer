@@ -5,7 +5,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink } from "lucide-react";
-import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
@@ -255,18 +254,6 @@ function buildReportHtml(insp: DashboardInspection, autoPrint = false): string {
     </tr>`
   ).join("");
 
-  const actionItemRows = (rd.action_items ?? []).map(item => {
-    const pBg  = item.priority === "high" ? "#fee2e2" : item.priority === "medium" ? "#fef9c3" : "#f3f4f6";
-    const pClr = item.priority === "high" ? "#b91c1c" : item.priority === "medium" ? "#92400e" : "#6b7280";
-    const icon = item.category === "evidence" ? "📎" : item.category === "signoff" ? "✍" : item.category === "close" ? "✓" : "⚠";
-    return `<tr>
-      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;vertical-align:top">
-        <span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:${pBg};color:${pClr}">${item.priority.toUpperCase()}</span>
-      </td>
-      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:11px;color:#1a1a1a;vertical-align:top">${icon} ${esc(item.action)}</td>
-    </tr>`;
-  }).join("");
-
   const header = rd.inspection_header;
   const headerRows = header ? [
     ["Project",     header.project_name],
@@ -369,21 +356,6 @@ ${actionRows ? `
 <div style="margin-bottom:16px">
   <h3>Recommended Actions</h3>
   ${actionRows}
-</div>` : ""}
-
-<!-- Action items for site manager -->
-${actionItemRows ? `
-<div style="margin-bottom:16px">
-  <h3>Action Items for Site Manager</h3>
-  <table style="font-size:12px">
-    <thead>
-      <tr style="background:#f3f4f6">
-        <th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;width:14%">Priority</th>
-        <th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em">Action</th>
-      </tr>
-    </thead>
-    <tbody>${actionItemRows}</tbody>
-  </table>
 </div>` : ""}
 
 <!-- Document observations -->
@@ -501,113 +473,6 @@ function buildCompanyReportHtml(
 </table>
 ${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</script>" : ""}
 </body></html>`;
-}
-
-// ── Action Report PDF builder ──────────────────────────────────────────────────
-
-function buildActionReportHtml(
-  inspections: DashboardInspection[],
-  projectName: string,
-  companyId: number,
-  projectId: number,
-  userName: string | null,
-  autoPrint = false
-): string {
-  const reviewedInspections = inspections.filter(i => i.review_data != null);
-  const total    = inspections.length;
-  const reviewed = reviewedInspections.length;
-
-  const priorityBg = (p: string) =>
-    p === "high" ? "#fee2e2" : p === "medium" ? "#fef9c3" : "#f3f4f6";
-  const priorityColor = (p: string) =>
-    p === "high" ? "#b91c1c" : p === "medium" ? "#92400e" : "#6b7280";
-  const categoryIcon = (c: string) => {
-    if (c === "evidence")   return "📎";
-    if (c === "signoff")    return "✍";
-    if (c === "close")      return "✓";
-    return "⚠";
-  };
-
-  const sections = reviewedInspections.map(insp => {
-    const rd           = insp.review_data!;
-    const displayScore = insp.override_score ?? insp.last_score;
-    const band         = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
-    const bandColor    = ({
-      compliant: "#16a34a", minor_gaps: "#d97706",
-      significant_gaps: "#ea580c", critical_risk: "#dc2626",
-    } as Record<string, string>)[band ?? ""] ?? "#6b7280";
-    const bandLabel    = band ? scoreBandLabel(band) : "—";
-    const procoreUrl   = `https://app.procore.com/${companyId}/project/${projectId}/inspections/${insp.id}`;
-    const summary      = rd.executive_summary
-      ? esc(rd.executive_summary.slice(0, 300) + (rd.executive_summary.length > 300 ? "…" : ""))
-      : (rd.key_issues?.[0]?.explanation ? esc(rd.key_issues[0].explanation) : "");
-    const actionItems: ActionItem[] = rd.action_items ?? [];
-
-    const actionRows = actionItems.map(item =>
-      `<tr>
-        <td style="padding:6px 10px;border-bottom:1px solid #f3f4f6;white-space:nowrap;vertical-align:top">
-          <span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:${priorityBg(item.priority)};color:${priorityColor(item.priority)}">${item.priority.toUpperCase()}</span>
-        </td>
-        <td style="padding:6px 10px;border-bottom:1px solid #f3f4f6;font-size:11px;color:#1a1a1a;vertical-align:top">${categoryIcon(item.category)} ${esc(item.action)}</td>
-      </tr>`
-    ).join("");
-
-    const overrideNote = insp.override_score != null && insp.override_note
-      ? `<p style="margin:6px 0 0 0;font-size:10px;color:#7c3aed;font-style:italic">Override note: ${esc(insp.override_note)}</p>`
-      : "";
-
-    return `
-<div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #e5e7eb">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-    <div>
-      <h3 style="margin:0 0 2px 0;font-size:13px;font-weight:700;color:#1f2937">${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — #${insp.inspection_number_of_type}` : ""}</h3>
-      <a href="${esc(procoreUrl)}" style="font-size:10px;color:#2563eb;text-decoration:none">${esc(procoreUrl)}</a>
-      ${overrideNote}
-    </div>
-    <div style="text-align:right;min-width:80px">
-      <div style="font-size:28px;font-weight:700;color:${bandColor};line-height:1">${displayScore ?? "—"}</div>
-      <div style="font-size:10px;font-weight:600;color:${bandColor};background:${({ compliant: "#f0fdf4", minor_gaps: "#fffbeb", significant_gaps: "#fff7ed", critical_risk: "#fef2f2" } as Record<string, string>)[band ?? ""] ?? "#f9fafb"};border-radius:20px;padding:2px 8px;display:inline-block;margin-top:2px">${esc(bandLabel)}</div>
-    </div>
-  </div>
-  ${summary ? `<p style="margin:0 0 8px 0;font-size:11px;color:#4b5563;line-height:1.5;padding:8px 10px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:0 4px 4px 0">${summary}</p>` : ""}
-  ${actionItems.length > 0 ? `
-  <div style="margin-top:8px">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:4px">Action Items for Site Manager</div>
-    <table style="width:100%;border-collapse:collapse">
-      <tbody>${actionRows}</tbody>
-    </table>
-  </div>` : `<p style="font-size:11px;color:#9ca3af;font-style:italic;margin:4px 0 0 0">No action items — ITP appears complete.</p>`}
-</div>`;
-  }).join("");
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>${esc(projectName)} — QA Action Report</title>
-<style>
-  @page { margin: 18mm 20mm; }
-  * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a1a1a; margin: 0; padding: 0; }
-  h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px 0; }
-  h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 0 0 10px 0; }
-  table { width: 100%; border-collapse: collapse; }
-  @media print { .no-print { display: none; } }
-</style>
-</head>
-<body>
-<!-- Cover header -->
-<div style="border-bottom:3px solid #1d4ed8;padding-bottom:16px;margin-bottom:24px">
-  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:8px">Fleek Constructions — QA Action Report</div>
-  <h2>${esc(projectName)}</h2>
-  <div style="font-size:11px;color:#6b7280;margin-top:4px">${reviewed} of ${total} ITPs reviewed · Generated ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}${userName ? ` · Prepared by ${esc(userName)}` : ""}</div>
-</div>
-
-${reviewed === 0 ? '<p style="color:#9ca3af;font-style:italic">No reviewed ITPs in the current view.</p>' : sections}
-
-${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</script>" : ""}
-</body>
-</html>`;
 }
 
 // ── Main page ──────────────────────────────────────────────────────────────────
@@ -1242,27 +1107,6 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   }
 
-  // ── Export Action Report ────────────────────────────────────────────────────
-
-  function handleExportActionReport() {
-    if (!selectedProject || !selectedCompany) return;
-    const html = buildActionReportHtml(
-      filteredInspections,
-      selectedProject.display_name || selectedProject.name,
-      selectedCompany.id,
-      selectedProject.id,
-      user?.name ?? null,
-      true
-    );
-    const win = window.open("", "_blank");
-    if (!win) {
-      alert("Popup blocked — please allow popups and try again.");
-      return;
-    }
-    win.document.write(html);
-    win.document.close();
-  }
-
   // ── Not authenticated ───────────────────────────────────────────────────────
 
   if (authenticated === false) {
@@ -1593,16 +1437,6 @@ export default function DashboardPage() {
                       >
                         <Download className="h-3.5 w-3.5" />
                         Export CSV
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleExportActionReport}
-                        disabled={filteredInspections.filter(i => i.review_data != null).length === 0}
-                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        title="Export action report PDF for all reviewed ITPs in this view"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        Action Report
                       </button>
                       <button
                         type="button"
@@ -2662,68 +2496,6 @@ function BulkStatusBadge({ status }: { status: BulkItemStatus }) {
   );
 }
 
-// ── ActionItemsSection ─────────────────────────────────────────────────────────
-
-function ActionItemsSection({ items }: { items: ActionItem[] }) {
-  const [checked, setChecked] = useState<Set<number>>(new Set());
-
-  function toggle(i: number) {
-    setChecked(prev => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i); else next.add(i);
-      return next;
-    });
-  }
-
-  const categoryIcon = (c: ActionItem["category"]) => {
-    if (c === "evidence")   return "📎";
-    if (c === "signoff")    return "✍️";
-    if (c === "close")      return "✓";
-    return "⚠️";
-  };
-
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-2">Action Items</p>
-      <div className="space-y-2">
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className="flex items-start gap-2 cursor-pointer group"
-            onClick={() => toggle(i)}
-          >
-            <input
-              type="checkbox"
-              checked={checked.has(i)}
-              onChange={() => toggle(i)}
-              onClick={e => e.stopPropagation()}
-              className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 accent-amber-600 cursor-pointer shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                  item.priority === "high"   ? "bg-red-100 text-red-700" :
-                  item.priority === "medium" ? "bg-amber-100 text-amber-700" :
-                                              "bg-gray-100 text-gray-500"
-                }`}>
-                  {item.priority.toUpperCase()}
-                </span>
-                <span className="text-[10px] text-gray-400">{categoryIcon(item.category)}</span>
-              </div>
-              <p className={`text-xs leading-snug ${
-                checked.has(i) ? "line-through text-gray-400" : "text-gray-700"
-              }`}>
-                {item.action}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="mt-2 text-[10px] text-gray-300 italic">Checkboxes reset on navigation — visual scratch pad only.</p>
-    </div>
-  );
-}
-
 // ── InspectionPanel ────────────────────────────────────────────────────────────
 
 function InspectionPanel({
@@ -2945,11 +2717,6 @@ function InspectionPanel({
               ))}
             </div>
           </div>
-        )}
-
-        {/* Action items */}
-        {rd?.action_items && rd.action_items.length > 0 && (
-          <ActionItemsSection items={rd.action_items} />
         )}
 
         {/* Action buttons */}
