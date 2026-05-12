@@ -37,6 +37,7 @@ interface RequestBody {
 
 export async function POST(request: NextRequest) {
   // ── Auth check ──────────────────────────────────────────────────────────────
+  console.log("[generate-action-items] step 1: auth check");
   const cookieStore = await cookies();
   if (!cookieStore.get("procore_access_token")?.value) {
     return NextResponse.json({ action_items: [], error: "Not authenticated." });
@@ -69,8 +70,8 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Build prompt ────────────────────────────────────────────────────────────
-  const issuesList   = Array.isArray(key_issues)      ? key_issues.join(", ")      : "";
-  const missingList  = Array.isArray(missing_evidence) ? missing_evidence.join(", ") : "";
+  const issuesList  = Array.isArray(key_issues)      ? key_issues.join(", ")      : "";
+  const missingList = Array.isArray(missing_evidence) ? missing_evidence.join(", ") : "";
 
   const userPrompt = `ITP: ${itp_name}
 Score: ${score}/100 (${score_band})
@@ -91,17 +92,25 @@ Respond with ONLY a JSON array, nothing else:
   // ── Call Claude ─────────────────────────────────────────────────────────────
   let actionItems: ActionItem[] = [];
   try {
-    const message = await anthropic.messages.create({
+    console.log("[generate-action-items] step 2: calling Claude");
+
+    const claudePromise = anthropic.messages.create({
       model:      "claude-sonnet-4-6",
       max_tokens: 800,
       system:     "You are a construction QA assistant. Generate specific actionable items for a site manager. Respond only with a JSON array.",
       messages: [{ role: "user", content: userPrompt }],
     });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Claude timeout after 15s")), 15000)
+    );
+    const message = await Promise.race([claudePromise, timeoutPromise]);
 
     const raw = message.content
       .filter(b => b.type === "text")
       .map(b => (b as { type: "text"; text: string }).text)
       .join("");
+
+    console.log("[generate-action-items] step 3: Claude responded, length:", raw.length);
 
     // Strip markdown fences if present
     const cleaned = raw
@@ -120,6 +129,8 @@ Respond with ONLY a JSON array, nothing else:
           ["evidence", "signoff", "close", "deficiency"].includes(item.category)
       ).slice(0, 5);
     }
+
+    console.log("[generate-action-items] step 4: parsed items:", actionItems.length);
   } catch (err) {
     console.error("[generate-action-items] Claude call or parse failed:", err instanceof Error ? err.message : err);
     // Non-fatal: return empty action items rather than error
@@ -153,6 +164,8 @@ Respond with ONLY a JSON array, nothing else:
         })
         .eq("id", record.id);
     }
+
+    console.log("[generate-action-items] step 5: saved to Supabase");
   } catch (err) {
     console.error("[generate-action-items] Supabase update failed:", err instanceof Error ? err.message : err);
     // Non-fatal: still return the generated items
