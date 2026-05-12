@@ -456,43 +456,44 @@ function buildActionReportHtml(
 
     const statusLabel = insp.status ?? "—";
 
+    // Only force a new page for dense sections — short ones share a page
+    const forcedBreak = actionItems.length > 4 || (rd.missing_evidence ?? []).length > 3;
+
     return `
-<div style="page-break-before:always;padding-top:16px">
-  <div style="border-top:2px solid #e5e7eb;padding-top:12px;margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:#1f2937">${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — #${insp.inspection_number_of_type}` : ""}</div>
-        <div style="font-size:10px;color:#6b7280;margin-top:2px">
-          Score: <strong style="color:${bandColor}">${displayScore ?? "—"}/100</strong>
-          &nbsp;·&nbsp;<strong style="color:${bandColor}">${esc(bandLabel)}</strong>
-          &nbsp;·&nbsp;${esc(statusLabel)}
-        </div>
-        <div style="font-size:10px;color:#2563eb;margin-top:2px">
-          View in Procore: ${esc(procoreUrl)}
-        </div>
-        ${insp.override_score != null ? `<div style="font-size:10px;color:#7c3aed;margin-top:2px">Override applied (AI: ${insp.last_score})</div>` : ""}
+<div class="itp-section"${forcedBreak ? ' style="page-break-before:always"' : ""}>
+  <div style="border-top:2px solid #e5e7eb;padding:12px 0 0 0;margin-bottom:16px">
+    <div style="margin-bottom:4px">
+      <div style="font-size:13px;font-weight:700;color:#1f2937">${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — #${insp.inspection_number_of_type}` : ""}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:2px">
+        Score: <strong style="color:${bandColor}">${displayScore ?? "—"}/100</strong>
+        &nbsp;·&nbsp;<strong style="color:${bandColor}">${esc(bandLabel)}</strong>
+        &nbsp;·&nbsp;${esc(statusLabel)}
       </div>
+      <div style="font-size:10px;color:#2563eb;margin-top:2px">
+        View in Procore: ${esc(procoreUrl)}
+      </div>
+      ${insp.override_score != null ? `<div style="font-size:10px;color:#7c3aed;margin-top:2px">Override applied (AI: ${insp.last_score})</div>` : ""}
     </div>
-  </div>
 
-  ${summary ? `
-  <div style="margin-bottom:10px">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:4px">Key Findings</div>
-    <div style="font-size:11px;color:#374151;line-height:1.5;padding:8px 10px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:0 4px 4px 0">${esc(summary)}</div>
-  </div>` : ""}
+    ${summary ? `
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:3px">Key Findings</div>
+      <div style="font-size:11px;color:#374151;line-height:1.5;padding:6px 8px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:0 4px 4px 0">${esc(summary)}</div>
+    </div>` : ""}
 
-  ${missingItems ? `
-  <div style="margin-bottom:10px">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:4px">Missing Evidence</div>
-    <ul style="margin:0;padding:0;list-style:none">${missingItems}</ul>
-  </div>` : ""}
+    ${missingItems ? `
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:3px">Missing Evidence</div>
+      <ul style="margin:0;padding:0;list-style:none">${missingItems}</ul>
+    </div>` : ""}
 
-  <div style="margin-bottom:10px">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:4px">Action Items</div>
-    ${actionItems.length > 0 ? `
-    <table style="width:100%;border-collapse:collapse">
-      <tbody>${actionRows}</tbody>
-    </table>` : `<div style="font-size:11px;color:#9ca3af;font-style:italic">Run a fresh review to generate action items.</div>`}
+    <div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:3px">Action Items</div>
+      ${actionItems.length > 0 ? `
+      <table style="width:100%;border-collapse:collapse">
+        <tbody>${actionRows}</tbody>
+      </table>` : `<div style="font-size:11px;color:#9ca3af;font-style:italic">Run a fresh review to generate action items.</div>`}
+    </div>
   </div>
 </div>`;
   }).join("");
@@ -506,6 +507,7 @@ function buildActionReportHtml(
   @page { margin: 18mm 20mm; }
   * { box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a1a1a; margin: 0; padding: 0; }
+  .itp-section { break-inside: avoid; }
   @media print { .no-print { display: none; } }
 </style>
 </head>
@@ -1681,7 +1683,7 @@ export default function DashboardPage() {
               {!inspectionsLoading && filteredInspections.length > 0 && (
                 <>
                   {/* Control bar: Select All (left) + Collapse All (right) */}
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-gray-100 border-b-2 border-amber-600">
+                  <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 bg-gray-100 border-b-2 border-amber-600 shadow-sm">
                     <div className="flex items-center gap-2.5">
                       <input
                         type="checkbox"
