@@ -186,7 +186,8 @@ Read all documents before drawing any conclusions. Evidence may span multiple fi
 export function buildInstructions(fileCount: number): string {
   return `
 Now produce your review. Do all scoring and reasoning internally.
-Output ONLY the JSON object below — no text before it, no text after it, no code fences.
+Output the JSON object below first — no text before it, no code fences.
+The ONLY text permitted after the closing } of the JSON is a single ACTION_ITEMS: [...] line (see instruction at the end of this message).
 Replace every placeholder value with real values from your review.
 
 CRITICAL: The document_observations array must contain exactly ${fileCount} entr${fileCount === 1 ? "y" : "ies"} — one for every file in this bundle. Do not skip any file. Each observation is ONE SENTENCE MAXIMUM — this is a hard limit, not a style guide. Exceeding it causes output truncation and breaks the app.

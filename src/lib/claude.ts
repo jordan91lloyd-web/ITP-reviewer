@@ -124,19 +124,17 @@ export async function runBundleReview(
   // while still being returned alongside the ReviewResult.
   contentBlocks.push({
     type: "text",
-    text: `
+    text: `After completing the JSON object above, write exactly one more line in this format:
 
-After the closing "}" of the JSON above, add this on a new line — outside the JSON:
+ACTION_ITEMS: [{"priority":"high","action":"Specific instruction for site manager","category":"evidence"}]
 
-ACTION_ITEMS: [{"priority":"...","action":"...","category":"..."}]
-
+This ACTION_ITEMS line is the only text permitted after the closing } of the JSON.
 Rules:
 - priority: "high" | "medium" | "low"
-- category: "evidence" (attach/upload a missing doc), "signoff" (obtain required sign-off or hold point), "deficiency" (rectify a deficient item), "close" (ITP is complete, recommend close)
-- Generate 2–5 items maximum, based only on actual gaps found in the review
+- category: "evidence" (attach/upload a missing doc) | "signoff" (obtain required sign-off or hold point release) | "deficiency" (rectify a deficient item) | "close" (ITP is complete — recommend close)
+- 2–5 items maximum; base them only on actual gaps found in the review
 - Reference specific inspection item numbers in the action text where possible
-- If the ITP is fully complete and well-documented, output exactly one item with category "close"
-- Output the ACTION_ITEMS line AFTER the JSON "}" — do not place it inside the JSON object`,
+- If the ITP is fully complete and well-documented, output exactly one item with category "close"`,
   });
   console.log(`[claude] Content blocks built: ${contentBlocks.length} blocks for ${files.length} file(s)`);
 
@@ -187,15 +185,23 @@ Rules:
     );
   }
 
+  // Strip ACTION_ITEMS before passing to extractJson.
+  // extractJson strategy 3 uses lastIndexOf("}") — without stripping, the last
+  // "}" belongs to an item inside the ACTION_ITEMS array, not to the main JSON
+  // object. The resulting slice is malformed and throws a parse error on every
+  // review where Claude appends ACTION_ITEMS. Stripping first isolates clean JSON.
+  // The original rawResponse (unstripped) goes to extractActionItems separately.
+  const cleanedRaw = rawResponse!.replace(/ACTION_ITEMS:\s*\[[\s\S]*?\]\s*$/m, "").trim();
+
   let parsed: unknown;
   try {
-    parsed = extractJson(rawResponse!);
+    parsed = extractJson(cleanedRaw);
   } catch (parseErr: unknown) {
     const parseMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
     console.error(`[claude] ── JSON parse failure ─────────────────────────────────`);
     console.error(`[claude] Parse error: ${parseMsg}`);
     console.error(`[claude] Files in bundle: ${files.length} | stop_reason: ${stopReason} | max_tokens: ${MAX_TOKENS}`);
-    console.error(`[claude] Response length: ${rawResponse!.length} chars`);
+    console.error(`[claude] Response length: ${rawResponse!.length} chars (cleanedRaw: ${cleanedRaw.length} chars)`);
     console.error(`[claude] First 500 chars:\n${rawResponse!.slice(0, 500)}`);
     console.error(`[claude] Last 500 chars:\n${rawResponse!.slice(-500)}`);
     console.error("[claude] ──────────────────────────────────────────────────────");
