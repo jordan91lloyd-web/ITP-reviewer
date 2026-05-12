@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
     itp_name,
   } = body;
 
+  console.log("[generate-action-items] called for:", itp_name, inspection_id);
+
   if (!inspection_id || !company_id || !itp_name) {
     return NextResponse.json({ action_items: [], error: "Missing required fields." });
   }

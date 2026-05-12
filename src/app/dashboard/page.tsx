@@ -801,6 +801,8 @@ export default function DashboardPage() {
               ? { ...prev, review_data: { ...prev.review_data, action_items: aiData.action_items } }
               : prev
             );
+          } else {
+            console.log("[action-items] empty or failed:", aiData);
           }
         })
         .catch(e => console.log("[action-items] fetch error:", e));
@@ -1049,6 +1051,8 @@ export default function DashboardPage() {
                     : i.review_data,
                 };
               }));
+            } else {
+              console.log("[action-items] empty or failed:", aiData);
             }
           })
           .catch(e => console.log("[action-items] fetch error:", e));
