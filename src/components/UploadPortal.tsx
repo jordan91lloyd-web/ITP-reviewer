@@ -111,7 +111,8 @@ export default function UploadPortal() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full rounded-xl bg-[#1F3864] px-6 py-4 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#253f77] active:bg-[#162a4a] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full rounded-xl px-6 py-4 text-base font-semibold text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{ backgroundColor: "var(--hp-warm-800)" }}
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-3">

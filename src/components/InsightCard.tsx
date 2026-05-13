@@ -225,19 +225,21 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 bg-gray-50">
+      <div className="flex items-center justify-between px-4 py-2.5 border-t" style={{ borderColor: "var(--hp-border-light)", backgroundColor: "var(--hp-warm-100)" }}>
         <button
           type="button"
           onClick={onGenerate}
           disabled={loading}
-          className="text-[10px] text-gray-400 hover:text-gray-600 disabled:opacity-40 transition-colors"
+          className="rounded-md text-[10px] font-medium px-2 py-1 disabled:opacity-40 transition-colors"
+          style={{ border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text-secondary)" }}
         >
           {hasSnap ? "Re-generate" : "Generate"}
         </button>
         <button
           type="button"
           onClick={onViewItps}
-          className="rounded-lg bg-[#1F3864] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#253f77] transition-colors"
+          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+          style={{ backgroundColor: "var(--hp-warm-800)" }}
         >
           View ITPs →
         </button>

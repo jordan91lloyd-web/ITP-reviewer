@@ -1804,7 +1804,7 @@ export default function DashboardPage() {
                         <div
                           key={`group-${groupName}`}
                           className="select-none"
-                          style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 4px", marginBottom: 5, marginTop: 12 }}
+                          style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", marginBottom: 5, marginTop: 12 }}
                         >
                           <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                             <span

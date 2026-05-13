@@ -281,7 +281,7 @@ export default function InsightsTab({
   const isLoading = snapshotsLoading || projectsLoading;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F9FAFB]">
+    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--hp-bg)" }}>
       <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
 
         {/* Header */}
@@ -301,10 +301,9 @@ export default function InsightsTab({
               onClick={refreshing ? () => { refreshCancelRef.current = true; } : handleRefreshAll}
               disabled={isLoading}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                refreshing
-                  ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
-                  : "bg-[#1F3864] text-white hover:bg-[#253f77] disabled:opacity-40"
+                refreshing ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100" : "text-white disabled:opacity-40"
               }`}
+              style={!refreshing ? { backgroundColor: "var(--hp-warm-800)" } : {}}
             >
               {isLoading && !refreshing && (
                 <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">

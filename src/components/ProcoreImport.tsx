@@ -464,7 +464,8 @@ function ProjectSelectStep({
         <button
           type="button"
           onClick={onLoad}
-          className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+          className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          style={{ border: "1px solid var(--hp-border)", color: "var(--hp-text-secondary)", backgroundColor: "var(--hp-surface)" }}
         >
           Load projects
         </button>

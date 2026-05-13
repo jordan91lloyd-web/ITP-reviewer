@@ -14,7 +14,7 @@ import {
 // ── Section config ─────────────────────────────────────────────────────────────
 
 const SECTIONS = [
-  { id: "what-is-it",      label: "What is the ITP QA Reviewer?" },
+  { id: "what-is-it",      label: "What is Holdpoint?" },
   { id: "getting-started", label: "Getting Started" },
   { id: "scoring-system",  label: "The Scoring System" },
   { id: "using-dashboard", label: "Using the Dashboard" },
@@ -27,7 +27,7 @@ const SECTIONS = [
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-bold text-[#1F3864] mb-4 pb-2 border-b border-gray-100">
+    <h2 className="text-xl font-bold mb-4 pb-2 border-b border-gray-100" style={{ color: "var(--hp-warm-800)" }}>
       {children}
     </h2>
   );
@@ -102,7 +102,8 @@ function ScoringDocDownload() {
       <a
         href={loading ? "#" : downloadUrl}
         download
-        className={`inline-flex items-center gap-2 rounded-lg bg-[#1F3864] px-5 py-3 text-sm font-semibold text-white hover:bg-[#253f77] transition-colors shadow-sm ${loading ? "opacity-50 pointer-events-none" : ""}`}
+        className={`inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white transition-colors shadow-sm ${loading ? "opacity-50 pointer-events-none" : ""}`}
+        style={{ backgroundColor: "var(--hp-warm-800)" }}
       >
         <Download className="h-4 w-4" />
         Download ITP QA Scoring Guidelines
@@ -115,7 +116,7 @@ function ScoringDocDownload() {
         </p>
         {isAdmin && (
           <p className="mt-2">
-            <Link href="/admin/documents" className="text-[#1F3864] hover:underline font-medium">
+            <Link href="/admin/documents" className="hover:underline font-medium" style={{ color: "var(--hp-warm-800)" }}>
               Update scoring document →
             </Link>
           </p>
@@ -166,10 +167,9 @@ export default function HowItWorksPage() {
           key={s.id}
           onClick={() => scrollTo(s.id)}
           className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-            activeSection === s.id
-              ? "bg-amber-50 text-[#1F3864] font-semibold"
-              : "text-gray-500 hover:text-[#1F3864] hover:bg-gray-50"
+            activeSection === s.id ? "font-semibold" : "text-gray-500 hover:bg-gray-50"
           }`}
+          style={activeSection === s.id ? { backgroundColor: "var(--hp-warm-100)", color: "var(--hp-warm-800)" } : {}}
         >
           {s.label}
         </button>
@@ -178,14 +178,15 @@ export default function HowItWorksPage() {
   );
 
   return (
-    <div className="min-h-full bg-[#F9FAFB]">
+    <div className="min-h-full" style={{ backgroundColor: "var(--hp-bg)" }}>
 
       {/* Page hero */}
-      <div className="bg-[#1F3864] text-white">
+      <div className="text-white" style={{ background: "linear-gradient(135deg, #5C4733 0%, #8C7258 100%)" }}>
         <div className="mx-auto max-w-6xl px-6 py-10">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors mb-5"
+            className="inline-flex items-center gap-1.5 text-sm transition-colors mb-5"
+            style={{ color: "rgba(255,255,255,0.6)" }}
           >
             ← Back to Dashboard
           </Link>
@@ -195,8 +196,8 @@ export default function HowItWorksPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold mb-1">How It Works</h1>
-              <p className="text-white/70 text-sm max-w-xl">
-                Everything you need to know to use the ITP QA Reviewer — scoring methodology,
+              <p className="text-sm max-w-xl" style={{ color: "rgba(255,255,255,0.8)" }}>
+                Everything you need to know to use Holdpoint — scoring methodology,
                 dashboard features, report interpretation, and tips for better QA records.
               </p>
             </div>
@@ -210,7 +211,8 @@ export default function HowItWorksPage() {
         <div className="lg:hidden mb-6">
           <button
             onClick={() => setTocOpen(!tocOpen)}
-            className="w-full flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-[#1F3864] shadow-sm"
+            className="w-full flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold shadow-sm"
+            style={{ color: "var(--hp-warm-800)" }}
           >
             <span>Table of Contents</span>
             {tocOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -240,9 +242,9 @@ export default function HowItWorksPage() {
             {/* ── 1. What is it ── */}
             <section id="what-is-it" className="scroll-mt-6">
               <Card>
-                <SectionHeading>What is the ITP QA Reviewer?</SectionHeading>
+                <SectionHeading>What is Holdpoint?</SectionHeading>
                 <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                  The ITP QA Reviewer is an internal quality assurance tool for Fleek Constructions.
+                  Holdpoint is an internal quality assurance tool for Fleek Constructions.
                   It uses Claude AI to read the documents attached to a Procore ITP inspection and
                   produce a structured quality assessment — a numeric score, a risk rating, identified
                   evidence gaps, and concrete next actions. It replaces manual QA checking and gives
@@ -256,7 +258,7 @@ export default function HowItWorksPage() {
                   ].map(({ icon, stat, label }) => (
                     <div key={label} className="text-center rounded-xl bg-[#F9FAFB] border border-gray-100 py-5 px-3">
                       <div className="flex justify-center mb-2">{icon}</div>
-                      <p className="text-2xl font-bold text-[#1F3864]">{stat}</p>
+                      <p className="text-2xl font-bold" style={{ color: "var(--hp-warm-800)" }}>{stat}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{label}</p>
                     </div>
                   ))}
@@ -424,7 +426,7 @@ export default function HowItWorksPage() {
                         },
                       ].map(d => (
                         <tr key={d.code} className="hover:bg-gray-50/50">
-                          <td className="px-4 py-3 font-bold text-[#1F3864] text-sm align-top">{d.code}</td>
+                          <td className="px-4 py-3 font-bold text-sm align-top" style={{ color: "var(--hp-warm-800)" }}>{d.code}</td>
                           <td className="px-4 py-3 align-top">
                             <p className="font-semibold text-gray-800 text-xs mb-0.5">{d.label}</p>
                             <p className="text-xs text-gray-500 leading-relaxed">{d.desc}</p>
@@ -631,27 +633,27 @@ export default function HowItWorksPage() {
                 <div className="space-y-3">
                   {[
                     {
-                      icon: <Package className="h-4 w-4 text-[#1F3864]" />,
+                      icon: <Package className="h-4 w-4" style={{ color: "var(--hp-warm-800)" }} />,
                       tip: "Attach engineer certificates directly to the hold point item they relate to — not just to the ITP at the top level. Claude can find them either way, but direct attachment is clearest.",
                     },
                     {
-                      icon: <HardHat className="h-4 w-4 text-[#1F3864]" />,
+                      icon: <HardHat className="h-4 w-4" style={{ color: "var(--hp-warm-800)" }} />,
                       tip: "Always attach concrete dockets and cylinder break results for structural pours. These are the single biggest factor in D2 scoring for Tier 1 ITPs.",
                     },
                     {
-                      icon: <Eye className="h-4 w-4 text-[#1F3864]" />,
+                      icon: <Eye className="h-4 w-4" style={{ color: "var(--hp-warm-800)" }} />,
                       tip: "Photos should be taken before concealment — not after. A photo of finished concrete tells Claude less than a photo of the steel before the pour. Pre-pour and pre-concealment photos are what count for D5.",
                     },
                     {
-                      icon: <Users className="h-4 w-4 text-[#1F3864]" />,
+                      icon: <Users className="h-4 w-4" style={{ color: "var(--hp-warm-800)" }} />,
                       tip: "Close subcontractor ITPs before closing the main ITP. D3 scoring checks whether the subcontractor ITP is also responded to and closed — an open sub ITP will reduce your D3 score.",
                     },
                     {
-                      icon: <FileText className="h-4 w-4 text-[#1F3864]" />,
+                      icon: <FileText className="h-4 w-4" style={{ color: "var(--hp-warm-800)" }} />,
                       tip: "If something was done verbally and paperwork is coming, add a note in the ITP inspection item. Claude reads notes and understands context — a note explaining a verbal sign-off is better than silence.",
                     },
                     {
-                      icon: <TrendingUp className="h-4 w-4 text-[#1F3864]" />,
+                      icon: <TrendingUp className="h-4 w-4" style={{ color: "var(--hp-warm-800)" }} />,
                       tip: "A partially completed ITP with strong evidence scores better than a fully ticked ITP with nothing attached. Evidence quality matters more than checkbox completion.",
                     },
                   ].map((item, i) => (

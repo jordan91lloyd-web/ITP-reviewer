@@ -63,7 +63,8 @@ export default function GlobalNav() {
             ) : (
               <a
                 href="/api/auth/login"
-                className="rounded-lg bg-[#1F3864] px-4 py-2 text-xs font-semibold text-white hover:bg-[#253f77] transition-colors"
+                className="rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors"
+                style={{ backgroundColor: "var(--hp-warm-800)" }}
               >
                 Connect to Procore
               </a>
