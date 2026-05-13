@@ -3,6 +3,10 @@
 // Replaces the previous local JSON file at data/review-history.json.
 //
 // All functions are async — callers must await them.
+//
+// Required Supabase columns (add via Supabase dashboard SQL if not present):
+//   confirmed_at TIMESTAMPTZ  (nullable) — when the ITP was signed off
+//   confirmed_by TEXT         (nullable) — display name of the confirming user
 
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";

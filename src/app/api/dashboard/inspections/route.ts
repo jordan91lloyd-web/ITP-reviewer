@@ -41,6 +41,9 @@ export interface DashboardInspection {
   override_score: number | null;
   override_note: string | null;
   override_created_by: string | null;
+  // QA sign-off
+  confirmed_at: string | null;
+  confirmed_by: string | null;
   // Procore metadata
   description: string | null;
   location: string | null;    // location.name, flattened
@@ -173,6 +176,8 @@ export async function GET(request: NextRequest) {
       override_score:           override ? (override.override_score as number) : null,
       override_note:            override ? (override.note as string | null) : null,
       override_created_by:      override ? (override.created_by as string | null) : null,
+      confirmed_at:             record ? (record.confirmed_at as string | null) : null,
+      confirmed_by:             record ? (record.confirmed_by as string | null) : null,
       description:              insp.description ?? null,
       location:                 insp.location?.name ?? null,
       created_by:               insp.created_by?.name ?? null,
