@@ -3,8 +3,8 @@ import "./globals.css";
 import GlobalNav from "@/components/GlobalNav";
 
 export const metadata: Metadata = {
-  title: "ITP QA Reviewer — Fleek Constructions",
-  description: "AI-powered QA review of construction inspection and ITP document bundles",
+  title: "Holdpoint — Fleek Constructions",
+  description: "AI-powered ITP quality assurance for construction projects",
 };
 
 export default function RootLayout({

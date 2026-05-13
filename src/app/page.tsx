@@ -3,6 +3,7 @@ import { Zap, Link2, FileText } from "lucide-react";
 import UploadPortal from "@/components/UploadPortal";
 import ProcoreConnect from "@/components/ProcoreConnect";
 import ProcoreImport from "@/components/ProcoreImport";
+import HoldpointLogo from "@/components/HoldpointLogo";
 
 export default async function Home({
   searchParams,
@@ -30,12 +31,13 @@ export default async function Home({
                 </p>
               </div>
             )}
-            <div className="inline-block rounded-full border border-[#D97706]/40 bg-[#D97706]/10 px-4 py-1.5 text-sm font-medium text-[#D97706] mb-6">
-              Internal QA Tool
+            <div className="flex flex-col items-center mb-6 gap-3">
+              <HoldpointLogo variant="dark" size={44} />
+              <h1 className="text-5xl font-bold leading-tight tracking-tight">
+                Holdpoint
+              </h1>
+              <p className="text-white/45 text-sm -mt-1">by Fleek Constructions</p>
             </div>
-            <h1 className="text-5xl font-bold mb-5 leading-tight tracking-tight">
-              ITP QA Reviewer
-            </h1>
             <p className="text-lg text-white/70 mb-10 leading-relaxed max-w-lg mx-auto">
               Automated quality assurance scoring for your Procore inspection
               packages. Powered by AI.
@@ -88,7 +90,7 @@ export default async function Home({
         </section>
 
         <footer className="bg-[#F9FAFB] border-t border-gray-100 py-6 text-center text-xs text-gray-400">
-          Fleek Constructions — Internal QA Tool
+          Holdpoint — Fleek Constructions
         </footer>
       </div>
     );
@@ -107,8 +109,11 @@ export default async function Home({
       )}
 
       <header className="mb-8 text-center">
-        <p className="text-base font-bold text-[#1F3864] tracking-wide">ITP QA Reviewer</p>
-        <p className="mt-3 text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
+        <div className="flex flex-col items-center gap-2 mb-3">
+          <HoldpointLogo variant="light" size={32} />
+          <p className="text-base font-bold text-[#5C4733] tracking-wide">Holdpoint</p>
+        </div>
+        <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
           Upload the documents from one inspection package. Claude will identify
           the project details automatically and tell you what&apos;s complete,
           what&apos;s missing, and what to do next.

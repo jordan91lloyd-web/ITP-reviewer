@@ -10,6 +10,7 @@ import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
 import InsightsTab from "@/components/InsightsTab";
+import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
 
@@ -1443,7 +1444,10 @@ export default function DashboardPage() {
     <div className="flex h-full flex-col bg-[#F9FAFB] overflow-hidden">
 
       {/* ── Top-level tab nav ── */}
-      <div className="shrink-0 bg-white border-b border-gray-200 px-4 flex items-center gap-0 h-10">
+      <div
+        className="shrink-0 flex items-center gap-1 px-3"
+        style={{ backgroundColor: "var(--hp-surface)", borderBottom: "1px solid var(--hp-border)", height: 44 }}
+      >
         {([
           ["company",         "Company",         null],
           ["insights",        "Insights",        "sparkles"],
@@ -1460,11 +1464,17 @@ export default function DashboardPage() {
               }
               if (view === "insights") setInsightsFetched(true);
             }}
-            className={`flex items-center gap-1.5 px-4 h-full text-xs font-medium transition-colors border-b-2 ${
-              dashboardView === view
-                ? "border-[#1F3864] text-[#1F3864]"
-                : "border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-300"
-            }`}
+            className="flex items-center gap-1.5 transition-all"
+            style={{
+              padding: "5px 12px",
+              borderRadius: 6,
+              fontSize: 13,
+              cursor: "pointer",
+              border: "none",
+              fontWeight: dashboardView === view ? 500 : 400,
+              backgroundColor: dashboardView === view ? "var(--hp-warm-100)" : "transparent",
+              color: dashboardView === view ? "var(--hp-warm-800)" : "var(--hp-text-secondary)",
+            }}
           >
             {icon === "sparkles" && <Sparkles className="h-3 w-3" />}
             {label}
@@ -1529,25 +1539,32 @@ export default function DashboardPage() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left: project list ── */}
-        <aside className="w-64 shrink-0 border-r border-gray-700/30 bg-[#1F3864] overflow-y-auto flex flex-col">
-          {/* Company selector */}
-          <div className="px-4 py-3 border-b border-white/10 shrink-0">
-            {companies.length > 1 ? (
+        <aside
+          className="w-64 shrink-0 overflow-y-auto flex flex-col"
+          style={{ backgroundColor: "var(--hp-sidebar)", borderRight: "1px solid rgba(0,0,0,0.12)" }}
+        >
+          {/* Holdpoint branding + company selector */}
+          <div className="shrink-0" style={{ padding: "14px 12px 12px 12px", borderBottom: "1px solid rgba(255,255,255,0.10)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: companies.length > 1 ? 10 : 0 }}>
+              <HoldpointLogo variant="dark" size={28} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>Holdpoint</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", lineHeight: 1.2 }}>by Fleek Constructions</div>
+              </div>
+            </div>
+            {companies.length > 1 && (
               <select
                 value={selectedCompany?.id ?? ""}
                 onChange={e => {
                   const c = companies.find(x => x.id === Number(e.target.value));
                   if (c) setSelectedCompany(c);
                 }}
-                className="w-full rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                style={{ backgroundColor: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}
               >
                 <option value="">— Select company —</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-            ) : selectedCompany ? (
-              <p className="text-xs font-semibold text-white truncate">{selectedCompany.name}</p>
-            ) : (
-              <p className="text-xs text-white/40 italic">Loading…</p>
             )}
           </div>
           {/* Projects label + audit link */}
@@ -1596,7 +1613,7 @@ export default function DashboardPage() {
         </aside>
 
         {/* ── Main: ITP list ── */}
-        <main className="flex-1 overflow-y-auto relative">
+        <main className="flex-1 overflow-y-auto relative" style={{ backgroundColor: "var(--hp-bg)" }}>
           {!selectedProject && (
             <div className="flex h-full items-center justify-center">
               <p className="text-sm text-gray-400">Select a project to view its ITPs.</p>
@@ -1606,7 +1623,7 @@ export default function DashboardPage() {
           {selectedProject && (
             <div className="pb-24">
               {/* Project header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
+              <div className="sticky top-0 z-10 px-6 py-4" style={{ backgroundColor: "var(--hp-surface)", borderBottom: "1px solid var(--hp-border)" }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-bold text-[#1F3864]">
@@ -1636,27 +1653,28 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Status tabs */}
-                <div className="mt-3 flex items-center gap-1 w-fit">
-                  <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 gap-0.5">
-                    {([
-                      ["closed",    `Closed (${closedCount})`],
-                      ["in_review", `In Review (${inReviewCount})`],
-                      ["open",      `Open (${openCount})`],
-                    ] as [StatusFilter, string][]).map(([s, label]) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => { setStatusFilter(s); setOpenSortOrder("default"); setClosedSortOrder("default"); setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                          statusFilter === s
-                            ? "bg-white text-gray-900 shadow-sm border border-gray-100"
-                            : "text-gray-400 hover:text-gray-600"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                <div className="mt-3 flex items-center gap-2">
+                  {([
+                    ["closed",    `Closed (${closedCount})`],
+                    ["in_review", `In Review (${inReviewCount})`],
+                    ["open",      `Open (${openCount})`],
+                  ] as [StatusFilter, string][]).map(([s, label]) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => { setStatusFilter(s); setOpenSortOrder("default"); setClosedSortOrder("default"); setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
+                      className="transition-all"
+                      style={{
+                        fontSize: 12, padding: "5px 12px", borderRadius: 20, cursor: "pointer",
+                        border: statusFilter === s ? "1px solid var(--hp-warm-800)" : "1px solid var(--hp-border)",
+                        backgroundColor: statusFilter === s ? "var(--hp-warm-800)" : "var(--hp-surface)",
+                        color: statusFilter === s ? "white" : "var(--hp-text-secondary)",
+                        fontWeight: statusFilter === s ? 500 : 400,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1688,7 +1706,10 @@ export default function DashboardPage() {
               {!inspectionsLoading && filteredInspections.length > 0 && (
                 <>
                   {/* Control bar: Select All (left) + Collapse All (right) */}
-                  <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
+                  <div
+                    className="sticky top-0 z-10 flex items-center justify-between px-4"
+                    style={{ backgroundColor: "var(--hp-bg)", paddingTop: 10, paddingBottom: 10, borderBottom: "1px solid var(--hp-border-light)", marginBottom: 14 }}
+                  >
                     <div className="flex items-center gap-2.5">
                       <input
                         type="checkbox"
@@ -1698,9 +1719,9 @@ export default function DashboardPage() {
                         disabled={bulkRunning}
                         className="h-4 w-4 rounded border-gray-400 text-amber-600 focus:ring-amber-500 cursor-pointer disabled:cursor-not-allowed"
                       />
-                      <span className="text-xs font-bold text-gray-700">Select All</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-text-secondary)" }}>Select All</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       {(statusFilter === "open" || statusFilter === "closed") && (
                         <button
                           type="button"
@@ -1708,7 +1729,8 @@ export default function DashboardPage() {
                             if (statusFilter === "open") setOpenSortOrder(o => o === "default" ? "score_desc" : o === "score_desc" ? "score_asc" : "default");
                             else setClosedSortOrder(o => o === "default" ? "score_desc" : o === "score_desc" ? "score_asc" : "default");
                           }}
-                          className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${activeSortOrder !== "default" ? "text-amber-600 hover:text-amber-700" : "text-gray-500 hover:text-gray-700"}`}
+                          className="flex items-center gap-1.5"
+                          style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: activeSortOrder !== "default" ? "var(--hp-warm-100)" : "var(--hp-surface)", color: activeSortOrder !== "default" ? "var(--hp-warm-800)" : "var(--hp-text-secondary)", cursor: "pointer" }}
                           title="Sort by score"
                         >
                           {activeSortOrder === "score_desc" ? <ArrowDown className="h-3.5 w-3.5" /> : activeSortOrder === "score_asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5" />}
@@ -1718,7 +1740,8 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={handleExportCsv}
-                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                        className="flex items-center gap-1.5"
+                        style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text-secondary)", cursor: "pointer" }}
                         title="Export visible ITPs to CSV"
                       >
                         <Download className="h-3.5 w-3.5" />
@@ -1728,7 +1751,8 @@ export default function DashboardPage() {
                         type="button"
                         onClick={handleExportActionReport}
                         disabled={filteredInspections.filter(i => i.review_data != null).length === 0}
-                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text-secondary)", cursor: "pointer" }}
                         title={selectedIds.size > 0 ? "Export action report for selected ITPs" : "Export action report for all reviewed ITPs in this view"}
                       >
                         <FileText className="h-3.5 w-3.5" />
@@ -1740,7 +1764,8 @@ export default function DashboardPage() {
                           const allCollapsed = groupOrder.length > 0 && collapsedGroups.size === groupOrder.length;
                           setCollapsedGroups(allCollapsed ? new Set() : new Set(groupOrder));
                         }}
-                        className="flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 transition-colors"
+                        className="flex items-center gap-1.5"
+                        style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text-secondary)", cursor: "pointer" }}
                       >
                         <span className={`inline-block text-[9px] transition-transform duration-150 ${groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "" : "rotate-90"}`}>▶</span>
                         {groupOrder.length > 0 && collapsedGroups.size === groupOrder.length ? "Expand All" : "Collapse All"}
@@ -1749,100 +1774,81 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Score legend */}
-                  <div className="flex items-center gap-3 px-4 py-1.5 bg-gray-50 border-b border-gray-100">
-                    <span className="text-[9px] font-semibold uppercase tracking-widest text-gray-400 shrink-0">Score:</span>
+                  <div style={{ display: "flex", gap: 16, padding: "9px 14px", backgroundColor: "var(--hp-surface)", border: "1px solid var(--hp-border-light)", borderRadius: 8, marginBottom: 12, fontSize: 11, color: "var(--hp-text-secondary)", alignItems: "center", flexWrap: "wrap" }}>
                     {([
-                      ["bg-green-100 text-green-700", "85–100 Compliant"],
-                      ["bg-amber-100 text-amber-700", "70–84 Minor Gaps"],
-                      ["bg-orange-100 text-orange-600", "50–69 Sig. Gaps"],
-                      ["bg-red-100 text-red-600",    "0–49 Critical"],
-                    ] as [string, string][]).map(([cls, label]) => (
-                      <span key={label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold ${cls}`}>
-                        {label}
-                      </span>
+                      ["var(--hp-compliant)",  "Compliant (75+)"],
+                      ["var(--hp-minor)",       "Minor gaps (60–74)"],
+                      ["var(--hp-significant)", "Significant gaps (40–59)"],
+                      ["var(--hp-critical)",    "Critical risk (below 40)"],
+                    ] as [string, string][]).map(([color, label]) => (
+                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+                        <span>{label}</span>
+                      </div>
                     ))}
                   </div>
 
-                  <table className="w-full text-sm shadow-sm">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        {/* Checkbox column — no label; Select All lives in control bar above */}
-                        <th className="px-3 py-2.5 w-10" />
-                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5">ITP</th>
-                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-12">#</th>
-                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-36">Person</th>
-                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-32">Score</th>
-                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-36">Rating</th>
-                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-24">Status</th>
-                        <th className="text-left text-[11px] font-semibold text-gray-700 uppercase tracking-wider px-3 py-2.5 w-32">Reviewed</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {groupOrder.map(groupName => {
-                        const group          = groupMap.get(groupName)!;
-                        const isCollapsed    = collapsedGroups.has(groupName);
-                        const worst          = worstBandInGroup(group);
-                        const reviewedInGroup = group.filter(i => i.review_status !== "not_reviewed").length;
-                        const groupIds       = group.map(i => i.id);
-                        const allGroupSel    = groupIds.every(id => selectedIds.has(id));
-                        const someGroupSel   = !allGroupSel && groupIds.some(id => selectedIds.has(id));
+                  {/* ITP rows */}
+                  <div>
+                    {groupOrder.map(groupName => {
+                      const group           = groupMap.get(groupName)!;
+                      const isCollapsed     = collapsedGroups.has(groupName);
+                      const reviewedInGroup = group.filter(i => i.review_status !== "not_reviewed").length;
+                      const groupIds        = group.map(i => i.id);
+                      const allGroupSel     = groupIds.every(id => selectedIds.has(id));
+                      const someGroupSel    = !allGroupSel && groupIds.some(id => selectedIds.has(id));
 
-                        return [
-                          // Group header row — light gray
-                          <tr
-                            key={`group-${groupName}`}
-                            className="bg-[#EEF0F5] border-t border-gray-200 select-none"
-                          >
-                            {/* Collapse arrow + group checkbox */}
-                            <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-gray-500 text-[10px] transition-transform duration-150 cursor-pointer shrink-0 ${isCollapsed ? "" : "rotate-90"}`}
-                                  onClick={() => toggleGroup(groupName)}
-                                >▶</span>
-                                <input
-                                  type="checkbox"
-                                  checked={allGroupSel}
-                                  ref={el => { if (el) el.indeterminate = someGroupSel; }}
-                                  onChange={() => toggleSelectGroup(group)}
-                                  disabled={bulkRunning}
-                                  className="h-3.5 w-3.5 rounded border-gray-400 text-amber-600 focus:ring-amber-500 cursor-pointer disabled:cursor-not-allowed shrink-0 accent-amber-600"
-                                />
-                              </div>
-                            </td>
-                            <td
-                              colSpan={7}
-                              className="px-3 py-2.5 cursor-pointer hover:bg-[#E5E8F0] transition-colors"
+                      return [
+                        // Group header
+                        <div
+                          key={`group-${groupName}`}
+                          className="select-none"
+                          style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 4px", marginBottom: 5, marginTop: 12 }}
+                        >
+                          <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                            <span
+                              style={{ fontSize: 10, color: "var(--hp-text-muted)", cursor: "pointer", display: "inline-block", transform: isCollapsed ? "rotate(0deg)" : "rotate(90deg)", transition: "transform 150ms" }}
                               onClick={() => toggleGroup(groupName)}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <span className={`h-3 w-3 rounded-full shrink-0 ring-1 ring-gray-300 ${groupIndicatorClasses(worst)}`} />
-                                <span className="text-sm font-bold text-[#1F3864] leading-snug">{groupName}</span>
-                                <span className="text-[10px] text-gray-500 font-normal ml-1">
-                                  {reviewedInGroup}/{group.length} reviewed
-                                </span>
-                              </div>
-                            </td>
-                          </tr>,
-                          // Inspection rows
-                          ...(!isCollapsed ? group.map(insp => (
-                            <InspectionRow
-                              key={insp.id}
-                              insp={insp}
-                              selected={selectedInsp?.id === insp.id && panelOpen}
-                              checked={selectedIds.has(insp.id)}
-                              bulkItemStatus={bulkStatus.get(insp.id) ?? null}
-                              bulkRunning={bulkRunning}
-                              companyId={selectedCompany?.id ?? 0}
-                              projectId={selectedProject?.id ?? 0}
-                              onCheck={e => { e.stopPropagation(); toggleSelect(insp.id); }}
-                              onClick={() => openPanel(insp)}
+                            >▶</span>
+                            <input
+                              type="checkbox"
+                              checked={allGroupSel}
+                              ref={el => { if (el) el.indeterminate = someGroupSel; }}
+                              onChange={() => toggleSelectGroup(group)}
+                              disabled={bulkRunning}
+                              style={{ accentColor: "var(--hp-warm-800)", cursor: bulkRunning ? "not-allowed" : "pointer", width: 12, height: 12 }}
                             />
-                          )) : []),
-                        ];
-                      })}
-                    </tbody>
-                  </table>
+                          </div>
+                          <span
+                            className="uppercase"
+                            style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-text-secondary)", letterSpacing: "0.4px", cursor: "pointer", whiteSpace: "nowrap" }}
+                            onClick={() => toggleGroup(groupName)}
+                          >
+                            {groupName}
+                          </span>
+                          <div style={{ flex: 1, height: 1, backgroundColor: "var(--hp-border-light)" }} />
+                          <span style={{ fontSize: 11, color: "var(--hp-text-muted)", whiteSpace: "nowrap" }}>
+                            {reviewedInGroup}/{group.length} reviewed
+                          </span>
+                        </div>,
+                        // Inspection rows
+                        ...(!isCollapsed ? group.map(insp => (
+                          <InspectionRow
+                            key={insp.id}
+                            insp={insp}
+                            selected={selectedInsp?.id === insp.id && panelOpen}
+                            checked={selectedIds.has(insp.id)}
+                            bulkItemStatus={bulkStatus.get(insp.id) ?? null}
+                            bulkRunning={bulkRunning}
+                            companyId={selectedCompany?.id ?? 0}
+                            projectId={selectedProject?.id ?? 0}
+                            onCheck={e => { e.stopPropagation(); toggleSelect(insp.id); }}
+                            onClick={() => openPanel(insp)}
+                          />
+                        )) : []),
+                      ];
+                    })}
+                  </div>
                 </>
               )}
             </div>
@@ -2592,59 +2598,90 @@ function InspectionRow({
   const band = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
   const isClosed = insp.status?.toLowerCase() === "closed";
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   const daysOpen = !isClosed && insp.created_at
     ? Math.floor((Date.now() - new Date(insp.created_at).getTime()) / (1000 * 60 * 60 * 24))
     : null;
 
   const readyToClose = !isClosed && (displayScore ?? 0) >= 75;
-
   const hasInfo = !!(insp.description || insp.location || insp.created_by);
 
+  const dotBg = displayScore === null || insp.review_status === "not_reviewed"
+    ? "#D4C4AE"
+    : displayScore >= 75 ? "var(--hp-compliant)"
+    : displayScore >= 60 ? "var(--hp-minor)"
+    : displayScore >= 40 ? "var(--hp-significant)"
+    : "var(--hp-critical)";
+
+  const scoreClr = displayScore === null
+    ? "var(--hp-text-muted)"
+    : displayScore >= 75 ? "var(--hp-compliant)"
+    : displayScore >= 60 ? "var(--hp-minor)"
+    : displayScore >= 40 ? "var(--hp-significant)"
+    : "var(--hp-critical)";
+
+  const pillStyle: React.CSSProperties = !band
+    ? { backgroundColor: "#F0E8DE", color: "var(--hp-text-muted)" }
+    : band === "compliant"        ? { backgroundColor: "var(--hp-compliant-bg)",    color: "var(--hp-sage-500)" }
+    : band === "minor_gaps"       ? { backgroundColor: "var(--hp-minor-bg)",         color: "var(--hp-minor)" }
+    : band === "significant_gaps" ? { backgroundColor: "var(--hp-significant-bg)",   color: "var(--hp-significant)" }
+    :                               { backgroundColor: "var(--hp-critical-bg)",       color: "var(--hp-critical)" };
+
+  const daysClr = daysOpen !== null && daysOpen > 30
+    ? (band === "compliant" || band === "minor_gaps" ? "var(--hp-significant)" : "var(--hp-critical)")
+    : "var(--hp-text-muted)";
+
   return (
-    <tr
+    <div
       onClick={onClick}
-      className={`cursor-pointer transition-colors border-b border-gray-100 ${
-        selected ? "bg-amber-50 border-l-[3px] border-l-amber-500" :
-        checked  ? "bg-amber-50/50 border-l-[3px] border-l-amber-400" :
-                   "bg-white hover:bg-gray-50 border-l-[3px] border-l-transparent"
-      }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "grid",
+        gridTemplateColumns: "20px 10px 1fr auto auto auto auto auto",
+        gap: 10,
+        alignItems: "center",
+        backgroundColor: selected || checked ? "rgba(196,146,74,0.05)" : "var(--hp-surface)",
+        border: `1px solid ${selected ? "var(--hp-warm-300)" : hovered ? "var(--hp-warm-200)" : "var(--hp-border-light)"}`,
+        borderRadius: 8,
+        padding: "11px 14px",
+        marginBottom: 4,
+        cursor: "pointer",
+        transition: "border-color 150ms, background-color 150ms",
+      }}
     >
-      {/* Checkbox — smallest, indented under group header */}
-      <td className="pl-9 pr-3 py-2.5" onClick={onCheck}>
+      {/* Col 1: Checkbox */}
+      <div onClick={onCheck} style={{ display: "flex", alignItems: "center" }}>
         <input
           type="checkbox"
           checked={checked}
-          onChange={() => {/* handled by onCheck */}}
+          onChange={() => {}}
           disabled={bulkRunning}
-          className="h-3 w-3 rounded border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer disabled:cursor-not-allowed accent-amber-600"
+          style={{ accentColor: "var(--hp-warm-800)", cursor: bulkRunning ? "not-allowed" : "pointer", width: 13, height: 13 }}
         />
-      </td>
+      </div>
 
-      {/* ITP name + dash bullet + bulk status — indented under group header */}
-      <td className="pl-10 pr-3 py-2.5 max-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-amber-300 shrink-0 font-semibold text-sm select-none">–</span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">{insp.name}</p>
-            {daysOpen !== null && (
-              <p className={`text-[10px] mt-0.5 ${daysOpen > 30 ? "text-red-500" : daysOpen >= 14 ? "text-amber-500" : "text-gray-400"}`}>
-                {daysOpen} days open
-              </p>
-            )}
-          </div>
-          {bulkItemStatus && (
-            <BulkStatusBadge status={bulkItemStatus} />
-          )}
+      {/* Col 2: Status dot */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: dotBg, flexShrink: 0 }} />
+      </div>
+
+      {/* Col 3: ITP name + subtitle */}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--hp-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {insp.name}
+          </span>
+          {bulkItemStatus && <BulkStatusBadge status={bulkItemStatus} />}
           {hasInfo && (
-            <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
+            <div style={{ position: "relative", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
               <button
                 type="button"
                 onClick={() => setPopoverOpen(o => !o)}
-                className="flex items-center text-gray-300 hover:text-gray-500 transition-colors"
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", color: "var(--hp-text-muted)" }}
                 aria-label="Show inspection details"
               >
-                {/* Info icon inline SVG */}
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="8" strokeLinecap="round" strokeWidth={3} />
@@ -2653,12 +2690,9 @@ function InspectionRow({
               </button>
               {popoverOpen && (
                 <>
-                  {/* Backdrop */}
                   <div className="fixed inset-0 z-40" onClick={() => setPopoverOpen(false)} />
                   <div className="absolute left-0 top-full mt-1.5 z-50 w-72 rounded-xl border border-gray-200 bg-white shadow-xl p-3 space-y-1.5">
-                    {insp.description && (
-                      <p className="text-xs text-gray-700 leading-relaxed">{insp.description}</p>
-                    )}
+                    {insp.description && <p className="text-xs text-gray-700 leading-relaxed">{insp.description}</p>}
                     {(insp.location || insp.created_by) && (
                       <p className="text-[10px] text-gray-400 leading-relaxed">
                         {insp.location && <span>📍 {insp.location}</span>}
@@ -2672,100 +2706,89 @@ function InspectionRow({
             </div>
           )}
         </div>
-      </td>
-
-      {/* # — now before Person */}
-      <td className="px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap">
-        {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : "—"}
-      </td>
-
-      {/* Person */}
-      <td className="px-3 py-2.5 text-[10px] text-gray-400 whitespace-nowrap">
-        {isClosed
-          ? (insp.closed_by ? `Closed by ${insp.closed_by}` : "—")
-          : (insp.assignee  ? `Assigned to ${insp.assignee}` : "—")}
-      </td>
-
-      {/* Score */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        {insp.review_status === "not_reviewed" ? (
-          <span className="text-xs text-gray-300 italic">—</span>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <span className={`text-sm font-bold ${
-              (displayScore ?? 0) >= 85 ? "text-green-600" :
-              (displayScore ?? 0) >= 70 ? "text-amber-600" :
-              (displayScore ?? 0) >= 50 ? "text-orange-500" :
-                                          "text-red-600"
-            }`}>
-              {displayScore ?? "—"}
-            </span>
-            {insp.override_score !== null && (
-              <span className="text-[10px] text-gray-400 line-through">{insp.last_score}</span>
-            )}
-          </div>
-        )}
-      </td>
-
-      {/* Band pill */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        {band ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${scorePillClasses(band)}`}>
-              {scoreBandLabel(band)}
-            </span>
-            {insp.override_score !== null && (
-              <span className="text-[10px] text-purple-600 font-semibold">Human</span>
-            )}
-            {readyToClose && (
-              <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">
-                Ready to close
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-gray-200 text-gray-500">
-            Not reviewed
-          </span>
-        )}
-      </td>
-
-      {/* Status — pill badge */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
-          isClosed                                   ? "bg-gray-100 text-gray-500" :
-          insp.status?.toLowerCase() === "in_review" ? "bg-amber-100 text-amber-700" :
-                                                       "bg-green-100 text-green-700"
-        }`}>
-          {insp.status ?? "—"}
-        </span>
-      </td>
-
-      {/* Last reviewed + Procore link */}
-      <td className="px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap">
-        <div className="flex items-center gap-2">
-          <span>
-            {insp.last_reviewed_at ? fmtDate(insp.last_reviewed_at) : "—"}
-            {insp.review_status === "changed" && (
-              <span className="ml-1 text-amber-500 text-[10px]">⚠</span>
-            )}
-          </span>
-          {!bulkRunning && companyId > 0 && projectId > 0 && (
-            <a
-              href={`https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="flex items-center gap-0.5 text-[10px] text-gray-400 hover:text-gray-600 transition-colors shrink-0"
-              title="Open in Procore"
-            >
-              <ExternalLink className="h-3 w-3" />
-              Procore
-            </a>
+        <div style={{ display: "flex", gap: 8, marginTop: 2, fontSize: 11, color: "var(--hp-text-muted)" }}>
+          {isClosed
+            ? (insp.closed_by ? <span key="cb">Closed by {insp.closed_by}</span> : null)
+            : (insp.assignee  ? <span key="as">Assigned to {insp.assignee}</span> : null)}
+          {daysOpen !== null && (
+            <span style={{ color: daysClr }}>{daysOpen}d open</span>
           )}
         </div>
-      </td>
-    </tr>
+      </div>
+
+      {/* Col 4: # */}
+      <div style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-text-muted)", whiteSpace: "nowrap" }}>
+        {insp.inspection_number_of_type != null ? `#${insp.inspection_number_of_type}` : ""}
+      </div>
+
+      {/* Col 5: Score */}
+      <div style={{ textAlign: "right", whiteSpace: "nowrap", minWidth: 34 }}>
+        {insp.review_status === "not_reviewed" ? (
+          <span style={{ fontSize: 13, color: "var(--hp-text-muted)" }}>—</span>
+        ) : (
+          <>
+            <span style={{ fontSize: 18, fontWeight: 500, color: scoreClr }}>{displayScore ?? "—"}</span>
+            {insp.override_score !== null && (
+              <span style={{ fontSize: 11, color: "var(--hp-text-muted)", textDecoration: "line-through", marginLeft: 4 }}>
+                {insp.last_score}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Col 6: Rating pill + badges */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-start" }}>
+        <span style={{ ...pillStyle, fontSize: 11, fontWeight: 500, padding: "3px 8px", borderRadius: 20, whiteSpace: "nowrap" }}>
+          {band ? scoreBandLabel(band) : "Not reviewed"}
+        </span>
+        {insp.override_score !== null && (
+          <span style={{ fontSize: 10, color: "var(--hp-text-muted)", fontWeight: 500 }}>Override</span>
+        )}
+        {readyToClose && (
+          <span style={{ backgroundColor: "var(--hp-sage-100)", color: "var(--hp-sage-500)", fontSize: 10, padding: "2px 7px", borderRadius: 10, fontWeight: 500, whiteSpace: "nowrap" }}>
+            Ready to close
+          </span>
+        )}
+      </div>
+
+      {/* Col 7: Status pill */}
+      <div>
+        <span style={{
+          fontSize: 11, fontWeight: 500, padding: "3px 8px", borderRadius: 20, whiteSpace: "nowrap",
+          ...(isClosed
+            ? { backgroundColor: "var(--hp-warm-100)", color: "var(--hp-text-secondary)" }
+            : insp.status?.toLowerCase() === "in_review"
+              ? { backgroundColor: "rgba(196,146,74,0.15)", color: "var(--hp-significant)" }
+              : { backgroundColor: "rgba(106,140,94,0.15)", color: "var(--hp-compliant)" }
+          )
+        }}>
+          {insp.status ?? "—"}
+        </span>
+      </div>
+
+      {/* Col 8: Reviewed date + Procore link */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-end", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+          {insp.last_reviewed_at ? fmtDate(insp.last_reviewed_at) : "—"}
+          {insp.review_status === "changed" && (
+            <span style={{ marginLeft: 4, color: "var(--hp-significant)" }}>⚠</span>
+          )}
+        </span>
+        {!bulkRunning && companyId > 0 && projectId > 0 && (
+          <a
+            href={`https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ fontSize: 10, color: "var(--hp-text-muted)", display: "flex", alignItems: "center", gap: 3 }}
+          >
+            <ExternalLink className="h-3 w-3" />
+            Procore
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
 
