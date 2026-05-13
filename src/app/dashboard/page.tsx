@@ -1443,7 +1443,7 @@ export default function DashboardPage() {
     <div className="flex h-full flex-col bg-[#F9FAFB] overflow-hidden">
 
       {/* ── Top-level tab nav ── */}
-      <div className="shrink-0 bg-white border-b border-gray-200 px-6 flex items-center gap-0.5 h-10">
+      <div className="shrink-0 bg-white border-b border-gray-200 px-4 flex items-center gap-0 h-10">
         {([
           ["company",         "Company",         null],
           ["insights",        "Insights",        "sparkles"],
@@ -1460,10 +1460,10 @@ export default function DashboardPage() {
               }
               if (view === "insights") setInsightsFetched(true);
             }}
-            className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-4 h-full text-xs font-medium transition-colors border-b-2 ${
               dashboardView === view
-                ? "bg-gray-100 text-gray-900"
-                : "text-gray-400 hover:text-gray-700"
+                ? "border-[#1F3864] text-[#1F3864]"
+                : "border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
             {icon === "sparkles" && <Sparkles className="h-3 w-3" />}
@@ -1529,9 +1529,9 @@ export default function DashboardPage() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left: project list ── */}
-        <aside className="w-64 shrink-0 border-r border-gray-200 bg-white overflow-y-auto flex flex-col">
+        <aside className="w-64 shrink-0 border-r border-gray-700/30 bg-[#1F3864] overflow-y-auto flex flex-col">
           {/* Company selector */}
-          <div className="px-4 py-3 border-b border-gray-100 shrink-0">
+          <div className="px-4 py-3 border-b border-white/10 shrink-0">
             {companies.length > 1 ? (
               <select
                 value={selectedCompany?.id ?? ""}
@@ -1539,34 +1539,34 @@ export default function DashboardPage() {
                   const c = companies.find(x => x.id === Number(e.target.value));
                   if (c) setSelectedCompany(c);
                 }}
-                className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <option value="">— Select company —</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             ) : selectedCompany ? (
-              <p className="text-xs font-semibold text-[#1F3864] truncate">{selectedCompany.name}</p>
+              <p className="text-xs font-semibold text-white truncate">{selectedCompany.name}</p>
             ) : (
-              <p className="text-xs text-gray-400 italic">Loading…</p>
+              <p className="text-xs text-white/40 italic">Loading…</p>
             )}
           </div>
           {/* Projects label + audit link */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Projects</p>
-            <Link href="/audit" className="text-[10px] text-gray-400 hover:text-[#1F3864] transition-colors font-medium">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 shrink-0">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50">Projects</p>
+            <Link href="/audit" className="text-[10px] text-white/50 hover:text-white/80 transition-colors font-medium">
               Audit Log
             </Link>
           </div>
           {!selectedCompany && (
-            <p className="px-4 py-6 text-xs text-gray-400 italic">Select a company to load projects.</p>
+            <p className="px-4 py-6 text-xs text-white/40 italic">Select a company to load projects.</p>
           )}
           {selectedCompany && projectsLoading && (
-            <div className="flex items-center gap-2 px-4 py-4 text-xs text-gray-400">
-              <Spinner className="h-3 w-3 text-blue-400" /> Loading…
+            <div className="flex items-center gap-2 px-4 py-4 text-xs text-white/50">
+              <Spinner className="h-3 w-3 text-white/40" /> Loading…
             </div>
           )}
           {selectedCompany && !projectsLoading && projects.length === 0 && (
-            <p className="px-4 py-4 text-xs text-gray-400 italic">No projects found.</p>
+            <p className="px-4 py-4 text-xs text-white/40 italic">No projects found.</p>
           )}
           {projects.map(p => (
             <ProjectRow
@@ -1583,11 +1583,11 @@ export default function DashboardPage() {
 
           {/* Show hidden toggle */}
           {selectedCompany && !projectsLoading && hiddenCount > 0 && (
-            <div className="border-t border-gray-100 px-3 py-2 shrink-0">
+            <div className="border-t border-white/10 px-3 py-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowHidden(v => !v)}
-                className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-[10px] text-white/40 hover:text-white/60 transition-colors"
               >
                 {showHidden ? "Hide hidden projects" : `${hiddenCount} hidden — show`}
               </button>
@@ -1609,19 +1609,24 @@ export default function DashboardPage() {
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-base font-bold text-gray-900">
+                    <h2 className="text-base font-bold text-[#1F3864]">
                       {selectedProject.display_name || selectedProject.name}
                     </h2>
                     {selectedProject.project_number && (
-                      <p className="text-xs text-gray-400 mt-0.5">#{selectedProject.project_number}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 font-medium">#{selectedProject.project_number}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-3">
                     {(selectedProject.reviewed_count ?? 0) > 0 && (
                       <>
-                        <span>{selectedProject.reviewed_count} reviewed</span>
+                        <span className="text-xs text-gray-400">{selectedProject.reviewed_count} reviewed</span>
                         {(selectedProject.avg_score ?? null) !== null && (
-                          <span className={`font-bold ${(selectedProject.avg_score ?? 0) >= 85 ? "text-green-600" : (selectedProject.avg_score ?? 0) >= 70 ? "text-amber-600" : (selectedProject.avg_score ?? 0) >= 50 ? "text-orange-500" : "text-red-500"}`}>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            (selectedProject.avg_score ?? 0) >= 85 ? "bg-green-50 text-green-700 border border-green-200" :
+                            (selectedProject.avg_score ?? 0) >= 70 ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                            (selectedProject.avg_score ?? 0) >= 50 ? "bg-orange-50 text-orange-600 border border-orange-200" :
+                                                                      "bg-red-50 text-red-600 border border-red-200"
+                          }`}>
                             Avg {selectedProject.avg_score}
                           </span>
                         )}
@@ -1683,7 +1688,7 @@ export default function DashboardPage() {
               {!inspectionsLoading && filteredInspections.length > 0 && (
                 <>
                   {/* Control bar: Select All (left) + Collapse All (right) */}
-                  <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 bg-gray-100 border-b-2 border-amber-600 shadow-sm">
+                  <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
                     <div className="flex items-center gap-2.5">
                       <input
                         type="checkbox"
@@ -1743,6 +1748,21 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
+                  {/* Score legend */}
+                  <div className="flex items-center gap-3 px-4 py-1.5 bg-gray-50 border-b border-gray-100">
+                    <span className="text-[9px] font-semibold uppercase tracking-widest text-gray-400 shrink-0">Score:</span>
+                    {([
+                      ["bg-green-100 text-green-700", "85–100 Compliant"],
+                      ["bg-amber-100 text-amber-700", "70–84 Minor Gaps"],
+                      ["bg-orange-100 text-orange-600", "50–69 Sig. Gaps"],
+                      ["bg-red-100 text-red-600",    "0–49 Critical"],
+                    ] as [string, string][]).map(([cls, label]) => (
+                      <span key={label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold ${cls}`}>
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+
                   <table className="w-full text-sm shadow-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200">
@@ -1771,7 +1791,7 @@ export default function DashboardPage() {
                           // Group header row — light gray
                           <tr
                             key={`group-${groupName}`}
-                            className="bg-[#F3F4F6] border-t border-gray-200 select-none"
+                            className="bg-[#EEF0F5] border-t border-gray-200 select-none"
                           >
                             {/* Collapse arrow + group checkbox */}
                             <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
@@ -1792,7 +1812,7 @@ export default function DashboardPage() {
                             </td>
                             <td
                               colSpan={7}
-                              className="px-3 py-2.5 cursor-pointer hover:bg-gray-200 transition-colors"
+                              className="px-3 py-2.5 cursor-pointer hover:bg-[#E5E8F0] transition-colors"
                               onClick={() => toggleGroup(groupName)}
                             >
                               <div className="flex items-center gap-2.5">
@@ -2058,7 +2078,7 @@ function ProjectRow({
   const auditHref = `/audit?project_id=${p.id}&project_name=${encodeURIComponent(p.display_name || p.name)}`;
 
   return (
-    <div className={`group relative border-b border-gray-100 transition-opacity duration-200 ${hiding ? "opacity-30 pointer-events-none" : ""}`}>
+    <div className={`group relative border-b border-white/10 transition-opacity duration-200 ${hiding ? "opacity-30 pointer-events-none" : ""}`}>
       <button
         type="button"
         onClick={onClick}
@@ -2067,28 +2087,28 @@ function ProjectRow({
           isHidden
             ? "cursor-default"
             : selected
-              ? "bg-amber-50 border-l-2 border-l-amber-500"
-              : "hover:bg-gray-50 border-l-2 border-l-transparent"
+              ? "bg-white/15 border-l-2 border-l-amber-400"
+              : "hover:bg-white/10 border-l-2 border-l-transparent"
         }`}
       >
         <div className="flex items-center gap-2 min-w-0">
           {/* Rating dot */}
-          <span className={`shrink-0 h-2 w-2 rounded-full ${isHidden ? "bg-gray-200" : dotColor}`} />
+          <span className={`shrink-0 h-2 w-2 rounded-full ${isHidden ? "bg-white/20" : dotColor}`} />
 
           <div className="min-w-0 flex-1">
             {p.project_number && (
-              <p className="text-[10px] text-gray-400 leading-none mb-0.5">#{p.project_number}</p>
+              <p className="text-[10px] text-white/50 leading-none mb-0.5">#{p.project_number}</p>
             )}
-            <p className={`text-xs font-medium leading-snug truncate ${isHidden ? "text-gray-400" : "text-gray-800"}`}>
+            <p className={`text-xs font-medium leading-snug truncate ${isHidden ? "text-white/30" : "text-white/90"}`}>
               {p.display_name || p.name}
             </p>
           </div>
 
           {/* Avg score or hidden label */}
           {isHidden ? (
-            <span className="shrink-0 text-[10px] text-gray-400 italic">hidden</span>
+            <span className="shrink-0 text-[10px] text-white/30 italic">hidden</span>
           ) : p.avg_score !== null ? (
-            <span className="shrink-0 text-[10px] font-semibold text-amber-600">
+            <span className="shrink-0 text-[10px] font-semibold text-amber-300">
               Avg {p.avg_score}
             </span>
           ) : null}
@@ -2100,7 +2120,7 @@ function ProjectRow({
         <button
           type="button"
           onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 leading-none text-sm font-bold"
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-white/40 hover:text-white/80 hover:bg-white/10 leading-none text-sm font-bold"
           title="More options"
         >
           ⋯
@@ -2585,9 +2605,9 @@ function InspectionRow({
     <tr
       onClick={onClick}
       className={`cursor-pointer transition-colors border-b border-gray-100 ${
-        selected ? "bg-amber-50 border-l-[3px] border-l-amber-600" :
-        checked  ? "bg-amber-50/60 border-l-[3px] border-l-amber-400" :
-                   "bg-white hover:bg-amber-50 border-l-[3px] border-l-amber-600"
+        selected ? "bg-amber-50 border-l-[3px] border-l-amber-500" :
+        checked  ? "bg-amber-50/50 border-l-[3px] border-l-amber-400" :
+                   "bg-white hover:bg-gray-50 border-l-[3px] border-l-transparent"
       }`}
     >
       {/* Checkbox — smallest, indented under group header */}
