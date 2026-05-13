@@ -4,7 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Clock } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
@@ -117,12 +117,6 @@ function fmtDate(iso: string | null | undefined): string {
   });
 }
 
-function fmtDateSydney(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-AU", {
-    day: "2-digit", month: "short", timeZone: "Australia/Sydney",
-  });
-}
 
 // Worst band among a group of inspections (for group colour indicator)
 const BAND_PRIORITY: Record<string, number> = {
@@ -1000,16 +994,6 @@ export default function DashboardPage() {
     } finally {
       setOverrideSaving(false);
     }
-  }
-
-  // ── Confirm ITP ────────────────────────────────────────────────────────────
-
-  function handleConfirm(confirmed_at: string, confirmed_by: string) {
-    if (!selectedInsp) return;
-    const updater = (insp: DashboardInspection): DashboardInspection =>
-      insp.id === selectedInsp.id ? { ...insp, confirmed_at, confirmed_by } : insp;
-    setInspections(prev => prev.map(updater));
-    setSelectedInsp(prev => prev ? updater(prev) : prev);
   }
 
   // ── Filtered + grouped ITP list ─────────────────────────────────────────────
@@ -1914,7 +1898,6 @@ export default function DashboardPage() {
             onOverrideScoreChange={setOverrideScore}
             onOverrideNoteChange={setOverrideNote}
             onSaveOverride={handleSaveOverride}
-            onConfirm={handleConfirm}
           />
         )}
       </div>
@@ -2659,7 +2642,7 @@ function InspectionRow({
       onMouseLeave={() => setHovered(false)}
       style={{
         display: "grid",
-        gridTemplateColumns: "20px 10px 1fr auto auto auto auto auto auto",
+        gridTemplateColumns: "20px 10px 1fr auto auto auto auto auto",
         gap: 10,
         alignItems: "center",
         backgroundColor: selected || checked ? "rgba(196,146,74,0.05)" : "var(--hp-surface)",
@@ -2772,26 +2755,7 @@ function InspectionRow({
         )}
       </div>
 
-      {/* Col 7: Last activity */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
-        {insp.confirmed_at ? (
-          <>
-            <CheckCircle className="h-3 w-3 shrink-0" style={{ color: "var(--hp-compliant)" }} />
-            <span style={{ fontSize: 11, color: "var(--hp-compliant)", fontWeight: 500 }}>
-              Confirmed {fmtDateSydney(insp.confirmed_at)}
-            </span>
-          </>
-        ) : insp.last_reviewed_at ? (
-          <>
-            <Clock className="h-3 w-3 shrink-0" style={{ color: "var(--hp-text-muted)" }} />
-            <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-              Reviewed {fmtDate(insp.last_reviewed_at)}
-            </span>
-          </>
-        ) : null}
-      </div>
-
-      {/* Col 8: Status pill */}
+      {/* Col 7: Status pill */}
       <div>
         <span style={{
           fontSize: 11, fontWeight: 500, padding: "3px 8px", borderRadius: 20, whiteSpace: "nowrap",
@@ -2959,7 +2923,6 @@ function InspectionPanel({
   onOverrideScoreChange,
   onOverrideNoteChange,
   onSaveOverride,
-  onConfirm,
 }: {
   insp: DashboardInspection;
   companyId: number;
@@ -2976,17 +2939,12 @@ function InspectionPanel({
   onOverrideScoreChange: (v: string) => void;
   onOverrideNoteChange: (v: string) => void;
   onSaveOverride: () => void;
-  onConfirm: (confirmed_at: string, confirmed_by: string) => void;
 }) {
   const displayScore  = insp.override_score ?? insp.last_score;
   const band          = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
   const rd            = insp.review_data;
   const hasOverride   = insp.override_score !== null;
   const [descExpanded, setDescExpanded] = useState(false);
-  const [confirming, setConfirming]     = useState(false);
-  const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [localConfirmedAt, setLocalConfirmedAt] = useState<string | null>(insp.confirmed_at ?? null);
-  const [localConfirmedBy, setLocalConfirmedBy] = useState<string | null>(insp.confirmed_by ?? null);
 
   const procoreUrl = companyId > 0 && projectId > 0
     ? `https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}`
@@ -3114,57 +3072,6 @@ function InspectionPanel({
         {insp.review_status === "not_reviewed" && (
           <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-center">
             <p className="text-sm text-gray-500">This ITP has not been reviewed yet.</p>
-          </div>
-        )}
-
-        {/* Confirm ITP sign-off */}
-        {insp.review_status !== "not_reviewed" && insp.review_record_id && (
-          <div className="rounded-xl border px-4 py-3" style={{ borderColor: localConfirmedAt ? "var(--hp-compliant-bg)" : "var(--hp-border)", backgroundColor: localConfirmedAt ? "var(--hp-compliant-bg)" : "var(--hp-warm-100)" }}>
-            {localConfirmedAt ? (
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 shrink-0" style={{ color: "var(--hp-compliant)" }} />
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: "var(--hp-compliant)" }}>ITP Confirmed</p>
-                  <p className="text-[10px]" style={{ color: "var(--hp-text-muted)" }}>
-                    by {localConfirmedBy} · {fmtDateSydney(localConfirmedAt)}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs" style={{ color: "var(--hp-text-secondary)" }}>Sign off this ITP as QA-reviewed and ready.</p>
-                <button
-                  type="button"
-                  disabled={confirming}
-                  onClick={async () => {
-                    if (!insp.review_record_id || !companyId) return;
-                    setConfirming(true);
-                    setConfirmError(null);
-                    try {
-                      const res = await fetch("/api/dashboard/confirm", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ review_record_id: insp.review_record_id, company_id: String(companyId) }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) throw new Error(data.error ?? "Confirm failed");
-                      setLocalConfirmedAt(data.confirmed_at);
-                      setLocalConfirmedBy(data.confirmed_by);
-                      onConfirm(data.confirmed_at, data.confirmed_by);
-                    } catch (err) {
-                      setConfirmError(err instanceof Error ? err.message : "Failed to confirm");
-                    } finally {
-                      setConfirming(false);
-                    }
-                  }}
-                  className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors"
-                  style={{ backgroundColor: "var(--hp-warm-800)" }}
-                >
-                  {confirming ? "Confirming…" : "Confirm ITP"}
-                </button>
-              </div>
-            )}
-            {confirmError && <p className="mt-1.5 text-[10px] text-red-500">{confirmError}</p>}
           </div>
         )}
 
