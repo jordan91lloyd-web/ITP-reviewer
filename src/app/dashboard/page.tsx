@@ -11,6 +11,7 @@ import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
 import InsightsTab from "@/components/InsightsTab";
 import HoldpointLogo from "@/components/HoldpointLogo";
+import RecentActivityStrip from "@/components/RecentActivityStrip";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
 
@@ -1537,6 +1538,11 @@ export default function DashboardPage() {
 
       {/* ── ITP Reviews tab ── */}
       {dashboardView === "itp_reviews" && (<>
+      {selectedCompany && (
+        <div className="shrink-0 px-4 pt-3" style={{ backgroundColor: "var(--hp-bg)" }}>
+          <RecentActivityStrip companyId={String(selectedCompany.id)} />
+        </div>
+      )}
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left: project list ── */}
