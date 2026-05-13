@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import HoldpointLogo from "@/components/HoldpointLogo";
 
 interface ProcoreUser {
   name?: string;
@@ -23,12 +24,12 @@ export default function GlobalNav() {
   }, []);
 
   return (
-    <nav className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6 shrink-0 z-10 print:hidden">
+    <nav className="bg-white h-14 flex items-center px-6 shrink-0 z-10 print:hidden" style={{ borderBottom: "1px solid var(--hp-border)" }}>
       <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-1">
-          <span className="text-[#D97706] font-bold text-base">Fleek</span>
-          <span className="text-[#1F3864] font-bold text-base"> Constructions</span>
+        <Link href="/" className="flex items-center gap-2.5">
+          <HoldpointLogo variant="light" size={24} />
+          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--hp-warm-900)" }}>Holdpoint</span>
         </Link>
 
         {/* Nav links + auth */}

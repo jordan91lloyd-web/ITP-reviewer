@@ -21,7 +21,7 @@ export default async function Home({
     return (
       <div className="flex flex-col min-h-full">
         {/* Hero */}
-        <section className="bg-[#1F3864] text-white pt-14 pb-28 px-6">
+        <section className="text-white pt-14 pb-28 px-6" style={{ background: "linear-gradient(135deg, #5C4733 0%, #8C7258 100%)" }}>
           <div className="mx-auto max-w-2xl text-center">
             {isUnauthorized && (
               <div className="mb-8 rounded-xl border border-red-400/30 bg-red-500/20 px-4 py-3">

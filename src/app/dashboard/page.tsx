@@ -1393,11 +1393,12 @@ export default function DashboardPage() {
 
   if (authenticated === false) {
     return (
-      <div className="flex-1 bg-[#F9FAFB] flex flex-col items-center justify-center gap-4 py-24">
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 py-24" style={{ backgroundColor: "var(--hp-bg)" }}>
         <p className="text-sm text-gray-600">Connect to Procore to use the dashboard.</p>
         <a
           href="/api/auth/login"
-          className="rounded-lg bg-[#1F3864] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#253f77] transition-colors"
+          style={{ backgroundColor: "var(--hp-warm-800)" }}
+          className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-colors"
         >
           Connect to Procore
         </a>
@@ -1407,7 +1408,7 @@ export default function DashboardPage() {
 
   if (authenticated === null) {
     return (
-      <div className="flex-1 bg-[#F9FAFB] flex items-center justify-center py-24">
+      <div className="flex-1 flex items-center justify-center py-24" style={{ backgroundColor: "var(--hp-bg)" }}>
         <Spinner className="h-6 w-6 text-gray-400" />
       </div>
     );
@@ -1441,7 +1442,7 @@ export default function DashboardPage() {
   const selectedCount = selectedIds.size;
 
   return (
-    <div className="flex h-full flex-col bg-[#F9FAFB] overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden" style={{ backgroundColor: "var(--hp-bg)" }}>
 
       {/* ── Top-level tab nav ── */}
       <div
@@ -1937,7 +1938,7 @@ function BulkActionBar({
   onClearSelection: () => void;
 }) {
   return (
-    <div className="sticky bottom-0 z-20 mx-4 mb-4 rounded-xl bg-[#1F3864] shadow-xl px-4 py-3 flex items-center gap-3">
+    <div className="sticky bottom-0 z-20 mx-4 mb-4 rounded-xl shadow-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--hp-warm-800)" }}>
       <span className="text-xs font-semibold text-white/80 shrink-0">
         {selectedCount} selected
       </span>
@@ -2277,17 +2278,17 @@ function CompanyTab({
   };
 
   function companyStatusPill(score: number | null) {
-    if (score === null)  return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-400">No reviews</span>;
-    if (score >= 75)     return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">On track</span>;
-    if (score >= 60)     return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Attention</span>;
-    return               <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-600 border border-red-200">Action needed</span>;
+    if (score === null) return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: "var(--hp-warm-100)", color: "var(--hp-text-muted)" }}>No reviews</span>;
+    if (score >= 75)    return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: "var(--hp-compliant-bg)", color: "var(--hp-compliant)" }}>On track</span>;
+    if (score >= 60)    return <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: "var(--hp-minor-bg)", color: "var(--hp-minor)" }}>Attention</span>;
+    return              <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: "var(--hp-significant-bg)", color: "var(--hp-significant)" }}>Action needed</span>;
   }
 
   function scoreColor(score: number | null): string {
-    if (score === null) return "text-gray-300";
-    if (score >= 75) return "text-green-700";
-    if (score >= 60) return "text-amber-700";
-    return "text-red-600";
+    if (score === null) return "var(--hp-text-muted)";
+    if (score >= 75) return "var(--hp-compliant)";
+    if (score >= 60) return "var(--hp-significant)";
+    return "var(--hp-critical)";
   }
 
   // Tiny inline count cell — shows spinner / dash / number
@@ -2310,7 +2311,7 @@ function CompanyTab({
   const loading = projectsLoading || companyStatsLoading;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F9FAFB]">
+    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--hp-bg)" }}>
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
 
         {/* Header */}
@@ -2349,7 +2350,8 @@ function CompanyTab({
               type="button"
               onClick={handleExportPdf}
               disabled={loading || visibleProjects.length === 0}
-              className="flex items-center gap-1.5 rounded-lg bg-[#1F3864] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#253f77] disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 transition-colors"
+              style={{ backgroundColor: "var(--hp-warm-800)" }}
             >
               <Download className="h-3.5 w-3.5" />
               Export PDF
@@ -2358,17 +2360,17 @@ function CompanyTab({
         </div>
 
         {/* Date range filter */}
-        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 gap-0.5 shadow-sm">
+        <div className="inline-flex rounded-lg p-0.5 gap-0.5 shadow-sm" style={{ border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)" }}>
           {(["all", "30d", "90d", "ytd"] as DateRange[]).map(range => (
             <button
               key={range}
               type="button"
               onClick={() => onDateRangeChange(range)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                companyDateRange === range
-                  ? "bg-gray-100 text-gray-900 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
+              className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+              style={companyDateRange === range
+                ? { backgroundColor: "var(--hp-warm-800)", color: "#fff" }
+                : { color: "var(--hp-text-muted)" }
+              }
             >
               {DATE_RANGE_LABELS[range]}
             </button>
@@ -2377,21 +2379,21 @@ function CompanyTab({
 
         {/* Summary cards */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Total Projects</p>
-            <p className="text-3xl font-bold text-gray-900">{visibleProjects.length}</p>
+          <div className="rounded-xl shadow-sm px-5 py-4" style={{ backgroundColor: "var(--hp-surface)", border: "1px solid var(--hp-border-light)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--hp-text-muted)" }}>Total Projects</p>
+            <p className="text-3xl font-bold" style={{ color: "var(--hp-text-primary)" }}>{visibleProjects.length}</p>
           </div>
-          <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">ITPs Reviewed</p>
-            <p className="text-3xl font-bold text-gray-900">{totalReviewed}</p>
+          <div className="rounded-xl shadow-sm px-5 py-4" style={{ backgroundColor: "var(--hp-surface)", border: "1px solid var(--hp-border-light)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--hp-text-muted)" }}>ITPs Reviewed</p>
+            <p className="text-3xl font-bold" style={{ color: "var(--hp-text-primary)" }}>{totalReviewed}</p>
           </div>
-          <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Average Score</p>
-            <p className={`text-3xl font-bold ${scoreColor(overallAvg)}`}>{overallAvg ?? "—"}</p>
+          <div className="rounded-xl shadow-sm px-5 py-4" style={{ backgroundColor: "var(--hp-surface)", border: "1px solid var(--hp-border-light)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--hp-text-muted)" }}>Average Score</p>
+            <p className="text-3xl font-bold" style={{ color: scoreColor(overallAvg) }}>{overallAvg ?? "—"}</p>
           </div>
-          <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Worst Performing</p>
-            <p className={`text-3xl font-bold ${scoreColor(worstProject?.avg_score ?? null)}`}>
+          <div className="rounded-xl shadow-sm px-5 py-4" style={{ backgroundColor: "var(--hp-surface)", border: "1px solid var(--hp-border-light)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--hp-text-muted)" }}>Worst Performing</p>
+            <p className="text-3xl font-bold" style={{ color: scoreColor(worstProject?.avg_score ?? null) }}>
               {worstProject?.avg_score ?? "—"}
             </p>
             {worstProject && <p className="text-[10px] text-gray-400 mt-1 truncate">{worstProjectName}</p>}
@@ -2488,7 +2490,7 @@ function CompanyTab({
 
                       {/* Avg Score */}
                       <td className="px-3 py-3 text-center">
-                        <span className={`text-base font-bold ${scoreColor(score)}`}>{score ?? "—"}</span>
+                        <span className="text-base font-bold" style={{ color: scoreColor(score) }}>{score ?? "—"}</span>
                       </td>
 
                       {/* Last Reviewed */}
@@ -2552,7 +2554,8 @@ function CompanyTab({
                             <button
                               type="button"
                               onClick={e => { e.stopPropagation(); onViewProject(p); }}
-                              className="rounded-lg bg-[#1F3864] px-4 py-2 text-xs font-semibold text-white hover:bg-[#253f77] transition-colors"
+                              className="rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors"
+                              style={{ backgroundColor: "var(--hp-warm-800)" }}
                             >
                               View ITPs →
                             </button>
@@ -3137,7 +3140,8 @@ function InspectionPanel({
             type="button"
             onClick={onRunReview}
             disabled={reviewRunning}
-            className="flex-1 rounded-lg bg-[#1F3864] px-3 py-2.5 text-xs font-semibold text-white hover:bg-[#253f77] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            style={{ backgroundColor: "var(--hp-warm-800)" }}
           >
             {reviewRunning ? (
               <span className="flex items-center justify-center gap-2">
@@ -3149,7 +3153,8 @@ function InspectionPanel({
             <button
               type="button"
               onClick={onViewFullReport}
-              className="flex-1 rounded-lg border border-[#1F3864]/30 bg-[#1F3864]/5 px-3 py-2.5 text-xs font-semibold text-[#1F3864] hover:bg-[#1F3864]/10 transition-colors"
+              className="flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors"
+              style={{ border: "1px solid var(--hp-warm-300)", backgroundColor: "var(--hp-warm-100)", color: "var(--hp-warm-800)" }}
             >
               View Full Report
             </button>
