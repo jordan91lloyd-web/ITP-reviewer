@@ -83,7 +83,7 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
             {snapshot?.project_number && (
               <p className="text-[10px] text-gray-400 leading-none mb-0.5">#{snapshot.project_number}</p>
             )}
-            <p className="text-sm font-bold text-[#1F3864] leading-snug truncate">
+            <p className="text-sm font-bold text-[var(--hp-text-primary)] leading-snug truncate">
               {snapshot?.project_name ?? "Loading…"}
             </p>
           </div>
@@ -110,7 +110,7 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
             <div
               className={`h-full rounded-full transition-all ${
                 snapshot.completion_pct >= 80 ? "bg-green-500" :
-                snapshot.completion_pct >= 50 ? "bg-blue-500" :
+                snapshot.completion_pct >= 50 ? "bg-[var(--hp-sage-400)]" :
                 "bg-gray-400"
               }`}
               style={{ width: `${Math.min(snapshot.completion_pct, 100)}%` }}
@@ -148,7 +148,7 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
       {loading && (
         <div className="px-4 pb-3">
           <div className="flex items-center gap-2">
-            <svg className="h-3.5 w-3.5 animate-spin text-blue-400" viewBox="0 0 24 24" fill="none">
+            <svg className="h-3.5 w-3.5 animate-spin text-[var(--hp-text-muted)]" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
@@ -172,7 +172,7 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
           <button
             type="button"
             onClick={onGenerate}
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            className="text-xs text-[var(--hp-text-muted)] hover:text-[var(--hp-text-secondary)] font-medium transition-colors"
           >
             Tap to generate summary →
           </button>
@@ -202,15 +202,15 @@ export default function InsightCard({ snapshot, openItps, cardState, errorMsg, o
 
           {/* 📋 Coming up */}
           {snapshot.coming_up.length > 0 && (
-            <div className="mx-4 mb-2 rounded-lg bg-blue-50 border border-blue-100 overflow-hidden">
-              <div className="px-3 py-1.5 border-b border-blue-100">
-                <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wide">📋 Coming up — next 2–4 weeks</p>
+            <div className="mx-4 mb-2 rounded-lg bg-[var(--hp-warm-100)] border border-[var(--hp-border-light)] overflow-hidden">
+              <div className="px-3 py-1.5 border-b border-[var(--hp-border-light)]">
+                <p className="text-[10px] font-bold text-[var(--hp-text-primary)] uppercase tracking-wide">📋 Coming up — next 2–4 weeks</p>
               </div>
               <ul className="px-3 py-1.5 space-y-0.5">
                 {snapshot.coming_up.map((m, i) => (
-                  <li key={i} className="text-[11px] text-blue-800 leading-snug">
+                  <li key={i} className="text-[11px] text-[var(--hp-text-primary)] leading-snug">
                     <span className="font-semibold">{m.itp} {m.name}</span>
-                    {m.reason && <span className="text-blue-500"> — {m.reason}</span>}
+                    {m.reason && <span className="text-[var(--hp-text-muted)]"> — {m.reason}</span>}
                   </li>
                 ))}
               </ul>

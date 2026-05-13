@@ -292,7 +292,7 @@ export default function InsightsTab({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {refreshing && refreshProgress && (
-              <p className="text-xs text-blue-600 font-medium">
+              <p className="text-xs text-[var(--hp-text-secondary)] font-medium">
                 Generating {refreshProgress.current} of {refreshProgress.total}…
               </p>
             )}

@@ -105,7 +105,7 @@ function buildIssuesSummary(insp: DashboardInspection): string {
   return "Reviewed — no issues noted";
 }
 
-// Fleek brand: all D1-D5 bars use amber (#D97706 = amber-600)
+// Holdpoint brand: all D1-D5 bars use amber (#D97706 = amber-600)
 function scoreBarColour(_pct: number): string {
   return "bg-amber-600";
 }
@@ -284,10 +284,10 @@ function buildReportHtml(insp: DashboardInspection, autoPrint = false, companyId
 </head>
 <body>
 <!-- Header -->
-<div style="border-bottom:2px solid #1d4ed8;padding-bottom:12px;margin-bottom:16px">
+<div style="border-bottom:2px solid #8C7258;padding-bottom:12px;margin-bottom:16px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:4px">Fleek Constructions — ITP QA Report</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8C7258;margin-bottom:4px">Holdpoint — ITP QA Report</div>
       <h2>${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — Inspection #${insp.inspection_number_of_type}` : ""}</h2>
       <div style="font-size:10px;color:#6b7280;margin-top:2px">Generated ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
       ${companyId > 0 && projectId > 0 ? `<div style="font-size:10px;color:#2563eb;margin-top:2px">View in Procore: https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}</div>` : ""}
@@ -514,8 +514,8 @@ function buildActionReportHtml(
 </head>
 <body>
 <!-- Cover header (no page break before first section) -->
-<div style="border-bottom:3px solid #1d4ed8;padding-bottom:16px;margin-bottom:0">
-  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:6px">Fleek Constructions</div>
+<div style="border-bottom:3px solid #8C7258;padding-bottom:16px;margin-bottom:0">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8C7258;margin-bottom:6px">Holdpoint</div>
   <div style="font-size:18px;font-weight:700;color:#1f2937;margin-bottom:6px">QA Action Report</div>
   <div style="font-size:11px;color:#374151">Project: ${esc(projectName)}</div>
   <div style="font-size:11px;color:#374151">Generated: ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
@@ -528,7 +528,7 @@ ${reviewed.length === 0
   : sections}
 
 <div style="margin-top:40px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center">
-  Fleek Constructions Pty Ltd — Confidential
+  Holdpoint — Confidential
 </div>
 
 <script>window.addEventListener("load", () => { window.print(); })</script>
@@ -594,8 +594,8 @@ function buildCompanyReportHtml(
   table { width: 100%; border-collapse: collapse; }
 </style>
 </head><body>
-<div style="border-bottom:2px solid #1d4ed8;padding-bottom:12px;margin-bottom:20px">
-  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1d4ed8;margin-bottom:4px">Fleek Constructions — Company Overview</div>
+<div style="border-bottom:2px solid #8C7258;padding-bottom:12px;margin-bottom:20px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8C7258;margin-bottom:4px">Holdpoint — Company Overview</div>
   <h2 style="margin:0 0 4px 0;font-size:16px;font-weight:700">${esc(companyName)}</h2>
   <div style="font-size:10px;color:#6b7280">Period: ${esc(dateRangeLabel)} · Generated ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
 </div>
@@ -1550,7 +1550,6 @@ export default function DashboardPage() {
               <HoldpointLogo variant="dark" size={28} />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>Holdpoint</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", lineHeight: 1.2 }}>by Fleek Constructions</div>
               </div>
             </div>
             {companies.length > 1 && (
@@ -1627,7 +1626,7 @@ export default function DashboardPage() {
               <div className="sticky top-0 z-10 px-6 py-4" style={{ backgroundColor: "var(--hp-surface)", borderBottom: "1px solid var(--hp-border)" }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-base font-bold text-[#1F3864]">
+                    <h2 className="text-base font-bold text-[var(--hp-text-primary)]">
                       {selectedProject.display_name || selectedProject.name}
                     </h2>
                     {selectedProject.project_number && (
@@ -1694,7 +1693,7 @@ export default function DashboardPage() {
               {/* ITP table */}
               {inspectionsLoading && (
                 <div className="flex items-center gap-2 px-6 py-6 text-sm text-gray-400">
-                  <Spinner className="h-4 w-4 text-blue-400" /> Loading inspections…
+                  <Spinner className="h-4 w-4 text-[var(--hp-text-muted)]" /> Loading inspections…
                 </div>
               )}
 
@@ -2007,12 +2006,12 @@ function ExportModal({
             type="button"
             onClick={onSeparate}
             disabled={exportRunning}
-            className="flex items-start gap-3 rounded-xl border-2 border-blue-100 bg-blue-50 hover:border-blue-300 hover:bg-blue-100 px-4 py-3 transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-start gap-3 rounded-xl border-2 border-[var(--hp-border)] bg-[var(--hp-warm-100)] hover:border-[var(--hp-border)] hover:bg-[var(--hp-warm-200)] px-4 py-3 transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <span className="text-xl">🖨️</span>
             <div>
-              <p className="text-xs font-bold text-blue-800">Separate files</p>
-              <p className="text-[11px] text-blue-600 mt-0.5">
+              <p className="text-xs font-bold text-[var(--hp-text-primary)]">Separate files</p>
+              <p className="text-[11px] text-[var(--hp-text-secondary)] mt-0.5">
                 Opens a print dialog for each report in a new window. Allow popups when prompted.
               </p>
             </div>
@@ -2407,7 +2406,7 @@ function CompanyTab({
           </div>
         ) : loading ? (
           <div className="flex items-center gap-2 px-4 py-8 text-sm text-gray-400">
-            <Spinner className="h-4 w-4 text-blue-400" /> Loading…
+            <Spinner className="h-4 w-4 text-[var(--hp-text-muted)]" /> Loading…
           </div>
         ) : visibleProjects.length === 0 ? (
           <div className="rounded-xl bg-white border border-gray-200 px-6 py-10 text-center text-sm text-gray-400">
@@ -2455,7 +2454,7 @@ function CompanyTab({
                     >
                       {/* Project name */}
                       <td className="px-4 py-3">
-                        <p className="text-sm font-semibold text-[#1F3864]">{p.display_name || p.name}</p>
+                        <p className="text-sm font-semibold text-[var(--hp-text-primary)]">{p.display_name || p.name}</p>
                         {p.project_number && <p className="text-[10px] text-gray-400">#{p.project_number}</p>}
                       </td>
 
@@ -2807,8 +2806,8 @@ function BulkStatusBadge({ status }: { status: BulkItemStatus }) {
   }
   if (status === "processing") {
     return (
-      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">
-        <Spinner className="h-2.5 w-2.5 text-blue-500" /> Processing
+      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--hp-minor-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--hp-minor)]">
+        <Spinner className="h-2.5 w-2.5 text-[var(--hp-minor)]" /> Processing
       </span>
     );
   }
@@ -2859,7 +2858,7 @@ function ActionItemsSection({ items }: { items: ActionItem[] }) {
       <button
         type="button"
         onClick={() => setExpanded(v => !v)}
-        className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-2"
+        className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-widest text-[var(--hp-text-primary)] mb-2"
       >
         Action Items
         <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-150 ${expanded ? "rotate-180" : ""}`} />
@@ -2959,7 +2958,7 @@ function InspectionPanel({
       <div className="flex items-start justify-between px-5 py-4 border-b border-gray-200 shrink-0 bg-white">
         <div className="min-w-0 flex-1 pr-3">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">ITP Detail</p>
-          <h3 className="text-sm font-bold text-[#1F3864] leading-snug">{insp.name}</h3>
+          <h3 className="text-sm font-bold text-[var(--hp-text-primary)] leading-snug">{insp.name}</h3>
           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
             {insp.inspection_number_of_type != null && (
               <p className="text-xs text-gray-400">Inspection #{insp.inspection_number_of_type}</p>
@@ -2969,7 +2968,7 @@ function InspectionPanel({
                 href={procoreUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-[var(--hp-minor)] transition-colors"
                 title="Open in Procore"
               >
                 <ExternalLink className="h-3 w-3" />
@@ -3042,7 +3041,7 @@ function InspectionPanel({
                   {hasOverride && (
                     <div className="flex flex-col">
                       <span className="text-xs text-gray-400 line-through">AI: {insp.last_score}</span>
-                      <span className="text-[10px] rounded-full bg-purple-100 text-purple-700 font-semibold px-2 py-0.5">
+                      <span className="text-[10px] rounded-full bg-[rgba(74,111,165,0.15)] text-[var(--hp-minor)] font-semibold px-2 py-0.5">
                         Human reviewed
                       </span>
                     </div>
@@ -3056,7 +3055,7 @@ function InspectionPanel({
               </div>
               <div className="text-right text-xs text-gray-400">
                 <p>Reviewed {fmtDate(insp.last_reviewed_at)}</p>
-                <p className={`mt-0.5 ${insp.status?.toLowerCase() === "closed" ? "text-gray-400" : "text-blue-500 font-medium"}`}>
+                <p className={`mt-0.5 ${insp.status?.toLowerCase() === "closed" ? "text-gray-400" : "text-[var(--hp-minor)] font-medium"}`}>
                   {insp.status}
                 </p>
                 {insp.review_data?.scoring_version_label && (
@@ -3078,7 +3077,7 @@ function InspectionPanel({
         {/* D1–D5 breakdown */}
         {rd?.score_breakdown?.category_scores && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-3">Score breakdown</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--hp-text-primary)] mb-3">Score breakdown</p>
             <div className="space-y-3">
               {([
                 ["D1", "Engineer & inspector verification", rd.score_breakdown.category_scores.D1_engineer_verification],
@@ -3116,7 +3115,7 @@ function InspectionPanel({
         {/* Top 3 missing evidence */}
         {rd?.missing_evidence && rd.missing_evidence.length > 0 && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-2">Missing evidence</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--hp-text-primary)] mb-2">Missing evidence</p>
             <div className="space-y-2">
               {rd.missing_evidence.slice(0, 3).map((item, i) => (
                 <div key={i} className="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
@@ -3169,27 +3168,27 @@ function InspectionPanel({
 
         {/* ── Human Override ── */}
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#1F3864] mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--hp-text-primary)] mb-3">
             Human Override
           </p>
 
           {hasOverride && (
-            <div className="mb-3 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
+            <div className="mb-3 rounded-lg border border-[var(--hp-border)] bg-[var(--hp-warm-100)] px-3 py-2">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] rounded-full bg-purple-100 text-purple-700 font-semibold px-2 py-0.5">
+                <span className="text-[10px] rounded-full bg-[var(--hp-warm-200)] text-[var(--hp-text-primary)] font-semibold px-2 py-0.5">
                   Human reviewed
                 </span>
-                <span className="text-xs text-purple-700 font-medium">
+                <span className="text-xs text-[var(--hp-text-primary)] font-medium">
                   AI: {insp.last_score} → Override: {insp.override_score}
                 </span>
               </div>
               {insp.override_note && (
-                <p className="text-xs text-purple-600 mt-1 italic break-words whitespace-pre-wrap">
+                <p className="text-xs text-[var(--hp-text-secondary)] mt-1 italic break-words whitespace-pre-wrap">
                   &ldquo;{insp.override_note}&rdquo;
                 </p>
               )}
               {insp.override_created_by && (
-                <p className="text-[10px] text-purple-400 mt-0.5">by {insp.override_created_by}</p>
+                <p className="text-[10px] text-[var(--hp-text-muted)] mt-0.5">by {insp.override_created_by}</p>
               )}
             </div>
           )}

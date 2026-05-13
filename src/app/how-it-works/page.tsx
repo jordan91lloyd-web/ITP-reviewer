@@ -95,7 +95,7 @@ function ScoringDocDownload() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-600 leading-relaxed">
-        The full scoring methodology used by this tool is documented in the Fleek Constructions
+        The full scoring methodology used by this tool is documented in the Holdpoint
         ITP QA Scoring Guidelines. This document defines all dimension weights, scoring states,
         tier classifications, and calibration decisions.
       </p>
@@ -244,11 +244,11 @@ export default function HowItWorksPage() {
               <Card>
                 <SectionHeading>What is Holdpoint?</SectionHeading>
                 <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                  Holdpoint is an internal quality assurance tool for Fleek Constructions.
-                  It uses Claude AI to read the documents attached to a Procore ITP inspection and
-                  produce a structured quality assessment — a numeric score, a risk rating, identified
-                  evidence gaps, and concrete next actions. It replaces manual QA checking and gives
-                  every inspection a consistent, evidence-based rating.
+                  Holdpoint is a construction QA platform that uses Claude AI to review
+                  ITP inspection packages and produce structured quality assessments.
+                  It reads the documents attached to a Procore ITP inspection and returns a numeric
+                  score, a risk rating, identified evidence gaps, and concrete next actions —
+                  giving every inspection a consistent, evidence-based rating.
                 </p>
                 <div className="grid grid-cols-3 gap-4">
                   {[
@@ -275,7 +275,7 @@ export default function HowItWorksPage() {
                     {
                       icon: <Zap className="h-4 w-4 text-white" />,
                       title: "Connect Procore",
-                      desc: "Click Connect to Procore on the home page and log in with your Procore credentials. Only Fleek Constructions team members can access the tool.",
+                      desc: "Click Connect to Procore on the home page and log in with your Procore credentials. Only authorised team members connected via Procore can access the tool.",
                     },
                     {
                       icon: <BarChart2 className="h-4 w-4 text-white" />,
@@ -358,8 +358,8 @@ export default function HowItWorksPage() {
                       tier: "Tier 3",
                       label: "Standard",
                       risk: "Variable risk",
-                      color: "border-blue-200 bg-blue-50",
-                      badge: "bg-blue-100 text-blue-700",
+                      color: "border-[var(--hp-border)] bg-[var(--hp-warm-100)]",
+                      badge: "bg-[var(--hp-minor-bg)] text-[var(--hp-minor)]",
                       examples: "Licensed services, envelope, mechanical, finishes",
                     },
                   ].map(t => (
