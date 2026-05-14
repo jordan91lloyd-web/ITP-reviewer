@@ -4,7 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
@@ -17,6 +17,15 @@ import type { DashboardInspection } from "@/app/api/dashboard/inspections/route"
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type BulkItemStatus = "queued" | "processing" | "rate_limited" | "done" | "failed";
+
+interface BgJobStatus {
+  job_id:    string;
+  status:    "running" | "completed" | "failed";
+  total:     number;
+  completed: number;
+  failed:    number;
+  items:     Array<{ inspection_id: number; project_id: string; status: string; error?: string }>;
+}
 
 interface Company { id: number; name: string; is_active: boolean }
 
@@ -672,6 +681,12 @@ export default function DashboardPage() {
   const [bulkStatus, setBulkStatus]     = useState<Map<number, BulkItemStatus>>(new Map());
   const [bulkSummary, setBulkSummary]   = useState<{ completed: number; failed: number } | null>(null);
 
+  // Background queue
+  const [bgJobId, setBgJobId]         = useState<string | null>(null);
+  const [bgJobStatus, setBgJobStatus] = useState<BgJobStatus | null>(null);
+  const bgPollRef                     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bgRefreshedIds                = useRef<Set<number>>(new Set());
+
   // Bulk export
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportRunning, setExportRunning]     = useState(false);
@@ -1106,6 +1121,103 @@ export default function DashboardPage() {
   const selectedReviewed = filteredInspections.filter(
     i => selectedIds.has(i.id) && i.review_data != null
   );
+
+  // ── Background queue helpers ────────────────────────────────────────────────
+
+  function startBgPolling(jobId: string, project: DashboardProject, company: Company) {
+    setBgJobId(jobId);
+    setBgJobStatus(null);
+    bgRefreshedIds.current = new Set();
+    if (bgPollRef.current) clearInterval(bgPollRef.current);
+
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `/api/procore/bulk-queue/status?job_id=${jobId}&company_id=${company.id}`
+        );
+        if (!res.ok) return;
+        const data: BgJobStatus = await res.json();
+        setBgJobStatus(data);
+
+        // Per-item row refresh as items complete
+        for (const item of data.items) {
+          if (item.status === "done" && !bgRefreshedIds.current.has(item.inspection_id)) {
+            bgRefreshedIds.current.add(item.inspection_id);
+            fetch(
+              `/api/dashboard/inspections?project_id=${project.id}&company_id=${company.id}&inspection_id=${item.inspection_id}`
+            )
+              .then(r => r.json())
+              .then((d: { inspections?: DashboardInspection[] }) => {
+                if (d.inspections?.length) {
+                  setInspections(prev =>
+                    prev.map(i => i.id === item.inspection_id ? { ...i, ...d.inspections![0] } : i)
+                  );
+                }
+              })
+              .catch(() => {});
+          }
+        }
+
+        if (data.status === "completed" || data.status === "failed") {
+          if (bgPollRef.current) clearInterval(bgPollRef.current);
+          bgPollRef.current = null;
+          await loadInspections(project, company);
+        }
+      } catch {
+        // non-fatal — polling will retry
+      }
+    };
+
+    void poll();
+    bgPollRef.current = setInterval(poll, 5000);
+  }
+
+  async function handleRunInBackground() {
+    if (!selectedProject || !selectedCompany) return;
+    const allSelected = [...selectedUnreviewed, ...selectedReviewed];
+    if (allSelected.length === 0) return;
+    try {
+      const res = await fetch("/api/procore/bulk-queue/start", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          company_id:     String(selectedCompany.id),
+          project_id:     String(selectedProject.id),
+          inspection_ids: allSelected.map(i => i.id),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to start background job");
+      startBgPolling(data.job_id, selectedProject, selectedCompany);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error("[bg-queue] start failed:", err);
+    }
+  }
+
+  async function handleAutoUpdate() {
+    if (!selectedProject || !selectedCompany) return;
+    try {
+      const res = await fetch("/api/procore/bulk-queue/auto", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          company_id: String(selectedCompany.id),
+          project_id: String(selectedProject.id),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed");
+      if (data.queued === 0) {
+        setBgJobStatus({ job_id: "", status: "completed", total: 0, completed: 0, failed: 0, items: [] });
+        setBgJobId("auto-uptodate");
+        return;
+      }
+      startBgPolling(data.job_id, selectedProject, selectedCompany);
+    } catch (err) {
+      console.error("[bg-queue] auto failed:", err);
+    }
+  }
 
   async function handleBulkReview() {
     if (!selectedProject || !selectedCompany || bulkRunning) return;
@@ -1676,6 +1788,17 @@ export default function DashboardPage() {
                       {label}
                     </button>
                   ))}
+                  <div className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={handleAutoUpdate}
+                    disabled={!!bgJobId && bgJobStatus?.status === "running"}
+                    className="flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}
+                  >
+                    <RefreshCw size={13} />
+                    Auto-update closed ITPs
+                  </button>
                 </div>
               </div>
 
@@ -1688,6 +1811,22 @@ export default function DashboardPage() {
                     Bulk review complete — {bulkSummary.completed} succeeded{bulkSummary.failed > 0 ? `, ${bulkSummary.failed} failed` : ""}
                   </span>
                   <button onClick={() => setBulkSummary(null)} className="text-xs text-gray-400 hover:text-gray-600 ml-4">✕</button>
+                </div>
+              )}
+
+              {/* Background job status banner */}
+              {bgJobStatus && (
+                <div className="mx-4 mt-3 rounded-lg border px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: "var(--hp-warm-100)", borderColor: "var(--hp-warm-200)" }}>
+                  <span className="text-xs font-semibold" style={{ color: "var(--hp-text-secondary)" }}>
+                    {bgJobStatus.status === "running"
+                      ? `Background review running — ${bgJobStatus.completed} of ${bgJobStatus.total} complete`
+                      : bgJobStatus.failed > 0
+                      ? `Background review complete — ${bgJobStatus.completed} succeeded, ${bgJobStatus.failed} failed`
+                      : `Background review complete — ${bgJobStatus.completed} reviewed`}
+                  </span>
+                  {bgJobStatus.status !== "running" && (
+                    <button onClick={() => { setBgJobId(null); setBgJobStatus(null); }} className="text-xs text-gray-400 hover:text-gray-600 ml-4">✕</button>
+                  )}
                 </div>
               )}
 
@@ -1862,7 +2001,9 @@ export default function DashboardPage() {
               unreviewedCount={selectedUnreviewed.length}
               reviewedCount={selectedReviewed.length}
               bulkRunning={bulkRunning}
+              bgJobRunning={!!bgJobId && bgJobStatus?.status === "running"}
               onRunReviews={handleBulkReview}
+              onRunInBackground={handleRunInBackground}
               onExportPdfs={() => setExportModalOpen(true)}
               onClearSelection={() => { setSelectedIds(new Set()); setBulkStatus(new Map()); setBulkSummary(null); }}
             />
@@ -1925,7 +2066,9 @@ function BulkActionBar({
   unreviewedCount,
   reviewedCount,
   bulkRunning,
+  bgJobRunning,
   onRunReviews,
+  onRunInBackground,
   onExportPdfs,
   onClearSelection,
 }: {
@@ -1933,7 +2076,9 @@ function BulkActionBar({
   unreviewedCount: number;
   reviewedCount: number;
   bulkRunning: boolean;
+  bgJobRunning: boolean;
   onRunReviews: () => void;
+  onRunInBackground: () => void;
   onExportPdfs: () => void;
   onClearSelection: () => void;
 }) {
@@ -1946,7 +2091,7 @@ function BulkActionBar({
         <button
           type="button"
           onClick={onRunReviews}
-          disabled={bulkRunning}
+          disabled={bulkRunning || bgJobRunning}
           className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
         >
           {bulkRunning && <Spinner className="h-3 w-3 text-white" />}
@@ -1958,8 +2103,17 @@ function BulkActionBar({
         </button>
         <button
           type="button"
+          onClick={onRunInBackground}
+          disabled={bulkRunning || bgJobRunning}
+          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+        >
+          {bgJobRunning ? <Spinner className="h-3 w-3 text-white" /> : <Server size={14} />}
+          Run in Background ({unreviewedCount + reviewedCount})
+        </button>
+        <button
+          type="button"
           onClick={onExportPdfs}
-          disabled={bulkRunning || reviewedCount === 0}
+          disabled={bulkRunning || bgJobRunning || reviewedCount === 0}
           className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Export PDFs ({reviewedCount})
@@ -1968,7 +2122,7 @@ function BulkActionBar({
       <button
         type="button"
         onClick={onClearSelection}
-        disabled={bulkRunning}
+        disabled={bulkRunning || bgJobRunning}
         className="text-xs text-white/50 hover:text-white/80 disabled:opacity-40 shrink-0 transition-colors"
       >
         Clear

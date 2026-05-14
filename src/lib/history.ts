@@ -3,6 +3,24 @@
 // Replaces the previous local JSON file at data/review-history.json.
 //
 // All functions are async — callers must await them.
+//
+// Required Supabase table — bulk_queue_jobs (create once via SQL editor):
+//
+//   CREATE TABLE bulk_queue_jobs (
+//     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+//     company_id TEXT NOT NULL,
+//     project_id TEXT NOT NULL,
+//     status     TEXT NOT NULL DEFAULT 'running',
+//     -- status: 'running' | 'completed' | 'failed'
+//     items      JSONB NOT NULL,
+//     -- array of { inspection_id, project_id, status, error? }
+//     -- item status: 'queued' | 'processing' | 'done' | 'failed'
+//     created_at TIMESTAMPTZ DEFAULT now(),
+//     updated_at TIMESTAMPTZ DEFAULT now()
+//   );
+//
+//   Enable RLS on the table; add a "No public access" policy
+//   (same pattern as review_records). All access is via SUPABASE_SERVICE_ROLE_KEY.
 
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
