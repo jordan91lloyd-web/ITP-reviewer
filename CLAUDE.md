@@ -1,4 +1,4 @@
-# CLAUDE.md — ITP QA Reviewer
+# CLAUDE.md — Holdpoint
 
 ## Auto-save at end of every session (MANDATORY)
 
@@ -19,27 +19,41 @@ This commits all changes and pushes to GitHub (`jordan91lloyd-web/itp-reviewer`)
 - **Procore OAuth** — login, callback, token refresh, logout, CSRF-protected state cookie
 - **Procore import** — full pipeline: fetch inspection (view=extended), flatten items, build text file, download attachments (PDF + JPEG/PNG + .msg + .docx), run review, save to Supabase
 - **Attachment extraction** — PDFs natively, JPEG/PNG as vision blocks, .msg via msgreader (subject/sender/body), .docx via mammoth (raw text), .doc gracefully rejected
-- **Dashboard** (`/dashboard`) — project list with aggregate stats, ITP inspection list with review badges, side panel showing full report, status filters (closed/open/in-review), project hide/unhide
-- **Bulk review** — select any combination of reviewed/unreviewed ITPs; smart button label (Run / Re-run / Run/Re-run); sequential fetch, progress indicators, reload on completion
+- **Dashboard** (`/dashboard`) — full ITP management interface with three tabs: ITP Reviews, Company, Insights
+  - Company → project → inspection hierarchy; status filter tabs (closed/open/in-review) with counts
+  - ITP rows: score pill, rating band, "Ready to close" badge, days-open with colour coding, description popover (ⓘ), closed-by / assignee, direct Procore link
+  - Sort by score (ascending/descending)
+  - Side panel: full `ReviewResults` report, score breakdown bars, score override input
+  - Stale data banner when Procore inspection was updated after the last review
+- **Bulk review** — select any combination of reviewed/unreviewed ITPs; smart button label (Run / Re-run / Run/Re-run); sequential fetch, per-row progress indicators, reload on completion
 - **Score overrides** — admins can set a manual override score + note on any review record; displayed prominently in the dashboard
 - **Audit log** (`/audit`) — every review, override, login, export, document update is written to Supabase `audit_log` table; filterable viewer page
 - **Admin pages** (`/admin/users`, `/admin/documents`) — manage company admins, upload company-specific scoring guidelines to Supabase Storage
 - **Scoring document versioning** — `src/lib/scoring.ts` fetches company-specific `.docx` from Supabase Storage (5-min cache), falls back to local `public/documents/ITP-QA-Scoring-Guidelines-v1.0.docx`, then hardcoded fallback. Version label stamped into every review record.
 - **Collapsible report sections** — all 11 sections in `ReviewResults` are independently collapsible; single `sections` state object at top level; "Collapse All / Expand All" button; print expands all sections before `window.print()` and restores state after
 - **PDF print fix** — `globals.css` sets `html, body { height: auto; overflow: visible }` for `@media print`; `break-inside: auto` on cards so large sections paginate across pages
-- **Access control** — `FLEEK_COMPANY_ID` env var gates login to Procore users belonging to Fleek's company only
+- **Access control** — `FLEEK_COMPANY_ID` env var gates login to users belonging to a specific Procore company; leave blank to disable (dev/multi-tenant use)
+- **Company tab** — financial summary, subcontract progress metrics, and site-level stats aggregated across all projects for the selected Procore company
+- **Insights tab** — per-project AI-generated insight cards showing: missing ITPs that should be open now, coming up in next 2–4 weeks, stage summary, completion %, contract value, active trades. Snapshots persist in Supabase across navigation; stale banner shown when data is older than 24h. "Refresh All" re-generates all cards sequentially.
+- **Action items** — AI-generated next-action recommendations per ITP, accessible from the side panel; stored in Supabase and reloaded on return
+- **Bulk PDF export** — export all reviewed ITPs for a project as individual PDFs (downloaded as a zip) or combined; logs `pdf_exported` audit events
+- **CSV export** — export audit log to CSV from the audit viewer page
+- **Direct Procore links** — every ITP row links directly to the inspection in Procore (`us02.procore.com/...`)
+- **Holdpoint rebrand** — full brand palette applied throughout. HP CSS custom properties (`--hp-*`) defined in `globals.css`; all server and client components use these vars via inline `style={{}}` (not Tailwind arbitrary values — they are unreliable with CSS custom properties)
 - **Vercel deployment** — app is live in production on Vercel
 
 ### Known limitations / not yet built
 - No email notifications
 - Manual upload does not support .msg or .docx (only the Procore import pipeline does)
-- The `how-it-works` page exists but is minimal
+- The `how-it-works` page exists but is sparse
+- No self-serve onboarding — new companies are added manually (Supabase row + Procore app access)
+- **Multi-tenant commercial version** is the next major phase — will be a separate repo, Vercel project, and Supabase instance. Current codebase is single-tenant (one Procore company).
 
 ---
 
 ## What this app does
 
-This is a **Next.js web app** for Fleek Constructions that reviews Inspection and Test Plan (ITP) packages using Claude AI. Construction QA managers upload a bundle of documents (PDFs, photos, emails, Word docs) from one inspection package, and the app returns a structured quality assessment: a numeric score (0–100), a score band, an audit readiness rating ("commercial confidence"), evidence gaps, key issues, and recommended next actions.
+**Holdpoint** is a Next.js construction QA platform that reviews Inspection and Test Plan (ITP) packages using Claude AI. QA managers connect their Procore account, select a project and ITP inspection, and the app fetches the inspection data, downloads all attached evidence (PDFs, images, emails, Word docs), and returns a structured quality assessment: a numeric score (0–100), a score band, an audit readiness rating ("commercial confidence"), evidence gaps, key issues, and recommended next actions.
 
 There are two input paths:
 1. **Manual upload** — drag-and-drop or file-picker. PDF/JPG/PNG files only.
@@ -47,23 +61,43 @@ There are two input paths:
 
 Review metadata (score, band, full `ReviewResult` JSON, scoring version, Procore inspection ID) is stored in Supabase (`review_records` table). The dashboard reads from Supabase to show current review status, scores, and D1–D5 breakdowns without re-running the review.
 
+The Insights tab provides a project-level view: AI-generated summaries of which ITPs are missing, what's coming up, and the overall project stage — built from Procore financial and inspection data.
+
 ---
 
 ## Tech stack
 
 - **Next.js 15** (App Router, TypeScript)
 - **React 19**
-- **Tailwind CSS 3** for all styling
+- **Tailwind CSS 3** for utility classes; **HP CSS custom properties** (`--hp-*`) in `globals.css` for brand colours — always applied via inline `style={{}}`, never via Tailwind arbitrary values
 - **Anthropic SDK** (`@anthropic-ai/sdk`) — model is `claude-sonnet-4-6`, `max_tokens: 16000`
 - **Procore REST API** (OAuth 2.0, `application/x-www-form-urlencoded` token exchange)
-- **Supabase** (`@supabase/supabase-js`, `@supabase/ssr`) — database (review_records, audit_log, score_overrides, company_admins, scoring_versions tables) + Storage (company scoring documents)
+- **Supabase** (`@supabase/supabase-js`, `@supabase/ssr`) — database (review_records, audit_log, score_overrides, company_admins, scoring_versions, project_snapshots tables) + Storage (company scoring documents)
 - **mammoth** (`^1.12.0`) — extracts plain text from `.docx` files; also used in `scoring.ts` to read `.docx` scoring guidelines from Supabase Storage
 - **msgreader** (`^1.0.1`) — extracts subject, sender, and body from Outlook `.msg` files
 - **lucide-react** (`^1.8.0`) — icon library used in dashboard UI
-- **jszip** (`^3.10.1`) — available but not currently used in the active pipeline
+- **jszip** (`^3.10.1`) — used for bundling bulk PDF exports into a zip download
 - **pdf-parse** (`^1.1.1`) — in dependencies but no longer used; PDFs go natively to Claude
 
 Dev server runs on port **3010** (`npm run dev`).
+
+---
+
+## Supabase — critical rules
+
+**All Supabase tables have RLS (Row Level Security) enabled.** The anon/publishable key respects RLS and will be blocked from reading most tables in server routes.
+
+**Rule: every server-side API route that reads from or writes to Supabase must use `SUPABASE_SERVICE_ROLE_KEY`, not `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.** The service role key bypasses RLS and is safe to use server-side (it is never exposed to the browser).
+
+The only exception is `src/lib/history.ts`, which currently uses the anon key for inserts — this works only because RLS insert policies allow it. For any new routes or queries, always default to the service role key.
+
+```ts
+// Correct for server-side routes:
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+```
 
 ---
 
@@ -80,7 +114,7 @@ PROCORE_ENV=production
 PROCORE_CLIENT_ID=...                    # production app credentials (different from sandbox)
 PROCORE_CLIENT_SECRET=...
 PROCORE_REDIRECT_URI=https://your-domain.vercel.app/api/auth/callback
-FLEEK_COMPANY_ID=598134325535477
+FLEEK_COMPANY_ID=598134325535477         # restricts login to one Procore company; blank = no restriction
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -90,8 +124,8 @@ SUPABASE_SERVICE_ROLE_KEY=...
 - **Serverless function timeout** — the `/api/procore/import` route downloads files and calls Claude; total wall time can exceed Vercel's default 10s timeout. Vercel Pro allows up to 60s. Set `maxDuration = 60` in the route file or `vercel.json` if needed.
 - **Node.js runtime required** — `mammoth`, `msgreader`, and `scoring.ts` (which uses `fs`/`path` to read local `.docx`) cannot run on the Vercel Edge runtime. All API routes must use the default Node.js runtime (the app currently does not set `export const runtime = "edge"` anywhere, so this is not currently an issue).
 - **No native binaries** — `sharp` is not installed. If added later (e.g. for HEIC conversion), Vercel requires `sharp` to be installed from `@img/sharp-linux-x64` or similar for the Linux build environment.
-- **File system writes** — the old `data/review-history.json` flat file is gone; all persistence is via Supabase. No filesystem writes occur in production.
-- **PROCORE_REDIRECT_URI** — must be updated from `http://localhost:3010/api/auth/callback` to the Vercel production URL. Also update the redirect URI in the Procore developer portal for the production app.
+- **File system writes** — all persistence is via Supabase. No filesystem writes occur in production.
+- **PROCORE_REDIRECT_URI** — must match the Vercel production URL and be registered in the Procore developer portal for the production app.
 
 ---
 
@@ -145,10 +179,10 @@ Procore OAuth + REST API client. Key points:
 - `ProcoreAttachment` has many optional URL fields — Procore uses different property names across API versions. All are tried in `resolveAttachmentUrl()` inside the import route.
 
 ### `src/lib/history.ts`
-Review history store. **Writes to Supabase `review_records` table** (not a flat file — the old `data/review-history.json` approach has been replaced). Functions: `appendRecord()` — upserts a review record keyed on `(procore_inspection_id, company_id)`; `findLatestForInspection()` — looks up the most recent record for a given inspection ID. Stores the full `ReviewResult` JSON in the `review_data` column so the dashboard can display the full report without re-running the review.
+Review history store. **Writes to Supabase `review_records` table** (not a flat file). Functions: `appendRecord()` — inserts a review record; `findLatestForInspection()` — looks up the most recent record for a given inspection ID. Stores the full `ReviewResult` JSON in the `review_data` column so the dashboard can display the full report without re-running the review.
 
 ### `src/lib/audit.ts`
-Audit event service. Writes structured events to the Supabase `audit_log` table. `logAuditEvent()` never throws — audit failures are console-only. `resolveAuditUser()` fetches the Procore user identity from the access token cookie. `AUDIT_ACTIONS` constants cover: `review_run`, `review_failed`, `score_override`, `pdf_exported`, `bulk_review_started`, `bulk_review_completed`, `login`, `logout`, `scoring_document_updated`, `project_hidden`, `project_unhidden`.
+Audit event service. Writes structured events to the Supabase `audit_log` table. `logAuditEvent()` never throws — audit failures are console-only. `resolveAuditUser()` fetches the Procore user identity from the access token cookie. `AUDIT_ACTIONS` constants cover: `review_run`, `review_failed`, `score_override`, `pdf_exported`, `bulk_review_started`, `bulk_review_completed`, `login`, `logout`, `scoring_document_updated`, `project_hidden`, `project_unhidden`, `compliance_report_uploaded`.
 
 ### `src/lib/admin.ts`
 Admin check utility. `isCompanyAdmin(email, company_id)` queries the Supabase `company_admins` table to determine whether a user has admin privileges for a company. Never throws — returns `false` on any error. Used by admin API routes to gate access.
@@ -157,7 +191,13 @@ Admin check utility. `isCompanyAdmin(email, company_id)` queries the Supabase `c
 Upload validation constants for the **manual upload** path: `MAX_FILE_SIZE_BYTES` (20 MB), `MAX_BUNDLE_SIZE_BYTES` (50 MB), `MAX_FILE_COUNT` (20), allowed MIME types (PDF/JPEG/PNG). Shared between the API route and the DropZone component. **Note:** the Procore import pipeline has its own separate caps and uses `normaliseMime()` in the import route — it does not use these constants.
 
 ### `src/app/page.tsx`
-Root page. Renders: `ProcoreConnect` (auth status bar), `ProcoreImport` (Procore import flow), a divider, and `UploadPortal` (manual upload). Max width 2xl, centred.
+Root page (Holdpoint landing page). Unauthenticated: hero gradient (`#3D2E1E → #6B5A42 → #8C7258`), HoldpointLogo (size 72), tagline, stats strip, "Learn how it works" teaser, "Connect to Procore" CTA. Authenticated: shows `ProcoreConnect`, `ProcoreImport`, divider, `UploadPortal`.
+
+### `src/components/HoldpointLogo.tsx`
+SVG logo. `variant="dark"` (white on dark bg) or `"light"` (brown on white). At `size >= 48` in dark variant, renders an inner dashed ring for a richer look. Used in the hero (size 72), nav (size 24), and authenticated upload page (size 32).
+
+### `src/components/GlobalNav.tsx`
+Top navigation bar shown on all authenticated pages. Holds the Holdpoint logo/wordmark, nav links (Dashboard, Audit, Admin), and the user connection status.
 
 ### `src/components/UploadPortal.tsx`
 Manual upload form. Uses `DropZone` for file selection. Posts `multipart/form-data` to `/api/review`. Shows `ReviewResults` on success.
@@ -181,19 +221,20 @@ The QA report UI. All 11 major sections are independently collapsible:
 - PDF export `@media print` CSS: `html, body { height: auto; overflow: visible }` fixes the "only page 1 prints" issue. `break-inside: auto` on cards lets large sections paginate across pages. `[data-section-content] { display: block !important }` forces all content visible in print as a safety net.
 - `getQAStatus()` computes `"strong" | "acceptable" | "high-risk"` from `total_score` + `commercial_confidence.rating`.
 
+### `src/components/InsightCard.tsx`
+Per-project insight card rendered in the Insights tab. Displays: completion %, contract value, active trade chips, open ITP stats, AI-generated missing ITP warnings, coming-up list, and stage summary. Has idle / fetching_financial / fetching_summary / done / error states. Exports `ProjectSnapshot` and `DashboardInspection`-adjacent types.
+
+### `src/components/InsightsTab.tsx`
+Renders a grid of `InsightCard` components — one per project. Manages per-card `cardState` and `snapshot` state. "Refresh All" button re-generates all cards sequentially. Loads the most recent snapshot from Supabase on mount (via `/api/dashboard/company-stats` or snapshot endpoint).
+
 ### `src/app/dashboard/page.tsx`
-Full ITP dashboard. Key features:
-- Company → project → inspection list hierarchy, loaded from Supabase + Procore.
-- Status filter tabs: closed / open / in-review, with counts per tab.
-- Inspection list with score pills, review badges, ITP number, closed-by, last reviewed date.
-- Side panel: clicking an inspection shows the full `ReviewResults` report inline.
-- **Bulk review**: select any mix of reviewed/unreviewed ITPs. Smart button label: "Run Reviews (X)" / "Re-run Reviews (X)" / "Run/Re-run Reviews (X)". Runs sequentially via `fetch("/api/procore/import")`. Reloads from Supabase after all complete.
-- **Score override**: admins can set a manual score + justification note. Displayed as an orange override badge.
-- Project hide/unhide (admin only).
-- PDF export button for reviewed inspections.
+Full ITP dashboard. Three top-level tabs:
+- **ITP Reviews** — project list → ITP inspection list. 8-column grid per row: checkbox, status dot, ITP name+subtitle, sequence #, score, rating pill, status pill, reviewed date + Procore link. Bulk review, score override, side panel, sort by score, status filters.
+- **Company** — financial summary and site-level metrics for the selected company (CompanyTab component inline).
+- **Insights** — renders `InsightsTab` with per-project AI insight cards.
 
 ### `src/app/audit/page.tsx`
-Audit log viewer. Reads from Supabase `audit_log` table. Filterable by action type, user, date range. Admin-only (requires `isCompanyAdmin`).
+Audit log viewer. Reads from Supabase `audit_log` table. Filterable by action type, user, date range. CSV export. Admin-only (requires `isCompanyAdmin`).
 
 ### `src/app/admin/users/page.tsx`
 Admin user management. Lists and manages entries in the `company_admins` Supabase table.
@@ -241,7 +282,7 @@ Scoring document admin. Uploads `.docx` scoring guidelines to Supabase Storage u
 - `"Skipped on retry: Claude API rejected the initial request"`
 
 ### `src/app/api/dashboard/inspections/route.ts`
-`GET /api/dashboard/inspections?project_id=X&company_id=Y`. Fetches all ITP-named inspections from Procore (all statuses), merges with latest `review_records` from Supabase and any `score_overrides`, returns enriched `DashboardInspection[]`. The dashboard uses this endpoint (not `/api/procore/inspections`).
+`GET /api/dashboard/inspections?project_id=X&company_id=Y`. Fetches all ITP-named inspections from Procore (all statuses), merges with latest `review_records` from Supabase (using service role key) and any `score_overrides`, returns enriched `DashboardInspection[]`. The dashboard uses this endpoint (not `/api/procore/inspections`). Exports the `DashboardInspection` interface — single source of truth for the ITP list data shape.
 
 ### `src/app/api/dashboard/projects/route.ts`
 `GET /api/dashboard/projects?company_id=X`. Returns Procore projects enriched with aggregate stats from Supabase (reviewed count, avg score, last reviewed date, hidden flag).
@@ -252,6 +293,21 @@ Scoring document admin. Uploads `.docx` scoring guidelines to Supabase Storage u
 
 ### `src/app/api/dashboard/export-pdf/route.ts`
 `POST /api/dashboard/export-pdf`. Logs a `pdf_exported` audit event.
+
+### `src/app/api/dashboard/company-stats/route.ts`
+Fetches financial and site-level aggregate stats for the Company tab and Insights tab. Calls Procore financial APIs for contract sums and subcontract progress.
+
+### `src/app/api/dashboard/site-diaries/route.ts`
+Fetches site diary entries from Procore for the selected project/company. Used by the Company tab.
+
+### `src/app/api/dashboard/site-mappings/route.ts`
+Maps Procore project IDs to site names/metadata. Used to resolve display names in the Company and Insights tabs.
+
+### `src/app/api/dashboard/project-counts/route.ts`
+Returns ITP counts (reviewed, unreviewed, total) per project for the dashboard sidebar stats.
+
+### `src/app/api/dashboard/compliance-reports/route.ts`
+Handles compliance report uploads and retrieval for the Company tab.
 
 ### `src/app/api/procore/inspections/route.ts`
 `GET /api/procore/inspections?project_id=X&company_id=Y`. Used by the **manual import UI** (`ProcoreImport.tsx`), not the dashboard. Filters to `status === "closed"` AND `name.startsWith("itp")` (case-insensitive). Enriches with `review_status` from Supabase.
@@ -266,7 +322,7 @@ Scoring document admin. Uploads `.docx` scoring guidelines to Supabase Storage u
 `GET /api/auth/login`. Generates a random `state` token, saves it as an `httpOnly` cookie, redirects to Procore OAuth.
 
 ### `src/app/api/auth/callback/route.ts`
-`GET /api/auth/callback`. Verifies state (CSRF protection), exchanges code for tokens. If `FLEEK_COMPANY_ID` is set, verifies the user belongs to that Procore company before allowing login. Stores `procore_access_token` / `procore_refresh_token` / `procore_token_expires_at` as `httpOnly` cookies. Logs `login` audit event.
+`GET /api/auth/callback`. Verifies state (CSRF protection), exchanges code for tokens. If `FLEEK_COMPANY_ID` env var is set, verifies the user belongs to that Procore company before allowing login (redirects to `/?error=unauthorized` otherwise). Stores `procore_access_token` / `procore_refresh_token` / `procore_token_expires_at` as `httpOnly` cookies. Logs `login` audit event.
 
 ### `src/app/api/auth/me/route.ts`
 `GET /api/auth/me`. Checks for an access token cookie, calls `/rest/v1.0/me`. Returns `{ authenticated, user }`.
@@ -354,20 +410,20 @@ PROCORE_CLIENT_ID=...
 PROCORE_CLIENT_SECRET=...
 PROCORE_REDIRECT_URI=http://localhost:3010/api/auth/callback
 
-# Access control — restrict login to Fleek's Procore company
-FLEEK_COMPANY_ID=598134325535477           # leave blank to disable check (dev only)
+# Access control — restrict login to one Procore company (leave blank to disable)
+FLEEK_COMPANY_ID=598134325535477
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...   # anon/publishable key
-SUPABASE_SERVICE_ROLE_KEY=...              # server-side only — bypasses RLS
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...   # anon/publishable key (browser-safe)
+SUPABASE_SERVICE_ROLE_KEY=...              # server-side only — bypasses RLS — use in all API routes
 ```
 
 ---
 
 ## Rules that must never be broken
 
-1. **Never change the scoring weights without updating the system prompt AND the `types.ts` interfaces together.** The weights in `buildSystemPrompt()` are calibrated. Any change must be intentional and agreed with Fleek.
+1. **Never change the scoring weights without updating the system prompt AND the `types.ts` interfaces together.** The weights in `buildSystemPrompt()` are calibrated. Any change must be intentional and explicitly agreed before implementation.
 
 2. **Always use `view=extended` when calling `/rest/v1.0/checklist/lists/{id}`.** Without it, Procore returns only the shell — no items, responses, or attachments. This was confirmed in production: omitting it caused scores of 18/100.
 
@@ -387,7 +443,7 @@ SUPABASE_SERVICE_ROLE_KEY=...              # server-side only — bypasses RLS
 
 10. **`commercial_confidence` is completely independent of `total_score`.** Do not let one influence the other in the prompt or in UI logic. `getQAStatus()` in `ReviewResults.tsx` combines them deliberately.
 
-11. **Review history is stored in Supabase, not a flat file.** `appendRecord()` upserts to the `review_records` table. There is no `data/review-history.json` — that approach was replaced. Do not reintroduce filesystem persistence.
+11. **Review history is stored in Supabase, not a flat file.** `appendRecord()` inserts to the `review_records` table. There is no `data/review-history.json` — that approach was replaced. Do not reintroduce filesystem persistence.
 
 12. **Procore inspections for the manual import UI are filtered to `status === "closed"` AND `name.startsWith("itp")`.** The dashboard endpoint (`/api/dashboard/inspections`) shows all statuses and uses a different filter. Do not confuse the two routes.
 
@@ -402,3 +458,7 @@ SUPABASE_SERVICE_ROLE_KEY=...              # server-side only — bypasses RLS
 17. **`logAuditEvent()` must never throw.** Wrap all audit writes in try/catch internally. The audit service is fire-and-forget — use `void logAuditEvent(...)` at call sites.
 
 18. **`scoring.ts` must never throw.** It always returns some content (Supabase → local file → hardcoded). Do not add logic that throws from this function — a failed scoring load must fall back silently, not break the review.
+
+19. **All server-side API routes must use `SUPABASE_SERVICE_ROLE_KEY` when querying Supabase.** All tables have RLS enabled. The anon/publishable key will be silently blocked from reading most tables. Using the anon key in a server route is a bug — it will return empty results with no error. See the Supabase section above.
+
+20. **HP CSS custom properties (`--hp-*`) must be applied via inline `style={{}}`, not Tailwind arbitrary values.** Tailwind JIT does not reliably resolve CSS custom properties in arbitrary value syntax (`bg-[var(--hp-bg)]`). Always use `style={{ backgroundColor: "var(--hp-bg)" }}` etc.
