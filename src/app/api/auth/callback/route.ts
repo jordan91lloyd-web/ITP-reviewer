@@ -5,9 +5,10 @@
 // the access token in a cookie and redirects back to the homepage.
 
 import { NextRequest, NextResponse } from "next/server";
-import { exchangeCodeForTokens } from "@/lib/procore";
+import { exchangeCodeForTokens, getProcoreUser } from "@/lib/procore";
 import { cookies } from "next/headers";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
+import { upsertToken } from "@/lib/token-store";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -118,6 +119,18 @@ export async function GET(request: NextRequest) {
   });
 
   console.log("[auth/callback] Tokens stored. Redirecting to homepage.");
+
+  // Persist tokens to Supabase store for background queue use (non-blocking)
+  const tokenCompanyId = fleekCompanyId ?? "default";
+  void getProcoreUser(tokens.access_token)
+    .then(user =>
+      upsertToken(tokenCompanyId, String(user.id), {
+        access_token:  tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at:    expiresAt,
+      })
+    )
+    .catch(err => console.error("[auth/callback] Failed to persist token to store:", err));
 
   // Fire-and-forget audit log — must not delay the redirect
   const fleekId = process.env.FLEEK_COMPANY_ID ?? "unknown";

@@ -21,6 +21,28 @@
 //
 //   Enable RLS on the table; add a "No public access" policy
 //   (same pattern as review_records). All access is via SUPABASE_SERVICE_ROLE_KEY.
+//
+//   Migration — add user_id column to bulk_queue_jobs (run once):
+//
+//   ALTER TABLE bulk_queue_jobs ADD COLUMN user_id TEXT;
+//
+// Required Supabase table — procore_tokens (create once via SQL editor):
+//
+//   CREATE TABLE procore_tokens (
+//     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+//     company_id    TEXT NOT NULL,
+//     user_id       TEXT NOT NULL,
+//     access_token  TEXT NOT NULL,
+//     refresh_token TEXT NOT NULL,
+//     expires_at    BIGINT NOT NULL,
+//     -- Unix ms timestamp (same format as procore_token_expires_at cookie)
+//     created_at    TIMESTAMPTZ DEFAULT now(),
+//     updated_at    TIMESTAMPTZ DEFAULT now(),
+//     UNIQUE(company_id, user_id)
+//   );
+//
+//   ALTER TABLE procore_tokens ENABLE ROW LEVEL SECURITY;
+//   CREATE POLICY "No public access" ON procore_tokens FOR ALL USING (false);
 
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";

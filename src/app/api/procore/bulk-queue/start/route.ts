@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { getProcoreUser } from "@/lib/procore";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 const supabase = createClient(
@@ -35,6 +36,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Resolve user_id so the process route can fetch a fresh token per item
+  let user_id: string;
+  try {
+    const user = await getProcoreUser(accessToken);
+    user_id = String(user.id);
+  } catch (err) {
+    console.error("[bulk-queue/start] Failed to resolve user identity:", err);
+    return NextResponse.json({ error: "Failed to verify identity." }, { status: 401 });
+  }
+
   const items = inspection_ids.map(id => ({
     inspection_id: id,
     project_id,
@@ -43,7 +54,7 @@ export async function POST(request: NextRequest) {
 
   const { data: job, error: insertError } = await supabase
     .from("bulk_queue_jobs")
-    .insert({ company_id, project_id, status: "running", items })
+    .insert({ company_id, project_id, user_id, status: "running", items })
     .select("id")
     .single();
 
@@ -54,11 +65,12 @@ export async function POST(request: NextRequest) {
 
   const jobId = job.id as string;
 
-  // Fire-and-forget: kick off processing (no await)
+  // Fire-and-forget: kick off processing — no access_token in body,
+  // the process route fetches a fresh token from the store each item.
   void fetch(new URL("/api/procore/bulk-queue/process", request.url).toString(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ job_id: jobId, access_token: accessToken }),
+    body: JSON.stringify({ job_id: jobId }),
   });
 
   // Audit log — fire-and-forget, never throws

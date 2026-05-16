@@ -3,7 +3,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getProcoreUser } from "@/lib/procore";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
+import { deleteToken } from "@/lib/token-store";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -17,6 +19,13 @@ export async function GET(request: NextRequest) {
   cookieStore.delete("procore_token_expires_at");
 
   console.log("[auth/logout] Procore session cleared");
+
+  // Clean up the Supabase token store (fire-and-forget)
+  if (accessToken) {
+    void getProcoreUser(accessToken)
+      .then(user => deleteToken(fleekId, String(user.id)))
+      .catch(err => console.error("[auth/logout] Failed to delete token from store:", err));
+  }
 
   void resolveAuditUser(accessToken).then(auditUser =>
     logAuditEvent({ ...auditUser, company_id: fleekId, action: AUDIT_ACTIONS.LOGOUT })
