@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       score:                 null,
       score_band:            null,
       review_data:           null,
-      reviewed_at:           null,
+      reviewed_at:           new Date().toISOString(),
       action_items:          null,
       scoring_version_id:    null,
       scoring_version_label: null,
