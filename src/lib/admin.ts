@@ -12,10 +12,7 @@ export async function isCompanyAdmin(
   if (!email || !company_id) return false;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  // Prefer service role key so RLS doesn't block the lookup; fall back to publishable key
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) return false;
 

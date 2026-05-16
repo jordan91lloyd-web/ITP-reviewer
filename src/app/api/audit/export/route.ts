@@ -12,7 +12,7 @@ import type { AuditLogRow } from "@/lib/audit";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 const ACTION_LABEL: Record<string, string> = {
