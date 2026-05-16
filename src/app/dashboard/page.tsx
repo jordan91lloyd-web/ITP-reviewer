@@ -4,7 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw, RotateCcw } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
@@ -1107,6 +1107,48 @@ export default function DashboardPage() {
     }
   }
 
+  // ── Reset Score ─────────────────────────────────────────────────────────────
+
+  async function handleResetScore() {
+    if (!selectedInsp?.review_record_id || !selectedCompany) return;
+    const confirmed = window.confirm(
+      "Reset this ITP score? It will be marked as unreviewed and can be re-scored by the cron job or manually."
+    );
+    if (!confirmed) return;
+    try {
+      const res = await fetch("/api/dashboard/reset-review", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          review_record_id: selectedInsp.review_record_id,
+          company_id:       String(selectedCompany.id),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Reset failed");
+      const updater = (insp: DashboardInspection): DashboardInspection =>
+        insp.id === selectedInsp.id
+          ? {
+              ...insp,
+              review_status:        "not_reviewed",
+              last_score:           null,
+              last_score_band:      null,
+              last_reviewed_at:     null,
+              review_data:          null,
+              override_score:       null,
+              override_note:        null,
+              override_created_by:  null,
+            }
+          : insp;
+      setInspections(prev => prev.map(updater));
+      setSelectedInsp(prev => prev ? updater(prev) : prev);
+      setOverrideScore("");
+      setOverrideNote("");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Reset failed");
+    }
+  }
+
   // ── Filtered + grouped ITP list ─────────────────────────────────────────────
 
   const filteredInspections = inspections.filter(i => {
@@ -2155,6 +2197,8 @@ export default function DashboardPage() {
             onOverrideScoreChange={setOverrideScore}
             onOverrideNoteChange={setOverrideNote}
             onSaveOverride={handleSaveOverride}
+            isAdmin={isAdmin}
+            onResetScore={handleResetScore}
           />
         )}
       </div>
@@ -3194,6 +3238,8 @@ function InspectionPanel({
   onOverrideScoreChange,
   onOverrideNoteChange,
   onSaveOverride,
+  isAdmin,
+  onResetScore,
 }: {
   insp: DashboardInspection;
   companyId: number;
@@ -3210,6 +3256,8 @@ function InspectionPanel({
   onOverrideScoreChange: (v: string) => void;
   onOverrideNoteChange: (v: string) => void;
   onSaveOverride: () => void;
+  isAdmin: boolean;
+  onResetScore: () => void;
 }) {
   const displayScore  = insp.override_score ?? insp.last_score;
   const band          = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
@@ -3504,6 +3552,32 @@ function InspectionPanel({
             <p className="text-xs text-gray-400 italic">Run a review first to enable score overrides.</p>
           )}
         </div>
+
+        {/* Reset Score — admin only, only when reviewed */}
+        {isAdmin && insp.review_record_id && insp.review_data && (
+          <div style={{ padding: "16px 20px 20px", borderTop: "1px solid var(--hp-border)" }}>
+            <button
+              type="button"
+              onClick={onResetScore}
+              style={{
+                display:        "flex",
+                alignItems:     "center",
+                gap:            5,
+                fontSize:       12,
+                color:          "var(--hp-text-muted)",
+                background:     "none",
+                border:         "none",
+                cursor:         "pointer",
+                padding:        0,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = "var(--hp-critical, #dc2626)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "var(--hp-text-muted)")}
+            >
+              <RotateCcw size={13} />
+              Reset score
+            </button>
+          </div>
+        )}
 
       </div>
 
