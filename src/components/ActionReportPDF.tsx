@@ -1,6 +1,12 @@
 // ─── ActionReportPDF ──────────────────────────────────────────────────────────
 // Server-side PDF component rendered via @react-pdf/renderer.
 // Used by POST /api/dashboard/action-report.
+//
+// React PDF gotchas applied here:
+//  - borderStyle: "solid" is REQUIRED for any border to render
+//  - gap/columnGap not supported — use marginLeft/marginRight instead
+//  - SVG strokeWidth must be a number, not a string
+//  - percentage widths work but the containing View needs explicit width
 
 import React from "react";
 import {
@@ -18,19 +24,18 @@ import type { DashboardInspection } from "@/app/api/dashboard/inspections/route"
 // ── Colours ───────────────────────────────────────────────────────────────────
 
 const C = {
-  bg:           "#FBF9F6",
-  surface:      "#FFFFFF",
-  border:       "#E8DDD0",
-  warm100:      "#F4EFE8",
-  sidebar:      "#8C7258",
-  textPrimary:  "#2E2418",
-  textSecond:   "#6B5A42",
-  textMuted:    "#A89278",
-  compliant:    "#6A8C5E",
-  minor:        "#4A6FA5",
-  significant:  "#C4924A",
-  critical:     "#B85E3A",
-  accent:       "#C4924A",
+  bg:          "#FBF9F6",
+  surface:     "#FFFFFF",
+  border:      "#E8DDD0",
+  sidebar:     "#8C7258",
+  textPrimary: "#2E2418",
+  textSecond:  "#6B5A42",
+  textMuted:   "#A89278",
+  compliant:   "#6A8C5E",
+  minor:       "#4A6FA5",
+  significant: "#C4924A",
+  critical:    "#B85E3A",
+  accent:      "#C4924A",
 } as const;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -77,26 +82,26 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
     fontFamily:      "Helvetica",
     paddingTop:      36,
-    paddingBottom:   48,
+    paddingBottom:   52,
     paddingLeft:     40,
     paddingRight:    40,
   },
-  // Header
+  // Header row
   header: {
-    flexDirection:      "row",
-    justifyContent:     "space-between",
-    alignItems:         "flex-start",
-    marginBottom:       10,
+    flexDirection:  "row",
+    justifyContent: "space-between",
+    alignItems:     "flex-start",
+    marginBottom:   10,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems:    "center",
-    gap:           8,
   },
   wordmark: {
-    fontSize:    18,
-    fontFamily:  "Helvetica-Bold",
-    color:       C.sidebar,
+    fontSize:   18,
+    fontFamily: "Helvetica-Bold",
+    color:      C.sidebar,
+    marginLeft: 8,        // replaces gap — React PDF Yoga does not support gap
   },
   headerRight: {
     alignItems: "flex-end",
@@ -110,9 +115,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color:    C.textMuted,
   },
+  // Divider — borderStyle required or border is invisible
   divider: {
     borderBottomWidth: 1,
     borderBottomColor: C.border,
+    borderBottomStyle: "solid",
     marginBottom:      6,
   },
   // Summary strip
@@ -121,11 +128,12 @@ const styles = StyleSheet.create({
     color:        C.textMuted,
     marginBottom: 16,
   },
-  // Card
+  // Card — borderStyle required
   card: {
     backgroundColor: C.surface,
     borderWidth:     1,
     borderColor:     C.border,
+    borderStyle:     "solid",
     borderRadius:    4,
     padding:         12,
     marginBottom:    8,
@@ -137,32 +145,36 @@ const styles = StyleSheet.create({
     marginBottom:   6,
   },
   cardTitle: {
-    fontSize:   11,
-    fontFamily: "Helvetica-Bold",
-    color:      C.textPrimary,
-    flex:       1,
+    fontSize:    11,
+    fontFamily:  "Helvetica-Bold",
+    color:       C.textPrimary,
+    flex:        1,
     marginRight: 8,
   },
+  // Score pill — minWidth prevents collapse; backgroundColor applied inline per-card
   scorePill: {
-    borderRadius:     10,
-    paddingLeft:      8,
-    paddingRight:     8,
-    paddingTop:       3,
-    paddingBottom:    3,
+    borderRadius:  10,
+    paddingLeft:   8,
+    paddingRight:  8,
+    paddingTop:    3,
+    paddingBottom: 3,
+    minWidth:      60,
+    alignItems:    "center",
   },
   scorePillText: {
     fontSize:   9,
     fontFamily: "Helvetica-Bold",
     color:      "#FFFFFF",
   },
-  // Score bar
+  // Score bar track — explicit width so percentage fill works
   barTrack: {
+    width:           "100%",
     height:          3,
     backgroundColor: C.border,
     borderRadius:    2,
     marginBottom:    8,
   },
-  // Labels
+  // Section labels
   sectionLabel: {
     fontSize:     8,
     fontFamily:   "Helvetica-Bold",
@@ -191,44 +203,46 @@ const styles = StyleSheet.create({
     color:    C.textPrimary,
     flex:     1,
   },
-  // Footer
+  // Footer — fixed, absolute positioned; borderTopStyle required
   footer: {
-    position:      "absolute",
-    bottom:        20,
-    left:          40,
-    right:         40,
+    position:       "absolute",
+    bottom:         18,
+    left:           40,
+    right:          40,
     borderTopWidth: 1,
     borderTopColor: C.border,
-    paddingTop:    6,
-    flexDirection: "row",
+    borderTopStyle: "solid",
+    paddingTop:     6,
+    flexDirection:  "row",
     justifyContent: "space-between",
-    alignItems:    "center",
+    alignItems:     "center",
   },
   footerText: {
-    fontSize:  8,
-    color:     C.textMuted,
+    fontSize: 8,
+    color:    C.textMuted,
   },
 });
 
 // ── Logo SVG ──────────────────────────────────────────────────────────────────
+// strokeWidth must be a number in React PDF SVG (not a string)
 
 function HoldpointLogoSvg() {
   return (
     <Svg width={24} height={24} viewBox="0 0 36 36">
       {/* Outer circle */}
-      <Circle cx="18" cy="18" r="13" stroke={C.sidebar} strokeWidth="1.5" fill="none" />
+      <Circle cx="18" cy="18" r="13" stroke={C.sidebar} strokeWidth={1.5} fill="none" />
       {/* N tick */}
-      <Line x1="18" y1="5"  x2="18" y2="9"  stroke={C.sidebar} strokeWidth="1.5" />
+      <Line x1="18" y1="5"  x2="18" y2="9"  stroke={C.sidebar} strokeWidth={1.5} />
       {/* S tick */}
-      <Line x1="18" y1="27" x2="18" y2="31" stroke={C.sidebar} strokeWidth="1.5" />
+      <Line x1="18" y1="27" x2="18" y2="31" stroke={C.sidebar} strokeWidth={1.5} />
       {/* W tick */}
-      <Line x1="5"  y1="18" x2="9"  y2="18" stroke={C.sidebar} strokeWidth="1.5" />
+      <Line x1="5"  y1="18" x2="9"  y2="18" stroke={C.sidebar} strokeWidth={1.5} />
       {/* E tick */}
-      <Line x1="27" y1="18" x2="31" y2="18" stroke={C.sidebar} strokeWidth="1.5" />
+      <Line x1="27" y1="18" x2="31" y2="18" stroke={C.sidebar} strokeWidth={1.5} />
       {/* Centre dot */}
       <Circle cx="18" cy="18" r="2.5" fill={C.accent} />
       {/* Hold bar */}
-      <Line x1="12" y1="33" x2="24" y2="33" stroke={C.accent} strokeWidth="2" />
+      <Line x1="12" y1="33" x2="24" y2="33" stroke={C.accent} strokeWidth={2} />
     </Svg>
   );
 }
@@ -254,6 +268,7 @@ function ItpCard({ insp }: { insp: DashboardInspection }) {
       {/* Row 1: title + score pill */}
       <View style={styles.cardRow1}>
         <Text style={styles.cardTitle}>{titleText}</Text>
+        {/* backgroundColor applied inline — dynamic per band colour */}
         <View style={[styles.scorePill, { backgroundColor: bg }]}>
           <Text style={styles.scorePillText}>
             {displayScore} · {bandLabel(band)}
@@ -322,7 +337,7 @@ export default function ActionReportPDF({
 
   // Summary stats
   const countBand = (b: string) => reviewed.filter(i => {
-    const s = i.override_score ?? i.last_score;
+    const s    = i.override_score ?? i.last_score;
     const band = i.last_score_band ?? (s !== null ? scoreBandFromScore(s) : null);
     return band === b;
   }).length;
@@ -341,18 +356,18 @@ export default function ActionReportPDF({
   const summaryParts = [
     `${reviewed.length} ITP${reviewed.length !== 1 ? "s" : ""} reviewed`,
     avgScore !== null ? `Average score: ${avgScore}` : null,
-    cCompliant   > 0 ? `${cCompliant} Compliant`         : null,
-    cMinor       > 0 ? `${cMinor} Minor gaps`            : null,
-    cSignificant > 0 ? `${cSignificant} Significant gaps` : null,
-    cCritical    > 0 ? `${cCritical} Critical risk`       : null,
+    cCompliant   > 0 ? `${cCompliant} Compliant`          : null,
+    cMinor       > 0 ? `${cMinor} Minor gaps`             : null,
+    cSignificant > 0 ? `${cSignificant} Significant gaps`  : null,
+    cCritical    > 0 ? `${cCritical} Critical risk`        : null,
   ].filter(Boolean).join("  ·  ");
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
 
-        {/* Header */}
-        <View style={styles.header} fixed={false}>
+        {/* Header — does not repeat (fixed=false is default) */}
+        <View style={styles.header}>
           <View style={styles.headerLeft}>
             <HoldpointLogoSvg />
             <Text style={styles.wordmark}>Holdpoint</Text>
