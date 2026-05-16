@@ -63,17 +63,6 @@ function scoreBandFromScore(score: number): string {
   return "critical_risk";
 }
 
-function priorityColor(p: string): string {
-  if (p === "high")   return C.critical;
-  if (p === "medium") return C.significant;
-  return C.compliant;
-}
-
-function priorityTag(p: string): string {
-  if (p === "high")   return "[HIGH]";
-  if (p === "medium") return "[MED]";
-  return "[LOW]";
-}
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -261,7 +250,6 @@ function ItpCard({ insp }: { insp: DashboardInspection }) {
     : insp.name;
 
   const missingEvidence = (rd.missing_evidence ?? []).slice(0, 4);
-  const actionItems     = (rd.action_items ?? []).slice(0, 5);
 
   return (
     <View style={styles.card} wrap={false}>
@@ -289,29 +277,13 @@ function ItpCard({ insp }: { insp: DashboardInspection }) {
       {/* Row 3: missing evidence */}
       {missingEvidence.length > 0 && (
         <View>
-          <Text style={styles.sectionLabel}>MISSING EVIDENCE</Text>
+          <Text style={styles.sectionLabel}>PLEASE CONFIRM THE FOLLOWING ARE ATTACHED</Text>
           {missingEvidence.map((m, i) => (
             <Text key={i} style={styles.evidenceItem}>·  {m.evidence_type}</Text>
           ))}
         </View>
       )}
 
-      {/* Row 4: action items */}
-      {actionItems.length > 0 && (
-        <View style={{ marginTop: missingEvidence.length > 0 ? 6 : 0 }}>
-          <Text style={[styles.sectionLabel, { marginTop: missingEvidence.length > 0 ? 6 : 0 }]}>
-            ACTION ITEMS
-          </Text>
-          {actionItems.map((item, i) => (
-            <View key={i} style={styles.actionItemRow}>
-              <Text style={[styles.actionTag, { color: priorityColor(item.priority) }]}>
-                {priorityTag(item.priority)}
-              </Text>
-              <Text style={styles.actionText}>{item.action}</Text>
-            </View>
-          ))}
-        </View>
-      )}
     </View>
   );
 }
