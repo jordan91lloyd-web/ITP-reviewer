@@ -1,7 +1,6 @@
 // ─── POST /api/procore/bulk-queue/start ───────────────────────────────────────
-// Creates a bulk_queue_jobs row in Supabase and kicks off processing in a
-// fire-and-forget call to /api/procore/bulk-queue/process.
-// Returns { job_id } immediately so the browser can start polling status.
+// Creates a bulk_queue_jobs row in Supabase and returns { job_id } immediately.
+// Processing is handled by the Vercel Cron at /api/cron/process-queue (every 2 min).
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
