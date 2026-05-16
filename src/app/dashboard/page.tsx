@@ -423,153 +423,6 @@ ${autoPrint ? "<script>window.addEventListener('load',()=>{window.print();})</sc
 </html>`;
 }
 
-// ── Action Report PDF builder ──────────────────────────────────────────────────
-
-function buildActionReportHtml(
-  inspections: DashboardInspection[],
-  projectName: string,
-  companyId: number,
-  projectId: number,
-  userName: string | null,
-): string {
-  const reviewed = inspections.filter(i => i.review_data != null && (i.override_score ?? i.last_score) !== null);
-
-  // Summary strip counts
-  const countBand = (b: string) => reviewed.filter(i => {
-    const s = i.override_score ?? i.last_score;
-    const band = i.last_score_band ?? (s !== null ? scoreBand(s) : null);
-    return band === b;
-  }).length;
-  const avgScore = reviewed.length > 0
-    ? Math.round(reviewed.reduce((sum, i) => sum + (i.override_score ?? i.last_score ?? 0), 0) / reviewed.length)
-    : null;
-  const cCompliant    = countBand("compliant");
-  const cMinor        = countBand("minor_gaps");
-  const cSignificant  = countBand("significant_gaps");
-  const cCritical     = countBand("critical_risk");
-
-  const pillBg = (band: string | null): string => ({
-    compliant:        "#6B8F5E",
-    minor_gaps:       "#4A90A4",
-    significant_gaps: "#C4872A",
-    critical_risk:    "#B85450",
-  } as Record<string, string>)[band ?? ""] ?? "#888";
-
-  const priorityColor = (p: string): string =>
-    p === "high" ? "#B85450" : p === "medium" ? "#C4872A" : "#6B8F5E";
-  const priorityTag = (p: string): string =>
-    p === "high" ? "HIGH" : p === "medium" ? "MED" : "LOW";
-
-  const cards = reviewed.map(insp => {
-    const rd           = insp.review_data!;
-    const displayScore = insp.override_score ?? insp.last_score;
-    const band         = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
-    const bandLabel    = band ? scoreBandLabel(band) : "—";
-    const bg           = pillBg(band);
-
-    const assessment = rd.package_assessment
-      ? stripMarkdown(rd.package_assessment)
-      : rd.executive_summary
-        ? stripMarkdown(rd.executive_summary).slice(0, 180) + (rd.executive_summary.length > 180 ? "…" : "")
-        : "";
-
-    const actionItems = (rd.action_items ?? []).slice(0, 5);
-    const bulletLines = actionItems.map(item =>
-      `<div style="display:flex;align-items:baseline;gap:6px;margin:3px 0;font-size:11px;color:#333;line-height:1.4">
-        <span style="flex-shrink:0;font-size:9px;font-weight:700;letter-spacing:0.04em;color:${priorityColor(item.priority)};min-width:28px">${esc(priorityTag(item.priority))}</span>
-        <span>${esc(item.action)}</span>
-      </div>`
-    ).join("");
-
-    const seqLabel = insp.inspection_number_of_type != null ? ` · #${insp.inspection_number_of_type}` : "";
-
-    return `
-<div class="card">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:5px">
-    <div style="font-size:13px;font-weight:600;color:#2C2C2C;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">
-      ${esc(insp.name)}${esc(seqLabel)}
-    </div>
-    <span style="flex-shrink:0;font-size:11px;font-weight:600;color:#fff;background:${bg};padding:2px 10px;border-radius:20px;white-space:nowrap">
-      ${displayScore ?? "—"} · ${esc(bandLabel)}
-    </span>
-  </div>
-  ${assessment ? `<div style="font-size:12px;color:#555;line-height:1.45;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(assessment)}</div>` : ""}
-  ${bulletLines
-    ? `<div style="margin-top:2px">${bulletLines}</div>`
-    : `<div style="font-size:11px;color:#aaa;font-style:italic">No action items recorded.</div>`}
-</div>`;
-  }).join("");
-
-  const dateStr = new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" });
-  const projNum = (inspections[0] as DashboardInspection & { project_number?: string })?.project_number;
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>${esc(projectName)} — QA Action Report</title>
-<style>
-  @page {
-    margin: 15mm 18mm;
-    size: A4;
-    @bottom-center {
-      content: "Holdpoint · Confidential · Page " counter(page) " of " counter(pages);
-      font-size: 10px;
-      color: #999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 12px;
-    color: #1a1a1a;
-    margin: 0;
-    padding: 0;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .card {
-    break-inside: avoid;
-    padding: 10px 0;
-    border-bottom: 1px solid #EDE8DF;
-    margin-bottom: 8px;
-  }
-  .card:last-child { border-bottom: none; }
-</style>
-</head>
-<body>
-
-<!-- Header — top of first page only -->
-<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:10px;border-bottom:1px solid #D4C9B8;margin-bottom:8px">
-  <div style="font-size:22px;font-weight:700;color:#5C6B4F;letter-spacing:-0.3px;line-height:1">Holdpoint</div>
-  <div style="text-align:right;line-height:1.5">
-    <div style="font-size:14px;font-weight:700;color:#2C2C2C">${esc(projectName)}</div>
-    ${projNum ? `<div style="font-size:12px;color:#888">#${esc(projNum)}</div>` : ""}
-    <div style="font-size:12px;color:#888">${esc(dateStr)}</div>
-    ${userName ? `<div style="font-size:12px;color:#888">${esc(userName)}</div>` : ""}
-  </div>
-</div>
-
-<!-- Summary strip -->
-<div style="font-size:11px;color:#888;margin-bottom:16px;line-height:1.5">
-  ${reviewed.length} ITP${reviewed.length !== 1 ? "s" : ""} reviewed
-  ${avgScore !== null ? ` · Average score: ${avgScore}` : ""}
-  ${cCompliant    > 0 ? ` · ${cCompliant} Compliant`         : ""}
-  ${cMinor        > 0 ? ` · ${cMinor} Minor gaps`            : ""}
-  ${cSignificant  > 0 ? ` · ${cSignificant} Significant gaps` : ""}
-  ${cCritical     > 0 ? ` · ${cCritical} Critical risk`       : ""}
-</div>
-
-${reviewed.length === 0
-  ? '<p style="color:#aaa;font-style:italic">No reviewed ITPs in the current selection.</p>'
-  : cards}
-
-<script>window.addEventListener("load", () => { window.print(); })</script>
-</body>
-</html>`;
-}
-
 // ── Company tab helpers ────────────────────────────────────────────────────────
 
 function getDateParams(range: DateRange): string {
@@ -1619,7 +1472,7 @@ export default function DashboardPage() {
 
   // ── Export Action Report ────────────────────────────────────────────────────
 
-  function handleExportActionReport() {
+  async function handleExportActionReport() {
     if (!selectedProject || !selectedCompany) return;
 
     // Use checkbox selection if anything is selected; otherwise all reviewed in current tab
@@ -1632,20 +1485,37 @@ export default function DashboardPage() {
 
     if (source.length === 0) return;
 
-    const html = buildActionReportHtml(
-      source,
-      selectedProject.display_name || selectedProject.name,
-      selectedCompany.id,
-      selectedProject.id,
-      user?.name ?? null,
-    );
-    const win = window.open("", "_blank");
-    if (!win) {
-      alert("Popup blocked — please allow popups and try again.");
-      return;
+    const projectName = selectedProject.display_name || selectedProject.name;
+    const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+    try {
+      const res = await fetch("/api/dashboard/action-report", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          inspections:    source,
+          project_name:   projectName,
+          project_number: selectedProject.project_number ?? "",
+          company_id:     String(selectedCompany.id),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        alert(data.error ?? "Failed to generate PDF.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `holdpoint-${slug}-report.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to generate PDF.");
     }
-    win.document.write(html);
-    win.document.close();
   }
 
   // ── Not authenticated ───────────────────────────────────────────────────────
