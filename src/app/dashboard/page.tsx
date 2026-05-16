@@ -433,84 +433,75 @@ function buildActionReportHtml(
   userName: string | null,
 ): string {
   const reviewed = inspections.filter(i => i.review_data != null && (i.override_score ?? i.last_score) !== null);
-  const total    = inspections.length;
 
-  const sections = reviewed.map(insp => {
+  // Summary strip counts
+  const countBand = (b: string) => reviewed.filter(i => {
+    const s = i.override_score ?? i.last_score;
+    const band = i.last_score_band ?? (s !== null ? scoreBand(s) : null);
+    return band === b;
+  }).length;
+  const avgScore = reviewed.length > 0
+    ? Math.round(reviewed.reduce((sum, i) => sum + (i.override_score ?? i.last_score ?? 0), 0) / reviewed.length)
+    : null;
+  const cCompliant    = countBand("compliant");
+  const cMinor        = countBand("minor_gaps");
+  const cSignificant  = countBand("significant_gaps");
+  const cCritical     = countBand("critical_risk");
+
+  const pillBg = (band: string | null): string => ({
+    compliant:        "#6B8F5E",
+    minor_gaps:       "#4A90A4",
+    significant_gaps: "#C4872A",
+    critical_risk:    "#B85450",
+  } as Record<string, string>)[band ?? ""] ?? "#888";
+
+  const priorityColor = (p: string): string =>
+    p === "high" ? "#B85450" : p === "medium" ? "#C4872A" : "#6B8F5E";
+  const priorityTag = (p: string): string =>
+    p === "high" ? "HIGH" : p === "medium" ? "MED" : "LOW";
+
+  const cards = reviewed.map(insp => {
     const rd           = insp.review_data!;
     const displayScore = insp.override_score ?? insp.last_score;
     const band         = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
     const bandLabel    = band ? scoreBandLabel(band) : "—";
+    const bg           = pillBg(band);
 
-    const bandColor = ({
-      compliant: "#16a34a", minor_gaps: "#d97706",
-      significant_gaps: "#ea580c", critical_risk: "#dc2626",
-    } as Record<string, string>)[band ?? ""] ?? "#6b7280";
+    const assessment = rd.package_assessment
+      ? stripMarkdown(rd.package_assessment)
+      : rd.executive_summary
+        ? stripMarkdown(rd.executive_summary).slice(0, 180) + (rd.executive_summary.length > 180 ? "…" : "")
+        : "";
 
-    const procoreUrl = `https://us02.procore.com/webclients/host/companies/${companyId}/projects/${projectId}/tools/inspections/${insp.id}`;
-
-    const summary = rd.executive_summary
-      ? stripMarkdown(rd.executive_summary).slice(0, 200) + (rd.executive_summary.length > 200 ? "…" : "")
-      : "";
-
-    const missingItems = (rd.missing_evidence ?? []).slice(0, 4).map(m =>
-      `<li style="margin:2px 0;font-size:11px;color:#374151">· ${esc(m.evidence_type)}</li>`
+    const actionItems = (rd.action_items ?? []).slice(0, 5);
+    const bulletLines = actionItems.map(item =>
+      `<div style="display:flex;align-items:baseline;gap:6px;margin:3px 0;font-size:11px;color:#333;line-height:1.4">
+        <span style="flex-shrink:0;font-size:9px;font-weight:700;letter-spacing:0.04em;color:${priorityColor(item.priority)};min-width:28px">${esc(priorityTag(item.priority))}</span>
+        <span>${esc(item.action)}</span>
+      </div>`
     ).join("");
 
-    const actionItems = rd.action_items ?? [];
-    const actionRows = actionItems.map(item => {
-      const pColor = item.priority === "high" ? "#dc2626" : item.priority === "medium" ? "#d97706" : "#9ca3af";
-      const pLabel = item.priority.toUpperCase();
-      return `<tr>
-        <td style="padding:4px 8px;vertical-align:top;white-space:nowrap;width:80px">
-          <span style="font-size:10px;font-weight:700;color:${pColor}">${esc(pLabel)}</span>
-        </td>
-        <td style="padding:4px 8px;font-size:11px;color:#1f2937;vertical-align:top">☐ ${esc(item.action)}</td>
-      </tr>`;
-    }).join("");
-
-    const statusLabel = insp.status ?? "—";
-
-    // Only force a new page for dense sections — short ones share a page
-    const forcedBreak = actionItems.length > 4 || (rd.missing_evidence ?? []).length > 3;
+    const seqLabel = insp.inspection_number_of_type != null ? ` · #${insp.inspection_number_of_type}` : "";
 
     return `
-<div class="itp-section"${forcedBreak ? ' style="page-break-before:always"' : ""}>
-  <div style="border-top:2px solid #e5e7eb;padding:12px 0 0 0;margin-bottom:16px">
-    <div style="margin-bottom:4px">
-      <div style="font-size:13px;font-weight:700;color:#1f2937">${esc(insp.name)}${insp.inspection_number_of_type != null ? ` — #${insp.inspection_number_of_type}` : ""}</div>
-      <div style="font-size:10px;color:#6b7280;margin-top:2px">
-        Score: <strong style="color:${bandColor}">${displayScore ?? "—"}/100</strong>
-        &nbsp;·&nbsp;<strong style="color:${bandColor}">${esc(bandLabel)}</strong>
-        &nbsp;·&nbsp;${esc(statusLabel)}
-      </div>
-      <div style="font-size:10px;color:#2563eb;margin-top:2px">
-        View in Procore: ${esc(procoreUrl)}
-      </div>
-      ${insp.override_score != null ? `<div style="font-size:10px;color:#7c3aed;margin-top:2px">Override applied (AI: ${insp.last_score})</div>` : ""}
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:5px">
+    <div style="font-size:13px;font-weight:600;color:#2C2C2C;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">
+      ${esc(insp.name)}${esc(seqLabel)}
     </div>
-
-    ${summary ? `
-    <div style="margin-bottom:8px">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:3px">Key Findings</div>
-      <div style="font-size:11px;color:#374151;line-height:1.5;padding:6px 8px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:0 4px 4px 0">${esc(summary)}</div>
-    </div>` : ""}
-
-    ${missingItems ? `
-    <div style="margin-bottom:8px">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:3px">Missing Evidence</div>
-      <ul style="margin:0;padding:0;list-style:none">${missingItems}</ul>
-    </div>` : ""}
-
-    <div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:3px">Action Items</div>
-      ${actionItems.length > 0 ? `
-      <table style="width:100%;border-collapse:collapse">
-        <tbody>${actionRows}</tbody>
-      </table>` : `<div style="font-size:11px;color:#9ca3af;font-style:italic">Run a fresh review to generate action items.</div>`}
-    </div>
+    <span style="flex-shrink:0;font-size:11px;font-weight:600;color:#fff;background:${bg};padding:2px 10px;border-radius:20px;white-space:nowrap">
+      ${displayScore ?? "—"} · ${esc(bandLabel)}
+    </span>
   </div>
+  ${assessment ? `<div style="font-size:12px;color:#555;line-height:1.45;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(assessment)}</div>` : ""}
+  ${bulletLines
+    ? `<div style="margin-top:2px">${bulletLines}</div>`
+    : `<div style="font-size:11px;color:#aaa;font-style:italic">No action items recorded.</div>`}
 </div>`;
   }).join("");
+
+  const dateStr = new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" });
+  const projNum = (inspections[0] as DashboardInspection & { project_number?: string })?.project_number;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -518,31 +509,61 @@ function buildActionReportHtml(
 <meta charset="utf-8">
 <title>${esc(projectName)} — QA Action Report</title>
 <style>
-  @page { margin: 18mm 20mm; }
+  @page {
+    margin: 15mm 18mm;
+    size: A4;
+    @bottom-center {
+      content: "Holdpoint · Confidential · Page " counter(page) " of " counter(pages);
+      font-size: 10px;
+      color: #999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+  }
   * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a1a1a; margin: 0; padding: 0; }
-  .itp-section { break-inside: avoid; }
-  @media print { .no-print { display: none; } }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .card {
+    break-inside: avoid;
+    padding: 10px 0;
+    border-bottom: 1px solid #EDE8DF;
+    margin-bottom: 8px;
+  }
+  .card:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
-<!-- Cover header (no page break before first section) -->
-<div style="border-bottom:3px solid #8C7258;padding-bottom:16px;margin-bottom:0">
-  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8C7258;margin-bottom:6px">Holdpoint</div>
-  <div style="font-size:18px;font-weight:700;color:#1f2937;margin-bottom:6px">QA Action Report</div>
-  <div style="font-size:11px;color:#374151">Project: ${esc(projectName)}</div>
-  <div style="font-size:11px;color:#374151">Generated: ${new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" })}</div>
-  ${userName ? `<div style="font-size:11px;color:#374151">Prepared by: ${esc(userName)}</div>` : ""}
-  <div style="font-size:11px;color:#374151">${reviewed.length} of ${total} ITP${total !== 1 ? "s" : ""} included</div>
+
+<!-- Header — top of first page only -->
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:10px;border-bottom:1px solid #D4C9B8;margin-bottom:8px">
+  <div style="font-size:22px;font-weight:700;color:#5C6B4F;letter-spacing:-0.3px;line-height:1">Holdpoint</div>
+  <div style="text-align:right;line-height:1.5">
+    <div style="font-size:14px;font-weight:700;color:#2C2C2C">${esc(projectName)}</div>
+    ${projNum ? `<div style="font-size:12px;color:#888">#${esc(projNum)}</div>` : ""}
+    <div style="font-size:12px;color:#888">${esc(dateStr)}</div>
+    ${userName ? `<div style="font-size:12px;color:#888">${esc(userName)}</div>` : ""}
+  </div>
+</div>
+
+<!-- Summary strip -->
+<div style="font-size:11px;color:#888;margin-bottom:16px;line-height:1.5">
+  ${reviewed.length} ITP${reviewed.length !== 1 ? "s" : ""} reviewed
+  ${avgScore !== null ? ` · Average score: ${avgScore}` : ""}
+  ${cCompliant    > 0 ? ` · ${cCompliant} Compliant`         : ""}
+  ${cMinor        > 0 ? ` · ${cMinor} Minor gaps`            : ""}
+  ${cSignificant  > 0 ? ` · ${cSignificant} Significant gaps` : ""}
+  ${cCritical     > 0 ? ` · ${cCritical} Critical risk`       : ""}
 </div>
 
 ${reviewed.length === 0
-  ? '<p style="color:#9ca3af;font-style:italic;margin-top:20px">No reviewed ITPs in the current selection.</p>'
-  : sections}
-
-<div style="margin-top:40px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center">
-  Holdpoint — Confidential
-</div>
+  ? '<p style="color:#aaa;font-style:italic">No reviewed ITPs in the current selection.</p>'
+  : cards}
 
 <script>window.addEventListener("load", () => { window.print(); })</script>
 </body>
