@@ -1,10 +1,7 @@
 // ─── POST /api/procore/bulk-queue/process ─────────────────────────────────────
-// Processes one item from a bulk_queue_jobs row, then self-invokes for the next.
-// Called by /start (and by itself) — never called directly by the browser.
-//
-// Pattern: one invocation = one item. After completing an item it fires a
-// fire-and-forget request to itself for the next queued item. This keeps each
-// invocation well within maxDuration while supporting arbitrarily large batches.
+// Processes ONE queued item from a bulk_queue_jobs row and returns.
+// Called by GET /api/cron/process-queue every 2 minutes — no self-chaining.
+// Can also be called directly for manual triggering.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -23,8 +20,6 @@ interface QueueItem {
   status:        "queued" | "processing" | "done" | "failed";
   error?:        string;
 }
-
-const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
 async function updateJob(
   jobId: string,
@@ -74,99 +69,90 @@ export async function POST(request: NextRequest) {
   const items = job.items as QueueItem[];
   const queuedIndex = items.findIndex(i => i.status === "queued");
 
+  // Nothing left — mark completed
   if (queuedIndex === -1) {
-    // Nothing left — mark completed
     await updateJob(job_id, items, "completed");
-    return NextResponse.json({ message: "All items processed." });
+    return NextResponse.json({ status: "completed" });
   }
 
+  // Mark item as processing
   const item = { ...items[queuedIndex] };
   items[queuedIndex] = { ...item, status: "processing" };
   await updateJob(job_id, items);
 
-  const baseUrl   = new URL(request.url).origin;
   const companyId = job.company_id as string;
   const userId    = job.user_id as string | undefined;
 
-  // ── Resolve a fresh access token from the store ──────────────────────────────
-  // Fetched per-item so long-running queues survive token expiry mid-batch.
+  // Resolve a fresh token
   if (!userId) {
     items[queuedIndex] = { ...item, status: "failed", error: "Job missing user_id — re-queue from the dashboard" };
     await updateJob(job_id, items);
-  } else {
-    const accessToken = await getValidToken(companyId, userId);
-    const cookieHdr   = accessToken ? `procore_access_token=${accessToken}` : "";
-
-    // ── Call import ───────────────────────────────────────────────────────────
-    try {
-      if (!accessToken) {
-        throw new Error("Token unavailable — please log in again");
-      }
-
-      const importRes = await fetch(`${baseUrl}/api/procore/import`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json", Cookie: cookieHdr },
-        body:    JSON.stringify({
-          inspection_id: item.inspection_id,
-          project_id:    item.project_id,
-          company_id:    companyId,
-        }),
-      });
-
-      // importRes.json() may fail if the response is not JSON
-      const importData = await importRes.json().catch(() => ({})) as Record<string, unknown>;
-
-      if (!importRes.ok || !importData.success) {
-        throw new Error((importData.error as string | undefined) ?? `HTTP ${importRes.status}`);
-      }
-
-      items[queuedIndex] = { ...item, status: "done" };
-      await updateJob(job_id, items);
-
-      // ── Fire generate-action-items (best-effort, no await) ─────────────────
-      const result = importData.result as Record<string, unknown> | undefined;
-      void fetch(`${baseUrl}/api/procore/generate-action-items`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json", Cookie: cookieHdr },
-        body:    JSON.stringify({
-          inspection_id:    String(item.inspection_id),
-          project_id:       item.project_id,
-          company_id:       companyId,
-          review_summary:   (result?.executive_summary as string | undefined) ?? "",
-          key_issues:       ((result?.key_issues as Array<{ title: string }> | undefined) ?? []).map(i => i.title),
-          missing_evidence: ((result?.missing_evidence as Array<{ evidence_type: string }> | undefined) ?? []).map(m => m.evidence_type),
-          score:            (result?.total_score as number | undefined) ?? 0,
-          score_band:       (result?.score_band as string | undefined) ?? "",
-          itp_name:         ((result?.inspection_header as Record<string, unknown> | undefined)?.itp_number as string | undefined)
-                              ?? String(item.inspection_id),
-        }),
-      });
-
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      items[queuedIndex] = { ...item, status: "failed", error: errMsg };
-      await updateJob(job_id, items);
-    }
+    return NextResponse.json({ status: "token_error" });
   }
 
-  // 3s buffer between items (mirrors the browser bulk review delay)
-  await delay(3000);
+  const token = await getValidToken(companyId, userId);
+  if (!token) {
+    items[queuedIndex] = { ...item, status: "failed", error: "Token unavailable — please log in again" };
+    await updateJob(job_id, items);
+    return NextResponse.json({ status: "token_error" });
+  }
 
-  // ── Determine next step ─────────────────────────────────────────────────────
-  const remaining = items.filter(i => i.status === "queued").length;
-
-  if (remaining > 0) {
-    // Self-invoke for the next queued item (fire-and-forget) — no access_token needed
-    void fetch(`${baseUrl}/api/procore/bulk-queue/process`, {
+  // Call the import route
+  const baseUrl = new URL(request.url).origin;
+  try {
+    const importRes = await fetch(`${baseUrl}/api/procore/import`, {
       method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ job_id }),
+      headers: {
+        "Content-Type": "application/json",
+        Cookie:         `procore_access_token=${token}`,
+      },
+      body: JSON.stringify({
+        inspection_id: item.inspection_id,
+        project_id:    item.project_id,
+        company_id:    companyId,
+      }),
     });
-  } else {
-    // Last item — set final job status
+
+    const importData = await importRes.json().catch(() => ({})) as Record<string, unknown>;
+
+    if (!importRes.ok || !importData.success) {
+      throw new Error((importData.error as string | undefined) ?? `HTTP ${importRes.status}`);
+    }
+
+    items[queuedIndex] = { ...item, status: "done" };
+    await updateJob(job_id, items);
+
+    // Fire generate-action-items (best-effort, no await)
+    const result = importData.result as Record<string, unknown> | undefined;
+    void fetch(`${baseUrl}/api/procore/generate-action-items`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", Cookie: `procore_access_token=${token}` },
+      body:    JSON.stringify({
+        inspection_id:    String(item.inspection_id),
+        project_id:       item.project_id,
+        company_id:       companyId,
+        review_summary:   (result?.executive_summary as string | undefined) ?? "",
+        key_issues:       ((result?.key_issues as Array<{ title: string }> | undefined) ?? []).map(i => i.title),
+        missing_evidence: ((result?.missing_evidence as Array<{ evidence_type: string }> | undefined) ?? []).map(m => m.evidence_type),
+        score:            (result?.total_score as number | undefined) ?? 0,
+        score_band:       (result?.score_band as string | undefined) ?? "",
+        itp_name:         ((result?.inspection_header as Record<string, unknown> | undefined)?.itp_number as string | undefined)
+                            ?? String(item.inspection_id),
+      }),
+    });
+
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    items[queuedIndex] = { ...item, status: "failed", error: errMsg };
+    await updateJob(job_id, items);
+  }
+
+  // Check whether all items are now done/failed — if so, close the job
+  const remaining = items.filter(i => i.status === "queued").length;
+  if (remaining === 0) {
     const anyFailed = items.some(i => i.status === "failed");
     await updateJob(job_id, items, anyFailed ? "failed" : "completed");
   }
 
-  return NextResponse.json({ processed: item.inspection_id, remaining });
+  return NextResponse.json({ status: "processed", inspection_id: item.inspection_id });
 }

@@ -65,13 +65,8 @@ export async function POST(request: NextRequest) {
 
   const jobId = job.id as string;
 
-  // Fire-and-forget: kick off processing — no access_token in body,
-  // the process route fetches a fresh token from the store each item.
-  void fetch(new URL("/api/procore/bulk-queue/process", request.url).toString(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ job_id: jobId }),
-  });
+  // Processing is handled by the Vercel Cron at /api/cron/process-queue
+  // which fires every 2 minutes — no manual kick-off needed.
 
   // Audit log — fire-and-forget, never throws
   const auditUser = await resolveAuditUser(accessToken);
