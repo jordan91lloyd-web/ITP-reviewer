@@ -10,6 +10,8 @@ import Link from "next/link";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
 import InsightsTab from "@/components/InsightsTab";
+import QueuePanel from "@/components/QueuePanel";
+import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
@@ -681,11 +683,105 @@ export default function DashboardPage() {
   const [bulkStatus, setBulkStatus]     = useState<Map<number, BulkItemStatus>>(new Map());
   const [bulkSummary, setBulkSummary]   = useState<{ completed: number; failed: number } | null>(null);
 
-  // Background queue
-  const [bgJobId, setBgJobId]         = useState<string | null>(null);
-  const [bgJobStatus, setBgJobStatus] = useState<BgJobStatus | null>(null);
-  const bgPollRef                     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const bgRefreshedIds                = useRef<Set<number>>(new Set());
+  // Background queue — multi-project, keyed by job_id
+  const [queueJobs, setQueueJobs] = useState<QueueJob[]>([]);
+  const bgPollRef                 = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Map of job_id → Set of inspection_ids already refreshed in the list
+  const bgRefreshedIds            = useRef<Map<string, Set<number>>>(new Map());
+
+  // Refs to avoid stale closures inside the polling interval
+  const queueJobsRef      = useRef<QueueJob[]>([]);
+  const selectedProjRef   = useRef<DashboardProject | null>(null);
+  const selectedCoRef     = useRef<Company | null>(null);
+  useEffect(() => { queueJobsRef.current = queueJobs; }, [queueJobs]);
+  useEffect(() => { selectedProjRef.current = selectedProject; }, [selectedProject]);
+  useEffect(() => { selectedCoRef.current = selectedCompany; }, [selectedCompany]);
+
+  // Start / stop the single polling interval based on whether any job is running
+  const hasRunningJobs = queueJobs.some(j => j.status === "running");
+  useEffect(() => {
+    if (!hasRunningJobs) {
+      if (bgPollRef.current) { clearInterval(bgPollRef.current); bgPollRef.current = null; }
+      return;
+    }
+    if (bgPollRef.current) return; // already polling
+
+    const poll = async () => {
+      const running = queueJobsRef.current.filter(j => j.status === "running");
+      for (const job of running) {
+        try {
+          const res = await fetch(
+            `/api/procore/bulk-queue/status?job_id=${job.job_id}&company_id=${job.company_id}`
+          );
+          if (!res.ok) continue;
+          const data: BgJobStatus = await res.json();
+
+          // Per-item refresh when viewing this project
+          if (!bgRefreshedIds.current.has(job.job_id)) bgRefreshedIds.current.set(job.job_id, new Set());
+          const refreshed  = bgRefreshedIds.current.get(job.job_id)!;
+          const curProject = selectedProjRef.current;
+
+          for (const item of data.items) {
+            if (
+              item.status === "done" &&
+              !refreshed.has(item.inspection_id) &&
+              curProject && String(curProject.id) === job.project_id
+            ) {
+              refreshed.add(item.inspection_id);
+              fetch(
+                `/api/dashboard/inspections?project_id=${job.project_id}&company_id=${job.company_id}&inspection_id=${item.inspection_id}`
+              )
+                .then(r => r.json())
+                .then((d: { inspections?: DashboardInspection[] }) => {
+                  if (d.inspections?.length) {
+                    setInspections(prev =>
+                      prev.map(i => i.id === item.inspection_id ? { ...i, ...d.inspections![0] } : i)
+                    );
+                  }
+                })
+                .catch(() => {});
+            }
+          }
+
+          // Update job record in state
+          setQueueJobs(prev => prev.map(j => {
+            if (j.job_id !== job.job_id) return j;
+            return {
+              ...j,
+              status:    data.status as QueueJob["status"],
+              total:     data.total,
+              completed: data.completed,
+              failed:    data.failed,
+              items: data.items.map(i => ({
+                inspection_id: i.inspection_id,
+                status:        i.status as "queued" | "processing" | "done" | "failed",
+                error:         i.error,
+              })),
+            };
+          }));
+
+          // Reload inspection list when the current project's job finishes
+          if (
+            (data.status === "completed" || data.status === "failed") &&
+            curProject && selectedCoRef.current &&
+            String(curProject.id) === job.project_id
+          ) {
+            void loadInspections(curProject, selectedCoRef.current);
+          }
+        } catch {
+          // non-fatal — retry next tick
+        }
+      }
+    };
+
+    void poll();
+    bgPollRef.current = setInterval(poll, 5000);
+
+    return () => {
+      if (bgPollRef.current) { clearInterval(bgPollRef.current); bgPollRef.current = null; }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasRunningJobs]);
 
   // Bulk export
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -709,7 +805,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [insightsFetched, setInsightsFetched] = useState(false);
 
@@ -1124,52 +1220,27 @@ export default function DashboardPage() {
 
   // ── Background queue helpers ────────────────────────────────────────────────
 
-  function startBgPolling(jobId: string, project: DashboardProject, company: Company) {
-    setBgJobId(jobId);
-    setBgJobStatus(null);
-    bgRefreshedIds.current = new Set();
-    if (bgPollRef.current) clearInterval(bgPollRef.current);
-
-    const poll = async () => {
-      try {
-        const res = await fetch(
-          `/api/procore/bulk-queue/status?job_id=${jobId}&company_id=${company.id}`
-        );
-        if (!res.ok) return;
-        const data: BgJobStatus = await res.json();
-        setBgJobStatus(data);
-
-        // Per-item row refresh as items complete
-        for (const item of data.items) {
-          if (item.status === "done" && !bgRefreshedIds.current.has(item.inspection_id)) {
-            bgRefreshedIds.current.add(item.inspection_id);
-            fetch(
-              `/api/dashboard/inspections?project_id=${project.id}&company_id=${company.id}&inspection_id=${item.inspection_id}`
-            )
-              .then(r => r.json())
-              .then((d: { inspections?: DashboardInspection[] }) => {
-                if (d.inspections?.length) {
-                  setInspections(prev =>
-                    prev.map(i => i.id === item.inspection_id ? { ...i, ...d.inspections![0] } : i)
-                  );
-                }
-              })
-              .catch(() => {});
-          }
-        }
-
-        if (data.status === "completed" || data.status === "failed") {
-          if (bgPollRef.current) clearInterval(bgPollRef.current);
-          bgPollRef.current = null;
-          await loadInspections(project, company);
-        }
-      } catch {
-        // non-fatal — polling will retry
-      }
+  /** Registers a new job in the queue state and switches to the Queue tab. */
+  function addQueueJob(
+    jobId:   string,
+    project: DashboardProject,
+    company: Company,
+    total = 0,
+  ) {
+    const job: QueueJob = {
+      job_id:       jobId,
+      project_id:   String(project.id),
+      project_name: project.display_name || project.name,
+      company_id:   String(company.id),
+      status:       "running",
+      total,
+      completed:    0,
+      failed:       0,
+      items:        [],
+      started_at:   new Date().toISOString(),
     };
-
-    void poll();
-    bgPollRef.current = setInterval(poll, 5000);
+    // Replace any existing job for this project; keep all others
+    setQueueJobs(prev => [...prev.filter(j => j.project_id !== String(project.id)), job]);
   }
 
   async function handleRunInBackground() {
@@ -1188,7 +1259,8 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to start background job");
-      startBgPolling(data.job_id, selectedProject, selectedCompany);
+      addQueueJob(data.job_id, selectedProject, selectedCompany, allSelected.length);
+      setDashboardView("queue");
       setSelectedIds(new Set());
     } catch (err) {
       console.error("[bg-queue] start failed:", err);
@@ -1209,11 +1281,22 @@ export default function DashboardPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed");
       if (data.queued === 0) {
-        setBgJobStatus({ job_id: "", status: "completed", total: 0, completed: 0, failed: 0, items: [] });
-        setBgJobId("auto-uptodate");
+        // Nothing to queue — show an immediate "Done" card in Queue tab
+        const upToDate: QueueJob = {
+          job_id:       `auto-uptodate-${Date.now()}`,
+          project_id:   String(selectedProject.id),
+          project_name: selectedProject.display_name || selectedProject.name,
+          company_id:   String(selectedCompany.id),
+          status:       "completed",
+          total: 0, completed: 0, failed: 0, items: [],
+          started_at: new Date().toISOString(),
+        };
+        setQueueJobs(prev => [...prev.filter(j => j.project_id !== String(selectedProject.id)), upToDate]);
+        setDashboardView("queue");
         return;
       }
-      startBgPolling(data.job_id, selectedProject, selectedCompany);
+      addQueueJob(data.job_id, selectedProject, selectedCompany, data.queued as number);
+      setDashboardView("queue");
     } catch (err) {
       console.error("[bg-queue] auto failed:", err);
     }
@@ -1553,6 +1636,9 @@ export default function DashboardPage() {
   // ── Dashboard layout ────────────────────────────────────────────────────────
 
   const selectedCount = selectedIds.size;
+  const currentProjectQueueJob = selectedProject
+    ? queueJobs.find(j => j.project_id === String(selectedProject.id))
+    : undefined;
 
   return (
     <div className="flex h-full flex-col overflow-hidden" style={{ backgroundColor: "var(--hp-bg)" }}>
@@ -1567,33 +1653,42 @@ export default function DashboardPage() {
           ["insights",        "Insights",        "sparkles"],
           ["itp_reviews",     "ITP Reviews",     null],
           ["site_compliance", "Site Compliance", null],
-        ] as [DashboardView, string, string | null][]).map(([view, label, icon]) => (
-          <button
-            key={view}
-            type="button"
-            onClick={() => {
-              setDashboardView(view);
-              if (view === "company" && !companyStatsFetched && selectedCompany) {
-                fetchCompanyStats(selectedCompany, companyDateRange);
-              }
-              if (view === "insights") setInsightsFetched(true);
-            }}
-            className="flex items-center gap-1.5 transition-all"
-            style={{
-              padding: "5px 12px",
-              borderRadius: 6,
-              fontSize: 13,
-              cursor: "pointer",
-              border: "none",
-              fontWeight: dashboardView === view ? 500 : 400,
-              backgroundColor: dashboardView === view ? "var(--hp-warm-100)" : "transparent",
-              color: dashboardView === view ? "var(--hp-warm-800)" : "var(--hp-text-secondary)",
-            }}
-          >
-            {icon === "sparkles" && <Sparkles className="h-3 w-3" />}
-            {label}
-          </button>
-        ))}
+          ["queue",           "Queue",           null],
+        ] as [DashboardView, string, string | null][]).map(([view, baseLabel, icon]) => {
+          const runningCount = view === "queue"
+            ? queueJobs.filter(j => j.status === "running").length
+            : 0;
+          const label = view === "queue" && runningCount > 0
+            ? `Queue (${runningCount})`
+            : baseLabel;
+          return (
+            <button
+              key={view}
+              type="button"
+              onClick={() => {
+                setDashboardView(view);
+                if (view === "company" && !companyStatsFetched && selectedCompany) {
+                  fetchCompanyStats(selectedCompany, companyDateRange);
+                }
+                if (view === "insights") setInsightsFetched(true);
+              }}
+              className="flex items-center gap-1.5 transition-all"
+              style={{
+                padding: "5px 12px",
+                borderRadius: 6,
+                fontSize: 13,
+                cursor: "pointer",
+                border: "none",
+                fontWeight: dashboardView === view ? 500 : 400,
+                backgroundColor: dashboardView === view ? "var(--hp-warm-100)" : "transparent",
+                color: dashboardView === view ? "var(--hp-warm-800)" : "var(--hp-text-secondary)",
+              }}
+            >
+              {icon === "sparkles" && <Sparkles className="h-3 w-3" />}
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Company tab ── */}
@@ -1645,6 +1740,14 @@ export default function DashboardPage() {
           companyId={selectedCompany?.id ?? null}
           projects={projects}
           isAdmin={isAdmin}
+        />
+      )}
+
+      {/* ── Queue tab ── */}
+      {dashboardView === "queue" && (
+        <QueuePanel
+          jobs={queueJobs}
+          onDismiss={(job_id) => setQueueJobs(prev => prev.filter(j => j.job_id !== job_id))}
         />
       )}
 
@@ -1792,9 +1895,8 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={handleAutoUpdate}
-                    disabled={!!bgJobId && bgJobStatus?.status === "running"}
-                    className="flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}
+                    className="flex items-center gap-1 transition-colors"
+                    style={{ fontSize: 12, color: "var(--hp-text-secondary)", cursor: "pointer" }}
                   >
                     <RefreshCw size={13} />
                     Auto-update closed ITPs
@@ -1814,19 +1916,31 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Background job status banner */}
-              {bgJobStatus && (
+              {/* Background job status banner — current project only */}
+              {currentProjectQueueJob && (
                 <div className="mx-4 mt-3 rounded-lg border px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: "var(--hp-warm-100)", borderColor: "var(--hp-warm-200)" }}>
                   <span className="text-xs font-semibold" style={{ color: "var(--hp-text-secondary)" }}>
-                    {bgJobStatus.status === "running"
-                      ? `Background review running — ${bgJobStatus.completed} of ${bgJobStatus.total} complete`
-                      : bgJobStatus.failed > 0
-                      ? `Background review complete — ${bgJobStatus.completed} succeeded, ${bgJobStatus.failed} failed`
-                      : `Background review complete — ${bgJobStatus.completed} reviewed`}
+                    {currentProjectQueueJob.status === "running"
+                      ? `Background review running — ${currentProjectQueueJob.completed} of ${currentProjectQueueJob.total} complete`
+                      : currentProjectQueueJob.failed > 0
+                      ? `Background review complete — ${currentProjectQueueJob.completed} succeeded, ${currentProjectQueueJob.failed} failed`
+                      : `Background review complete — ${currentProjectQueueJob.completed} reviewed`}
                   </span>
-                  {bgJobStatus.status !== "running" && (
-                    <button onClick={() => { setBgJobId(null); setBgJobStatus(null); }} className="text-xs text-gray-400 hover:text-gray-600 ml-4">✕</button>
-                  )}
+                  <div className="flex items-center gap-3 ml-4">
+                    <button
+                      onClick={() => setDashboardView("queue")}
+                      className="text-xs font-medium hover:underline"
+                      style={{ color: "var(--hp-warm-800)" }}
+                    >
+                      View Queue
+                    </button>
+                    {currentProjectQueueJob.status !== "running" && (
+                      <button
+                        onClick={() => setQueueJobs(prev => prev.filter(j => j.job_id !== currentProjectQueueJob.job_id))}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >✕</button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -2001,7 +2115,9 @@ export default function DashboardPage() {
               unreviewedCount={selectedUnreviewed.length}
               reviewedCount={selectedReviewed.length}
               bulkRunning={bulkRunning}
-              bgJobRunning={!!bgJobId && bgJobStatus?.status === "running"}
+              bgJobRunningForProject={queueJobs.some(
+                j => j.project_id === String(selectedProject?.id) && j.status === "running"
+              )}
               onRunReviews={handleBulkReview}
               onRunInBackground={handleRunInBackground}
               onExportPdfs={() => setExportModalOpen(true)}
@@ -2066,7 +2182,7 @@ function BulkActionBar({
   unreviewedCount,
   reviewedCount,
   bulkRunning,
-  bgJobRunning,
+  bgJobRunningForProject,
   onRunReviews,
   onRunInBackground,
   onExportPdfs,
@@ -2076,12 +2192,13 @@ function BulkActionBar({
   unreviewedCount: number;
   reviewedCount: number;
   bulkRunning: boolean;
-  bgJobRunning: boolean;
+  bgJobRunningForProject: boolean;  // true if this project already has a running bg job
   onRunReviews: () => void;
   onRunInBackground: () => void;
   onExportPdfs: () => void;
   onClearSelection: () => void;
 }) {
+  const total = unreviewedCount + reviewedCount;
   return (
     <div className="sticky bottom-0 z-20 mx-4 mb-4 rounded-xl shadow-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--hp-warm-800)" }}>
       <span className="text-xs font-semibold text-white/80 shrink-0">
@@ -2091,7 +2208,7 @@ function BulkActionBar({
         <button
           type="button"
           onClick={onRunReviews}
-          disabled={bulkRunning || bgJobRunning}
+          disabled={bulkRunning}
           className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
         >
           {bulkRunning && <Spinner className="h-3 w-3 text-white" />}
@@ -2099,21 +2216,21 @@ function BulkActionBar({
             ? `Run Reviews (${unreviewedCount})`
             : unreviewedCount === 0 && reviewedCount > 0
             ? `Re-run Reviews (${reviewedCount})`
-            : `Run/Re-run Reviews (${unreviewedCount + reviewedCount})`}
+            : `Run/Re-run Reviews (${total})`}
         </button>
         <button
           type="button"
           onClick={onRunInBackground}
-          disabled={bulkRunning || bgJobRunning}
+          disabled={bulkRunning}
           className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
         >
-          {bgJobRunning ? <Spinner className="h-3 w-3 text-white" /> : <Server size={14} />}
-          Run in Background ({unreviewedCount + reviewedCount})
+          {bgJobRunningForProject ? <Spinner className="h-3 w-3 text-white" /> : <Server size={14} />}
+          {bgJobRunningForProject ? `Update Queue (${total})` : `Run in Background (${total})`}
         </button>
         <button
           type="button"
           onClick={onExportPdfs}
-          disabled={bulkRunning || bgJobRunning || reviewedCount === 0}
+          disabled={bulkRunning || reviewedCount === 0}
           className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Export PDFs ({reviewedCount})
@@ -2122,7 +2239,7 @@ function BulkActionBar({
       <button
         type="button"
         onClick={onClearSelection}
-        disabled={bulkRunning || bgJobRunning}
+        disabled={bulkRunning}
         className="text-xs text-white/50 hover:text-white/80 disabled:opacity-40 shrink-0 transition-colors"
       >
         Clear
