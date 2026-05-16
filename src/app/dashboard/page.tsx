@@ -74,6 +74,7 @@ function scoreBand(score: number | null): string {
 }
 
 function scoreBandLabel(band: string): string {
+  if (band === "reset") return "Not reviewed";
   return ({
     compliant: "Compliant", minor_gaps: "Minor gaps",
     significant_gaps: "Significant gaps", critical_risk: "Critical risk",
@@ -1130,10 +1131,9 @@ export default function DashboardPage() {
         insp.id === selectedInsp.id
           ? {
               ...insp,
-              review_status:        "not_reviewed",
-              last_score:           null,
-              last_score_band:      null,
-              last_reviewed_at:     null,
+              last_score:           0,
+              last_score_band:      "reset",
+              last_reviewed_at:     new Date().toISOString(),
               review_data:          null,
               override_score:       null,
               override_note:        null,
@@ -2912,8 +2912,9 @@ function InspectionRow({
   onCheck: (e: React.MouseEvent) => void;
   onClick: () => void;
 }) {
-  const displayScore = insp.override_score ?? insp.last_score;
-  const band = insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null);
+  const isReset = insp.last_score_band === "reset";
+  const displayScore = isReset ? null : (insp.override_score ?? insp.last_score);
+  const band = isReset ? null : (insp.last_score_band ?? (displayScore !== null ? scoreBand(displayScore) : null));
   const isClosed = insp.status?.toLowerCase() === "closed";
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -2922,7 +2923,7 @@ function InspectionRow({
     ? Math.floor((Date.now() - new Date(insp.created_at).getTime()) / (1000 * 60 * 60 * 24))
     : null;
 
-  const readyToClose = !isClosed && (displayScore ?? 0) >= 75;
+  const readyToClose = !isClosed && !isReset && (displayScore ?? 0) >= 75;
   const hasInfo = !!(insp.description || insp.location || insp.created_by);
 
   const dotBg = displayScore === null || insp.review_status === "not_reviewed"
@@ -3041,7 +3042,7 @@ function InspectionRow({
 
       {/* Col 5: Score */}
       <div style={{ textAlign: "right", whiteSpace: "nowrap", minWidth: 34 }}>
-        {insp.review_status === "not_reviewed" ? (
+        {insp.review_status === "not_reviewed" || isReset ? (
           <span style={{ fontSize: 13, color: "var(--hp-text-muted)" }}>—</span>
         ) : (
           <>

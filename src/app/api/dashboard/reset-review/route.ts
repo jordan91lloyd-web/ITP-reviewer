@@ -66,15 +66,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Access denied." }, { status: 403 });
   }
 
-  // Null out the review fields
+  // Reset review fields — use sentinel values for NOT NULL columns
   console.log("[reset-review] Attempting update on record:", review_record_id);
   const { error: updateError } = await supabase
     .from("review_records")
     .update({
-      score:                 null,
-      score_band:            null,
-      review_data:           null,
+      score:                 0,
+      score_band:            "reset",
+      package_assessment:    "reset",
       reviewed_at:           new Date().toISOString(),
+      review_data:           null,
       action_items:          null,
       scoring_version_id:    null,
       scoring_version_label: null,
