@@ -120,17 +120,21 @@ export async function GET(request: NextRequest) {
 
   console.log("[auth/callback] Tokens stored. Redirecting to homepage.");
 
-  // Persist tokens to Supabase store for background queue use (non-blocking)
-  const tokenCompanyId = fleekCompanyId ?? "default";
-  void getProcoreUser(tokens.access_token)
-    .then(user =>
-      upsertToken(tokenCompanyId, String(user.id), {
-        access_token:  tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at:    expiresAt,
-      })
-    )
-    .catch(err => console.error("[auth/callback] Failed to persist token to store:", err));
+  // Persist tokens to Supabase store for background queue use (non-blocking).
+  // Only store when we have a real company_id — the process route looks up tokens
+  // by the numeric Procore company ID sent in the job record, so the stored
+  // company_id must match exactly. Skip when FLEEK_COMPANY_ID is unset (dev mode).
+  if (fleekCompanyId) {
+    void getProcoreUser(tokens.access_token)
+      .then(user =>
+        upsertToken(fleekCompanyId, String(user.id), {
+          access_token:  tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at:    expiresAt,
+        })
+      )
+      .catch(err => console.error("[auth/callback] Failed to persist token to store:", err));
+  }
 
   // Fire-and-forget audit log — must not delay the redirect
   const fleekId = process.env.FLEEK_COMPANY_ID ?? "unknown";
