@@ -602,8 +602,10 @@ async function runImport(
   }
 
   // ── 7. Save to history ─────────────────────────────────────────────────────
-  // Stamp version label into review_data before persisting so dashboard can display it
-  reviewResult.scoring_version_label = reviewResult.scoring_version_label;
+  // discipline_guide_used is already on reviewResult (set in claude.ts).
+  // It is stored inside review_data JSONB so the report footer can display it
+  // without requiring an ALTER TABLE migration. A dedicated column can be added
+  // later: ALTER TABLE review_records ADD COLUMN discipline_guide_used TEXT;
 
   await appendRecord({
     source: "procore",

@@ -85,6 +85,9 @@ export interface ReviewResult {
   action_items?: ActionItem[];
   // Stamped by the review route — not part of Claude's output
   scoring_version_label?: string;
+  // Name of the discipline-specific guide injected into the review prompt, e.g.
+  // "Concrete Pour". Null/absent means only the base scoring guidelines were used.
+  discipline_guide_used?: string | null;
 }
 
 export type ReviewResponse =

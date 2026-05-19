@@ -204,6 +204,7 @@ export async function runBundleReview(
     scoring_source:        scoringSource,
     scoring_version_id:    scoringVersionId,
     scoring_version_label: scoringVersionLabel,
+    discipline_guide_used: disciplineGuide?.disciplineName ?? null,
   };
 }
 

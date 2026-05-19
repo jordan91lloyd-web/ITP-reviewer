@@ -545,6 +545,12 @@ export default function ReviewResults({ result, onReset, skippedFiles, descripti
               Scored using: <span className="font-medium">{result.scoring_version_label}</span>
             </p>
           )}
+          <p className="text-[11px] text-gray-400">
+            Discipline guide:{" "}
+            <span className="font-medium">
+              {result.discipline_guide_used ?? "Base guide only"}
+            </span>
+          </p>
           <button
             onClick={onReset}
             className="rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors print:hidden"

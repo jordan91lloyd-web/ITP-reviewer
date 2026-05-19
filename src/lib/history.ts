@@ -83,6 +83,12 @@ export interface ReviewRecord {
   scoring_version_id:    string | null;
   scoring_version_label: string | null;
 
+  // Discipline guide used — name of the matched guide, or null for base-only.
+  // Requires migration before using as a dedicated column:
+  //   ALTER TABLE review_records ADD COLUMN discipline_guide_used TEXT;
+  // Until that migration runs, this field is stored inside review_data JSONB only.
+  discipline_guide_used?: string | null;
+
   // Procore change-detection
   procore_updated_at: string | null;
 }
