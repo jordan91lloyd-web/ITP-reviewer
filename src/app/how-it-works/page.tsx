@@ -8,8 +8,9 @@ import Link from "next/link";
 import {
   BookOpen, Zap, BarChart2, Layers, ClipboardList, CheckSquare,
   Download, FileText, AlertTriangle, ChevronDown, ChevronRight,
-  Users, Shield, HardHat, TrendingUp, Eye, Package,
+  Users, Shield, HardHat, TrendingUp, Eye, Package, RefreshCw,
 } from "lucide-react";
+import { DISCIPLINE_GUIDES } from "@/lib/discipline-guides";
 
 // ── Section config ─────────────────────────────────────────────────────────────
 
@@ -20,7 +21,8 @@ const SECTIONS = [
   { id: "using-dashboard", label: "Using the Dashboard" },
   { id: "understanding-report", label: "Understanding the Report" },
   { id: "tips",            label: "Tips for Site Managers" },
-  { id: "reference-doc",  label: "Scoring Reference Document" },
+  { id: "reference-doc",       label: "Scoring Reference Document" },
+  { id: "discipline-guides",   label: "Discipline Guides" },
 ];
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -121,6 +123,67 @@ function ScoringDocDownload() {
             </Link>
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Discipline guides download list ───────────────────────────────────────────
+
+function DisciplineGuidesSection() {
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  async function handleDownload(id: string, name: string) {
+    setDownloading(id);
+    try {
+      const res = await fetch(`/api/admin/documents/discipline-guide?id=${encodeURIComponent(id)}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `discipline-guide-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(null);
+    }
+  }
+
+  return (
+    <div className="mt-6">
+      <p className="text-sm text-gray-600 leading-relaxed mb-4">
+        Holdpoint automatically detects the construction discipline from the ITP name and injects
+        a targeted evidence guide into the review. Each guide lists the critical evidence required
+        for full marks across D1–D5 for that discipline, plus common scoring triggers.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {DISCIPLINE_GUIDES.map(guide => (
+          <div
+            key={guide.id}
+            className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-[#F9FAFB] px-3 py-2.5"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white border border-gray-200">
+                <FileText className="h-3.5 w-3.5" style={{ color: "var(--hp-warm-800)" }} />
+              </div>
+              <p className="text-sm font-medium text-gray-800 truncate">{guide.name}</p>
+            </div>
+            <button
+              onClick={() => handleDownload(guide.id, guide.name)}
+              disabled={downloading === guide.id}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {downloading === guide.id
+                ? <RefreshCw className="h-3 w-3 animate-spin" />
+                : <Download className="h-3 w-3" />
+              }
+              PDF
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -673,6 +736,14 @@ export default function HowItWorksPage() {
               <Card>
                 <SectionHeading>Scoring Reference Document</SectionHeading>
                 <ScoringDocDownload />
+              </Card>
+            </section>
+
+            {/* ── 8. Discipline Guides ── */}
+            <section id="discipline-guides" className="scroll-mt-6">
+              <Card>
+                <SectionHeading>Discipline Scoring Guides</SectionHeading>
+                <DisciplineGuidesSection />
               </Card>
             </section>
 

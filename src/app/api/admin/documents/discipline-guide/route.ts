@@ -1,15 +1,14 @@
 // ─── GET /api/admin/documents/discipline-guide?id=<guide-id> ─────────────────
 // Returns the discipline-specific scoring guide as a plain-text PDF.
 // Uses @react-pdf/renderer so no extra dependencies are needed.
-// Admin-only (checked via isCompanyAdmin).
+// Requires authentication (any logged-in user); no admin check needed for
+// read-only reference documents.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import React from "react";
 import { renderToBuffer, Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { DISCIPLINE_GUIDES } from "@/lib/discipline-guides";
-import { getProcoreUser } from "@/lib/procore";
-import { isCompanyAdmin } from "@/lib/admin";
 
 const styles = StyleSheet.create({
   page: {
@@ -68,23 +67,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  let email = "";
-  const companyId = process.env.FLEEK_COMPANY_ID ?? "";
-  try {
-    const user = await getProcoreUser(accessToken);
-    email = user.login ?? "";
-  } catch {
-    return NextResponse.json({ error: "Failed to verify identity." }, { status: 401 });
-  }
-
-  if (companyId && !(await isCompanyAdmin(email, companyId))) {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-  }
-
   // ── Find guide ──────────────────────────────────────────────────────────────
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   const guide = id ? DISCIPLINE_GUIDES.find(g => g.id === id) : null;
+
+  console.log(`[discipline-guide] id="${id ?? "(none)"}" → ${guide ? `found: "${guide.name}"` : "NOT FOUND"}`);
+
   if (!guide) {
     return NextResponse.json({ error: "Guide not found." }, { status: 404 });
   }
