@@ -5,7 +5,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt, buildPreamble, buildInstructions } from "./prompt";
-import { getCompanyScoringContent } from "./scoring";
+import { getCompanyScoringContent, getDisciplineGuideContent } from "./scoring";
 export type { ScoringSource } from "./scoring";
 import type {
   ReviewResult,
@@ -33,12 +33,17 @@ const MAX_TOKENS = 16000;
  * Supabase Storage (or fall back to local file / hardcoded). Pass the
  * FLEEK_COMPANY_ID for manual reviews; pass the Procore company_id (as string)
  * for Procore imports. Defaults to "default" if not provided.
+ *
+ * itp_name: optional ITP name/title used to select a discipline-specific guide.
+ * When provided, the matching guide is appended to the scoring guidelines so
+ * Claude receives targeted evidence requirements for that discipline.
  */
 export async function runBundleReview(
   filesRaw: ProcessedFile[],
-  company_id: string = "default"
+  company_id: string = "default",
+  itp_name?: string
 ): Promise<ReviewResult & { scoring_source: string; scoring_version_id: string | null; scoring_version_label: string }> {
-  console.log(`[claude] ── runBundleReview called ── files=${filesRaw.length} company_id="${company_id}"`);
+  console.log(`[claude] ── runBundleReview called ── files=${filesRaw.length} company_id="${company_id}"${itp_name ? ` itp_name="${itp_name}"` : ""}`);
 
   // ── Pre-flight: strip any images that exceed Claude's 5 MB per-image limit.
   // base64.length * 0.75 ≈ raw bytes (base64 encodes 3 bytes as 4 chars).
@@ -62,6 +67,15 @@ export async function runBundleReview(
   const { content: scoringContent, source: scoringSource, version_id: scoringVersionId, version_label: scoringVersionLabel } =
     await getCompanyScoringContent(company_id);
   console.log(`[claude] Scoring source for company "${company_id}": ${scoringSource} (${scoringVersionLabel})`);
+
+  // ── Append discipline-specific guide if ITP name was provided ────────────
+  const disciplineGuide = itp_name ? getDisciplineGuideContent(itp_name) : null;
+  const fullScoringContent = disciplineGuide
+    ? `${scoringContent}\n\n${disciplineGuide.content}`
+    : scoringContent;
+  if (disciplineGuide) {
+    console.log(`[claude] Discipline guide injected: "${disciplineGuide.disciplineName}"`);
+  }
 
   const client = new Anthropic();
 
@@ -127,7 +141,7 @@ export async function runBundleReview(
     const message = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: buildSystemPrompt(scoringContent),
+      system: buildSystemPrompt(fullScoringContent),
       messages: [
         { role: "user", content: contentBlocks },
       ],

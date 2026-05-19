@@ -14,6 +14,7 @@ import path from "path";
 import { createClient } from "@supabase/supabase-js";
 import mammoth from "mammoth";
 import { FALLBACK_SCORING_CONTENT } from "./prompt";
+import { detectDiscipline } from "./discipline-guides";
 
 const BUCKET = "documents";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -145,6 +146,18 @@ export async function getCompanyScoringContent(company_id: string): Promise<Scor
 async function extractDocxText(buffer: Buffer): Promise<string> {
   const result = await mammoth.extractRawText({ buffer });
   return result.value;
+}
+
+/**
+ * Returns the discipline-specific guide content for the given ITP name, or null
+ * if no matching guide is found. This content is appended to the base scoring
+ * guidelines in claude.ts before calling the API.
+ */
+export function getDisciplineGuideContent(itpName: string): { content: string; disciplineName: string } | null {
+  const guide = detectDiscipline(itpName);
+  if (!guide) return null;
+  console.log(`[scoring] Discipline matched: "${guide.name}" for ITP name: "${itpName}"`);
+  return { content: guide.content, disciplineName: guide.name };
 }
 
 /**

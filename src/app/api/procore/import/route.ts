@@ -559,7 +559,7 @@ async function runImport(
 
   let reviewResult;
   try {
-    reviewResult = await runBundleReview(processedFiles, String(company_id));
+    reviewResult = await runBundleReview(processedFiles, String(company_id), inspection.name);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     // Claude can return a 400 if an individual file (usually an image) is
@@ -577,7 +577,7 @@ async function runImport(
         skippedFiles.push({ filename: img.filename, reason: "Skipped on retry: Claude API rejected the initial request" });
       }
       try {
-        reviewResult = await runBundleReview(filesWithoutImages, String(company_id));
+        reviewResult = await runBundleReview(filesWithoutImages, String(company_id), inspection.name);
       } catch (err2) {
         const msg2 = err2 instanceof Error ? err2.message : String(err2);
         console.error("[procore/import] Retry without images also failed:", msg2);

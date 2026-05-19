@@ -5,7 +5,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Upload, FileText, CheckCircle, AlertCircle, RefreshCw, Clock, Users, Info } from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle, RefreshCw, Clock, Users, Info, Download, BookOpen } from "lucide-react";
+import { DISCIPLINE_GUIDES } from "@/lib/discipline-guides";
 
 interface StorageDocument {
   name:          string;
@@ -51,7 +52,8 @@ export default function AdminDocumentsPage() {
   const [uploading, setUploading]       = useState(false);
   const [uploadResult, setUploadResult] = useState<{ success: boolean; message: string } | null>(null);
   const [dragOver, setDragOver]         = useState(false);
-  const [auditHistory, setAuditHistory] = useState<AuditEntry[]>([]);
+  const [auditHistory, setAuditHistory]         = useState<AuditEntry[]>([]);
+  const [downloadingGuide, setDownloadingGuide] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Admin check
@@ -126,6 +128,25 @@ export default function AdminDocumentsPage() {
       setUploadResult({ success: false, message: "Network error. Please try again." });
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleDownloadGuide(guideId: string) {
+    setDownloadingGuide(guideId);
+    try {
+      const res = await fetch(`/api/admin/documents/discipline-guide?id=${encodeURIComponent(guideId)}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `discipline-guide-${guideId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingGuide(null);
     }
   }
 
@@ -376,6 +397,51 @@ export default function AdminDocumentsPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Discipline scoring guides */}
+        <div className="mt-10">
+          <div className="mb-4 flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-[#1F3864]" />
+            <h2 className="text-base font-bold text-[#1F3864]">Discipline Scoring Guides</h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Each guide provides targeted evidence requirements for a specific construction discipline.
+            When Holdpoint detects a matching ITP name, the relevant guide is automatically appended
+            to the scoring guidelines before the review runs.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {DISCIPLINE_GUIDES.map(guide => (
+              <div
+                key={guide.id}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1F3864]/5">
+                    <FileText className="h-4 w-4 text-[#1F3864]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{guide.name}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Keywords: {guide.keywords.slice(0, 3).join(", ")}{guide.keywords.length > 3 ? "…" : ""}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDownloadGuide(guide.id)}
+                  disabled={downloadingGuide === guide.id}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {downloadingGuide === guide.id ? (
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  PDF
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <p className="mt-6 text-center text-xs text-gray-400">
