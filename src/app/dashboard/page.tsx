@@ -2916,12 +2916,19 @@ function InspectionRow({
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 2, fontSize: 11, color: "var(--hp-text-muted)" }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 2, fontSize: 11, color: "var(--hp-text-muted)", flexWrap: "wrap", alignItems: "center" }}>
           {isClosed
             ? (insp.closed_by ? <span key="cb">Closed by {insp.closed_by}</span> : null)
             : (insp.assignee  ? <span key="as">Assigned to {insp.assignee}</span> : null)}
           {daysOpen !== null && (
             <span style={{ color: daysClr }}>{daysOpen}d open</span>
+          )}
+          {insp.review_data?.discipline_guide_used && (
+            <span style={{ fontSize: 10, color: "var(--hp-text-muted)", backgroundColor: "var(--hp-warm-100)",
+                           border: "1px solid var(--hp-border)", borderRadius: 10,
+                           padding: "1px 6px", whiteSpace: "nowrap" }}>
+              {insp.review_data.discipline_guide_used}
+            </span>
           )}
         </div>
       </div>

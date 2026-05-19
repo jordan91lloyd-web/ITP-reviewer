@@ -540,12 +540,10 @@ export default function ReviewResults({ result, onReset, skippedFiles, descripti
 
         {/* ── Footer ── */}
         <div className="pt-2 flex flex-col items-center gap-2 print:items-start">
-          {result.scoring_version_label && (
-            <p className="text-[11px] text-gray-400">
-              Scored using: <span className="font-medium">{result.scoring_version_label}</span>
-            </p>
-          )}
           <p className="text-[11px] text-gray-400">
+            {result.scoring_version_label && (
+              <>Scored using: <span className="font-medium">{result.scoring_version_label}</span>{" · "}</>
+            )}
             Discipline guide:{" "}
             <span className="font-medium">
               {result.discipline_guide_used ?? "Base guide only"}

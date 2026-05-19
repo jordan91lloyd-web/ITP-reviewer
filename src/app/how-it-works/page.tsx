@@ -132,12 +132,18 @@ function ScoringDocDownload() {
 
 function DisciplineGuidesSection() {
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  async function handleDownload(id: string, name: string) {
+  async function handleDownload(id: string) {
     setDownloading(id);
+    setDownloadError(null);
     try {
       const res = await fetch(`/api/admin/documents/discipline-guide?id=${encodeURIComponent(id)}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setDownloadError(data.error ?? `Download failed (${res.status})`);
+        return;
+      }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");
@@ -147,6 +153,8 @@ function DisciplineGuidesSection() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+    } catch {
+      setDownloadError("Network error — please try again.");
     } finally {
       setDownloading(null);
     }
@@ -159,22 +167,38 @@ function DisciplineGuidesSection() {
         a targeted evidence guide into the review. Each guide lists the critical evidence required
         for full marks across D1–D5 for that discipline, plus common scoring triggers.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {downloadError && (
+        <p className="mb-3 text-xs text-red-600 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+          {downloadError}
+        </p>
+      )}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
         {DISCIPLINE_GUIDES.map(guide => (
           <div
             key={guide.id}
-            className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-[#F9FAFB] px-3 py-2.5"
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                     borderRadius: 12, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-warm-100)",
+                     padding: "8px 12px" }}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white border border-gray-200">
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
+                            width: 28, height: 28, borderRadius: 8, background: "#fff",
+                            border: "1px solid #e5e7eb", flexShrink: 0 }}>
                 <FileText className="h-3.5 w-3.5" style={{ color: "var(--hp-warm-800)" }} />
               </div>
-              <p className="text-sm font-medium text-gray-800 truncate">{guide.name}</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "var(--hp-text-primary)",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
+                {guide.name}
+              </p>
             </div>
             <button
-              onClick={() => handleDownload(guide.id, guide.name)}
+              onClick={() => handleDownload(guide.id)}
               disabled={downloading === guide.id}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 4,
+                       borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff",
+                       padding: "4px 10px", fontSize: 12, fontWeight: 500, color: "#4b5563",
+                       cursor: downloading === guide.id ? "not-allowed" : "pointer",
+                       opacity: downloading === guide.id ? 0.5 : 1 }}
             >
               {downloading === guide.id
                 ? <RefreshCw className="h-3 w-3 animate-spin" />
