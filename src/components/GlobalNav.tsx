@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Activity } from "lucide-react";
 import HoldpointLogo from "@/components/HoldpointLogo";
 
 interface ProcoreUser {
@@ -45,6 +46,13 @@ export default function GlobalNav() {
             className="text-sm text-gray-500 hover:text-[#1F3864] transition-colors font-medium"
           >
             How it Works
+          </Link>
+          <Link
+            href="/monitoring"
+            className="text-sm text-gray-500 hover:text-[#1F3864] transition-colors font-medium flex items-center gap-1"
+          >
+            <Activity size={14} />
+            My Monitoring
           </Link>
 
           {checked && (

@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw, RotateCcw } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
+import { useAttentionTracker } from "@/hooks/useAttentionTracker";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
 import InsightsTab from "@/components/InsightsTab";
@@ -571,6 +572,14 @@ export default function DashboardPage() {
   useEffect(() => { queueJobsRef.current = queueJobs; }, [queueJobs]);
   useEffect(() => { selectedProjRef.current = selectedProject; }, [selectedProject]);
   useEffect(() => { selectedCoRef.current = selectedCompany; }, [selectedCompany]);
+
+  // Attention tracking — records active time on the selected project
+  useAttentionTracker({
+    project_id:   selectedProject ? String(selectedProject.id) : null,
+    project_name: selectedProject?.display_name || selectedProject?.name || "",
+    company_id:   selectedCompany ? String(selectedCompany.id) : null,
+    enabled:      !!selectedProject && !!selectedCompany,
+  });
 
   // Start / stop the single polling interval based on whether any job is running
   const hasRunningJobs = queueJobs.some(j => j.status === "running");
