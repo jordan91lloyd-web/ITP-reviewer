@@ -9,6 +9,7 @@
 //   days        (optional — days to look back, default 7, max 31)
 
 import { NextRequest, NextResponse } from "next/server";
+import { writeFileSync } from "fs";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
@@ -76,6 +77,12 @@ export async function GET(request: NextRequest) {
       sumbittedDateRange: { from: fromDt, to: toDt },
       convertDateTimeToLocalTimezone: true,
     });
+
+    try {
+      writeFileSync("/tmp/breadcrumb-debug.json", JSON.stringify(_debug_sample, null, 2));
+    } catch (writeErr) {
+      console.warn("[site-briefings DEBUG] Could not write debug file:", writeErr);
+    }
 
     return NextResponse.json({ source: "breadcrumb_api", rows, _debug_sample });
   } catch (err) {
