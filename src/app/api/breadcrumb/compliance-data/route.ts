@@ -101,7 +101,7 @@ async function fetchAllPages<T>(
   endpoint: string,
   body: Record<string, unknown>,
 ): Promise<T[]> {
-  let pageNumber = 1;
+  let pageNumber = 0;
   const allResults: T[] = [];
 
   while (pageNumber <= MAX_PAGES) {
@@ -111,7 +111,7 @@ async function fetchAllPages<T>(
         "X-Api-Key": API_KEY!,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ ...body, pagingInfo: { pageSize: PAGE_SIZE, pageNumber } }),
+      body: JSON.stringify({ ...body, pagingInfo: { pageSize: PAGE_SIZE, pageNumber, SortOrder: "DESC" } }),
       signal: AbortSignal.timeout(20_000),
     });
 

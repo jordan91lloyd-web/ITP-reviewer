@@ -15,14 +15,14 @@ const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app
 const PAGE_SIZE = 500;
 
 async function fetchAllPages(body: Record<string, unknown>): Promise<Record<string, unknown>[]> {
-  let pageNumber = 1;
+  let pageNumber = 0;
   const all: Record<string, unknown>[] = [];
 
   while (true) {
     const res = await fetch(`${BASE_URL}/integration/v2/report/form-report`, {
       method: "POST",
       headers: { "X-Api-Key": API_KEY!, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...body, pagingInfo: { pageSize: PAGE_SIZE, pageNumber } }),
+      body: JSON.stringify({ ...body, pagingInfo: { pageSize: PAGE_SIZE, pageNumber, SortOrder: "DESC" } }),
       signal: AbortSignal.timeout(15_000),
     });
 

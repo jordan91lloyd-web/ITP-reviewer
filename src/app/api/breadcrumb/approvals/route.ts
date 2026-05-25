@@ -14,7 +14,7 @@ const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app
 const PAGE_SIZE = 500;
 
 async function fetchApprovalType(entityType: number): Promise<Record<string, unknown>[]> {
-  let pageNumber = 1;
+  let pageNumber = 0;
   const all: Record<string, unknown>[] = [];
 
   while (true) {
@@ -25,7 +25,7 @@ async function fetchApprovalType(entityType: number): Promise<Record<string, unk
         approveStatusList:     [0],
         approveEntityTypeList: [entityType],
         convertDateTimeToLocalTimezone: true,
-        pagingInfo: { pageSize: PAGE_SIZE, pageNumber },
+        pagingInfo: { pageSize: PAGE_SIZE, pageNumber, SortOrder: "DESC" },
       }),
       signal: AbortSignal.timeout(15_000),
     });
