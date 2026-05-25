@@ -30,6 +30,13 @@ async function fetchAllPages(body: Record<string, unknown>): Promise<Record<stri
 
     const data = await res.json();
     const results: Record<string, unknown>[] = Array.isArray(data?.result) ? data.result : [];
+
+    // DEBUG — log first 3 raw records from page 0 to expose all field names
+    if (pageNumber === 0 && results.length > 0) {
+      console.log("[site-briefings DEBUG] Total records on page 0:", results.length);
+      console.log("[site-briefings DEBUG] First 3 raw records:", JSON.stringify(results.slice(0, 3), null, 2));
+    }
+
     all.push(...results);
 
     if (results.length < PAGE_SIZE) break;
