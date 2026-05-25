@@ -28,11 +28,13 @@ interface SiteMapping {
   procore_project_id: string;
 }
 
-interface DiaryResult {
-  open_count: number | null;
-  total_days: number;
-  entries: { date: string; status: string | null }[];
-  source: "daily_logs" | "notes_logs" | null;
+interface SiteDiaryResult {
+  siteReference: string;
+  projectId: string;
+  completedDays: number;
+  totalDays: number;
+  display: string;   // "X/Y" or "—"
+  missedDates: string[];
 }
 
 type TrafficLight = "green" | "amber" | "red" | "gray";
@@ -47,7 +49,7 @@ interface SiteRow {
   pendingInductionDetails: Array<{ title: string; supplier: string; dateSubmitted: string }>;
   pendingDocDetails: Array<{ title: string; supplier: string; dateSubmitted: string }>;
   oldestPendingDate: string | null;
-  diary: DiaryResult | null;
+  siteDiary: SiteDiaryResult | null;
   diaryLoading: boolean;
 }
 
@@ -166,11 +168,10 @@ function countLight(count: number): TrafficLight {
   if (count <= 3)  return "amber";
   return "red";
 }
-function diaryLight(result: DiaryResult | null): TrafficLight {
-  if (!result || result.open_count === null) return "gray";
-  if (result.open_count === 0)  return "green";
-  if (result.open_count <= 2)   return "amber";
-  return "red";
+function diaryLight(result: SiteDiaryResult | null): TrafficLight {
+  if (!result || result.display === "—") return "gray";
+  if (result.completedDays >= result.totalDays) return "green";
+  return "amber";
 }
 function overallLight(lights: TrafficLight[]): TrafficLight {
   const active = lights.filter(l => l !== "gray");
@@ -376,7 +377,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             dateSubmitted: i.submittedDate,
           })),
           oldestPendingDate,
-          diary:        null,
+          siteDiary:    null,
           diaryLoading: !!mappedProjectId,
         };
       });
@@ -429,52 +430,57 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         prestartCount: calcPrestartCount(briefings ?? [], site, monday, friday),
         toolboxDone:   calcToolboxDone(briefings ?? [], site),
         ...calcApprovalKPIs(approvals ?? [], site),
-        diary:        null,
+        siteDiary:    null,
         diaryLoading: !!(mapBySite.get(site)),
       }));
     },
     []
   );
 
-  // ── Fetch diary data ──────────────────────────────────────────────────────────
+  // ── Fetch site diary data (current partial week, Mon–yesterday, Sydney time) ──
 
-  const loadDiariesForRows = useCallback(
-    async (rows: SiteRow[], weekMonday?: Date) => {
+  const loadSiteDiaries = useCallback(
+    async (rows: SiteRow[]) => {
       if (!companyId) return;
-      const effectiveMonday = weekMonday ?? getCurrentWeekBounds().monday;
-      const startDate = toDateString(effectiveMonday);
-      const endDate   = toDateString(addDays(effectiveMonday, 4));
 
       const projectIds = Array.from(
         new Set(rows.filter(r => r.mappedProjectId).map(r => r.mappedProjectId!))
       );
-      if (projectIds.length === 0) return;
+      if (projectIds.length === 0) {
+        setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
+        return;
+      }
 
-      const results = await Promise.all(
-        projectIds.map(async pid => {
-          try {
-            const res = await fetch(
-              `/api/dashboard/site-diaries?project_id=${pid}&company_id=${companyId}&start_date=${startDate}&end_date=${endDate}`
-            );
-            const data: DiaryResult = res.ok
-              ? await res.json()
-              : { open_count: null, total_days: 5, entries: [], source: null };
-            return { pid, data };
-          } catch {
-            return { pid, data: { open_count: null, total_days: 5, entries: [], source: null } as DiaryResult };
-          }
-        })
-      );
+      try {
+        const res = await fetch(
+          `/api/breadcrumb/site-diaries?company_id=${companyId}&project_ids=${projectIds.join(",")}`
+        );
+        if (!res.ok) {
+          setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
+          return;
+        }
+        const data = await res.json();
 
-      const diaryMap = new Map(results.map(r => [r.pid, r.data]));
+        if (data.todayIsMonday) {
+          // Today is Monday — nothing to check yet; show "—" for all sites
+          setSiteRows(prev => prev.map(r => ({ ...r, siteDiary: null, diaryLoading: false })));
+          return;
+        }
 
-      setSiteRows(prev =>
-        prev.map(row => ({
-          ...row,
-          diary:        row.mappedProjectId ? (diaryMap.get(row.mappedProjectId) ?? null) : null,
-          diaryLoading: false,
-        }))
-      );
+        const diaryMap = new Map<string, SiteDiaryResult>(
+          (data.results ?? []).map((r: SiteDiaryResult) => [r.projectId, r])
+        );
+
+        setSiteRows(prev =>
+          prev.map(row => ({
+            ...row,
+            siteDiary:    row.mappedProjectId ? (diaryMap.get(row.mappedProjectId) ?? null) : null,
+            diaryLoading: false,
+          }))
+        );
+      } catch {
+        setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
+      }
     },
     [companyId]
   );
@@ -542,10 +548,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
         // Update siteRows with the freshly-saved data, preserving any diary data already loaded
         setSiteRows(prev => {
-          const diaryBySite = new Map(prev.map(r => [r.site, { diary: r.diary, diaryLoading: r.diaryLoading }]));
+          const diaryBySite = new Map(prev.map(r => [r.site, { siteDiary: r.siteDiary, diaryLoading: r.diaryLoading }]));
           return rows.map(r => ({
             ...r,
-            diary:        diaryBySite.get(r.site)?.diary ?? null,
+            siteDiary:    diaryBySite.get(r.site)?.siteDiary ?? null,
             diaryLoading: diaryBySite.get(r.site)?.diaryLoading ?? r.diaryLoading,
           }));
         });
@@ -586,7 +592,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         const rows = buildApiSiteRows(apiSites, currentMappings, projects);
         setSiteRows(rows);
         setLastFetched(new Date());
-        void loadDiariesForRows(rows, effectiveMonday);
+        void loadSiteDiaries(rows);
 
         // Auto-save once per week (keyed by week start)
         if (weekStart !== lastApiSaveRef.current) {
@@ -603,10 +609,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             const cData = await cached.json();
             if (cData?.report && Array.isArray(cData.report.site_data)) {
               const restored: SiteRow[] = (cData.report.site_data as SiteRow[]).map(r => ({
-                ...r, diary: null, diaryLoading: !!r.mappedProjectId,
+                ...r, siteDiary: null, diaryLoading: !!r.mappedProjectId,
               }));
               setSiteRows(restored);
-              void loadDiariesForRows(restored);
+              void loadSiteDiaries(restored);
             }
           }
         } catch {
@@ -616,7 +622,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         setIsLoading(false);
       }
     },
-    [companyId, selectedMonday, projects, buildApiSiteRows, loadDiariesForRows, saveComplianceReport]
+    [companyId, selectedMonday, projects, buildApiSiteRows, loadSiteDiaries, saveComplianceReport]
   );
 
   // ── On-mount: check API, load mappings, load history ─────────────────────────
@@ -674,8 +680,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     if (!csvBriefings && !csvApprovals) return;
     const rows = buildCsvSiteRows(csvBriefings, csvApprovals, mappings, projects);
     setSiteRows(rows);
-    void loadDiariesForRows(rows);
-  }, [csvBriefings, csvApprovals, mappings, projects, mode, buildCsvSiteRows, loadDiariesForRows]);
+    void loadSiteDiaries(rows);
+  }, [csvBriefings, csvApprovals, mappings, projects, mode, buildCsvSiteRows, loadSiteDiaries]);
 
   // ── Auto-save when CSV data is present (CSV mode only) ───────────────────────
 
@@ -718,10 +724,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
         if (Array.isArray(report.site_data)) {
           const restored: SiteRow[] = (report.site_data as SiteRow[]).map(r => ({
-            ...r, diary: null, diaryLoading: !!r.mappedProjectId,
+            ...r, siteDiary: null, diaryLoading: !!r.mappedProjectId,
           }));
           setSiteRows(restored);
-          void loadDiariesForRows(restored);
+          void loadSiteDiaries(restored);
         }
 
         setSavedReportMeta({
@@ -811,7 +817,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       toolboxLight(row.toolboxDone),
       countLight(row.pendingInductions),
       countLight(row.pendingDocs),
-      diaryLight(row.diary),
+      diaryLight(row.siteDiary),
     ])
   );
 
@@ -1181,7 +1187,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Toolbox Talk</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending Inductions</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending SWMS/Docs</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Open Site Diaries</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Site Diaries</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Overall</th>
                   <th className="px-4 py-3 w-8" />
                 </tr>
@@ -1192,7 +1198,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                   const tbLight    = toolboxLight(row.toolboxDone);
                   const indLight   = countLight(row.pendingInductions);
                   const docLight   = countLight(row.pendingDocs);
-                  const dLight     = diaryLight(row.diary);
+                  const dLight     = diaryLight(row.siteDiary);
                   const overall    = overallLight([preLight, tbLight, indLight, docLight, dLight]);
                   const isExpanded = expandedSite === row.site;
 
@@ -1242,23 +1248,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                                 Map site →
                               </button>
                             </div>
-                          ) : row.diary === null ? (
+                          ) : row.siteDiary === null ? (
                             <Pill light="gray">—</Pill>
                           ) : (
-                            <div>
-                              <Pill light={dLight}>
-                                {row.diary.open_count === null
-                                  ? "—"
-                                  : row.diary.open_count === 0
-                                    ? "All closed"
-                                    : `${row.diary.open_count} open`}
-                              </Pill>
-                              {row.diary.source === "notes_logs" && (
-                                <p className="text-[10px] text-gray-400 mt-0.5" title="Daily Construction Reports not enabled; using Notes Logs as proxy">
-                                  via notes
-                                </p>
-                              )}
-                            </div>
+                            <Pill light={dLight}>{row.siteDiary.display}</Pill>
                           )}
                         </td>
 
@@ -1310,35 +1303,24 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                                 </div>
                               )}
 
-                              {row.diary && row.diary.entries.length > 0 && (
+                              {row.siteDiary && row.siteDiary.missedDates.length > 0 && (
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
-                                    Site Diary — This Week
-                                    {row.diary.source === "notes_logs" && (
-                                      <span className="ml-1.5 normal-case font-normal text-gray-400">
-                                        (via Notes Logs — Daily Reports not enabled)
-                                      </span>
-                                    )}
+                                    Site Diary — Missing Days
                                   </p>
                                   <ul className="space-y-1">
-                                    {row.diary.entries.map(entry => {
-                                      const isOpen = !entry.status ||
-                                        (entry.status !== "approved" && entry.status !== "submitted");
-                                      return (
-                                        <li key={entry.date} className="flex items-center justify-between text-xs">
-                                          <span className="text-gray-600">
-                                            {new Date(entry.date + "T00:00:00").toLocaleDateString("en-AU", {
-                                              weekday: "short", day: "numeric", month: "short",
-                                            })}
-                                          </span>
-                                          <span className={`rounded-full px-2 py-0.5 font-medium ${
-                                            isOpen ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-                                          }`}>
-                                            {entry.status ?? "Missing"}
-                                          </span>
-                                        </li>
-                                      );
-                                    })}
+                                    {row.siteDiary.missedDates.map(date => (
+                                      <li key={date} className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-600">
+                                          {new Date(date + "T00:00:00").toLocaleDateString("en-AU", {
+                                            weekday: "short", day: "numeric", month: "short",
+                                          })}
+                                        </span>
+                                        <span className="rounded-full px-2 py-0.5 font-medium bg-amber-100 text-amber-700">
+                                          Missing
+                                        </span>
+                                      </li>
+                                    ))}
                                   </ul>
                                 </div>
                               )}
@@ -1358,7 +1340,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
                               {row.pendingInductionDetails.length === 0 &&
                                row.pendingDocDetails.length === 0 &&
-                               (!row.diary || row.diary.entries.length === 0) && (
+                               (!row.siteDiary || row.siteDiary.missedDates.length === 0) && (
                                 <p className="text-xs text-gray-400 col-span-full">No detail data available.</p>
                               )}
                             </div>
