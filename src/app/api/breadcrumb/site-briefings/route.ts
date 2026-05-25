@@ -14,9 +14,13 @@ const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
 const PAGE_SIZE = 500;
 
-async function fetchAllPages(body: Record<string, unknown>): Promise<Record<string, unknown>[]> {
+async function fetchAllPages(body: Record<string, unknown>): Promise<{
+  rows: Record<string, unknown>[];
+  _debug_sample: Record<string, unknown>[];
+}> {
   let pageNumber = 0;
   const all: Record<string, unknown>[] = [];
+  let debugSample: Record<string, unknown>[] = [];
 
   while (true) {
     const res = await fetch(`${BASE_URL}/integration/v2/report/form-report`, {
@@ -31,10 +35,11 @@ async function fetchAllPages(body: Record<string, unknown>): Promise<Record<stri
     const data = await res.json();
     const results: Record<string, unknown>[] = Array.isArray(data?.result) ? data.result : [];
 
-    // DEBUG — log first 3 raw records from page 0 to expose all field names
-    if (pageNumber === 0 && results.length > 0) {
+    // DEBUG — capture first 3 raw records from page 0 before any processing
+    if (pageNumber === 0) {
+      debugSample = results.slice(0, 3);
       console.log("[site-briefings DEBUG] Total records on page 0:", results.length);
-      console.log("[site-briefings DEBUG] First 3 raw records:", JSON.stringify(results.slice(0, 3), null, 2));
+      console.log("[site-briefings DEBUG] First 3 raw records:", JSON.stringify(debugSample, null, 2));
     }
 
     all.push(...results);
@@ -43,7 +48,7 @@ async function fetchAllPages(body: Record<string, unknown>): Promise<Record<stri
     pageNumber++;
   }
 
-  return all;
+  return { rows: all, _debug_sample: debugSample };
 }
 
 export async function GET(request: NextRequest) {
@@ -67,12 +72,12 @@ export async function GET(request: NextRequest) {
     const fromDt = `${startDate.toISOString().slice(0, 10)}T00:00:00`;
     const toDt   = `${endDate.toISOString().slice(0, 10)}T23:59:59`;
 
-    const rows = await fetchAllPages({
+    const { rows, _debug_sample } = await fetchAllPages({
       sumbittedDateRange: { from: fromDt, to: toDt },
       convertDateTimeToLocalTimezone: true,
     });
 
-    return NextResponse.json({ source: "breadcrumb_api", rows });
+    return NextResponse.json({ source: "breadcrumb_api", rows, _debug_sample });
   } catch (err) {
     return NextResponse.json(
       { source: "api_error", error: err instanceof Error ? err.message : "Unknown error", rows: [] },
