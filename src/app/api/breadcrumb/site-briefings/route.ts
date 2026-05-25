@@ -9,19 +9,14 @@
 //   days        (optional — days to look back, default 7, max 31)
 
 import { NextRequest, NextResponse } from "next/server";
-import { writeFileSync } from "fs";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
 const PAGE_SIZE = 500;
 
-async function fetchAllPages(body: Record<string, unknown>): Promise<{
-  rows: Record<string, unknown>[];
-  _debug_sample: Record<string, unknown>[];
-}> {
+async function fetchAllPages(body: Record<string, unknown>): Promise<Record<string, unknown>[]> {
   let pageNumber = 0;
   const all: Record<string, unknown>[] = [];
-  let debugSample: Record<string, unknown>[] = [];
 
   while (true) {
     const res = await fetch(`${BASE_URL}/integration/v2/report/form-report`, {
@@ -35,21 +30,13 @@ async function fetchAllPages(body: Record<string, unknown>): Promise<{
 
     const data = await res.json();
     const results: Record<string, unknown>[] = Array.isArray(data?.result) ? data.result : [];
-
-    // DEBUG — capture first 3 raw records from page 0 before any processing
-    if (pageNumber === 0) {
-      debugSample = results.slice(0, 3);
-      console.log("[site-briefings DEBUG] Total records on page 0:", results.length);
-      console.log("[site-briefings DEBUG] First 3 raw records:", JSON.stringify(debugSample, null, 2));
-    }
-
     all.push(...results);
 
     if (results.length < PAGE_SIZE) break;
     pageNumber++;
   }
 
-  return { rows: all, _debug_sample: debugSample };
+  return all;
 }
 
 export async function GET(request: NextRequest) {
@@ -73,32 +60,12 @@ export async function GET(request: NextRequest) {
     const fromDt = `${startDate.toISOString().slice(0, 10)}T00:00:00`;
     const toDt   = `${endDate.toISOString().slice(0, 10)}T23:59:59`;
 
-    const { rows, _debug_sample } = await fetchAllPages({
+    const rows = await fetchAllPages({
       sumbittedDateRange: { from: fromDt, to: toDt },
       convertDateTimeToLocalTimezone: true,
     });
 
-    try {
-      writeFileSync("/tmp/breadcrumb-debug.json", JSON.stringify(_debug_sample, null, 2));
-    } catch (writeErr) {
-      console.warn("[site-briefings DEBUG] Could not write debug file:", writeErr);
-    }
-
-    // DEBUG — summarise formType and formName values across all returned records
-    const byType: Record<string, number> = {};
-    const seenNames = new Set<string>();
-    for (const row of rows) {
-      const t = String(row.formType ?? row.FormType ?? "unknown");
-      byType[t] = (byType[t] ?? 0) + 1;
-      const n = String(row.formName ?? row.FormName ?? "");
-      if (n) seenNames.add(n);
-    }
-    const _form_type_summary = {
-      by_type:      byType,
-      sample_names: Array.from(seenNames).slice(0, 20),
-    };
-
-    return NextResponse.json({ source: "breadcrumb_api", rows, _debug_sample, _form_type_summary });
+    return NextResponse.json({ source: "breadcrumb_api", rows });
   } catch (err) {
     return NextResponse.json(
       { source: "api_error", error: err instanceof Error ? err.message : "Unknown error", rows: [] },

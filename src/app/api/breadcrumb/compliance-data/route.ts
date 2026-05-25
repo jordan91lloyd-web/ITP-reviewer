@@ -95,6 +95,47 @@ function getWeekBounds(weekStartParam: string | null): {
   return { monday, weekdays: getWeekDays(monday) };
 }
 
+// ── Form-name matchers ─────────────────────────────────────────────────────────
+// Both Daily Prestart and Toolbox Meeting are FormType = 7 (Site Briefing).
+// They are distinguished by formName. All matching is case-insensitive.
+
+function isPrestartForm(formName: string): boolean {
+  const n = formName.trim().toLowerCase();
+  return (
+    n.includes("daily prestart") ||
+    n.includes("daily pre-start") ||
+    n.includes("prestart") ||
+    n.includes("pre start") ||
+    n.includes("daily brief") ||
+    n.includes("daily briefing") ||
+    n.includes("site briefing")
+  );
+}
+
+function isToolboxForm(formName: string): boolean {
+  const n = formName.trim().toLowerCase();
+  return (
+    n.includes("toolbox") ||
+    n.includes("tool box") ||
+    n === "tbt"
+  );
+}
+
+// ── 7-day forward coverage ─────────────────────────────────────────────────────
+// A single submission covers fillDate through fillDate + 6 calendar days
+// (all in Sydney local time). This handles daily, weekly, Sunday-to-Friday,
+// and multi-week submission patterns.
+//
+// Both dates must be YYYY-MM-DD Sydney calendar date strings.
+function coversDay(fillDateSydney: string, targetDay: string): boolean {
+  const [fy, fm, fd] = fillDateSydney.split("-").map(Number);
+  const [ty, tm, td] = targetDay.split("-").map(Number);
+  const fillMs   = Date.UTC(fy, fm - 1, fd);
+  const targetMs = Date.UTC(ty, tm - 1, td);
+  const diffDays = (targetMs - fillMs) / 86_400_000;
+  return diffDays >= 0 && diffDays <= 6;
+}
+
 // ── Paginated fetch ────────────────────────────────────────────────────────────
 
 async function fetchAllPages<T>(
@@ -142,6 +183,7 @@ interface FormRecord {
   siteReference?: string;
   siteName?: string;
   formName?: string;          // confirmed field name (NOT formTitle)
+  formType?: number | string; // 7 = Site Briefing (Daily Prestart + Toolbox Meeting)
   fillDate?: string;          // confirmed field name (NOT submittedDate)
   status?: string;
   procoreProjectId?: string | number | null;
@@ -189,13 +231,20 @@ export async function GET(request: NextRequest) {
 
   const { monday, weekdays } = getWeekBounds(weekStartP);
 
+  // Date range for form-report: 14 days before Monday → Friday 23:59:59.
+  // Captures submissions made up to 2 weeks prior that still cover days in
+  // the selected week via the 7-day forward coverage rule.
+  // NOTE: Breadcrumb's sumbittedDateRange filter is currently ignored by the
+  // API — records are returned regardless and we filter client-side by fillDate.
+  // The range is set here for semantic correctness and future-proofing.
+  const fetchFrom = new Date(monday.getTime() - 14 * 86_400_000);
+  const fetchTo   = new Date(monday.getTime() +  4 * 86_400_000); // Friday
+  const fromDt = `${getSydneyDateString(fetchFrom.toISOString())}T00:00:00`;
+  const toDt   = `${getSydneyDateString(fetchTo.toISOString())}T23:59:59`;
+
   const errors: string[] = [];
 
   // ── Fetch all data sources in parallel ────────────────────────────────────
-  // NOTE: Breadcrumb's sumbittedDateRange filter is ignored by the API — all
-  // records are returned regardless of any date param. We fetch once and filter
-  // client-side by fillDate. Prestarts and toolbox both use the same allForms
-  // array, filtered against the selected week's Mon–Fri Sydney date array.
   const [
     sitesResult,
     allFormsResult,
@@ -205,6 +254,7 @@ export async function GET(request: NextRequest) {
   ] = await Promise.allSettled([
     fetchAllPages<SiteRecord>("/integration/site/list", {}),
     fetchAllPages<FormRecord>("/integration/v2/report/form-report", {
+      sumbittedDateRange: { from: fromDt, to: toDt },
       convertDateTimeToLocalTimezone: true,
     }),
     fetchAllPages<ApprovalRecord>("/integration/v2/report/approval-report", {
@@ -342,28 +392,32 @@ export async function GET(request: NextRequest) {
   // ── Build per-site output ─────────────────────────────────────────────────
 
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
-    // ── Daily Prestarts: distinct Mon-Fri Sydney-timezone dates with ≥1 prestart form
+    // ── Daily Prestarts: count Mon–Fri days covered by ≥1 "Daily Prestart" submission.
+    // Coverage rule: a submission covers fillDate through fillDate + 6 calendar days
+    // (Sydney local). This handles daily, weekly, Sunday-to-Friday, and multi-week
+    // submission patterns. Count distinct weekdays covered; display as X/5.
     const prestartDays = new Set<string>();
     for (const r of formsBySite.get(siteReference) ?? []) {
-      const name = (r.formName ?? "").trim().toLowerCase();
-      if (!name.includes("daily prestart") && !name.includes("daily pre-start") &&
-          !name.includes("prestart") && !name.includes("pre start")) continue;
+      if (!isPrestartForm(r.formName ?? "")) continue;
       if (!r.fillDate) continue;
-      const ds = getSydneyDateString(r.fillDate);
-      if (weekdays.includes(ds)) prestartDays.add(ds);
+      const fillDaySydney = getSydneyDateString(r.fillDate);
+      for (const wd of weekdays) {
+        if (coversDay(fillDaySydney, wd)) prestartDays.add(wd);
+      }
     }
 
-    // ── Toolbox Talk: any toolbox form submitted during the selected week (Mon–Fri)
-    // lastToolbox tracks the most recent submission ever (informational; no date filter).
-    let lastToolbox: string | null = null;
+    // ── Toolbox Meeting: "Done" if ≥1 "Toolbox Meeting" submission covers any Mon–Fri
+    // day in the selected week. Same 7-day forward coverage rule as prestarts.
+    // lastToolbox tracks the most recent submission ever (informational).
     let toolboxSubmitted = false;
+    let lastToolbox: string | null = null;
     for (const r of formsBySite.get(siteReference) ?? []) {
-      const name = (r.formName ?? "").trim().toLowerCase();
-      if (!name.includes("toolbox") && !name.includes("tool box") &&
-          !name.includes("tbm") && !name.includes("tbt")) continue;
+      if (!isToolboxForm(r.formName ?? "")) continue;
       if (!r.fillDate) continue;
-      const ds = getSydneyDateString(r.fillDate);
-      if (weekdays.includes(ds)) toolboxSubmitted = true;
+      const fillDaySydney = getSydneyDateString(r.fillDate);
+      if (weekdays.some(wd => coversDay(fillDaySydney, wd))) {
+        toolboxSubmitted = true;
+      }
       if (!lastToolbox || r.fillDate > lastToolbox) lastToolbox = r.fillDate;
     }
 
