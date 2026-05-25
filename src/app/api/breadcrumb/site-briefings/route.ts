@@ -84,7 +84,21 @@ export async function GET(request: NextRequest) {
       console.warn("[site-briefings DEBUG] Could not write debug file:", writeErr);
     }
 
-    return NextResponse.json({ source: "breadcrumb_api", rows, _debug_sample });
+    // DEBUG — summarise formType and formName values across all returned records
+    const byType: Record<string, number> = {};
+    const seenNames = new Set<string>();
+    for (const row of rows) {
+      const t = String(row.formType ?? row.FormType ?? "unknown");
+      byType[t] = (byType[t] ?? 0) + 1;
+      const n = String(row.formName ?? row.FormName ?? "");
+      if (n) seenNames.add(n);
+    }
+    const _form_type_summary = {
+      by_type:      byType,
+      sample_names: Array.from(seenNames).slice(0, 20),
+    };
+
+    return NextResponse.json({ source: "breadcrumb_api", rows, _debug_sample, _form_type_summary });
   } catch (err) {
     return NextResponse.json(
       { source: "api_error", error: err instanceof Error ? err.message : "Unknown error", rows: [] },
