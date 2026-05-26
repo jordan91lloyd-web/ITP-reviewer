@@ -357,10 +357,15 @@ export async function GET(request: NextRequest) {
         }
       }
       if (rowsToInsert.length > 0) {
-        // ON CONFLICT DO NOTHING — endDates are immutable once set
-        await supabase
-          .from("breadcrumb_form_endates")
-          .upsert(rowsToInsert, { onConflict: "form_data_id", ignoreDuplicates: true });
+        // ON CONFLICT (form_data_id) DO NOTHING — endDates are immutable once set
+        try {
+          const { error: upsertError } = await supabase
+            .from("breadcrumb_form_endates")
+            .upsert(rowsToInsert, { onConflict: "form_data_id", ignoreDuplicates: true });
+          if (upsertError) console.error("[endDate cache] upsert failed:", upsertError);
+        } catch (e) {
+          console.error("[endDate cache] upsert threw:", e);
+        }
       }
     }
   }
@@ -570,5 +575,18 @@ export async function GET(request: NextRequest) {
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
+    _diagnostic: {
+      kimberlyForms: allForms
+        .filter(f => f.siteReference === "009" && isPrestartForm(f.formName ?? ""))
+        .map(f => ({
+          formDataId: f.formDataId,
+          fillDate:   f.fillDate,
+          formName:   f.formName,
+        })),
+      endDateMapSize:   endDateMap.size,
+      endDateSample:    Array.from(endDateMap.entries())
+        .slice(0, 5)
+        .map(([id, date]) => ({ id, date })),
+    },
   });
 }
