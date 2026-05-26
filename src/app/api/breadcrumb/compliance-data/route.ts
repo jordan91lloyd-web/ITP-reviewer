@@ -472,7 +472,8 @@ export async function GET(request: NextRequest) {
   // ── Build per-site output ─────────────────────────────────────────────────
 
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
-    const isBondi = meta.siteName.toLowerCase().includes("bondi");
+    const isBondi  = meta.siteName.toLowerCase().includes("bondi");
+    const isClarke = meta.siteName.toLowerCase().includes("clarke");
 
     // ── Daily Prestarts: count Mon–Fri days covered by ≥1 "Daily Prestart" submission.
     // For submissions made before this week, uses the actual endDate from the
@@ -498,6 +499,19 @@ export async function GET(request: NextRequest) {
           console.log(`  → coversDay("${fillDaySydney}", "${wd}", ${endDateSydney ?? "undefined"}) = ${covers}`);
           if (covers) prestartDays.add(wd);
         }
+      } else if (isClarke) {
+        console.log("[CLARKE DEBUG] prestart record:", {
+          formDataId:     r.formDataId ?? null,
+          fillDateRaw:    r.fillDate,
+          fillDateSydney: fillDaySydney,
+          endDateFromMap: endDateSydney ?? null,
+          coverageMode:   endDateSydney ? "actual endDate" : "7-day fallback",
+        });
+        for (const wd of weekdays) {
+          const covers = coversDay(fillDaySydney, wd, endDateSydney);
+          console.log(`  → coversDay("${fillDaySydney}", "${wd}", ${endDateSydney ?? "undefined"}) = ${covers}`);
+          if (covers) prestartDays.add(wd);
+        }
       } else {
         for (const wd of weekdays) {
           if (coversDay(fillDaySydney, wd, endDateSydney)) prestartDays.add(wd);
@@ -507,6 +521,9 @@ export async function GET(request: NextRequest) {
 
     if (isBondi) {
       console.log("[BONDI DEBUG] final prestartDays:", Array.from(prestartDays).sort());
+    }
+    if (isClarke) {
+      console.log("[CLARKE DEBUG] final prestartDays:", Array.from(prestartDays).sort());
     }
 
     // ── Toolbox Meeting: "Done" if ≥1 "Toolbox Meeting" submission covers any Mon–Fri
