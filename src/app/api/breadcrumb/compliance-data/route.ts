@@ -457,7 +457,7 @@ export async function GET(request: NextRequest) {
         const wdMs = dateToMs(wd);
         const covered = endMs !== null
           ? (fillMs <= wdMs && wdMs <= endMs)
-          : (fillMs === wdMs);
+          : (wdMs === fillMs || wdMs === fillMs + 86400000);
         if (covered) prestartDays.add(wd);
       }
     }
@@ -480,7 +480,7 @@ export async function GET(request: NextRequest) {
         const wdMs = dateToMs(wd);
         return endMs !== null
           ? (fillMs <= wdMs && wdMs <= endMs)
-          : (fillMs === wdMs);
+          : (wdMs === fillMs || wdMs === fillMs + 86400000);
       })) {
         toolboxSubmitted = true;
       }
@@ -530,8 +530,6 @@ export async function GET(request: NextRequest) {
   const sunday = new Date(monday);
   sunday.setUTCDate(monday.getUTCDate() + 6);
 
-  const samplePrestart = allForms.find(r => isPrestartForm(r.formName ?? ""));
-
   return NextResponse.json({
     weekStart:  getSydneyDateString(monday.toISOString()),
     weekEnd:    getSydneyDateString(sunday.toISOString()),
@@ -539,19 +537,5 @@ export async function GET(request: NextRequest) {
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
-    _diagnostic: {
-      allFormsCount:       allForms.length,
-      prestartForms:       allForms.filter(r => isPrestartForm(r.formName ?? "")).length,
-      toolboxForms:        allForms.filter(r => isToolboxForm(r.formName ?? "")).length,
-      formDataIdsToFetch:  formDataIdsToFetch.size,
-      sampleForm: samplePrestart ? {
-        keys:       Object.keys(samplePrestart),
-        formDataId: (samplePrestart as Record<string, unknown>).formDataId,
-        FormDataId: (samplePrestart as Record<string, unknown>).FormDataId,
-        id:         (samplePrestart as Record<string, unknown>).id,
-        fillDate:   samplePrestart.fillDate,
-        formName:   samplePrestart.formName,
-      } : null,
-    },
   });
 }
