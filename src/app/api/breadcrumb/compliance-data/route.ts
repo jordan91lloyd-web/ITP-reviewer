@@ -121,19 +121,49 @@ function isToolboxForm(formName: string): boolean {
   );
 }
 
-// ── 7-day forward coverage ─────────────────────────────────────────────────────
-// A single submission covers fillDate through fillDate + 6 calendar days
-// (all in Sydney local time). This handles daily, weekly, Sunday-to-Friday,
-// and multi-week submission patterns.
+// ── Coverage check ─────────────────────────────────────────────────────────────
+// If an actual endDate is known (fetched from /integration/v2/report/form-data),
+// a submission covers fillDate through endDate inclusive (both Sydney calendar dates).
+// Otherwise falls back to fillDate + 6 days (the original 7-day rule).
 //
-// Both dates must be YYYY-MM-DD Sydney calendar date strings.
-function coversDay(fillDateSydney: string, targetDay: string): boolean {
+// All date parameters must be YYYY-MM-DD Sydney calendar date strings.
+function coversDay(fillDateSydney: string, targetDay: string, endDateSydney?: string): boolean {
   const [fy, fm, fd] = fillDateSydney.split("-").map(Number);
   const [ty, tm, td] = targetDay.split("-").map(Number);
   const fillMs   = Date.UTC(fy, fm - 1, fd);
   const targetMs = Date.UTC(ty, tm - 1, td);
+  if (targetMs < fillMs) return false;
+
+  if (endDateSydney) {
+    const [ey, em, ed] = endDateSydney.split("-").map(Number);
+    const endMs = Date.UTC(ey, em - 1, ed);
+    return targetMs <= endMs;
+  }
+
+  // Fallback: 7-day forward window (fillDate + 6 days)
   const diffDays = (targetMs - fillMs) / 86_400_000;
-  return diffDays >= 0 && diffDays <= 6;
+  return diffDays <= 6;
+}
+
+// ── Fetch actual endDate from Breadcrumb form-data API ─────────────────────────
+// Returns a YYYY-MM-DD Sydney date string, or null on any failure.
+async function fetchFormDataEndDate(formDataId: number | string): Promise<string | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/integration/v2/report/form-data`, {
+      method: "POST",
+      headers: { "X-Api-Key": API_KEY!, "Content-Type": "application/json" },
+      body: JSON.stringify({ formDataId }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    // endDate can appear at top level or nested under filledFormInfo
+    const rawEnd: string | undefined = data?.endDate ?? data?.filledFormInfo?.endDate;
+    if (!rawEnd) return null;
+    return getSydneyDateString(rawEnd);
+  } catch {
+    return null;
+  }
 }
 
 // ── Paginated fetch ────────────────────────────────────────────────────────────
@@ -187,6 +217,7 @@ interface FormRecord {
   fillDate?: string;          // confirmed field name (NOT submittedDate)
   status?: string;
   procoreProjectId?: string | number | null;
+  formDataId?: number | string | null;
 }
 
 interface ApprovalRecord {
@@ -282,6 +313,41 @@ export async function GET(request: NextRequest) {
   if (inductionsResult.status    === "rejected") errors.push(`approval-report (inductions): ${inductionsResult.reason}`);
   if (swmsResult.status          === "rejected") errors.push(`approval-report (SWMS): ${swmsResult.reason}`);
   if (supplierDocsResult.status  === "rejected") errors.push(`supplier-document-report: ${supplierDocsResult.reason}`);
+
+  // ── Fetch actual endDates for pre-week prestart/toolbox submissions ──────────
+  // Submissions made before the selected week's Monday cannot be reliably covered
+  // by the fixed 7-day rule alone (e.g. a form submitted 10 days ago with a
+  // "Valid Until" date that extends into this week would be missed).
+  // For those submissions only, we call /integration/v2/report/form-data to get
+  // the real expiry date. Submissions within the current week use the 7-day
+  // fallback — no extra fetch needed.
+
+  const mondaySydney = getSydneyDateString(monday.toISOString());
+
+  // Collect unique formDataIds for qualifying submissions
+  const preWeekFormDataIds = new Set<string>();
+  for (const r of allForms) {
+    if (!r.fillDate || !r.formDataId) continue;
+    if (!isPrestartForm(r.formName ?? "") && !isToolboxForm(r.formName ?? "")) continue;
+    const fillDaySydney = getSydneyDateString(r.fillDate);
+    if (fillDaySydney < mondaySydney) {
+      preWeekFormDataIds.add(String(r.formDataId));
+    }
+  }
+
+  // Fetch in parallel — failures silently return null (fallback to 7-day rule)
+  const endDateMap = new Map<string, string>(); // formDataId → YYYY-MM-DD Sydney
+  if (preWeekFormDataIds.size > 0) {
+    const detailResults = await Promise.all(
+      Array.from(preWeekFormDataIds).map(async id => ({
+        id,
+        endDate: await fetchFormDataEndDate(id),
+      }))
+    );
+    for (const { id, endDate } of detailResults) {
+      if (endDate) endDateMap.set(id, endDate);
+    }
+  }
 
   // ── Build procoreProjectId map from form records ──────────────────────────
   // Form records carry procoreProjectId; site/list does not.
@@ -393,21 +459,23 @@ export async function GET(request: NextRequest) {
 
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
     // ── Daily Prestarts: count Mon–Fri days covered by ≥1 "Daily Prestart" submission.
-    // Coverage rule: a submission covers fillDate through fillDate + 6 calendar days
-    // (Sydney local). This handles daily, weekly, Sunday-to-Friday, and multi-week
-    // submission patterns. Count distinct weekdays covered; display as X/5.
+    // For submissions made before this week, uses the actual endDate from the
+    // form-data API (fetched above). For submissions within this week, falls back
+    // to fillDate + 6 days. Count distinct weekdays covered; display as X/5.
     const prestartDays = new Set<string>();
     for (const r of formsBySite.get(siteReference) ?? []) {
       if (!isPrestartForm(r.formName ?? "")) continue;
       if (!r.fillDate) continue;
       const fillDaySydney = getSydneyDateString(r.fillDate);
+      const endDateSydney = r.formDataId ? endDateMap.get(String(r.formDataId)) : undefined;
       for (const wd of weekdays) {
-        if (coversDay(fillDaySydney, wd)) prestartDays.add(wd);
+        if (coversDay(fillDaySydney, wd, endDateSydney)) prestartDays.add(wd);
       }
     }
 
     // ── Toolbox Meeting: "Done" if ≥1 "Toolbox Meeting" submission covers any Mon–Fri
-    // day in the selected week. Same 7-day forward coverage rule as prestarts.
+    // day in the selected week. Uses actual endDate from form-data API for pre-week
+    // submissions; falls back to 7-day rule for submissions within this week.
     // lastToolbox tracks the most recent submission ever (informational).
     let toolboxSubmitted = false;
     let lastToolbox: string | null = null;
@@ -415,7 +483,8 @@ export async function GET(request: NextRequest) {
       if (!isToolboxForm(r.formName ?? "")) continue;
       if (!r.fillDate) continue;
       const fillDaySydney = getSydneyDateString(r.fillDate);
-      if (weekdays.some(wd => coversDay(fillDaySydney, wd))) {
+      const endDateSydney = r.formDataId ? endDateMap.get(String(r.formDataId)) : undefined;
+      if (weekdays.some(wd => coversDay(fillDaySydney, wd, endDateSydney))) {
         toolboxSubmitted = true;
       }
       if (!lastToolbox || r.fillDate > lastToolbox) lastToolbox = r.fillDate;
