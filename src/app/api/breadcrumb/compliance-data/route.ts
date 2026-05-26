@@ -145,6 +145,7 @@ async function fetchFormDataEndDate(formDataId: number | string): Promise<string
     });
     if (!res.ok) return null;
     const data = await res.json();
+    console.log('[ENDDATE]', JSON.stringify({ id: formDataId, status: res.status, keys: Object.keys(data || {}), a: data?.result?.filledFormInfo?.endDate, b: data?.filledFormInfo?.endDate, c: data?.result?.endDate, d: data?.endDate }));
     const rawEnd: string | undefined =
       data?.result?.filledFormInfo?.endDate ??
       data?.filledFormInfo?.endDate          ??
