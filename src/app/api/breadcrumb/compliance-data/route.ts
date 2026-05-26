@@ -487,6 +487,7 @@ export async function GET(request: NextRequest) {
       if (!isPrestartForm(r.formName ?? "")) continue;
       if (!r.fillDate) continue;
       const fillDay    = getSydneyDateString(r.fillDate);
+      if (fillDay < fetchFromSydney || fillDay > fetchToSydney) continue;
       const endDay     = r.formDataId ? endDateMap.get(String(r.formDataId)) : undefined;
       const fillMs     = dateToMs(fillDay);
       const endMs      = endDay ? dateToMs(endDay) : null;
@@ -510,6 +511,7 @@ export async function GET(request: NextRequest) {
       if (!isToolboxForm(r.formName ?? "")) continue;
       if (!r.fillDate) continue;
       const fillDay = getSydneyDateString(r.fillDate);
+      if (fillDay < fetchFromSydney || fillDay > fetchToSydney) continue;
       const endDay  = r.formDataId ? endDateMap.get(String(r.formDataId)) : undefined;
       const fillMs  = dateToMs(fillDay);
       const endMs   = endDay ? dateToMs(endDay) : null;
@@ -575,18 +577,5 @@ export async function GET(request: NextRequest) {
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
-    _diagnostic: {
-      kimberlyForms: allForms
-        .filter(f => f.siteReference === "009" && isPrestartForm(f.formName ?? ""))
-        .map(f => ({
-          formDataId: f.formDataId,
-          fillDate:   f.fillDate,
-          formName:   f.formName,
-        })),
-      endDateMapSize:   endDateMap.size,
-      endDateSample:    Array.from(endDateMap.entries())
-        .slice(0, 5)
-        .map(([id, date]) => ({ id, date })),
-    },
   });
 }
