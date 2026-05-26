@@ -29,8 +29,7 @@ interface SiteMapping {
 }
 
 interface SiteDiaryResult {
-  siteReference: string;
-  projectId: string;
+  breadcrumb_site_name: string;
   completedDays: number;
   totalDays: number;
   display: string;   // "X/Y" or "—"
@@ -378,7 +377,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           })),
           oldestPendingDate,
           siteDiary:    null,
-          diaryLoading: !!mappedProjectId,
+          diaryLoading: true,
         };
       });
 
@@ -431,7 +430,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         toolboxDone:   calcToolboxDone(briefings ?? [], site),
         ...calcApprovalKPIs(approvals ?? [], site),
         siteDiary:    null,
-        diaryLoading: !!(mapBySite.get(site)),
+        diaryLoading: true,
       }));
     },
     []
@@ -440,46 +439,31 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   // ── Fetch site diary data (current partial week, Mon–yesterday, Sydney time) ──
 
   const loadSiteDiaries = useCallback(
-    async (rows: SiteRow[]) => {
+    async () => {
       if (!companyId) return;
 
-      const projectIds = Array.from(
-        new Set(rows.filter(r => r.mappedProjectId).map(r => r.mappedProjectId!))
-      );
-      console.log("[SiteDiaries] rows:", rows.length, "| rows with mappedProjectId:", rows.filter(r => r.mappedProjectId).length, "| projectIds to fetch:", projectIds);
-      if (projectIds.length === 0) {
-        console.log("[SiteDiaries] No project IDs — skipping fetch. Row mappings:", rows.map(r => ({ site: r.site, mappedProjectId: r.mappedProjectId })));
-        setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
-        return;
-      }
-
       try {
-        console.log("[SiteDiaries] Fetching /api/breadcrumb/site-diaries with project_ids:", projectIds.join(","));
-        const res = await fetch(
-          `/api/breadcrumb/site-diaries?company_id=${companyId}&project_ids=${projectIds.join(",")}`
-        );
-        console.log("[SiteDiaries] API response status:", res.status);
+        const res = await fetch(`/api/breadcrumb/site-diaries?company_id=${companyId}`);
         if (!res.ok) {
           setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
           return;
         }
         const data = await res.json();
-        console.log("[SiteDiaries] API response:", JSON.stringify(data));
 
         if (data.todayIsMonday) {
-          // Today is Monday — nothing to check yet; show "—" for all sites
           setSiteRows(prev => prev.map(r => ({ ...r, siteDiary: null, diaryLoading: false })));
           return;
         }
 
+        // Key results by breadcrumb_site_name (lowercase for case-insensitive match)
         const diaryMap = new Map<string, SiteDiaryResult>(
-          (data.results ?? []).map((r: SiteDiaryResult) => [r.projectId, r])
+          (data.results ?? []).map((r: SiteDiaryResult) => [r.breadcrumb_site_name.toLowerCase(), r])
         );
 
         setSiteRows(prev =>
           prev.map(row => ({
             ...row,
-            siteDiary:    row.mappedProjectId ? (diaryMap.get(row.mappedProjectId) ?? null) : null,
+            siteDiary:    diaryMap.get(row.site.toLowerCase()) ?? null,
             diaryLoading: false,
           }))
         );
@@ -597,7 +581,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         const rows = buildApiSiteRows(apiSites, currentMappings, projects);
         setSiteRows(rows);
         setLastFetched(new Date());
-        void loadSiteDiaries(rows);
+        void loadSiteDiaries();
 
         // Auto-save once per week (keyed by week start)
         if (weekStart !== lastApiSaveRef.current) {
@@ -614,10 +598,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             const cData = await cached.json();
             if (cData?.report && Array.isArray(cData.report.site_data)) {
               const restored: SiteRow[] = (cData.report.site_data as SiteRow[]).map(r => ({
-                ...r, siteDiary: null, diaryLoading: !!r.mappedProjectId,
+                ...r, siteDiary: null, diaryLoading: true,
               }));
               setSiteRows(restored);
-              void loadSiteDiaries(restored);
+              void loadSiteDiaries();
             }
           }
         } catch {
@@ -685,7 +669,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     if (!csvBriefings && !csvApprovals) return;
     const rows = buildCsvSiteRows(csvBriefings, csvApprovals, mappings, projects);
     setSiteRows(rows);
-    void loadSiteDiaries(rows);
+    void loadSiteDiaries();
   }, [csvBriefings, csvApprovals, mappings, projects, mode, buildCsvSiteRows, loadSiteDiaries]);
 
   // ── Auto-save when CSV data is present (CSV mode only) ───────────────────────
@@ -729,10 +713,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
         if (Array.isArray(report.site_data)) {
           const restored: SiteRow[] = (report.site_data as SiteRow[]).map(r => ({
-            ...r, siteDiary: null, diaryLoading: !!r.mappedProjectId,
+            ...r, siteDiary: null, diaryLoading: true,
           }));
           setSiteRows(restored);
-          void loadSiteDiaries(restored);
+          void loadSiteDiaries();
         }
 
         setSavedReportMeta({
@@ -1211,8 +1195,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                     ? projects.find(p => String(p.id) === row.mappedProjectId) ?? null
                     : null;
 
-                  const diaryIsUnmapped = !row.diaryLoading && !row.mappedProjectId;
-
                   return (
                     <>
                       <tr
@@ -1243,16 +1225,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                         <td className="px-4 py-3">
                           {row.diaryLoading ? (
                             <Spinner />
-                          ) : diaryIsUnmapped ? (
-                            <div className="flex flex-col gap-1">
-                              <Pill light="gray">—</Pill>
-                              <button
-                                onClick={scrollToMapping}
-                                className="text-[10px] text-amber-600 hover:text-amber-700 font-medium text-left underline-offset-2 hover:underline"
-                              >
-                                Map site →
-                              </button>
-                            </div>
                           ) : row.siteDiary === null ? (
                             <Pill light="gray">—</Pill>
                           ) : (
