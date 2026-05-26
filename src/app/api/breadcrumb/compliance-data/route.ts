@@ -137,12 +137,14 @@ function isToolboxForm(formName: string): boolean {
 // Tries all known response field paths in priority order.
 async function fetchFormDataEndDate(formDataId: number | string): Promise<string | null> {
   try {
+    console.log('[ENDDATE START]', { formDataId });
     const res = await fetch(`${BASE_URL}/integration/v2/report/form-data`, {
       method: "POST",
       headers: { "X-Api-Key": API_KEY!, "Content-Type": "application/json" },
       body: JSON.stringify({ formDataId }),
       signal: AbortSignal.timeout(10_000),
     });
+    console.log('[ENDDATE RAW]', { formDataId, status: res.status });
     if (!res.ok) return null;
     const data = await res.json();
     console.log('[ENDDATE]', JSON.stringify({ id: formDataId, status: res.status, keys: Object.keys(data || {}), a: data?.result?.filledFormInfo?.endDate, b: data?.filledFormInfo?.endDate, c: data?.result?.endDate, d: data?.endDate }));
