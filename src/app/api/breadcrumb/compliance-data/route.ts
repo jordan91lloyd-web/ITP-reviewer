@@ -323,6 +323,7 @@ export async function GET(request: NextRequest) {
   }
 
   const endDateMap = new Map<string, string>(); // formDataId → YYYY-MM-DD Sydney
+  console.log('[FETCH CHECK]', JSON.stringify({ allFormsCount: allForms.length, sampleFormDataId: (allForms[0] as any)?.formDataId, sampleFormDataIdAlt: (allForms[0] as any)?.FormDataId, sampleId: (allForms[0] as any)?.id, sampleKeys: allForms[0] ? Object.keys(allForms[0]) : [], formDataIdsSize: formDataIdsToFetch.size }));
   if (formDataIdsToFetch.size > 0) {
     const detailResults = await Promise.all(
       Array.from(formDataIdsToFetch).map(async id => ({
