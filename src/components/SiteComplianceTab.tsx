@@ -439,11 +439,12 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   // ── Fetch site diary data (current partial week, Mon–yesterday, Sydney time) ──
 
   const loadSiteDiaries = useCallback(
-    async () => {
+    async (weekMonday?: Date) => {
       if (!companyId) return;
 
+      const weekStartParam = weekMonday ? toDateString(weekMonday) : toDateString(getCurrentWeekBounds().monday);
       try {
-        const res = await fetch(`/api/breadcrumb/site-diaries?company_id=${companyId}`);
+        const res = await fetch(`/api/breadcrumb/site-diaries?company_id=${companyId}&week_start=${weekStartParam}`);
         if (!res.ok) {
           setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
           return;
@@ -581,7 +582,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         const rows = buildApiSiteRows(apiSites, currentMappings, projects);
         setSiteRows(rows);
         setLastFetched(new Date());
-        void loadSiteDiaries();
+        void loadSiteDiaries(effectiveMonday);
 
         // Auto-save once per week (keyed by week start)
         if (weekStart !== lastApiSaveRef.current) {
@@ -601,7 +602,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                 ...r, siteDiary: null, diaryLoading: true,
               }));
               setSiteRows(restored);
-              void loadSiteDiaries();
+              void loadSiteDiaries(effectiveMonday);
             }
           }
         } catch {
@@ -716,7 +717,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             ...r, siteDiary: null, diaryLoading: true,
           }));
           setSiteRows(restored);
-          void loadSiteDiaries();
+          const reportMonday = report.report_week_start
+            ? new Date(report.report_week_start + "T00:00:00Z")
+            : undefined;
+          void loadSiteDiaries(reportMonday);
         }
 
         setSavedReportMeta({
