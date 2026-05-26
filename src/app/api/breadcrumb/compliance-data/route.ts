@@ -157,8 +157,22 @@ async function fetchFormDataEndDate(formDataId: number | string): Promise<string
     });
     if (!res.ok) return null;
     const data = await res.json();
-    // endDate can appear at top level or nested under filledFormInfo
-    const rawEnd: string | undefined = data?.endDate ?? data?.filledFormInfo?.endDate;
+
+    // DEBUG: log the top-level keys and filledFormInfo shape so we can confirm
+    // the correct field path. Remove once the path is verified.
+    console.log(`[FORM-DATA DEBUG] formDataId=${formDataId} top-level keys:`, Object.keys(data ?? {}));
+    console.log(`[FORM-DATA DEBUG] data.result?.filledFormInfo?.endDate =`, data?.result?.filledFormInfo?.endDate);
+    console.log(`[FORM-DATA DEBUG] data.filledFormInfo?.endDate         =`, data?.filledFormInfo?.endDate);
+    console.log(`[FORM-DATA DEBUG] data.result?.endDate                 =`, data?.result?.endDate);
+    console.log(`[FORM-DATA DEBUG] data.endDate                         =`, data?.endDate);
+
+    // Try all known field paths in priority order
+    const rawEnd: string | undefined =
+      data?.result?.filledFormInfo?.endDate ??
+      data?.filledFormInfo?.endDate          ??
+      data?.result?.endDate                  ??
+      data?.endDate;
+
     if (!rawEnd) return null;
     return getSydneyDateString(rawEnd);
   } catch {
