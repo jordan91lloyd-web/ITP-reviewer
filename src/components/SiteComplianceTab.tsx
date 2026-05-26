@@ -446,20 +446,25 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       const projectIds = Array.from(
         new Set(rows.filter(r => r.mappedProjectId).map(r => r.mappedProjectId!))
       );
+      console.log("[SiteDiaries] rows:", rows.length, "| rows with mappedProjectId:", rows.filter(r => r.mappedProjectId).length, "| projectIds to fetch:", projectIds);
       if (projectIds.length === 0) {
+        console.log("[SiteDiaries] No project IDs — skipping fetch. Row mappings:", rows.map(r => ({ site: r.site, mappedProjectId: r.mappedProjectId })));
         setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
         return;
       }
 
       try {
+        console.log("[SiteDiaries] Fetching /api/breadcrumb/site-diaries with project_ids:", projectIds.join(","));
         const res = await fetch(
           `/api/breadcrumb/site-diaries?company_id=${companyId}&project_ids=${projectIds.join(",")}`
         );
+        console.log("[SiteDiaries] API response status:", res.status);
         if (!res.ok) {
           setSiteRows(prev => prev.map(r => ({ ...r, diaryLoading: false })));
           return;
         }
         const data = await res.json();
+        console.log("[SiteDiaries] API response:", JSON.stringify(data));
 
         if (data.todayIsMonday) {
           // Today is Monday — nothing to check yet; show "—" for all sites

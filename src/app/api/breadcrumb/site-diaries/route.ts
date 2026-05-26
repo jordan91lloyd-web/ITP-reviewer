@@ -101,12 +101,14 @@ export async function GET(request: NextRequest) {
     }
 
     const projectIds = pidParam.split(",").map(s => s.trim()).filter(Boolean);
+    console.log("[site-diaries] received project_ids:", projectIds);
     if (projectIds.length === 0) {
       return NextResponse.json({ results: [], todayIsMonday: false });
     }
 
     // Check date range — null means today is Monday (nothing to check yet)
     const range = getCheckRange();
+    console.log("[site-diaries] date range:", range ? `${range.startDate} → ${range.endDate} (${range.workingDays.length} days)` : "null — today is Monday");
     if (!range) {
       return NextResponse.json({ results: [], todayIsMonday: true });
     }
@@ -146,6 +148,7 @@ export async function GET(request: NextRequest) {
             signal:  AbortSignal.timeout(15_000),
           });
 
+          console.log(`[site-diaries] project ${projectId}: Procore status ${res.status}`);
           if (!res.ok) {
             // Procore returned an error — report all days as missed
             return {
@@ -161,6 +164,7 @@ export async function GET(request: NextRequest) {
           const data = await res.json();
           const notesLogs: Array<{ date?: string; status?: string }> =
             Array.isArray(data?.notes_logs) ? data.notes_logs : [];
+          console.log(`[site-diaries] project ${projectId}: notes_logs count=${notesLogs.length}, approved=${notesLogs.filter(l => l.status === "approved").length}`);
 
           // A day is "complete" if notes_logs has ≥1 entry with status === "approved"
           const completedSet = new Set(
