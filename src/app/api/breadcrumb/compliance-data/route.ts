@@ -13,13 +13,10 @@
 // partial data is returned.
 //
 // Coverage rules for Daily Prestarts and Toolbox Meetings:
-//   With endDate (fetched from form-data API):
-//     submission covers a day if fillDate <= day <= endDate (all Sydney dates)
-//   Without endDate (fetch failed or no formDataId):
-//     submission covers only its exact fillDate day
+//   A submission covers a working day if fillDay === that working day (exact match).
+//   Exception: a Sunday submission (day before Monday) counts as covering Monday.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 // Force dynamic — never cache this route. week_start query param must be
 // evaluated per-request.
@@ -63,12 +60,6 @@ function getSydneyDateString(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString("en-CA", {
     timeZone: "Australia/Sydney",
   });
-}
-
-// Convert a YYYY-MM-DD string to a UTC millisecond timestamp for comparison.
-function dateToMs(yyyymmdd: string): number {
-  const [y, m, d] = yyyymmdd.split("-").map(Number);
-  return Date.UTC(y, m - 1, d);
 }
 
 // Generate Mon–Fri YYYY-MM-DD strings for the given Monday (UTC midnight Date).
@@ -133,31 +124,6 @@ function isToolboxForm(formName: string): boolean {
   );
 }
 
-// ── Fetch actual endDate from Breadcrumb form-data API ─────────────────────────
-// Returns a YYYY-MM-DD Sydney date string, or null on any failure.
-// Tries all known response field paths in priority order.
-async function fetchFormDataEndDate(formDataId: number | string): Promise<string | null> {
-  try {
-    const res = await fetch(`${BASE_URL}/integration/v2/report/form-data`, {
-      method: "POST",
-      headers: { "X-Api-Key": API_KEY!, "Content-Type": "application/json" },
-      body: JSON.stringify({ formDataId }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const rawEnd: string | undefined =
-      data?.result?.filledFormInfo?.endDate ??
-      data?.filledFormInfo?.endDate          ??
-      data?.result?.endDate                  ??
-      data?.endDate;
-    if (!rawEnd) return null;
-    return getSydneyDateString(rawEnd);
-  } catch {
-    return null;
-  }
-}
-
 // ── Paginated fetch ────────────────────────────────────────────────────────────
 
 async function fetchAllPages<T>(
@@ -208,7 +174,6 @@ interface FormRecord {
   fillDate?: string;          // confirmed field name (NOT submittedDate)
   status?: string;
   procoreProjectId?: string | number | null;
-  formDataId?: number | string | null;
 }
 
 interface ApprovalRecord {
@@ -253,14 +218,16 @@ export async function GET(request: NextRequest) {
 
   const { monday, weekdays } = getWeekBounds(weekStartP);
 
-  // Lookback window: 14 days before Monday → Friday of selected week.
+  // Fetch window: Sunday before Monday through Friday of selected week.
   // NOTE: Breadcrumb's sumbittedDateRange filter is currently ignored by the API —
   // records are returned regardless of date range. The range is set here for
   // semantic correctness and future-proofing.
-  const fetchFrom = new Date(monday.getTime() - 14 * 86_400_000);
-  const fetchTo   = new Date(monday.getTime() +  4 * 86_400_000); // Friday
-  const fetchFromSydney = getSydneyDateString(fetchFrom.toISOString());
-  const fetchToSydney   = getSydneyDateString(fetchTo.toISOString());
+  const sundayBeforeWeek = getSydneyDateString(
+    new Date(monday.getTime() - 86_400_000).toISOString()
+  );
+  const mondaySydney   = weekdays[0];
+  const fetchFromSydney = sundayBeforeWeek;
+  const fetchToSydney   = weekdays[4]; // Friday
   const fromDt = `${fetchFromSydney}T00:00:00`;
   const toDt   = `${fetchToSydney}T23:59:59`;
 
@@ -304,71 +271,6 @@ export async function GET(request: NextRequest) {
   if (inductionsResult.status    === "rejected") errors.push(`approval-report (inductions): ${inductionsResult.reason}`);
   if (swmsResult.status          === "rejected") errors.push(`approval-report (SWMS): ${swmsResult.reason}`);
   if (supplierDocsResult.status  === "rejected") errors.push(`supplier-document-report: ${supplierDocsResult.reason}`);
-
-  // ── Resolve endDates (Supabase cache-first, Breadcrumb fallback) ─────────────
-  // Collect all formDataIds for prestart/toolbox submissions in the lookback window.
-
-  const formDataIdsToFetch = new Set<string>();
-  for (const r of allForms) {
-    if (!r.fillDate || !r.formDataId) continue;
-    if (!isPrestartForm(r.formName ?? "") && !isToolboxForm(r.formName ?? "")) continue;
-    const fillDaySydney = getSydneyDateString(r.fillDate);
-    if (fillDaySydney >= fetchFromSydney && fillDaySydney <= fetchToSydney) {
-      formDataIdsToFetch.add(String(r.formDataId));
-    }
-  }
-
-  const endDateMap = new Map<string, string>(); // formDataId → YYYY-MM-DD Sydney
-
-  if (formDataIdsToFetch.size > 0) {
-    const allIds = Array.from(formDataIdsToFetch);
-
-    // Step 1: read from Supabase cache
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    const { data: cachedRows } = await supabase
-      .from("breadcrumb_form_endates")
-      .select("form_data_id, end_date")
-      .eq("company_id", companyId)
-      .in("form_data_id", allIds);
-
-    for (const row of cachedRows ?? []) {
-      endDateMap.set(row.form_data_id, row.end_date);
-    }
-
-    // Step 2: fetch from Breadcrumb for any IDs not in cache
-    const uncachedIds = allIds.filter(id => !endDateMap.has(id));
-    if (uncachedIds.length > 0) {
-      const freshResults = await Promise.all(
-        uncachedIds.map(async id => ({
-          id,
-          endDate: await fetchFormDataEndDate(id),
-        }))
-      );
-
-      // Populate map and upsert new rows into Supabase
-      const rowsToInsert: { form_data_id: string; company_id: string; end_date: string }[] = [];
-      for (const { id, endDate } of freshResults) {
-        if (endDate) {
-          endDateMap.set(id, endDate);
-          rowsToInsert.push({ form_data_id: id, company_id: companyId, end_date: endDate });
-        }
-      }
-      if (rowsToInsert.length > 0) {
-        // ON CONFLICT (form_data_id) DO NOTHING — endDates are immutable once set
-        try {
-          const { error: upsertError } = await supabase
-            .from("breadcrumb_form_endates")
-            .upsert(rowsToInsert, { onConflict: "form_data_id", ignoreDuplicates: true });
-          if (upsertError) console.error("[endDate cache] upsert failed:", upsertError);
-        } catch (e) {
-          console.error("[endDate cache] upsert threw:", e);
-        }
-      }
-    }
-  }
 
   // ── Build procoreProjectId map from form records ──────────────────────────
   // Form records carry procoreProjectId; site/list does not.
@@ -479,25 +381,18 @@ export async function GET(request: NextRequest) {
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
 
     // ── Daily Prestarts ───────────────────────────────────────────────────────
-    // Coverage per submission:
-    //   With endDate:    fillDate <= day <= endDate  (all YYYY-MM-DD Sydney)
-    //   Without endDate: day === fillDate             (exact match only)
+    // A submission covers a working day if fillDay === that working day.
+    // Exception: a Sunday submission (day before Monday) counts as covering Monday.
     const prestartDays = new Set<string>();
     for (const r of formsBySite.get(siteReference) ?? []) {
       if (!isPrestartForm(r.formName ?? "")) continue;
       if (!r.fillDate) continue;
-      const fillDay    = getSydneyDateString(r.fillDate);
+      const fillDay = getSydneyDateString(r.fillDate);
       if (fillDay < fetchFromSydney || fillDay > fetchToSydney) continue;
-      const endDay     = r.formDataId ? endDateMap.get(String(r.formDataId)) : undefined;
-      const fillMs     = dateToMs(fillDay);
-      const endMs      = endDay ? dateToMs(endDay) : null;
-
       for (const wd of weekdays) {
-        const wdMs = dateToMs(wd);
-        const covered = endMs !== null
-          ? (fillMs <= wdMs && wdMs <= endMs)
-          : (wdMs === fillMs);
-        if (covered) prestartDays.add(wd);
+        if (fillDay === wd || (fillDay === sundayBeforeWeek && wd === mondaySydney)) {
+          prestartDays.add(wd);
+        }
       }
     }
 
@@ -512,19 +407,9 @@ export async function GET(request: NextRequest) {
       if (!r.fillDate) continue;
       const fillDay = getSydneyDateString(r.fillDate);
       if (fillDay < fetchFromSydney || fillDay > fetchToSydney) continue;
-      const endDay  = r.formDataId ? endDateMap.get(String(r.formDataId)) : undefined;
-      const fillMs  = dateToMs(fillDay);
-      const endMs   = endDay ? dateToMs(endDay) : null;
-
-      if (weekdays.some(wd => {
-        const wdMs = dateToMs(wd);
-        return endMs !== null
-          ? (fillMs <= wdMs && wdMs <= endMs)
-          : (wdMs === fillMs);
-      })) {
+      if (weekdays.some(wd => fillDay === wd || (fillDay === sundayBeforeWeek && wd === mondaySydney))) {
         toolboxSubmitted = true;
       }
-
       if (!lastToolbox || r.fillDate > lastToolbox) lastToolbox = r.fillDate;
     }
 
