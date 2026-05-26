@@ -14,6 +14,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+// Force dynamic — never cache this route. Query params (week_start, debug) must
+// always be evaluated per-request.
+export const dynamic = "force-dynamic";
+
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
 // All Breadcrumb endpoints silently return [] when pageSize exceeds ~100.
@@ -464,7 +468,9 @@ export async function GET(request: NextRequest) {
 
   // ── Build per-site output ─────────────────────────────────────────────────
 
-  // Clarke St debug accumulator — populated only when debugMode === "clarke"
+  // Clarke St debug accumulator — populated only when debugMode === "clarke".
+  // Matches on "clarke" OR "vaucluse" (both unique to 16 Clarke St, Vaucluse) so
+  // the match works even if Breadcrumb's site/list returns an unexpected name format.
   type PrestartDebugRecord = {
     formDataId: string | number | null;
     fillDateRaw: string;
@@ -474,9 +480,14 @@ export async function GET(request: NextRequest) {
     daysCovered: string[];
   };
   let clarkeDebug: { prestartRecords: PrestartDebugRecord[]; finalDays: string[] } | null = null;
+  // Always collect all site names so we can see what Breadcrumb calls each site
+  const allSiteNames = Array.from(siteMap.values()).map(m => m.siteName).sort();
 
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
-    const isClarkeDebug = debugMode === "clarke" && meta.siteName.toLowerCase().includes("clarke");
+    const lowerName = meta.siteName.toLowerCase();
+    const isClarkeDebug = debugMode === "clarke" && (
+      lowerName.includes("clarke") || lowerName.includes("vaucluse")
+    );
     const prestartDebugRecords: PrestartDebugRecord[] = [];
 
     // ── Daily Prestarts: count Mon–Fri days covered by ≥1 "Daily Prestart" submission.
@@ -580,6 +591,10 @@ export async function GET(request: NextRequest) {
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
-    _debug:     debugMode === "clarke" ? { clarke: clarkeDebug } : undefined,
+    _debug:     debugMode === "clarke" ? {
+      weekdays,
+      allSiteNames,
+      clarke: clarkeDebug,
+    } : undefined,
   });
 }
