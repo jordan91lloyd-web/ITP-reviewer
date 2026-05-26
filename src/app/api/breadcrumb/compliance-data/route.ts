@@ -158,14 +158,6 @@ async function fetchFormDataEndDate(formDataId: number | string): Promise<string
     if (!res.ok) return null;
     const data = await res.json();
 
-    // DEBUG: log the top-level keys and filledFormInfo shape so we can confirm
-    // the correct field path. Remove once the path is verified.
-    console.log(`[FORM-DATA DEBUG] formDataId=${formDataId} top-level keys:`, Object.keys(data ?? {}));
-    console.log(`[FORM-DATA DEBUG] data.result?.filledFormInfo?.endDate =`, data?.result?.filledFormInfo?.endDate);
-    console.log(`[FORM-DATA DEBUG] data.filledFormInfo?.endDate         =`, data?.filledFormInfo?.endDate);
-    console.log(`[FORM-DATA DEBUG] data.result?.endDate                 =`, data?.result?.endDate);
-    console.log(`[FORM-DATA DEBUG] data.endDate                         =`, data?.endDate);
-
     // Try all known field paths in priority order
     const rawEnd: string | undefined =
       data?.result?.filledFormInfo?.endDate ??
@@ -269,6 +261,7 @@ export async function GET(request: NextRequest) {
   const sp         = request.nextUrl.searchParams;
   const companyId  = sp.get("company_id");
   const weekStartP = sp.get("week_start");
+  const debugMode  = sp.get("debug"); // e.g. "clarke" — adds _debug field to response
 
   if (!companyId) {
     return NextResponse.json({ error: "company_id is required" }, { status: 400 });
@@ -471,9 +464,20 @@ export async function GET(request: NextRequest) {
 
   // ── Build per-site output ─────────────────────────────────────────────────
 
+  // Clarke St debug accumulator — populated only when debugMode === "clarke"
+  type PrestartDebugRecord = {
+    formDataId: string | number | null;
+    fillDateRaw: string;
+    fillDateSydney: string;
+    endDateFromMap: string | null;
+    coverageMode: string;
+    daysCovered: string[];
+  };
+  let clarkeDebug: { prestartRecords: PrestartDebugRecord[]; finalDays: string[] } | null = null;
+
   const sites = Array.from(siteMap.entries()).map(([siteReference, meta]) => {
-    const isBondi  = meta.siteName.toLowerCase().includes("bondi");
-    const isClarke = meta.siteName.toLowerCase().includes("clarke");
+    const isClarkeDebug = debugMode === "clarke" && meta.siteName.toLowerCase().includes("clarke");
+    const prestartDebugRecords: PrestartDebugRecord[] = [];
 
     // ── Daily Prestarts: count Mon–Fri days covered by ≥1 "Daily Prestart" submission.
     // For submissions made before this week, uses the actual endDate from the
@@ -485,45 +489,29 @@ export async function GET(request: NextRequest) {
       if (!r.fillDate) continue;
       const fillDaySydney = getSydneyDateString(r.fillDate);
       const endDateSydney = r.formDataId ? endDateMap.get(String(r.formDataId)) : undefined;
+      const daysCovered: string[] = [];
 
-      if (isBondi) {
-        console.log("[BONDI DEBUG] prestart record:", {
+      for (const wd of weekdays) {
+        if (coversDay(fillDaySydney, wd, endDateSydney)) {
+          prestartDays.add(wd);
+          if (isClarkeDebug) daysCovered.push(wd);
+        }
+      }
+
+      if (isClarkeDebug) {
+        prestartDebugRecords.push({
           formDataId:     r.formDataId ?? null,
           fillDateRaw:    r.fillDate,
           fillDateSydney: fillDaySydney,
           endDateFromMap: endDateSydney ?? null,
           coverageMode:   endDateSydney ? "actual endDate" : "7-day fallback",
+          daysCovered,
         });
-        for (const wd of weekdays) {
-          const covers = coversDay(fillDaySydney, wd, endDateSydney);
-          console.log(`  → coversDay("${fillDaySydney}", "${wd}", ${endDateSydney ?? "undefined"}) = ${covers}`);
-          if (covers) prestartDays.add(wd);
-        }
-      } else if (isClarke) {
-        console.log("[CLARKE DEBUG] prestart record:", {
-          formDataId:     r.formDataId ?? null,
-          fillDateRaw:    r.fillDate,
-          fillDateSydney: fillDaySydney,
-          endDateFromMap: endDateSydney ?? null,
-          coverageMode:   endDateSydney ? "actual endDate" : "7-day fallback",
-        });
-        for (const wd of weekdays) {
-          const covers = coversDay(fillDaySydney, wd, endDateSydney);
-          console.log(`  → coversDay("${fillDaySydney}", "${wd}", ${endDateSydney ?? "undefined"}) = ${covers}`);
-          if (covers) prestartDays.add(wd);
-        }
-      } else {
-        for (const wd of weekdays) {
-          if (coversDay(fillDaySydney, wd, endDateSydney)) prestartDays.add(wd);
-        }
       }
     }
 
-    if (isBondi) {
-      console.log("[BONDI DEBUG] final prestartDays:", Array.from(prestartDays).sort());
-    }
-    if (isClarke) {
-      console.log("[CLARKE DEBUG] final prestartDays:", Array.from(prestartDays).sort());
+    if (isClarkeDebug) {
+      clarkeDebug = { prestartRecords: prestartDebugRecords, finalDays: Array.from(prestartDays).sort() };
     }
 
     // ── Toolbox Meeting: "Done" if ≥1 "Toolbox Meeting" submission covers any Mon–Fri
@@ -592,5 +580,6 @@ export async function GET(request: NextRequest) {
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
+    _debug:     debugMode === "clarke" ? { clarke: clarkeDebug } : undefined,
   });
 }
