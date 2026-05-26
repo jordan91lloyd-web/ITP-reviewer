@@ -19,6 +19,7 @@
 //     submission covers only its exact fillDate day
 
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 // Force dynamic — never cache this route. week_start query param must be
 // evaluated per-request.
@@ -304,10 +305,8 @@ export async function GET(request: NextRequest) {
   if (swmsResult.status          === "rejected") errors.push(`approval-report (SWMS): ${swmsResult.reason}`);
   if (supplierDocsResult.status  === "rejected") errors.push(`supplier-document-report: ${supplierDocsResult.reason}`);
 
-  // ── Fetch endDate for all prestart/toolbox submissions in the lookback window ─
-  // Fetch for every record whose fillDate falls within fetchFrom–fetchTo, not just
-  // pre-Monday ones. This handles same-week submissions that have multi-day validity.
-  // Deduplicates by formDataId before fetching. Failures silently return null.
+  // ── Resolve endDates (Supabase cache-first, Breadcrumb fallback) ─────────────
+  // Collect all formDataIds for prestart/toolbox submissions in the lookback window.
 
   const formDataIdsToFetch = new Set<string>();
   for (const r of allForms) {
@@ -320,15 +319,49 @@ export async function GET(request: NextRequest) {
   }
 
   const endDateMap = new Map<string, string>(); // formDataId → YYYY-MM-DD Sydney
+
   if (formDataIdsToFetch.size > 0) {
-    const detailResults = await Promise.all(
-      Array.from(formDataIdsToFetch).map(async id => ({
-        id,
-        endDate: await fetchFormDataEndDate(id),
-      }))
+    const allIds = Array.from(formDataIdsToFetch);
+
+    // Step 1: read from Supabase cache
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    for (const { id, endDate } of detailResults) {
-      if (endDate) endDateMap.set(id, endDate);
+    const { data: cachedRows } = await supabase
+      .from("breadcrumb_form_endates")
+      .select("form_data_id, end_date")
+      .eq("company_id", companyId)
+      .in("form_data_id", allIds);
+
+    for (const row of cachedRows ?? []) {
+      endDateMap.set(row.form_data_id, row.end_date);
+    }
+
+    // Step 2: fetch from Breadcrumb for any IDs not in cache
+    const uncachedIds = allIds.filter(id => !endDateMap.has(id));
+    if (uncachedIds.length > 0) {
+      const freshResults = await Promise.all(
+        uncachedIds.map(async id => ({
+          id,
+          endDate: await fetchFormDataEndDate(id),
+        }))
+      );
+
+      // Populate map and upsert new rows into Supabase
+      const rowsToInsert: { form_data_id: string; company_id: string; end_date: string }[] = [];
+      for (const { id, endDate } of freshResults) {
+        if (endDate) {
+          endDateMap.set(id, endDate);
+          rowsToInsert.push({ form_data_id: id, company_id: companyId, end_date: endDate });
+        }
+      }
+      if (rowsToInsert.length > 0) {
+        // ON CONFLICT DO NOTHING — endDates are immutable once set
+        await supabase
+          .from("breadcrumb_form_endates")
+          .upsert(rowsToInsert, { onConflict: "form_data_id", ignoreDuplicates: true });
+      }
     }
   }
 
