@@ -243,19 +243,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ fallback: true, sites: [] });
   }
 
-  // One-time cache clear — removes any stale endDate rows written before the
-  // lookback-window filter fix. Remove this block after first successful deploy.
-  try {
-    const supabaseClear = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    await supabaseClear
-      .from("breadcrumb_form_endates")
-      .delete()
-      .neq("form_data_id", "");
-  } catch { /* non-fatal */ }
-
   const sp         = request.nextUrl.searchParams;
   const companyId  = sp.get("company_id");
   const weekStartP = sp.get("week_start");
