@@ -137,17 +137,14 @@ function isToolboxForm(formName: string): boolean {
 // Tries all known response field paths in priority order.
 async function fetchFormDataEndDate(formDataId: number | string): Promise<string | null> {
   try {
-    console.log('[ENDDATE START]', { formDataId });
     const res = await fetch(`${BASE_URL}/integration/v2/report/form-data`, {
       method: "POST",
       headers: { "X-Api-Key": API_KEY!, "Content-Type": "application/json" },
       body: JSON.stringify({ formDataId }),
       signal: AbortSignal.timeout(10_000),
     });
-    console.log('[ENDDATE RAW]', { formDataId, status: res.status });
     if (!res.ok) return null;
     const data = await res.json();
-    console.log('[ENDDATE]', JSON.stringify({ id: formDataId, status: res.status, keys: Object.keys(data || {}), a: data?.result?.filledFormInfo?.endDate, b: data?.filledFormInfo?.endDate, c: data?.result?.endDate, d: data?.endDate }));
     const rawEnd: string | undefined =
       data?.result?.filledFormInfo?.endDate ??
       data?.filledFormInfo?.endDate          ??
@@ -323,7 +320,6 @@ export async function GET(request: NextRequest) {
   }
 
   const endDateMap = new Map<string, string>(); // formDataId → YYYY-MM-DD Sydney
-  console.log('[FETCH CHECK]', JSON.stringify({ allFormsCount: allForms.length, sampleFormDataId: (allForms[0] as any)?.formDataId, sampleFormDataIdAlt: (allForms[0] as any)?.FormDataId, sampleId: (allForms[0] as any)?.id, sampleKeys: allForms[0] ? Object.keys(allForms[0]) : [], formDataIdsSize: formDataIdsToFetch.size }));
   if (formDataIdsToFetch.size > 0) {
     const detailResults = await Promise.all(
       Array.from(formDataIdsToFetch).map(async id => ({
@@ -534,6 +530,8 @@ export async function GET(request: NextRequest) {
   const sunday = new Date(monday);
   sunday.setUTCDate(monday.getUTCDate() + 6);
 
+  const samplePrestart = allForms.find(r => isPrestartForm(r.formName ?? ""));
+
   return NextResponse.json({
     weekStart:  getSydneyDateString(monday.toISOString()),
     weekEnd:    getSydneyDateString(sunday.toISOString()),
@@ -541,5 +539,19 @@ export async function GET(request: NextRequest) {
     source:     "breadcrumb_api",
     sites,
     errors:     errors.length > 0 ? errors : undefined,
+    _diagnostic: {
+      allFormsCount:       allForms.length,
+      prestartForms:       allForms.filter(r => isPrestartForm(r.formName ?? "")).length,
+      toolboxForms:        allForms.filter(r => isToolboxForm(r.formName ?? "")).length,
+      formDataIdsToFetch:  formDataIdsToFetch.size,
+      sampleForm: samplePrestart ? {
+        keys:       Object.keys(samplePrestart),
+        formDataId: (samplePrestart as Record<string, unknown>).formDataId,
+        FormDataId: (samplePrestart as Record<string, unknown>).FormDataId,
+        id:         (samplePrestart as Record<string, unknown>).id,
+        fillDate:   samplePrestart.fillDate,
+        formName:   samplePrestart.formName,
+      } : null,
+    },
   });
 }
