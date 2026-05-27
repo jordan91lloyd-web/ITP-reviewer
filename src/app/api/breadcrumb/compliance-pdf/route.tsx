@@ -1,5 +1,6 @@
 // ─── GET /api/breadcrumb/compliance-pdf ───────────────────────────────────────
-// Reads from site_compliance_snapshots and streams a landscape A4 PDF.
+// Fetches live compliance data and streams a landscape A4 PDF.
+// Data source: /api/breadcrumb/compliance-data (live Breadcrumb fetch).
 //
 // Query params:
 //   company_id   (required)
@@ -8,7 +9,6 @@
 // Returns application/pdf with Content-Disposition: attachment
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import React from "react";
 import {
   renderToBuffer,
@@ -19,18 +19,17 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
-export const dynamic = "force-dynamic";
+export const dynamic     = "force-dynamic";
+export const maxDuration = 60;
 
 // ── Brand colours ──────────────────────────────────────────────────────────────
 const C = {
   navy:    "#1B2A3B",
   gold:    "#C8972A",
-  cream:   "#F8F5F0",
   white:   "#FFFFFF",
   green:   "#16A34A",
   amber:   "#D97706",
   red:     "#DC2626",
-  blue:    "#2563EB",
   border:  "#E5E7EB",
   grey:    "#9CA3AF",
   text:    "#111827",
@@ -40,23 +39,22 @@ const C = {
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  // Page — no padding; header is full-width navy band
   page: {
-    backgroundColor: C.cream,
+    backgroundColor: C.white,
     paddingBottom:   50,
     fontFamily:      "Helvetica",
     fontSize:        8,
   },
 
-  // ── Header (full-width navy background) ───────────────────────────────────
+  // ── Header (full-width navy band) ──────────────────────────────────────────
   header: {
-    backgroundColor:  C.navy,
-    flexDirection:    "row",
-    justifyContent:   "space-between",
-    alignItems:       "flex-start",
-    paddingVertical:  14,
+    backgroundColor:   C.navy,
+    flexDirection:     "row",
+    justifyContent:    "space-between",
+    alignItems:        "flex-start",
+    paddingVertical:   14,
     paddingHorizontal: 30,
-    marginBottom:     14,
+    marginBottom:      14,
   },
   headerLeft: {
     flexDirection: "column",
@@ -68,7 +66,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   brandTagline: {
-    fontSize:  8,
+    fontSize:  9,
     color:     C.white,
     marginTop: 3,
   },
@@ -76,17 +74,17 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   reportTitle: {
-    fontSize:   12,
+    fontSize:   14,
     fontFamily: "Helvetica-Bold",
     color:      C.white,
   },
   reportWeek: {
-    fontSize:  9,
+    fontSize:  10,
     color:     C.gold,
     marginTop: 3,
   },
   reportGenerated: {
-    fontSize:  7,
+    fontSize:  8,
     color:     C.white,
     marginTop: 3,
     opacity:   0.7,
@@ -97,16 +95,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
 
-  // ── Summary strip ──────────────────────────────────────────────────────────
+  // ── Summary strip — white bg, gold bottom border ──────────────────────────
   summaryStrip: {
     flexDirection:    "row",
-    backgroundColor:  C.cream,
-    borderLeft:       3,
+    backgroundColor:  C.white,
+    borderBottom:     2,
     borderColor:      C.gold,
-    borderRadius:     3,
-    paddingVertical:  10,
+    paddingVertical:  12,
     paddingHorizontal: 14,
-    marginBottom:     14,
+    marginBottom:     16,
     gap:              0,
   },
   summaryItem: {
@@ -119,86 +116,93 @@ const styles = StyleSheet.create({
     marginVertical:  2,
   },
   summaryValue: {
-    fontSize:   16,
+    fontSize:   24,
     fontFamily: "Helvetica-Bold",
     color:      C.text,
   },
   summaryValueRed: {
-    fontSize:   16,
+    fontSize:   24,
     fontFamily: "Helvetica-Bold",
     color:      C.red,
   },
   summaryValueGreen: {
-    fontSize:   16,
+    fontSize:   24,
     fontFamily: "Helvetica-Bold",
     color:      C.green,
   },
   summaryLabel: {
-    fontSize:  6.5,
-    color:     C.subText,
-    marginTop: 2,
-    textAlign: "center",
+    fontSize:      8,
+    color:         C.subText,
+    marginTop:     2,
+    textAlign:     "center",
     textTransform: "uppercase",
   },
 
   // ── Table ──────────────────────────────────────────────────────────────────
   table: {
-    width:       "100%",
+    width:        "100%",
     borderRadius: 4,
-    overflow:    "hidden",
-    border:      1,
-    borderColor: C.border,
+    overflow:     "hidden",
+    border:       1,
+    borderColor:  C.border,
   },
   thead: {
-    flexDirection:    "row",
-    backgroundColor:  C.navy,
-    paddingVertical:  6,
+    flexDirection:     "row",
+    backgroundColor:   C.navy,
+    paddingVertical:   6,
     paddingHorizontal: 8,
-    alignItems:       "center",
+    alignItems:        "center",
   },
   trow: {
-    flexDirection:    "row",
-    paddingVertical:  5,
+    flexDirection:     "row",
+    paddingVertical:   5,
     paddingHorizontal: 8,
-    borderBottom:     1,
-    borderColor:      C.border,
-    alignItems:       "center",
+    borderBottom:      1,
+    borderColor:       C.border,
+    alignItems:        "center",
   },
   trowAlt: {
     backgroundColor: C.rowAlt,
   },
 
-  // Column widths
-  colSite:       { width: "20%", paddingRight: 4 },
+  // Column widths — no Quality column
+  colSite:       { width: "24%", paddingRight: 4 },
   colDay:        { width: "4%",  alignItems: "center" },
-  colToolbox:    { width: "7%",  alignItems: "center" },
-  colQuality:    { width: "9%",  alignItems: "center" },
-  colInductions: { width: "9%",  alignItems: "center" },
-  colDocs:       { width: "9%",  alignItems: "center" },
-  colStatus:     { width: "10%", alignItems: "center" },
+  colToolbox:    { width: "10%", alignItems: "center" },
+  colInductions: { width: "15%", alignItems: "center" },
+  colDocs:       { width: "15%", alignItems: "center" },
+  colStatus:     { width: "16%", alignItems: "center" },
 
   // Text
   thText: {
-    color:      C.white,
-    fontFamily: "Helvetica-Bold",
-    fontSize:   6.5,
+    color:         C.white,
+    fontFamily:    "Helvetica-Bold",
+    fontSize:      6.5,
+    textTransform: "uppercase",
+    textAlign:     "center",
+  },
+  thTextLeft: {
+    color:         C.white,
+    fontFamily:    "Helvetica-Bold",
+    fontSize:      6.5,
     textTransform: "uppercase",
   },
   tdSiteName: {
-    fontSize:   7.5,
+    fontSize:   8,
     fontFamily: "Helvetica-Bold",
     color:      C.text,
   },
-  tdSubText: {
-    fontSize:  6,
-    color:     C.subText,
-    marginTop: 1,
+  tdGamingFlag: {
+    fontSize:   7,
+    color:      C.amber,
+    fontFamily: "Helvetica-Bold",
+    marginTop:  2,
   },
 
-  // Day cells — solid background, white text
+  // Day cells — solid fill, white text
   dayCell: {
     borderRadius:      2,
-    paddingVertical:   2,
+    paddingVertical:   3,
     paddingHorizontal: 4,
     fontSize:          7,
     fontFamily:        "Helvetica-Bold",
@@ -211,7 +215,7 @@ const styles = StyleSheet.create({
   dayCellRed:   { backgroundColor: C.red    },
   dayCellGrey:  { backgroundColor: C.grey   },
 
-  // Pill chips (toolbox, quality, status)
+  // Pills
   pill: {
     borderRadius:      2,
     paddingVertical:   2,
@@ -223,21 +227,24 @@ const styles = StyleSheet.create({
   pillGreen: { backgroundColor: "#DCFCE7", color: C.green  },
   pillAmber: { backgroundColor: "#FEF3C7", color: C.amber  },
   pillRed:   { backgroundColor: "#FEE2E2", color: C.red    },
-  pillBlue:  { backgroundColor: "#DBEAFE", color: C.blue   },
-  pillGrey:  { backgroundColor: "#F3F4F6", color: C.subText },
+
+  // Status pills — solid for prominence
+  pillStatusGreen: { backgroundColor: C.green, color: C.white },
+  pillStatusAmber: { backgroundColor: C.amber, color: C.white },
+  pillStatusRed:   { backgroundColor: C.red,   color: C.white },
 
   // ── Footer ─────────────────────────────────────────────────────────────────
   footer: {
-    position:         "absolute",
-    bottom:           16,
-    left:             30,
-    right:            30,
-    flexDirection:    "row",
-    justifyContent:   "space-between",
-    alignItems:       "center",
-    borderTop:        1,
-    borderColor:      C.gold,
-    paddingTop:       5,
+    position:       "absolute",
+    bottom:         16,
+    left:           30,
+    right:          30,
+    flexDirection:  "row",
+    justifyContent: "space-between",
+    alignItems:     "center",
+    borderTop:      1,
+    borderColor:    C.gold,
+    paddingTop:     5,
   },
   footerText: {
     fontSize: 6.5,
@@ -253,25 +260,15 @@ const styles = StyleSheet.create({
 
 type DayStatus = "green" | "amber" | "red" | "future";
 
-interface SnapshotRow {
-  site_reference:           string;
-  site_name:                string;
-  prestart_mon:             boolean;
-  prestart_tue:             boolean;
-  prestart_wed:             boolean;
-  prestart_thu:             boolean;
-  prestart_fri:             boolean;
-  prestart_count:           number;
-  toolbox_active:           boolean;
-  toolbox_submission_dates: string[] | null;
-  pending_inductions:       number;
-  pending_docs:             number;
-  generated_at:             string;
-  // New columns (nullable for old snapshots before migration)
-  gaming_flagged?:        boolean | null;
-  prestart_day_statuses?: Record<string, DayStatus> | null;
-  toolbox_status?:        string | null;
-  quality_rating?:        string | null;
+interface SiteData {
+  siteReference:     string;
+  siteName:          string;
+  dailyPrestarts:    { count: number; days: string[] };
+  prestartDayStatus: Record<string, DayStatus> | null;
+  gamingFlagged:     boolean;
+  toolboxStatus:     "green" | "amber" | "red";
+  pendingInductions: { count: number };
+  pendingDocs:       { count: number };
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -297,32 +294,30 @@ function getWeekdays(mondayStr: string): string[] {
   return days;
 }
 
-function rowStatus(row: SnapshotRow, checkableDays: number): "On Track" | "Attention" | "Action Needed" {
-  const prestartOk = checkableDays === 0 || row.prestart_count >= checkableDays;
-  const tbStatus   = row.toolbox_status ?? (row.toolbox_active ? "green" : "red");
-  const tbOk       = tbStatus !== "red";
-  const pendingOk  = row.pending_inductions === 0 && row.pending_docs === 0;
-
+function rowStatus(site: SiteData, checkableDays: number): "On Track" | "Attention" | "Action Needed" {
+  const prestartOk = checkableDays === 0 || site.dailyPrestarts.count >= checkableDays;
+  const tbOk       = site.toolboxStatus !== "red";
+  const pendingOk  = site.pendingInductions.count === 0 && site.pendingDocs.count === 0;
   if (prestartOk && tbOk && pendingOk) return "On Track";
-  if (!prestartOk || tbStatus === "red")  return "Action Needed";
+  if (!prestartOk || site.toolboxStatus === "red") return "Action Needed";
   return "Attention";
 }
 
 // ── PDF document ───────────────────────────────────────────────────────────────
 
 function CompliancePDF({
-  rows,
+  sites,
   weekStart,
   todayStr,
 }: {
-  rows:      SnapshotRow[];
+  sites:     SiteData[];
   weekStart: string;   // YYYY-MM-DD Monday
   todayStr:  string;   // YYYY-MM-DD today in Sydney
 }) {
-  const weekdays     = getWeekdays(weekStart);
-  const [y, m, d]    = weekStart.split("-").map(Number);
-  const fridayDate   = new Date(Date.UTC(y, m - 1, d + 4));
-  const fridayStr    = fridayDate.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
+  const weekdays      = getWeekdays(weekStart);
+  const [y, m, d]     = weekStart.split("-").map(Number);
+  const fridayDate    = new Date(Date.UTC(y, m - 1, d + 4));
+  const fridayStr     = fridayDate.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
   const checkableDays = weekdays.filter(wd => wd <= todayStr).length;
 
   const generatedAt = new Date().toLocaleString("en-AU", {
@@ -331,9 +326,9 @@ function CompliancePDF({
   });
 
   // Summary stats
-  const actionCount  = rows.filter(r => rowStatus(r, checkableDays) === "Action Needed").length;
-  const onTrackCount = rows.filter(r => rowStatus(r, checkableDays) === "On Track").length;
-  const totalPending = rows.reduce((s, r) => s + r.pending_inductions + r.pending_docs, 0);
+  const actionCount  = sites.filter(s => rowStatus(s, checkableDays) === "Action Needed").length;
+  const onTrackCount = sites.filter(s => rowStatus(s, checkableDays) === "On Track").length;
+  const totalPending = sites.reduce((sum, s) => sum + s.pendingInductions.count + s.pendingDocs.count, 0);
 
   return (
     <Document>
@@ -348,7 +343,7 @@ function CompliancePDF({
           <View style={styles.headerRight}>
             <Text style={styles.reportTitle}>Site Compliance Report</Text>
             <Text style={styles.reportWeek}>
-              Week of {fmtDate(weekStart)} – {fmtDate(fridayStr)}
+              {fmtDate(weekStart)} – {fmtDate(fridayStr)}
             </Text>
             <Text style={styles.reportGenerated}>Generated {generatedAt} AEST</Text>
           </View>
@@ -356,10 +351,10 @@ function CompliancePDF({
 
         <View style={styles.body}>
 
-          {/* ── Summary strip — cream bg, gold left border ── */}
+          {/* ── Summary strip — white, gold bottom border ── */}
           <View style={styles.summaryStrip}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{rows.length}</Text>
+              <Text style={styles.summaryValue}>{sites.length}</Text>
               <Text style={styles.summaryLabel}>Sites Tracked</Text>
             </View>
             <View style={styles.summaryDivider} />
@@ -385,7 +380,7 @@ function CompliancePDF({
             {/* Table header */}
             <View style={styles.thead}>
               <View style={styles.colSite}>
-                <Text style={styles.thText}>Site</Text>
+                <Text style={styles.thTextLeft}>Site</Text>
               </View>
               {weekdays.map(wd => (
                 <View key={wd} style={styles.colDay}>
@@ -397,14 +392,11 @@ function CompliancePDF({
               <View style={styles.colToolbox}>
                 <Text style={styles.thText}>Toolbox</Text>
               </View>
-              <View style={styles.colQuality}>
-                <Text style={styles.thText}>Quality</Text>
-              </View>
               <View style={styles.colInductions}>
-                <Text style={styles.thText}>Inductions</Text>
+                <Text style={styles.thText}>Pending</Text>
               </View>
               <View style={styles.colDocs}>
-                <Text style={styles.thText}>SWMS/Docs</Text>
+                <Text style={styles.thText}>Docs</Text>
               </View>
               <View style={styles.colStatus}>
                 <Text style={styles.thText}>Status</Text>
@@ -412,32 +404,29 @@ function CompliancePDF({
             </View>
 
             {/* Table rows */}
-            {rows.map((row, idx) => {
-              const dayStatuses = row.prestart_day_statuses ?? null;
-              const bools       = [row.prestart_mon, row.prestart_tue, row.prestart_wed, row.prestart_thu, row.prestart_fri];
-              const status      = rowStatus(row, checkableDays);
+            {sites.map((site, idx) => {
+              const dayStatuses = site.prestartDayStatus ?? null;
+              const coveredDays = site.dailyPrestarts.days;
+              const status      = rowStatus(site, checkableDays);
               const isAlt       = idx % 2 === 1;
-              const tbStatus    = row.toolbox_status ?? (row.toolbox_active ? "green" : "red");
 
               return (
-                <View key={row.site_reference} style={[styles.trow, ...(isAlt ? [styles.trowAlt] : [])]}>
+                <View key={site.siteReference} style={[styles.trow, ...(isAlt ? [styles.trowAlt] : [])]}>
 
                   {/* Site name + gaming flag */}
                   <View style={styles.colSite}>
-                    <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 3 }}>
-                      <Text style={styles.tdSiteName}>{row.site_name}</Text>
-                      {row.gaming_flagged && (
-                        <Text style={{ fontSize: 7, color: C.amber, fontFamily: "Helvetica-Bold" }}>⚠</Text>
-                      )}
-                    </View>
+                    <Text style={styles.tdSiteName}>{site.siteName}</Text>
+                    {site.gamingFlagged && (
+                      <Text style={styles.tdGamingFlag}>⚠ Long validity</Text>
+                    )}
                   </View>
 
-                  {/* Day cells — use prestartDayStatus if available, else booleans */}
+                  {/* Day cells — use prestartDayStatus if available, else days array */}
                   {weekdays.map((wd, i) => {
                     const ds: DayStatus =
-                      dayStatuses ? (dayStatuses[wd] ?? "red") :
-                      wd > todayStr    ? "future"              :
-                      bools[i]         ? "green"               : "red";
+                      dayStatuses    ? (dayStatuses[wd] ?? "red") :
+                      wd > todayStr  ? "future"                   :
+                      coveredDays.includes(wd) ? "green"          : "red";
 
                     const cellStyle =
                       ds === "green"  ? styles.dayCellGreen :
@@ -459,46 +448,31 @@ function CompliancePDF({
                   <View style={styles.colToolbox}>
                     <Text style={[
                       styles.pill,
-                      tbStatus === "green" ? styles.pillGreen :
-                      tbStatus === "amber" ? styles.pillAmber : styles.pillRed,
+                      site.toolboxStatus === "green" ? styles.pillGreen :
+                      site.toolboxStatus === "amber" ? styles.pillAmber : styles.pillRed,
                     ]}>
-                      {tbStatus === "green" ? "Done" : tbStatus === "amber" ? "Long val." : "Missing"}
+                      {site.toolboxStatus === "green" ? "Done" :
+                       site.toolboxStatus === "amber" ? "Long val." : "Missing"}
                     </Text>
                   </View>
 
-                  {/* Quality */}
-                  <View style={styles.colQuality}>
-                    {row.quality_rating ? (
-                      <Text style={[
-                        styles.pill,
-                        row.quality_rating === "Detailed"   ? styles.pillGreen :
-                        row.quality_rating === "Adequate"   ? styles.pillBlue  :
-                        row.quality_rating === "Minimal"    ? styles.pillAmber : styles.pillRed,
-                      ]}>
-                        {row.quality_rating}
-                      </Text>
-                    ) : (
-                      <Text style={[styles.pill, styles.pillGrey]}>—</Text>
-                    )}
-                  </View>
-
-                  {/* Inductions */}
+                  {/* Pending Inductions */}
                   <View style={styles.colInductions}>
                     <Text style={[
                       styles.pill,
-                      row.pending_inductions === 0 ? styles.pillGreen : styles.pillAmber,
+                      site.pendingInductions.count === 0 ? styles.pillGreen : styles.pillAmber,
                     ]}>
-                      {row.pending_inductions === 0 ? "Clear" : `${row.pending_inductions}`}
+                      {site.pendingInductions.count === 0 ? "Clear" : `${site.pendingInductions.count}`}
                     </Text>
                   </View>
 
-                  {/* Docs */}
+                  {/* Pending Docs */}
                   <View style={styles.colDocs}>
                     <Text style={[
                       styles.pill,
-                      row.pending_docs === 0 ? styles.pillGreen : styles.pillAmber,
+                      site.pendingDocs.count === 0 ? styles.pillGreen : styles.pillAmber,
                     ]}>
-                      {row.pending_docs === 0 ? "Clear" : `${row.pending_docs}`}
+                      {site.pendingDocs.count === 0 ? "Clear" : `${site.pendingDocs.count}`}
                     </Text>
                   </View>
 
@@ -506,8 +480,8 @@ function CompliancePDF({
                   <View style={styles.colStatus}>
                     <Text style={[
                       styles.pill,
-                      status === "On Track"      ? styles.pillGreen :
-                      status === "Attention"     ? styles.pillAmber : styles.pillRed,
+                      status === "On Track"      ? styles.pillStatusGreen :
+                      status === "Attention"     ? styles.pillStatusAmber : styles.pillStatusRed,
                     ]}>
                       {status}
                     </Text>
@@ -523,7 +497,7 @@ function CompliancePDF({
         {/* ── Footer — gold top border ── */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Generated {generatedAt} · Holdpoint ITP Platform
+            Holdpoint · Site Compliance
           </Text>
           <Text
             style={styles.footerPage}
@@ -548,25 +522,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id and week_start are required" }, { status: 400 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  // Fetch live compliance data from the compliance-data endpoint
+  const origin  = request.nextUrl.origin;
+  const dataRes = await fetch(
+    `${origin}/api/breadcrumb/compliance-data?company_id=${encodeURIComponent(companyId)}&week_start=${encodeURIComponent(weekStart)}`
   );
 
-  const { data: rows, error } = await supabase
-    .from("site_compliance_snapshots")
-    .select("*")
-    .eq("company_id", companyId)
-    .eq("week_start", weekStart)
-    .order("site_name");
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!dataRes.ok) {
+    return NextResponse.json({ error: "Failed to fetch compliance data" }, { status: 502 });
   }
 
-  if (!rows || rows.length === 0) {
+  const data  = await dataRes.json();
+  const sites = (data.sites ?? []) as SiteData[];
+
+  if (sites.length === 0) {
     return NextResponse.json(
-      { error: "No snapshot found for this week. Generate the report first." },
+      { error: "No site data available for this week." },
       { status: 404 },
     );
   }
@@ -577,7 +548,7 @@ export async function GET(request: NextRequest) {
   try {
     buffer = await renderToBuffer(
       <CompliancePDF
-        rows={rows as SnapshotRow[]}
+        sites={sites}
         weekStart={weekStart}
         todayStr={todayStr}
       />

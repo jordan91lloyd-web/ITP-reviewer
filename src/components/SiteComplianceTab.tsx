@@ -39,7 +39,6 @@ interface SiteDiaryResult {
 type TrafficLight = "green" | "amber" | "red" | "gray";
 type DayStatus    = "green" | "amber" | "red" | "future";
 type ToolboxStatus = "green" | "amber" | "red";
-type QualityRating = "Detailed" | "Adequate" | "Minimal" | "No content";
 
 interface SiteRow {
   site: string;
@@ -58,9 +57,6 @@ interface SiteRow {
   oldestPendingDate: string | null;
   siteDiary: SiteDiaryResult | null;
   diaryLoading: boolean;
-  qualityRating: QualityRating | null;
-  qualityScore: number | null;
-  qualitySummary: string | null;
 }
 
 interface ReportHistoryItem {
@@ -114,9 +110,6 @@ interface ApiSiteData {
   toolboxStatus: ToolboxStatus;
   pendingInductions: { count: number; items: ApiInductionItem[] };
   pendingDocs: { count: number; items: ApiDocItem[] };
-  qualityRating: QualityRating | null;
-  qualityScore: number | null;
-  qualitySummary: string | null;
 }
 
 // ── Week helpers ───────────────────────────────────────────────────────────────
@@ -359,20 +352,6 @@ function PrestartDayGrid({
   );
 }
 
-// ── Quality pill ───────────────────────────────────────────────────────────────
-
-function QualityPill({ rating }: { rating: QualityRating | null }) {
-  if (!rating) return <Pill light="gray">—</Pill>;
-  const map: Record<QualityRating, { light: TrafficLight; label: string }> = {
-    "Detailed":   { light: "green", label: "Detailed"   },
-    "Adequate":   { light: "amber", label: "Adequate"   },
-    "Minimal":    { light: "red",   label: "Minimal"    },
-    "No content": { light: "red",   label: "No content" },
-  };
-  const { light, label } = map[rating];
-  return <Pill light={light}>{label}</Pill>;
-}
-
 // ── Main component ─────────────────────────────────────────────────────────────
 
 interface Props {
@@ -485,9 +464,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           oldestPendingDate,
           siteDiary:     null,
           diaryLoading:  true,
-          qualityRating: (s.qualityRating as QualityRating | null) ?? null,
-          qualityScore:  s.qualityScore  ?? null,
-          qualitySummary: s.qualitySummary ?? null,
         };
       });
 
@@ -545,11 +521,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           toolboxDone:       tbDone,
           toolboxStatus:     (tbDone ? "green" : "red") as ToolboxStatus,
           ...calcApprovalKPIs(approvals ?? [], site),
-          siteDiary:     null,
-          diaryLoading:  true,
-          qualityRating:  null,
-          qualityScore:   null,
-          qualitySummary: null,
+          siteDiary:    null,
+          diaryLoading: true,
         };
       });
     },
@@ -740,11 +713,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                 gamingFlagged:     r.gamingFlagged     ?? false,
                 longestValidityDays: r.longestValidityDays ?? 0,
                 toolboxStatus:     r.toolboxStatus ?? (r.toolboxDone ? "green" : "red"),
-                qualityRating:     r.qualityRating  ?? null,
-                qualityScore:      r.qualityScore   ?? null,
-                qualitySummary:    r.qualitySummary ?? null,
-                siteDiary:     null,
-                diaryLoading:  true,
+                siteDiary:    null,
+                diaryLoading: true,
               }));
               setSiteRows(restored);
               void loadSiteDiaries(effectiveMonday);
@@ -881,11 +851,8 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             gamingFlagged:     r.gamingFlagged     ?? false,
             longestValidityDays: r.longestValidityDays ?? 0,
             toolboxStatus:     r.toolboxStatus ?? (r.toolboxDone ? "green" : "red"),
-            qualityRating:     r.qualityRating  ?? null,
-            qualityScore:      r.qualityScore   ?? null,
-            qualitySummary:    r.qualitySummary ?? null,
-            siteDiary:     null,
-            diaryLoading:  true,
+            siteDiary:    null,
+            diaryLoading: true,
           }));
           setSiteRows(restored);
           const reportMonday = report.report_week_start
@@ -1400,7 +1367,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400 w-44">Site</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Daily Prestart</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Toolbox Talk</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Quality</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending Inductions</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending SWMS/Docs</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Site Diaries</th>
@@ -1473,12 +1439,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                           )}
                         </td>
 
-                        {/* Quality — from Claude scoring of prestart content */}
-                        <td className="px-4 py-3">
-                          <span title={row.qualitySummary ?? undefined}>
-                            <QualityPill rating={row.qualityRating} />
-                          </span>
-                        </td>
                         <td className="px-4 py-3">
                           <Pill light={indLight}>
                             {row.pendingInductions === 0 ? "Clear" : `${row.pendingInductions} pending`}
@@ -1513,7 +1473,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                       {/* ── Expanded detail row ── */}
                       {isExpanded && (
                         <tr key={`${row.site}-detail`}>
-                          <td colSpan={9} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                          <td colSpan={8} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
                               {row.pendingInductionDetails.length > 0 && (
