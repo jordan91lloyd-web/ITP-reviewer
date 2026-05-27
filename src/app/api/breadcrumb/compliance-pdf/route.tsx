@@ -135,14 +135,13 @@ const S = StyleSheet.create({
     backgroundColor: C.rowAlt,
   },
 
-  // Column widths — 7 cols, total 100%; landscape A4 ~740pt usable
-  colSite:   { width: "35%", paddingRight: 8 },
-  colPre:    { width: "13%", alignItems: "center" },
-  colTb:     { width: "12%", alignItems: "center" },
-  colInd:    { width: "11%", alignItems: "center" },
-  colDocs:   { width: "10%", alignItems: "center" },
-  colPhotos: { width: "10%", alignItems: "center" },
-  colStat:   { width: "9%",  alignItems: "flex-end" },
+  // Column widths — 6 cols, total 100%; landscape A4 ~740pt usable
+  colSite: { width: "38%", paddingRight: 8 },
+  colPre:  { width: "14%", alignItems: "center" },
+  colTb:   { width: "13%", alignItems: "center" },
+  colInd:  { width: "12%", alignItems: "center" },
+  colDocs: { width: "11%", alignItems: "center" },
+  colStat: { width: "12%", alignItems: "flex-end" },
 
   // Table header labels
   th: {
@@ -179,12 +178,6 @@ const S = StyleSheet.create({
   cntGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
   cntAmber: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
 
-  // Photos (7d)
-  photoGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
-  photoAmber: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
-  photoRed:   { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "center" },
-  photoDash:  { fontSize: 8, color: C.label, textAlign: "center" },
-
   // Status
   statusGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "right" },
   statusAmber: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "right" },
@@ -213,7 +206,6 @@ type DayStatus = "green" | "amber" | "red" | "future";
 interface SiteData {
   siteReference:     string;
   siteName:          string;
-  procoreProjectId:  string | null;
   dailyPrestarts:    { count: number; days: string[] };
   prestartDayStatus: Record<string, DayStatus> | null;
   gamingFlagged:     boolean;
@@ -221,7 +213,6 @@ interface SiteData {
   toolboxStatus:     "green" | "amber" | "red";
   pendingInductions: { count: number };
   pendingDocs:       { count: number };
-  photoCount7d:      number | null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -341,7 +332,6 @@ function CompliancePDF({
             <View style={S.colTb}><Text style={S.th}>Toolbox</Text></View>
             <View style={S.colInd}><Text style={S.th}>Inductions</Text></View>
             <View style={S.colDocs}><Text style={S.th}>Docs</Text></View>
-            <View style={S.colPhotos}><Text style={S.th}>Photos</Text></View>
             <View style={S.colStat}><Text style={S.th}>Status</Text></View>
           </View>
 
@@ -411,18 +401,6 @@ function CompliancePDF({
                   </Text>
                 </View>
 
-                {/* Photos (7d) */}
-                <View style={S.colPhotos}>
-                  {(() => {
-                    const cnt = site.photoCount7d;
-                    if (cnt === null)  return <Text style={S.photoDash}>—</Text>;
-                    if (cnt >= 50)    return <Text style={S.photoGreen}>{String(cnt)}</Text>;
-                    if (cnt >= 10)    return <Text style={S.photoAmber}>{String(cnt)}</Text>;
-                    if (cnt > 0)      return <Text style={S.photoRed}>{String(cnt)}</Text>;
-                    return <Text style={S.photoRed}>None</Text>;
-                  })()}
-                </View>
-
                 {/* Status */}
                 <View style={S.colStat}>
                   <Text style={
@@ -473,39 +451,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch compliance data" }, { status: 502 });
   }
 
-  const data     = await dataRes.json();
-  type RawSite   = Omit<SiteData, "photoCount7d">;
-  const rawSites = (data.sites ?? []) as RawSite[];
+  const data  = await dataRes.json();
+  const sites = (data.sites ?? []) as SiteData[];
 
-  if (rawSites.length === 0) {
+  if (sites.length === 0) {
     return NextResponse.json({ error: "No site data available for this week." }, { status: 404 });
   }
-
-  // Fetch photo counts for mapped projects (forward auth cookie)
-  const mappedIds = rawSites
-    .map(s => s.procoreProjectId)
-    .filter((id): id is string => !!id);
-
-  let photoCounts: Record<string, number> = {};
-  if (mappedIds.length > 0) {
-    try {
-      const photoRes = await fetch(
-        `${origin}/api/breadcrumb/photo-counts?company_id=${encodeURIComponent(companyId)}&project_ids=${mappedIds.join(",")}`,
-        { headers: { cookie: request.headers.get("cookie") ?? "" } }
-      );
-      if (photoRes.ok) {
-        const pd = await photoRes.json();
-        photoCounts = pd.counts ?? {};
-      }
-    } catch {
-      // non-critical — PDF renders without photo counts
-    }
-  }
-
-  const sites: SiteData[] = rawSites.map(s => ({
-    ...s,
-    photoCount7d: s.procoreProjectId ? (photoCounts[s.procoreProjectId] ?? null) : null,
-  }));
 
   const todayStr = getSydneyDateString(new Date().toISOString());
 

@@ -403,9 +403,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const mappingSectionRef = useRef<HTMLDivElement>(null);
   const [mappingOpen, setMappingOpen] = useState(false);
 
-  // ── Photo counts (7d) ─────────────────────────────────────────────────────
-  const [photoCounts, setPhotoCounts]     = useState<Record<string, number>>({});
-  const [photosLoading, setPhotosLoading] = useState(false);
 
   // ── Compute weekdays for selected week (used in day grid render) ──────────
   const weekdays = useMemo(() => {
@@ -571,33 +568,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     [companyId]
   );
 
-  // ── Fetch photo counts (7 days) ──────────────────────────────────────────────
-
-  const loadPhotoCounts = useCallback(
-    async (rows: SiteRow[]) => {
-      if (!companyId) return;
-      const projectIds = rows
-        .map(r => r.mappedProjectId)
-        .filter((id): id is string => !!id);
-      if (projectIds.length === 0) return;
-
-      setPhotosLoading(true);
-      try {
-        const res = await fetch(
-          `/api/breadcrumb/photo-counts?company_id=${companyId}&project_ids=${projectIds.join(",")}`
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        setPhotoCounts(data.counts ?? {});
-      } catch {
-        // non-critical — table shows "—" on failure
-      } finally {
-        setPhotosLoading(false);
-      }
-    },
-    [companyId]
-  );
-
   // ── Save compliance report ────────────────────────────────────────────────────
 
   const saveComplianceReport = useCallback(
@@ -717,7 +687,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         setSiteRows(rows);
         setLastFetched(new Date());
         void loadSiteDiaries(effectiveMonday);
-        void loadPhotoCounts(rows);
 
         // Auto-save once per week (or always on manual generate)
         if (generate || weekStart !== lastApiSaveRef.current) {
@@ -760,7 +729,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         setIsGenerating(false);
       }
     },
-    [companyId, selectedMonday, projects, buildApiSiteRows, loadSiteDiaries, loadPhotoCounts, saveComplianceReport]
+    [companyId, selectedMonday, projects, buildApiSiteRows, loadSiteDiaries, saveComplianceReport]
   );
 
   // ── On-mount: check API, load mappings, load history ─────────────────────────
@@ -814,8 +783,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     const rows = buildCsvSiteRows(csvBriefings, csvApprovals, mappings, projects);
     setSiteRows(rows);
     void loadSiteDiaries();
-    void loadPhotoCounts(rows);
-  }, [csvBriefings, csvApprovals, mappings, projects, mode, buildCsvSiteRows, loadSiteDiaries, loadPhotoCounts]);
+  }, [csvBriefings, csvApprovals, mappings, projects, mode, buildCsvSiteRows, loadSiteDiaries]);
 
   // ── Auto-save when CSV data is present (CSV mode only) ───────────────────────
 
@@ -1403,7 +1371,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending Inductions</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending SWMS/Docs</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Site Diaries</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Photos (7d)</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Overall</th>
                   <th className="px-4 py-3 w-8" />
                 </tr>
@@ -1421,9 +1388,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                   const project = row.mappedProjectId
                     ? projects.find(p => String(p.id) === row.mappedProjectId) ?? null
                     : null;
-                  const photoCount = row.mappedProjectId !== null
-                    ? photoCounts[row.mappedProjectId]
-                    : undefined;
 
                   return (
                     <>
@@ -1497,25 +1461,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                           )}
                         </td>
 
-                        {/* Photos (7d) */}
-                        <td className="px-4 py-3">
-                          {!row.mappedProjectId ? (
-                            <span className="text-xs text-gray-400">—</span>
-                          ) : photosLoading ? (
-                            <span className="text-xs text-gray-400">…</span>
-                          ) : photoCount === undefined ? (
-                            <span className="text-xs text-gray-400">—</span>
-                          ) : photoCount >= 50 ? (
-                            <span className="text-xs font-semibold text-green-700">{photoCount}</span>
-                          ) : photoCount >= 10 ? (
-                            <span className="text-xs font-semibold text-amber-700">{photoCount}</span>
-                          ) : photoCount > 0 ? (
-                            <span className="text-xs font-semibold text-red-600">{photoCount}</span>
-                          ) : (
-                            <span className="text-xs font-semibold text-red-600">None</span>
-                          )}
-                        </td>
-
                         <td className="px-4 py-3">
                           <Pill light={overall}>
                             {{ green: "On track", amber: "Attention", red: "Action needed", gray: "—" }[overall]}
@@ -1529,7 +1474,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                       {/* ── Expanded detail row ── */}
                       {isExpanded && (
                         <tr key={`${row.site}-detail`}>
-                          <td colSpan={9} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                          <td colSpan={8} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
                               {row.pendingInductionDetails.length > 0 && (
