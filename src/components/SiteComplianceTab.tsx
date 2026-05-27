@@ -2,13 +2,13 @@
 
 // ─── SiteComplianceTab ─────────────────────────────────────────────────────────
 // Weekly traffic-light compliance view across all Fleek projects.
-// When BREADCRUMB_API_KEY is configured, data loads automatically from the
-// Breadcrumb API on mount. Falls back to CSV upload if the key is missing.
+// MODE A (default load): reads from site_compliance_snapshots — fast.
+// MODE B (Refresh / Generate): fetches live from Breadcrumb, stores snapshot.
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   AlertTriangle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  CheckCircle, Clock, RefreshCw,
+  CheckCircle, Clock, RefreshCw, Download, Zap,
 } from "lucide-react";
 import SiteComplianceCsvUpload from "./SiteComplianceCsvUpload";
 
@@ -42,6 +42,7 @@ interface SiteRow {
   site: string;
   mappedProjectId: string | null;
   prestartCount: number;
+  prestartDays: string[];   // YYYY-MM-DD strings of covered days
   toolboxDone: boolean;
   pendingInductions: number;
   pendingDocs: number;
@@ -114,13 +115,6 @@ function getCurrentWeekBounds(): { monday: Date; friday: Date } {
   friday.setDate(monday.getDate() + 4);
   friday.setHours(23, 59, 59, 999);
   return { monday, friday };
-}
-
-function fmtWeekLabel(): string {
-  const { monday, friday } = getCurrentWeekBounds();
-  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
-  const optsYear: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
-  return `Week of ${monday.toLocaleDateString("en-AU", opts)} – ${friday.toLocaleDateString("en-AU", optsYear)}`;
 }
 
 function fmtDateLabel(dateStr: string): string {
@@ -285,6 +279,51 @@ function Spinner({ className = "h-3 w-3" }: { className?: string }) {
   );
 }
 
+// ── Prestart day grid ──────────────────────────────────────────────────────────
+// Shows Mon–Fri as individual green/red/gray cells instead of an X/5 pill.
+
+function PrestartDayGrid({
+  prestartDays,
+  weekdays,
+  todayStr,
+}: {
+  prestartDays: string[];
+  weekdays: string[];
+  todayStr: string;
+}) {
+  const labels = ["M", "T", "W", "T", "F"];
+  return (
+    <div className="flex gap-0.5">
+      {weekdays.map((wd, i) => {
+        const isFuture  = wd > todayStr;
+        const isCovered = prestartDays.includes(wd);
+        let cls: string;
+        let label: string;
+        if (isFuture) {
+          cls   = "bg-gray-100 text-gray-400";
+          label = "—";
+        } else if (isCovered) {
+          cls   = "bg-green-100 text-green-700 font-bold";
+          label = "✓";
+        } else {
+          cls   = "bg-red-100 text-red-600";
+          label = "✗";
+        }
+        return (
+          <div
+            key={wd}
+            title={wd}
+            className={`w-6 h-6 text-[10px] flex flex-col items-center justify-center rounded ${cls}`}
+          >
+            <span className="leading-none">{labels[i]}</span>
+            <span className="leading-none text-[8px]">{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 interface Props {
@@ -298,13 +337,15 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const [mode, setMode] = useState<"checking" | "api" | "csv">("checking");
 
   // ── API mode state
-  const [isLoading, setIsLoading]   = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-  const lastApiSaveRef = useRef<string>("");   // prevents duplicate saves per week
-  const isManualRefreshRef = useRef(false);   // prevents stale Supabase load from overwriting fresh API data
+  const [isLoading, setIsLoading]       = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [snapshotMissing, setSnapshotMissing] = useState(false);
+  const [fetchError, setFetchError]     = useState<string | null>(null);
+  const [lastFetched, setLastFetched]   = useState<Date | null>(null);
+  const lastApiSaveRef    = useRef<string>("");
+  const isManualRefreshRef = useRef(false);
 
-  // ── Selected week (defaults to current Monday; navigation updates this)
+  // ── Selected week
   const [selectedMonday, setSelectedMonday] = useState<Date>(() => getCurrentWeekBounds().monday);
 
   // ── CSV fallback state
@@ -334,6 +375,19 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const mappingSectionRef = useRef<HTMLDivElement>(null);
   const [mappingOpen, setMappingOpen] = useState(false);
 
+  // ── Compute weekdays for selected week (used in day grid render) ──────────
+  const weekdays = useMemo(() => {
+    const days: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(selectedMonday);
+      d.setDate(selectedMonday.getDate() + i);
+      days.push(toDateString(d));
+    }
+    return days;
+  }, [selectedMonday]);
+
+  const todayStr = useMemo(() => toDateString(new Date()), []);
+
   // ── Build SiteRows from API compliance-data response ─────────────────────────
 
   const buildApiSiteRows = useCallback(
@@ -342,7 +396,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       const projectOrder  = new Map(currentProjects.map((p, i) => [String(p.id), i]));
 
       const rows: SiteRow[] = apiSites.map(s => {
-        // Manual DB mapping overrides Breadcrumb's procoreProjectId
         const mappedProjectId = mapBySiteName.get(s.siteName) ?? s.procoreProjectId ?? null;
 
         const allDates = [
@@ -362,6 +415,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           site:          s.siteName,
           mappedProjectId,
           prestartCount: s.dailyPrestarts.count,
+          prestartDays:  s.dailyPrestarts.days,
           toolboxDone:   s.toolboxTalk.submitted,
           pendingInductions: s.pendingInductions.count,
           pendingDocs:       s.pendingDocs.count,
@@ -381,7 +435,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         };
       });
 
-      // Sort: mapped sites by Procore project order, unmapped alphabetically at bottom
       return rows.sort((a, b) => {
         const oA = a.mappedProjectId ? (projectOrder.get(a.mappedProjectId) ?? Infinity) : Infinity;
         const oB = b.mappedProjectId ? (projectOrder.get(b.mappedProjectId) ?? Infinity) : Infinity;
@@ -426,8 +479,9 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       return sortedSites.map(site => ({
         site,
         mappedProjectId: mapBySite.get(site) ?? null,
-        prestartCount: calcPrestartCount(briefings ?? [], site, monday, friday),
-        toolboxDone:   calcToolboxDone(briefings ?? [], site),
+        prestartCount:   calcPrestartCount(briefings ?? [], site, monday, friday),
+        prestartDays:    [],   // CSV mode — no per-day strings
+        toolboxDone:     calcToolboxDone(briefings ?? [], site),
         ...calcApprovalKPIs(approvals ?? [], site),
         siteDiary:    null,
         diaryLoading: true,
@@ -436,7 +490,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     []
   );
 
-  // ── Fetch site diary data (current partial week, Mon–yesterday, Sydney time) ──
+  // ── Fetch site diary data ─────────────────────────────────────────────────────
 
   const loadSiteDiaries = useCallback(
     async (weekMonday?: Date) => {
@@ -456,7 +510,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           return;
         }
 
-        // Key results by breadcrumb_site_name (lowercase for case-insensitive match)
         const diaryMap = new Map<string, SiteDiaryResult>(
           (data.results ?? []).map((r: SiteDiaryResult) => [r.breadcrumb_site_name.toLowerCase(), r])
         );
@@ -536,7 +589,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         };
         setSavedReportMeta(newMeta);
 
-        // Update siteRows with the freshly-saved data, preserving any diary data already loaded
         setSiteRows(prev => {
           const diaryBySite = new Map(prev.map(r => [r.site, { siteDiary: r.siteDiary, diaryLoading: r.diaryLoading }]));
           return rows.map(r => ({
@@ -560,34 +612,51 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   );
 
   // ── Fetch API compliance data ─────────────────────────────────────────────────
+  // generate=false → MODE A (read snapshot)
+  // generate=true  → MODE B (generate live, store snapshot)
 
   const fetchApiData = useCallback(
-    async (currentMappings: SiteMapping[], weekMonday?: Date) => {
+    async (currentMappings: SiteMapping[], weekMonday?: Date, generate = false) => {
       if (!companyId) return;
       setIsLoading(true);
+      setIsGenerating(generate);
       setFetchError(null);
 
       const effectiveMonday = weekMonday ?? selectedMonday;
       const weekStart = toDateString(effectiveMonday);
+      const generateParam = generate ? "&generate=true" : "";
 
       try {
         const res = await fetch(
-          `/api/breadcrumb/compliance-data?company_id=${companyId}&week_start=${weekStart}`
+          `/api/breadcrumb/compliance-data?company_id=${companyId}&week_start=${weekStart}${generateParam}`
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        const apiSites: ApiSiteData[] = data.sites ?? [];
 
+        // MODE A returned no snapshot — show the Generate button
+        if (data.hasSnapshot === false) {
+          setSnapshotMissing(true);
+          setSiteRows([]);
+          return;
+        }
+
+        setSnapshotMissing(false);
+        const apiSites: ApiSiteData[] = data.sites ?? [];
         const rows = buildApiSiteRows(apiSites, currentMappings, projects);
         setSiteRows(rows);
         setLastFetched(new Date());
         void loadSiteDiaries(effectiveMonday);
 
-        // Auto-save once per week (keyed by week start)
-        if (weekStart !== lastApiSaveRef.current) {
+        // Auto-save once per week (or always on manual generate)
+        if (generate || weekStart !== lastApiSaveRef.current) {
           lastApiSaveRef.current = weekStart;
-          void saveComplianceReport(rows, { briefingsFile: "breadcrumb_api", approvalsFile: null, source: "api", weekMonday: effectiveMonday });
+          void saveComplianceReport(rows, {
+            briefingsFile: "breadcrumb_api",
+            approvalsFile: null,
+            source: "api",
+            weekMonday: effectiveMonday,
+          });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to load compliance data";
@@ -599,17 +668,18 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             const cData = await cached.json();
             if (cData?.report && Array.isArray(cData.report.site_data)) {
               const restored: SiteRow[] = (cData.report.site_data as SiteRow[]).map(r => ({
-                ...r, siteDiary: null, diaryLoading: true,
+                ...r, prestartDays: r.prestartDays ?? [], siteDiary: null, diaryLoading: true,
               }));
               setSiteRows(restored);
               void loadSiteDiaries(effectiveMonday);
             }
           }
         } catch {
-          // ignore — no cached data to restore
+          // ignore
         }
       } finally {
         setIsLoading(false);
+        setIsGenerating(false);
       }
     },
     [companyId, selectedMonday, projects, buildApiSiteRows, loadSiteDiaries, saveComplianceReport]
@@ -620,7 +690,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   useEffect(() => {
     if (!companyId) return;
 
-    // Kick off mappings + mode detection in parallel
     Promise.all([
       fetch(`/api/breadcrumb/sites?company_id=${companyId}`).then(r => r.ok ? r.json() : null),
       fetch(`/api/dashboard/site-mappings?company_id=${companyId}`).then(r => r.ok ? r.json() : null),
@@ -633,16 +702,13 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         return;
       }
 
-      // API is configured
       setMode("api");
-      void fetchApiData(loadedMappings);
+      void fetchApiData(loadedMappings, undefined, false);  // MODE A on mount
     }).catch(() => setMode("csv"));
 
-    // Load saved report meta (for banner) — only on initial mount, not after manual refresh
     fetch(`/api/dashboard/compliance-reports?company_id=${companyId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        // If a manual refresh has already run, don't let this stale fetch overwrite the fresh meta
         if (isManualRefreshRef.current) return;
         if (data?.report) {
           setSavedReportMeta({
@@ -655,7 +721,6 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
       })
       .catch(() => {});
 
-    // Load report history
     fetch(`/api/dashboard/compliance-reports/history?company_id=${companyId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => setReportHistory(data?.history ?? []))
@@ -684,7 +749,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     void saveComplianceReport(siteRows);
   }, [mode, csvBriefings, csvApprovals, siteRows, briefingsFilename, approvalsFilename, saveComplianceReport]);
 
-  // ── Manual refresh (API mode) ─────────────────────────────────────────────────
+  // ── Manual refresh — MODE B ───────────────────────────────────────────────────
 
   const handleRefresh = useCallback(async () => {
     if (!companyId || mode !== "api") return;
@@ -692,10 +757,30 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     const mappingsData = mappingsRes?.ok ? await mappingsRes.json().catch(() => null) : null;
     const currentMappings: SiteMapping[] = mappingsData?.mappings ?? mappings;
     if (mappingsData) setMappings(currentMappings);
-    isManualRefreshRef.current = true;   // prevent stale mount fetch from overwriting fresh data
-    lastApiSaveRef.current = "";         // force re-save on manual refresh
-    void fetchApiData(currentMappings, selectedMonday);
+    isManualRefreshRef.current = true;
+    lastApiSaveRef.current = "";
+    void fetchApiData(currentMappings, selectedMonday, true);  // MODE B
   }, [companyId, mode, mappings, selectedMonday, fetchApiData]);
+
+  // ── Generate report — MODE B (called when no snapshot exists) ────────────────
+
+  const handleGenerate = useCallback(async () => {
+    if (!companyId || mode !== "api") return;
+    isManualRefreshRef.current = true;
+    lastApiSaveRef.current = "";
+    void fetchApiData(mappings, selectedMonday, true);  // MODE B
+  }, [companyId, mode, mappings, selectedMonday, fetchApiData]);
+
+  // ── Download PDF ──────────────────────────────────────────────────────────────
+
+  const handleDownloadPdf = useCallback(() => {
+    if (!companyId) return;
+    const weekStart = toDateString(selectedMonday);
+    const a = document.createElement("a");
+    a.href = `/api/breadcrumb/compliance-pdf?company_id=${companyId}&week_start=${weekStart}`;
+    a.download = `site-compliance-${weekStart}.pdf`;
+    a.click();
+  }, [companyId, selectedMonday]);
 
   // ── Load historical report by ID ──────────────────────────────────────────────
 
@@ -714,7 +799,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
         if (Array.isArray(report.site_data)) {
           const restored: SiteRow[] = (report.site_data as SiteRow[]).map(r => ({
-            ...r, siteDiary: null, diaryLoading: true,
+            ...r, prestartDays: r.prestartDays ?? [], siteDiary: null, diaryLoading: true,
           }));
           setSiteRows(restored);
           const reportMonday = report.report_week_start
@@ -738,7 +823,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
     [companyId]
   );
 
-  // ── CSV handlers (fallback mode) ──────────────────────────────────────────────
+  // ── CSV handlers ──────────────────────────────────────────────────────────────
 
   function handleBriefingsParsed(rows: Record<string, string>[], name: string, uploadTime: Date, rawText: string) {
     setCsvBriefings(rows);
@@ -793,13 +878,15 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
   const handleWeekNav = useCallback((direction: -1 | 1) => {
     const newMonday = addDays(selectedMonday, direction * 7);
     setSelectedMonday(newMonday);
-    void fetchApiData(mappings, newMonday);
+    setSnapshotMissing(false);
+    void fetchApiData(mappings, newMonday, false);  // MODE A for navigation
   }, [selectedMonday, mappings, fetchApiData]);
 
   const handleGoToCurrentWeek = useCallback(() => {
     const monday = getCurrentWeekBounds().monday;
     setSelectedMonday(monday);
-    void fetchApiData(mappings, monday);
+    setSnapshotMissing(false);
+    void fetchApiData(mappings, monday, false);  // MODE A
   }, [mappings, fetchApiData]);
 
   // ── Derived stats ─────────────────────────────────────────────────────────────
@@ -890,20 +977,34 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* ── API mode: refresh button + live badge ── */}
+            {/* ── API mode: action buttons ── */}
             {mode === "api" && (
               <>
                 <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
                   <CheckCircle className="h-3 w-3" />
                   Live via Breadcrumb API
                 </span>
+
+                {/* Download PDF — only when data exists */}
+                {hasData && (
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={isLoading}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="h-3.5 w-3.5 text-gray-400" />
+                    Download PDF
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={handleRefresh}
                   disabled={isLoading}
                   className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
-                  {isLoading
+                  {isLoading && isGenerating
                     ? <Spinner className="h-3 w-3" />
                     : <RefreshCw className="h-3.5 w-3.5 text-gray-400" />}
                   Refresh
@@ -1014,11 +1115,46 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
           </div>
         )}
 
-        {/* ── Loading state ── */}
-        {mode === "api" && isLoading && siteRows.length === 0 && (
+        {/* ── Generating indicator (MODE B in progress) ── */}
+        {mode === "api" && isLoading && isGenerating && siteRows.length === 0 && (
+          <div className="flex items-center justify-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-8 py-16">
+            <Spinner className="h-5 w-5" />
+            <div className="text-center">
+              <p className="text-sm font-semibold text-amber-800">Generating compliance report…</p>
+              <p className="text-xs text-amber-600 mt-1">Fetching live data from Breadcrumb — this takes 15–30 seconds on first run.</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Loading snapshot (MODE A in progress) ── */}
+        {mode === "api" && isLoading && !isGenerating && siteRows.length === 0 && (
           <div className="flex items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-8 py-16">
             <Spinner className="h-5 w-5" />
             <p className="text-sm text-gray-500">Loading compliance data…</p>
+          </div>
+        )}
+
+        {/* ── No snapshot for this week ── */}
+        {mode === "api" && !isLoading && snapshotMissing && (
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white px-8 py-16 text-center">
+            <div className="rounded-full bg-amber-100 p-3">
+              <Zap className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">No report for this week</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Click Generate to fetch live data from Breadcrumb and create a snapshot for this week.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-500 transition-colors disabled:opacity-50"
+            >
+              <Zap className="h-4 w-4" />
+              Generate Report
+            </button>
           </div>
         )}
 
@@ -1040,7 +1176,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         )}
 
         {/* ── Empty state ── */}
-        {!hasData && mode !== "checking" && !(mode === "api" && isLoading) && (
+        {!hasData && !snapshotMissing && mode !== "checking" && !(mode === "api" && isLoading) && (
           <div className="rounded-xl border border-gray-200 bg-white px-8 py-16 text-center">
             {mode === "csv" ? (
               <>
@@ -1073,7 +1209,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             ))}
           </div>
 
-          {/* ── Site → Project mapping (collapsible; editable by admins) ── */}
+          {/* ── Site → Project mapping (collapsible) ── */}
           <div ref={mappingSectionRef} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <button
               type="button"
@@ -1213,7 +1349,27 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                           )}
                         </td>
 
-                        <td className="px-4 py-3"><Pill light={preLight}>{row.prestartCount}/5</Pill></td>
+                        {/* Daily Prestart — day grid */}
+                        <td className="px-4 py-3">
+                          {row.prestartDays.length > 0 || mode === "csv" ? (
+                            mode === "csv" ? (
+                              <Pill light={preLight}>{row.prestartCount}/5</Pill>
+                            ) : (
+                              <PrestartDayGrid
+                                prestartDays={row.prestartDays}
+                                weekdays={weekdays}
+                                todayStr={todayStr}
+                              />
+                            )
+                          ) : (
+                            <PrestartDayGrid
+                              prestartDays={row.prestartDays}
+                              weekdays={weekdays}
+                              todayStr={todayStr}
+                            />
+                          )}
+                        </td>
+
                         <td className="px-4 py-3"><Pill light={tbLight}>{row.toolboxDone ? "Done" : "Missing"}</Pill></td>
                         <td className="px-4 py-3">
                           <Pill light={indLight}>
@@ -1322,7 +1478,10 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                               {row.pendingInductionDetails.length === 0 &&
                                row.pendingDocDetails.length === 0 &&
                                (!row.siteDiary || row.siteDiary.missedDates.length === 0) && (
-                                <p className="text-xs text-gray-400 col-span-full">No detail data available.</p>
+                                <p className="text-xs text-gray-400 col-span-full">
+                                  No detail data available.
+                                  {mode === "api" && <span className="ml-1">Click Refresh to load full details.</span>}
+                                </p>
                               )}
                             </div>
                           </td>
