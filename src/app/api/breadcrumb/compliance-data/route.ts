@@ -86,12 +86,22 @@ function getSydneyMonday(): Date {
   return syd;
 }
 
+function snapToMonday(d: Date): Date {
+  const dow = d.getUTCDay(); // 0=Sun … 6=Sat
+  if (dow === 1) return d;
+  // Sun (+1), Mon (0), Tue (-1), Wed (-2), Thu (-3), Fri (-4), Sat (-5)
+  d.setUTCDate(d.getUTCDate() + (dow === 0 ? 1 : 1 - dow));
+  return d;
+}
+
 function getWeekBounds(param: string | null): { monday: Date; weekdays: string[] } {
   let monday: Date;
   if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
     const [y, m, d] = param.split("-").map(Number);
     const c = new Date(Date.UTC(y, m - 1, d));
-    monday = isNaN(c.getTime()) ? getSydneyMonday() : c;
+    // Snap to Monday — guards against timezone edge cases where the browser
+    // sends the UTC equivalent of Sydney midnight (which lands on Sunday)
+    monday = isNaN(c.getTime()) ? getSydneyMonday() : snapToMonday(c);
   } else {
     monday = getSydneyMonday();
   }

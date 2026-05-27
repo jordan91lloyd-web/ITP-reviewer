@@ -38,31 +38,28 @@ const C = {
   daygrey: "#CCCCCC",
 };
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
+// ── StyleSheet ─────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-
-  // Page
   page: {
     backgroundColor: C.white,
     fontFamily:      "Helvetica",
     fontSize:        8,
-    paddingBottom:   44,
+    paddingBottom:   48,
   },
 
-  // ── Header ─────────────────────────────────────────────────────────────────
+  // Header
   header: {
     backgroundColor:   C.slate,
     flexDirection:     "row",
     justifyContent:    "space-between",
     alignItems:        "center",
-    paddingVertical:   24,
+    paddingVertical:   20,
     paddingHorizontal: 32,
-    marginBottom:      0,
   },
-  hLeft:    { flexDirection: "column" },
-  hRight:   { alignItems: "flex-end" },
+  hLeft:  { flexDirection: "column" },
+  hRight: { alignItems: "flex-end" },
   hBrand: {
-    fontSize:      22,
+    fontSize:      24,
     fontFamily:    "Helvetica-Bold",
     color:         C.gold,
     letterSpacing: 1.5,
@@ -71,7 +68,7 @@ const S = StyleSheet.create({
     fontSize:  9,
     color:     C.white,
     marginTop: 4,
-    opacity:   0.85,
+    opacity:   0.8,
   },
   hTitle: {
     fontSize:   13,
@@ -90,30 +87,21 @@ const S = StyleSheet.create({
     opacity:   0.65,
   },
 
-  // ── Summary bar ────────────────────────────────────────────────────────────
+  // Summary bar
   summaryBar: {
     flexDirection:     "row",
     backgroundColor:   C.white,
     borderBottom:      1,
     borderColor:       C.border,
-    paddingVertical:   16,
+    paddingVertical:   14,
     paddingHorizontal: 32,
-    marginBottom:      0,
   },
-  statBox:   { flex: 1, alignItems: "center" },
-  statDivider: {
-    width:           1,
-    backgroundColor: C.border,
-    marginVertical:  4,
-  },
-  statNum: {
-    fontSize:   26,
-    fontFamily: "Helvetica-Bold",
-    color:      C.text,
-  },
+  statBox:     { flex: 1, alignItems: "center" },
+  statDivider: { width: 1, backgroundColor: C.border, marginVertical: 4 },
+  statNum:      { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.text  },
   statNumRed:   { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.red   },
   statNumGreen: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.green },
-  statLabel: {
+  statLabel:    {
     fontSize:      8,
     color:         C.label,
     marginTop:     3,
@@ -121,10 +109,10 @@ const S = StyleSheet.create({
     textTransform: "uppercase",
   },
 
-  // ── Table ──────────────────────────────────────────────────────────────────
+  // Table
   tableWrap: {
     marginHorizontal: 20,
-    marginTop:        16,
+    marginTop:        14,
     border:           1,
     borderColor:      C.border,
     borderRadius:     2,
@@ -147,81 +135,42 @@ const S = StyleSheet.create({
   },
   trowAlt: { backgroundColor: C.altRow },
 
-  // Columns — SITE(24%) M T W T F(4%×5=20%) TOOLBOX(10%) IND(12%) DOCS(12%) STATUS(14%)
-  // Total: 24+20+10+12+12+14 = 92% — remaining flex fills gaps
-  colSite:  { width: "24%", paddingRight: 6 },
-  colDay:   { width: "4%",  alignItems: "center", justifyContent: "center" },
-  colTb:    { width: "10%", alignItems: "center" },
-  colInd:   { width: "12%", alignItems: "center" },
-  colDocs:  { width: "12%", alignItems: "center" },
-  colStat:  { width: "14%", alignItems: "flex-end" },
+  // Column widths: SITE(23%) + M T W T F(4.2%×5=21%) + TOOLBOX(10%) + IND(13%) + DOCS(13%) + STATUS(13%) = 93%
+  colSite: { width: "23%", paddingRight: 6 },
+  colDay:  { width: "4.2%", alignItems: "center", justifyContent: "center" },
+  colTb:   { width: "10%", alignItems: "center" },
+  colInd:  { width: "13%", alignItems: "center" },
+  colDocs: { width: "13%", alignItems: "center" },
+  colStat: { width: "13%", alignItems: "flex-end" },
 
-  // Header cells
   th: {
     color:         C.white,
     fontFamily:    "Helvetica-Bold",
-    fontSize:      7.5,
+    fontSize:      7,
     textTransform: "uppercase",
     textAlign:     "center",
   },
   thLeft: {
     color:         C.white,
     fontFamily:    "Helvetica-Bold",
-    fontSize:      7.5,
+    fontSize:      7,
     textTransform: "uppercase",
   },
 
-  // Site cell
-  siteName: {
-    fontSize:   9,
-    fontFamily: "Helvetica-Bold",
-    color:      C.text,
-  },
-  siteFlag: {
-    fontSize:   7,
-    color:      C.amber,
-    fontFamily: "Helvetica-Oblique",
-    marginTop:  2,
-  },
+  siteName: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.text },
+  siteFlag: { fontSize: 7, color: C.amber, fontFamily: "Helvetica-Oblique", marginTop: 2 },
 
-  // Day cell — 16×16 View box (background on View, reliable in react-pdf)
-  dayBox: {
-    width:          16,
-    height:         16,
-    borderRadius:   2,
-    justifyContent: "center",
-    alignItems:     "center",
-  },
-  dayBoxGreen: { backgroundColor: C.green   },
-  dayBoxAmber: { backgroundColor: C.amber   },
-  dayBoxRed:   { backgroundColor: C.red     },
-  dayBoxGrey:  { backgroundColor: C.daygrey },
-  dayLabel: {
-    fontSize:   7.5,
-    fontFamily: "Helvetica-Bold",
-    color:      C.white,
-    textAlign:  "center",
-  },
-  dayLabelDark: {
-    fontSize:   7.5,
-    fontFamily: "Helvetica-Bold",
-    color:      "#555555",
-    textAlign:  "center",
-  },
+  // Toolbox / count / status — plain coloured text
+  tbGreen:     { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
+  tbAmber:     { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
+  tbRed:       { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "center" },
+  cntGreen:    { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
+  cntAmber:    { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
+  statGreen:   { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "right" },
+  statAmber:   { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "right" },
+  statRed:     { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "right" },
 
-  // Toolbox / status text cells
-  tbGreen:  { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
-  tbAmber:  { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
-  tbRed:    { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "center" },
-
-  countAmber: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
-  countGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
-
-  statGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "right" },
-  statAmber: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "right" },
-  statRed:   { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "right" },
-
-  // ── Footer ─────────────────────────────────────────────────────────────────
+  // Footer
   footer: {
     position:       "absolute",
     bottom:         14,
@@ -265,9 +214,20 @@ function fmtDate(yyyymmdd: string): string {
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
+// Snaps a UTC Date to Monday (guards against client sending Sunday due to timezone conversion)
+function snapToMonday(d: Date): Date {
+  const dow = d.getUTCDay(); // 0=Sun … 6=Sat
+  if (dow === 1) return d;
+  d.setUTCDate(d.getUTCDate() + (dow === 0 ? 1 : 1 - dow));
+  return d;
+}
+
+// Returns Mon–Fri YYYY-MM-DD strings for the week containing mondayStr.
+// Input is snapped to Monday first so a Sunday param (timezone edge case) still
+// produces the correct Mon-Fri week.
 function getWeekdays(mondayStr: string): string[] {
   const [y, m, d] = mondayStr.split("-").map(Number);
-  const monday = new Date(Date.UTC(y, m - 1, d));
+  const monday = snapToMonday(new Date(Date.UTC(y, m - 1, d)));
   const days: string[] = [];
   for (let i = 0; i < 5; i++) {
     const day = new Date(monday);
@@ -286,6 +246,22 @@ function rowStatus(site: SiteData, checkableDays: number): "On Track" | "Attenti
   return "Attention";
 }
 
+// Returns the fill colour for a day cell
+function dayCellBg(ds: DayStatus): string {
+  if (ds === "green")  return C.green;
+  if (ds === "amber")  return C.amber;
+  if (ds === "red")    return C.red;
+  return C.daygrey;
+}
+
+// Returns the label for a day cell
+function dayCellLabel(ds: DayStatus): string {
+  if (ds === "green")  return "OK";
+  if (ds === "amber")  return "!";
+  if (ds === "red")    return "X";
+  return "-";
+}
+
 // ── PDF document ───────────────────────────────────────────────────────────────
 
 function CompliancePDF({
@@ -298,8 +274,9 @@ function CompliancePDF({
   todayStr:  string;
 }) {
   const weekdays      = getWeekdays(weekStart);
-  const [y, m, d]     = weekStart.split("-").map(Number);
-  const fridayDate    = new Date(Date.UTC(y, m - 1, d + 4));
+  const fridayDate    = new Date(Date.UTC(...(weekStart.split("-").map(Number) as [number, number, number])));
+  snapToMonday(fridayDate);
+  fridayDate.setUTCDate(fridayDate.getUTCDate() + 4);
   const fridayStr     = fridayDate.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
   const checkableDays = weekdays.filter(wd => wd <= todayStr).length;
 
@@ -324,7 +301,7 @@ function CompliancePDF({
           </View>
           <View style={S.hRight}>
             <Text style={S.hTitle}>Site Compliance Report</Text>
-            <Text style={S.hWeek}>Week of {fmtDate(weekStart)} – {fmtDate(fridayStr)}</Text>
+            <Text style={S.hWeek}>Week of {fmtDate(weekdays[0])} – {fmtDate(fridayStr)}</Text>
             <Text style={S.hGenerated}>Generated {generatedAt} AEST</Text>
           </View>
         </View>
@@ -357,9 +334,7 @@ function CompliancePDF({
 
           {/* Header row */}
           <View style={S.thead}>
-            <View style={S.colSite}>
-              <Text style={S.thLeft}>Site</Text>
-            </View>
+            <View style={S.colSite}><Text style={S.thLeft}>Site</Text></View>
             {weekdays.map(wd => (
               <View key={wd} style={S.colDay}>
                 <Text style={S.th}>
@@ -367,18 +342,10 @@ function CompliancePDF({
                 </Text>
               </View>
             ))}
-            <View style={S.colTb}>
-              <Text style={S.th}>Toolbox</Text>
-            </View>
-            <View style={S.colInd}>
-              <Text style={S.th}>Inductions</Text>
-            </View>
-            <View style={S.colDocs}>
-              <Text style={S.th}>Docs</Text>
-            </View>
-            <View style={S.colStat}>
-              <Text style={S.th}>Status</Text>
-            </View>
+            <View style={S.colTb}><Text style={S.th}>Toolbox</Text></View>
+            <View style={S.colInd}><Text style={S.th}>Inductions</Text></View>
+            <View style={S.colDocs}><Text style={S.th}>Docs</Text></View>
+            <View style={S.colStat}><Text style={S.th}>Status</Text></View>
           </View>
 
           {/* Data rows */}
@@ -392,7 +359,7 @@ function CompliancePDF({
             return (
               <View
                 key={site.siteReference}
-                style={[S.trow, ...(isAlt ? [S.trowAlt] : [])]}
+                style={isAlt ? [S.trow, S.trowAlt] : S.trow}
                 wrap={false}
               >
                 {/* Site */}
@@ -403,29 +370,31 @@ function CompliancePDF({
                   )}
                 </View>
 
-                {/* Day cells — coloured 16×16 View boxes */}
+                {/* Day cells — inline styles so backgroundColor renders reliably */}
                 {weekdays.map(wd => {
                   const ds: DayStatus =
                     dayStatuses              ? (dayStatuses[wd] ?? "future") :
                     wd > todayStr            ? "future"                       :
                     coveredDays.includes(wd) ? "green"                        : "red";
 
-                  const boxStyle =
-                    ds === "green"  ? S.dayBoxGreen :
-                    ds === "amber"  ? S.dayBoxAmber :
-                    ds === "future" ? S.dayBoxGrey  : S.dayBoxRed;
-
-                  const label =
-                    ds === "green"  ? "OK" :
-                    ds === "amber"  ? "!"  :
-                    ds === "future" ? "-"  : "X";
-
-                  const labelStyle = ds === "future" ? S.dayLabelDark : S.dayLabel;
-
                   return (
                     <View key={wd} style={S.colDay}>
-                      <View style={[S.dayBox, boxStyle]}>
-                        <Text style={labelStyle}>{label}</Text>
+                      <View style={{
+                        width:          20,
+                        height:         20,
+                        backgroundColor: dayCellBg(ds),
+                        borderRadius:   3,
+                        alignItems:     "center",
+                        justifyContent: "center",
+                      }}>
+                        <Text style={{
+                          color:      C.white,
+                          fontSize:   8,
+                          fontFamily: "Helvetica-Bold",
+                          textAlign:  "center",
+                        }}>
+                          {dayCellLabel(ds)}
+                        </Text>
                       </View>
                     </View>
                   );
@@ -444,14 +413,14 @@ function CompliancePDF({
 
                 {/* Inductions */}
                 <View style={S.colInd}>
-                  <Text style={site.pendingInductions.count === 0 ? S.countGreen : S.countAmber}>
+                  <Text style={site.pendingInductions.count === 0 ? S.cntGreen : S.cntAmber}>
                     {site.pendingInductions.count === 0 ? "Clear" : String(site.pendingInductions.count)}
                   </Text>
                 </View>
 
                 {/* Docs */}
                 <View style={S.colDocs}>
-                  <Text style={site.pendingDocs.count === 0 ? S.countGreen : S.countAmber}>
+                  <Text style={site.pendingDocs.count === 0 ? S.cntGreen : S.cntAmber}>
                     {site.pendingDocs.count === 0 ? "Clear" : String(site.pendingDocs.count)}
                   </Text>
                 </View>
@@ -469,7 +438,6 @@ function CompliancePDF({
               </View>
             );
           })}
-
         </View>
 
         {/* ── Footer ── */}
