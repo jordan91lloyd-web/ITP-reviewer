@@ -324,6 +324,7 @@ export async function GET(request: NextRequest) {
   const companyId  = sp.get("company_id");
   const weekStartP = sp.get("week_start");
   const generate   = sp.get("generate") === "true";
+  const debugMode  = sp.get("debug");
 
   if (!companyId) {
     return NextResponse.json({ error: "company_id is required" }, { status: 400 });
@@ -645,6 +646,42 @@ export async function GET(request: NextRequest) {
   // Strip _toolboxDates from response (internal field)
   const responseSites = sites.map(({ _toolboxDates: _, ...rest }) => rest);
 
+  // ── Kimberly diagnostic (?debug=kimberly alongside ?generate=true) ───────────
+  let diagnostic: Record<string, unknown> | undefined;
+  if (debugMode === "kimberly") {
+    const KIMBERLY_REF = "009";
+    // All Site Briefing forms for Kimberly in the lookback window (pre-filter: just date range)
+    const kimberlyAllForms = allForms
+      .filter(r => r.siteReference === KIMBERLY_REF && r.fillDate)
+      .map(r => {
+        const fillDay = getSydneyDateString(r.fillDate!);
+        const inWindow = fillDay >= fetchFromSydney && fillDay <= fetchToSydney;
+        const idStr = r.formDataId != null ? String(r.formDataId) : null;
+        const endDay = (idStr && endDateMap.has(idStr)) ? endDateMap.get(idStr) : null;
+        return {
+          formName:        r.formName ?? null,
+          formDataId:      r.formDataId ?? null,
+          fillDate:        fillDay,
+          endDate:         endDay ?? null,
+          inLookbackWindow: inWindow,
+          isPrestart:      isPrestartForm(r.formName ?? ""),
+          isToolbox:       isToolboxForm(r.formName ?? ""),
+        };
+      })
+      .sort((a, b) => a.fillDate.localeCompare(b.fillDate));
+
+    const kimberlyPrestartForms = kimberlyAllForms.filter(r => r.isPrestart && r.inLookbackWindow);
+    const kimberlyToolboxForms  = kimberlyAllForms.filter(r => r.isToolbox  && r.inLookbackWindow);
+
+    diagnostic = {
+      lookbackWindow:        { from: fetchFromSydney, to: fetchToSydney },
+      weekdays,
+      kimberlyAllForms,
+      kimberlyPrestartForms,
+      kimberlyToolboxForms,
+    };
+  }
+
   return NextResponse.json({
     hasSnapshot: true,
     weekStart:   weekStartDate,
@@ -653,5 +690,6 @@ export async function GET(request: NextRequest) {
     source:      "breadcrumb_api",
     sites:       responseSites,
     errors:      errors.length > 0 ? errors : undefined,
+    ...(diagnostic ? { _diagnostic: diagnostic } : {}),
   });
 }
