@@ -904,6 +904,9 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  console.log("[upsert row count]", upsertRows.length);
+  console.log("[upsert rows]", JSON.stringify(upsertRows.slice(0, 1), null, 2));
+
   if (upsertRows.length > 0) {
     try {
       const { error: upsertError } = await supabase
