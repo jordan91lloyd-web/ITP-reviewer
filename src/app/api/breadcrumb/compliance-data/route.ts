@@ -913,8 +913,8 @@ export async function GET(request: NextRequest) {
         .from("site_compliance_snapshots")
         .upsert(upsertRows, { onConflict: "company_id,week_start,site_reference" });
       if (upsertError) {
-        console.error("[snapshot upsert error]", upsertError);
-        errors.push(`snapshot upsert: ${upsertError.message}`);
+        console.error("[snapshot upsert error]", JSON.stringify(upsertError));
+        errors.push(`snapshot upsert: ${JSON.stringify(upsertError)}`);
       }
     } catch (e) {
       errors.push(`snapshot upsert threw: ${e instanceof Error ? e.message : String(e)}`);
