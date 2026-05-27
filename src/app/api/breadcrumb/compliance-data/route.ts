@@ -321,6 +321,34 @@ async function resolveEndDates(
   return { endDateMap, freshQaMap };
 }
 
+// ── Dedicated quality QA fetcher (always fresh, no Supabase cache) ─────────────
+// Fetches form-data for the given IDs in batches, returns formDataId → QAs.
+// Used exclusively for quality scoring — independent of the endDate cache.
+
+async function fetchQualityQAs(
+  formDataIds: string[],
+): Promise<Map<string, QuestionAnswer[]>> {
+  const qaMap = new Map<string, QuestionAnswer[]>();
+  if (formDataIds.length === 0) return qaMap;
+
+  for (let i = 0; i < formDataIds.length; i += ENDBATCH_SIZE) {
+    const batch = formDataIds.slice(i, i + ENDBATCH_SIZE);
+    const results = await Promise.all(
+      batch.map(async id => ({ id, result: await fetchFormData(id) }))
+    );
+    for (const { id, result } of results) {
+      if (result.questionAnswers.length > 0) {
+        qaMap.set(id, result.questionAnswers);
+      }
+    }
+    if (i + ENDBATCH_SIZE < formDataIds.length) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  }
+
+  return qaMap;
+}
+
 // ── Quality scoring helpers ────────────────────────────────────────────────────
 
 function buildQualityText(
@@ -601,9 +629,23 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── Resolve endDates (+ capture fresh QAs for quality scoring) ─────────────
+  // ── Resolve endDates (Supabase cache-first, Breadcrumb fallback) ─────────────
 
-  const { endDateMap, freshQaMap } = await resolveEndDates(supabase, companyId, Array.from(formDataIdSet));
+  const { endDateMap } = await resolveEndDates(supabase, companyId, Array.from(formDataIdSet));
+
+  // ── Fetch QAs fresh for quality scoring (always live, never cached) ───────────
+  // Only in-week prestart submissions (Mon–Fri of the selected week) are scored.
+  // This is independent of the endDate cache so quality data is always current.
+
+  const inWeekPrestartIds: string[] = [];
+  for (const r of filteredForms) {
+    if (!isPrestartForm(r.formName ?? "") || !r.fillDate || r.formDataId == null) continue;
+    const fillDay = getSydneyDateString(r.fillDate);
+    if (fillDay >= weekdays[0] && fillDay <= weekdays[4]) {
+      inWeekPrestartIds.push(String(r.formDataId));
+    }
+  }
+  const qualityQaMap = await fetchQualityQAs(inWeekPrestartIds);
 
   // ── Build procoreProjectId map from form records ───────────────────────────
 
@@ -822,7 +864,7 @@ export async function GET(request: NextRequest) {
   const qualityResults = await Promise.all(
     sites.map(async s => {
       const siteForms = formsBySite.get(s.siteReference) ?? [];
-      const text = buildQualityText(s.siteName, siteForms, freshQaMap);
+      const text = buildQualityText(s.siteName, siteForms, qualityQaMap);
       if (!text) return { siteReference: s.siteReference, quality: null };
       const quality = await scoreQuality(s.siteName, text);
       return { siteReference: s.siteReference, quality };

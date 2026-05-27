@@ -73,14 +73,17 @@ function getCheckRange(weekStartParam?: string | null): CheckRange | null {
   }
 
   if (weekMondayStr < currentMondayStr) {
-    // Past week — all 5 Mon–Fri days are checkable
+    // Past week — Mon–Fri only (defensive day-of-week check guards against
+    // a non-Monday week_start param producing weekend dates).
     const workingDays: string[] = [];
     for (let i = 0; i < 5; i++) {
       const d = new Date(weekMonday);
       d.setUTCDate(weekMonday.getUTCDate() + i);
-      workingDays.push(d.toISOString().slice(0, 10));
+      const dow = d.getUTCDay();
+      if (dow >= 1 && dow <= 5) workingDays.push(d.toISOString().slice(0, 10));
     }
-    return { startDate: workingDays[0], endDate: workingDays[4], workingDays };
+    if (workingDays.length === 0) return null;
+    return { startDate: workingDays[0], endDate: workingDays[workingDays.length - 1], workingDays };
   }
 
   // Current week — Mon up to (not including) today
