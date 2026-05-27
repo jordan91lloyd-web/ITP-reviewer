@@ -6,10 +6,13 @@
 //   company_id   (required)
 //   project_ids  (required) — comma-separated Procore project IDs
 //
-// Returns: { counts: { [project_id: string]: number } }
+// Returns:
+//   { counts: { [project_id]: number },
+//     debug:  { [project_id]: { unfiltered: number, filtered: number } } }
 //
-// Diagnostic note: logs URL + raw response shape for the first project so we
-// can verify the Procore endpoint and filter format via Vercel logs.
+// Debug response lets callers see whether the endpoint returns ANY photos at
+// all (unfiltered) vs photos in the date window (filtered), so we can tell
+// whether 0 is caused by a bad date filter or a bad endpoint/company_id.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -21,111 +24,110 @@ const PROCORE_API_BASE =
 
 const PER_PAGE = 500;
 
-// ── Try both known endpoint shapes ────────────────────────────────────────────
-// Shape A: /rest/v1.0/photos           (company-scoped, project_id as param)
-// Shape B: /rest/v1.0/projects/{id}/photos  (project-scoped)
-// Date filter: gte/lte separate params (Procore v1 documented format)
+// ── Fetch one page, return count + status ─────────────────────────────────────
 
-async function fetchPageCount(
+async function fetchPage(
   url: URL,
   authHeaders: Record<string, string>,
-): Promise<{ count: number; rawType: string; status: number }> {
+): Promise<{ count: number; status: number }> {
   const res = await fetch(url.toString(), {
     headers: authHeaders,
     signal:  AbortSignal.timeout(15_000),
   });
-
-  const status  = res.status;
-  const rawType = res.headers.get("content-type") ?? "unknown";
-
-  if (!res.ok) {
-    return { count: 0, rawType: `${status} ${rawType}`, status };
-  }
-
-  const data                = await res.json();
-  const results: unknown[]  = Array.isArray(data) ? data : [];
-  return { count: results.length, rawType, status };
+  if (!res.ok) return { count: 0, status: res.status };
+  const data           = await res.json();
+  const results: unknown[] = Array.isArray(data) ? data : [];
+  return { count: results.length, status: res.status };
 }
 
-async function fetchProjectPhotoCount(
+// ── Paginate through all results for a given base URL ─────────────────────────
+
+async function paginateCount(
+  base: URL,
+  authHeaders: Record<string, string>,
+): Promise<number> {
+  let total = 0;
+  let page  = 1;
+
+  while (true) {
+    const url = new URL(base.toString());
+    url.searchParams.set("per_page", String(PER_PAGE));
+    url.searchParams.set("page",     String(page));
+
+    const { count, status } = await fetchPage(url, authHeaders);
+    if (status !== 200) break;
+
+    total += count;
+    if (count < PER_PAGE) break;
+    page++;
+  }
+
+  return total;
+}
+
+// ── Per-project fetch: unfiltered then filtered ────────────────────────────────
+
+async function fetchProjectCounts(
   projectId: string,
   companyId: string,
   accessToken: string,
   fromDate: string,
   toDate: string,
   isFirst: boolean,
-): Promise<number> {
+): Promise<{ unfiltered: number; filtered: number }> {
   const authHeaders: Record<string, string> = {
     Authorization:        `Bearer ${accessToken}`,
+    // company_id MUST appear in both header and query param (Procore rule)
     "Procore-Company-Id": companyId,
   };
 
-  // ── Shape A: /rest/v1.0/photos with gte/lte filters ─────────────────────
-  {
-    let total = 0;
-    let page  = 1;
+  // ── Unfiltered probe (1 page, no date) — confirm endpoint works ──────────
+  const probeUrl = new URL(`${PROCORE_API_BASE}/rest/v1.0/photos`);
+  probeUrl.searchParams.set("project_id", projectId);
+  probeUrl.searchParams.set("company_id", companyId);   // required as query param too
+  probeUrl.searchParams.set("per_page",   "1");
+  probeUrl.searchParams.set("page",       "1");
 
-    while (true) {
-      const url = new URL(`${PROCORE_API_BASE}/rest/v1.0/photos`);
-      url.searchParams.set("project_id",                    projectId);
-      url.searchParams.set("filters[created_at][gte]",      fromDate);
-      url.searchParams.set("filters[created_at][lte]",      toDate);
-      url.searchParams.set("per_page",                      String(PER_PAGE));
-      url.searchParams.set("page",                          String(page));
+  const { count: probeCount, status: probeStatus } = await fetchPage(probeUrl, authHeaders);
 
-      const { count, rawType, status } = await fetchPageCount(url, authHeaders);
-
-      if (isFirst && page === 1) {
-        console.log(`[photo-counts] Shape A  project=${projectId}  status=${status}  count=${count}  url=${url.toString()}  type=${rawType}`);
-      }
-
-      if (status === 404 || status === 403) break; // endpoint not available — try Shape B
-
-      total += count;
-      if (count < PER_PAGE) return total;
-      page++;
-    }
-
-    // If Shape A returned something (even 0 with a 200), trust it
-    // Check with a single unfiltered request to see if photos exist at all
-    if (isFirst) {
-      const probe = new URL(`${PROCORE_API_BASE}/rest/v1.0/photos`);
-      probe.searchParams.set("project_id", projectId);
-      probe.searchParams.set("per_page",   "1");
-      probe.searchParams.set("page",       "1");
-      const { count: unfiltered, status: us } = await fetchPageCount(probe, authHeaders);
-      console.log(`[photo-counts] Shape A unfiltered probe  project=${projectId}  status=${us}  count=${unfiltered}  (if 0 here, project has no photos at all)`);
-    }
+  if (isFirst) {
+    console.log(
+      `[photo-counts] unfiltered probe  project=${projectId}  status=${probeStatus}  hasPhotos=${probeCount > 0}  url=${probeUrl.toString()}`
+    );
   }
 
-  // ── Shape B: /rest/v1.0/projects/{id}/photos with gte/lte filters ────────
-  {
-    let total = 0;
-    let page  = 1;
-
-    while (true) {
-      const url = new URL(`${PROCORE_API_BASE}/rest/v1.0/projects/${projectId}/photos`);
-      url.searchParams.set("filters[created_at][gte]",  fromDate);
-      url.searchParams.set("filters[created_at][lte]",  toDate);
-      url.searchParams.set("per_page",                  String(PER_PAGE));
-      url.searchParams.set("page",                      String(page));
-
-      const { count, rawType, status } = await fetchPageCount(url, authHeaders);
-
-      if (isFirst && page === 1) {
-        console.log(`[photo-counts] Shape B  project=${projectId}  status=${status}  count=${count}  url=${url.toString()}  type=${rawType}`);
-      }
-
-      if (status === 404 || status === 403) break;
-
-      total += count;
-      if (count < PER_PAGE) return total;
-      page++;
-    }
+  // If endpoint itself doesn't work (404/403/401), return early
+  if (probeStatus === 404 || probeStatus === 403 || probeStatus === 401) {
+    if (isFirst) console.log(`[photo-counts] endpoint unavailable status=${probeStatus}`);
+    return { unfiltered: 0, filtered: 0 };
   }
 
-  return 0;
+  // ── Full unfiltered count ─────────────────────────────────────────────────
+  const unfilteredBase = new URL(`${PROCORE_API_BASE}/rest/v1.0/photos`);
+  unfilteredBase.searchParams.set("project_id", projectId);
+  unfilteredBase.searchParams.set("company_id", companyId);
+
+  const unfiltered = await paginateCount(unfilteredBase, authHeaders);
+
+  // ── Filtered count (gte/lte, YYYY-MM-DD) ─────────────────────────────────
+  const filteredBase = new URL(`${PROCORE_API_BASE}/rest/v1.0/photos`);
+  filteredBase.searchParams.set("project_id",               projectId);
+  filteredBase.searchParams.set("company_id",               companyId);
+  filteredBase.searchParams.set("filters[created_at][gte]", fromDate);
+  filteredBase.searchParams.set("filters[created_at][lte]", toDate);
+
+  const filtered = await paginateCount(filteredBase, authHeaders);
+
+  if (isFirst) {
+    console.log(
+      `[photo-counts] project=${projectId}  unfiltered=${unfiltered}  filtered=${filtered}  range=${fromDate}..${toDate}`
+    );
+  }
+
+  return { unfiltered, filtered };
 }
+
+// ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
   try {
@@ -148,31 +150,30 @@ export async function GET(request: NextRequest) {
 
     const projectIds = projectIdsP.split(",").map(s => s.trim()).filter(Boolean);
     if (projectIds.length === 0) {
-      return NextResponse.json({ counts: {} });
+      return NextResponse.json({ counts: {}, debug: {} });
     }
 
     // 7 calendar days ago → today (YYYY-MM-DD, no time component)
     const toDate   = new Date().toISOString().slice(0, 10);
     const fromDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-    console.log(`[photo-counts] date range: ${fromDate}..${toDate}  projects: ${projectIds.join(",")}`);
+    console.log(`[photo-counts] company=${companyId}  range=${fromDate}..${toDate}  projects=${projectIds.join(",")}`);
 
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number>                                    = {};
+    const debug:  Record<string, { unfiltered: number; filtered: number }>  = {};
+
     await Promise.all(
       projectIds.map(async (id, idx) => {
-        counts[id] = await fetchProjectPhotoCount(
-          id, companyId, accessToken, fromDate, toDate,
-          idx === 0, // only log diagnostics for first project
-        );
+        const result  = await fetchProjectCounts(id, companyId, accessToken, fromDate, toDate, idx === 0);
+        counts[id]    = result.filtered;
+        debug[id]     = result;
       })
     );
 
-    console.log(`[photo-counts] results: ${JSON.stringify(counts)}`);
-
-    return NextResponse.json({ counts });
+    return NextResponse.json({ counts, debug });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error", counts: {} },
+      { error: err instanceof Error ? err.message : "Unknown error", counts: {}, debug: {} },
       { status: 502 },
     );
   }
