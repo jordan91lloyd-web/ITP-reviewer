@@ -509,7 +509,10 @@ export async function GET(request: NextRequest) {
   }
 
   const { monday, weekdays } = getWeekBounds(weekStartP);
-  const weekStartDate = weekdays[0]; // Monday YYYY-MM-DD (Sydney)
+  // Use the param directly as the snapshot key — avoids timezone conversion drift
+  const weekStartDate = (weekStartP && /^\d{4}-\d{2}-\d{2}$/.test(weekStartP))
+    ? weekStartP
+    : weekdays[0];
   const sunday = new Date(monday);
   sunday.setUTCDate(monday.getUTCDate() + 6);
   const weekEndDate = getSydneyDateString(sunday.toISOString());
@@ -903,9 +906,6 @@ export async function GET(request: NextRequest) {
       quality_issues:           q?.issues  ?? null,
     };
   });
-
-  console.log("[upsert row count]", upsertRows.length);
-  console.log("[upsert rows]", JSON.stringify(upsertRows.slice(0, 1), null, 2));
 
   if (upsertRows.length > 0) {
     try {
