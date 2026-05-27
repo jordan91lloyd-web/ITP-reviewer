@@ -41,7 +41,7 @@ const C = {
 const styles = StyleSheet.create({
   page: {
     backgroundColor: C.white,
-    paddingBottom:   50,
+    paddingBottom:   55,
     fontFamily:      "Helvetica",
     fontSize:        8,
   },
@@ -51,16 +51,16 @@ const styles = StyleSheet.create({
     backgroundColor:   C.navy,
     flexDirection:     "row",
     justifyContent:    "space-between",
-    alignItems:        "flex-start",
-    paddingVertical:   14,
+    alignItems:        "center",
+    paddingVertical:   20,
     paddingHorizontal: 30,
-    marginBottom:      14,
+    marginBottom:      16,
   },
   headerLeft: {
     flexDirection: "column",
   },
   brandName: {
-    fontSize:      20,
+    fontSize:      24,
     fontFamily:    "Helvetica-Bold",
     color:         C.gold,
     letterSpacing: 2,
@@ -68,7 +68,8 @@ const styles = StyleSheet.create({
   brandTagline: {
     fontSize:  9,
     color:     C.white,
-    marginTop: 3,
+    marginTop: 4,
+    opacity:   0.85,
   },
   headerRight: {
     alignItems: "flex-end",
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     fontSize:  8,
     color:     C.white,
     marginTop: 3,
-    opacity:   0.7,
+    opacity:   0.65,
   },
 
   // ── Body content wrapper ───────────────────────────────────────────────────
@@ -97,14 +98,13 @@ const styles = StyleSheet.create({
 
   // ── Summary strip — white bg, gold bottom border ──────────────────────────
   summaryStrip: {
-    flexDirection:    "row",
-    backgroundColor:  C.white,
-    borderBottom:     2,
-    borderColor:      C.gold,
-    paddingVertical:  12,
+    flexDirection:     "row",
+    backgroundColor:   C.white,
+    borderBottom:      2,
+    borderColor:       C.gold,
+    paddingVertical:   12,
     paddingHorizontal: 14,
-    marginBottom:     16,
-    gap:              0,
+    marginBottom:      16,
   },
   summaryItem: {
     flex:       1,
@@ -113,27 +113,27 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width:           1,
     backgroundColor: C.border,
-    marginVertical:  2,
+    marginVertical:  4,
   },
   summaryValue: {
-    fontSize:   24,
+    fontSize:   28,
     fontFamily: "Helvetica-Bold",
     color:      C.text,
   },
   summaryValueRed: {
-    fontSize:   24,
+    fontSize:   28,
     fontFamily: "Helvetica-Bold",
     color:      C.red,
   },
   summaryValueGreen: {
-    fontSize:   24,
+    fontSize:   28,
     fontFamily: "Helvetica-Bold",
     color:      C.green,
   },
   summaryLabel: {
     fontSize:      8,
     color:         C.subText,
-    marginTop:     2,
+    marginTop:     3,
     textAlign:     "center",
     textTransform: "uppercase",
   },
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   // ── Table ──────────────────────────────────────────────────────────────────
   table: {
     width:        "100%",
-    borderRadius: 4,
+    borderRadius: 3,
     overflow:     "hidden",
     border:       1,
     borderColor:  C.border,
@@ -149,14 +149,14 @@ const styles = StyleSheet.create({
   thead: {
     flexDirection:     "row",
     backgroundColor:   C.navy,
-    paddingVertical:   6,
-    paddingHorizontal: 8,
+    paddingVertical:   7,
+    paddingHorizontal: 10,
     alignItems:        "center",
   },
   trow: {
     flexDirection:     "row",
-    paddingVertical:   5,
-    paddingHorizontal: 8,
+    paddingVertical:   8,
+    paddingHorizontal: 10,
     borderBottom:      1,
     borderColor:       C.border,
     alignItems:        "center",
@@ -165,15 +165,15 @@ const styles = StyleSheet.create({
     backgroundColor: C.rowAlt,
   },
 
-  // Column widths — no Quality column
-  colSite:       { width: "24%", paddingRight: 4 },
-  colDay:        { width: "4%",  alignItems: "center" },
+  // Column widths — SITE | M T W T F (×5) | TOOLBOX | PENDING | DOCS | STATUS
+  colSite:       { width: "24%", paddingRight: 6 },
+  colDay:        { width: "4%",  alignItems: "center", justifyContent: "center" },
   colToolbox:    { width: "10%", alignItems: "center" },
   colInductions: { width: "15%", alignItems: "center" },
   colDocs:       { width: "15%", alignItems: "center" },
   colStatus:     { width: "16%", alignItems: "center" },
 
-  // Text
+  // Header text
   thText: {
     color:         C.white,
     fontFamily:    "Helvetica-Bold",
@@ -187,40 +187,46 @@ const styles = StyleSheet.create({
     fontSize:      6.5,
     textTransform: "uppercase",
   },
+
+  // Site cell
   tdSiteName: {
-    fontSize:   8,
+    fontSize:   8.5,
     fontFamily: "Helvetica-Bold",
     color:      C.text,
   },
   tdGamingFlag: {
     fontSize:   7,
     color:      C.amber,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Helvetica-Oblique",
     marginTop:  2,
   },
 
-  // Day cells — solid fill, white text
-  dayCell: {
-    borderRadius:      2,
-    paddingVertical:   3,
-    paddingHorizontal: 4,
-    fontSize:          7,
-    fontFamily:        "Helvetica-Bold",
-    color:             C.white,
-    textAlign:         "center",
-    minWidth:          16,
+  // Day cell — 18×18 coloured View square, white text inside
+  // Background colour is applied via the dayCellGreen/Amber/Red/Grey overrides
+  dayCellBox: {
+    width:          18,
+    height:         18,
+    borderRadius:   2,
+    justifyContent: "center",
+    alignItems:     "center",
   },
-  dayCellGreen: { backgroundColor: C.green  },
-  dayCellAmber: { backgroundColor: C.amber  },
-  dayCellRed:   { backgroundColor: C.red    },
-  dayCellGrey:  { backgroundColor: C.grey   },
+  dayCellGreen: { backgroundColor: C.green },
+  dayCellAmber: { backgroundColor: C.amber },
+  dayCellRed:   { backgroundColor: C.red   },
+  dayCellGrey:  { backgroundColor: C.grey  },
+  dayCellLabel: {
+    fontSize:   8,
+    fontFamily: "Helvetica-Bold",
+    color:      C.white,
+    textAlign:  "center",
+  },
 
-  // Pills
+  // Pill chips
   pill: {
-    borderRadius:      2,
+    borderRadius:      3,
     paddingVertical:   2,
-    paddingHorizontal: 5,
-    fontSize:          6.5,
+    paddingHorizontal: 6,
+    fontSize:          7,
     fontFamily:        "Helvetica-Bold",
     textAlign:         "center",
   },
@@ -228,15 +234,15 @@ const styles = StyleSheet.create({
   pillAmber: { backgroundColor: "#FEF3C7", color: C.amber  },
   pillRed:   { backgroundColor: "#FEE2E2", color: C.red    },
 
-  // Status pills — solid for prominence
-  pillStatusGreen: { backgroundColor: C.green, color: C.white },
-  pillStatusAmber: { backgroundColor: C.amber, color: C.white },
-  pillStatusRed:   { backgroundColor: C.red,   color: C.white },
+  // Status pills — solid fill with white text
+  pillStatusGreen: { backgroundColor: C.green, color: C.white, borderRadius: 3 },
+  pillStatusAmber: { backgroundColor: C.amber, color: C.white, borderRadius: 3 },
+  pillStatusRed:   { backgroundColor: C.red,   color: C.white, borderRadius: 3 },
 
   // ── Footer ─────────────────────────────────────────────────────────────────
   footer: {
     position:       "absolute",
-    bottom:         16,
+    bottom:         18,
     left:           30,
     right:          30,
     flexDirection:  "row",
@@ -266,6 +272,7 @@ interface SiteData {
   dailyPrestarts:    { count: number; days: string[] };
   prestartDayStatus: Record<string, DayStatus> | null;
   gamingFlagged:     boolean;
+  toolboxTalk:       { submitted: boolean };
   toolboxStatus:     "green" | "amber" | "red";
   pendingInductions: { count: number };
   pendingDocs:       { count: number };
@@ -325,7 +332,6 @@ function CompliancePDF({
     hour: "2-digit", minute: "2-digit", timeZone: "Australia/Sydney",
   });
 
-  // Summary stats
   const actionCount  = sites.filter(s => rowStatus(s, checkableDays) === "Action Needed").length;
   const onTrackCount = sites.filter(s => rowStatus(s, checkableDays) === "On Track").length;
   const totalPending = sites.reduce((sum, s) => sum + s.pendingInductions.count + s.pendingDocs.count, 0);
@@ -351,7 +357,7 @@ function CompliancePDF({
 
         <View style={styles.body}>
 
-          {/* ── Summary strip — white, gold bottom border ── */}
+          {/* ── Summary strip ── */}
           <View style={styles.summaryStrip}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryValue}>{sites.length}</Text>
@@ -409,6 +415,7 @@ function CompliancePDF({
               const coveredDays = site.dailyPrestarts.days;
               const status      = rowStatus(site, checkableDays);
               const isAlt       = idx % 2 === 1;
+              const submitted   = site.toolboxTalk?.submitted ?? (site.toolboxStatus !== "red");
 
               return (
                 <View key={site.siteReference} style={[styles.trow, ...(isAlt ? [styles.trowAlt] : [])]}>
@@ -421,39 +428,45 @@ function CompliancePDF({
                     )}
                   </View>
 
-                  {/* Day cells — use prestartDayStatus if available, else days array */}
-                  {weekdays.map((wd, i) => {
+                  {/* Day cells — 18×18 coloured View squares.
+                      Background colour is on the View (reliable in @react-pdf/renderer).
+                      Uses prestartDayStatus map; falls back to days array. */}
+                  {weekdays.map(wd => {
                     const ds: DayStatus =
-                      dayStatuses    ? (dayStatuses[wd] ?? "red") :
-                      wd > todayStr  ? "future"                   :
-                      coveredDays.includes(wd) ? "green"          : "red";
+                      dayStatuses               ? (dayStatuses[wd] ?? "future") :
+                      wd > todayStr             ? "future"                       :
+                      coveredDays.includes(wd)  ? "green"                        : "red";
 
-                    const cellStyle =
+                    const boxStyle =
                       ds === "green"  ? styles.dayCellGreen :
                       ds === "amber"  ? styles.dayCellAmber :
                       ds === "future" ? styles.dayCellGrey  : styles.dayCellRed;
+
                     const label =
                       ds === "green"  ? "✓" :
-                      ds === "amber"  ? "⚠" :
+                      ds === "amber"  ? "!" :
                       ds === "future" ? "—" : "✗";
 
                     return (
                       <View key={wd} style={styles.colDay}>
-                        <Text style={[styles.dayCell, cellStyle]}>{label}</Text>
+                        <View style={[styles.dayCellBox, boxStyle]}>
+                          <Text style={styles.dayCellLabel}>{label}</Text>
+                        </View>
                       </View>
                     );
                   })}
 
                   {/* Toolbox */}
                   <View style={styles.colToolbox}>
-                    <Text style={[
-                      styles.pill,
-                      site.toolboxStatus === "green" ? styles.pillGreen :
-                      site.toolboxStatus === "amber" ? styles.pillAmber : styles.pillRed,
-                    ]}>
-                      {site.toolboxStatus === "green" ? "Done" :
-                       site.toolboxStatus === "amber" ? "Long val." : "Missing"}
-                    </Text>
+                    {submitted && site.toolboxStatus === "green" && (
+                      <Text style={[styles.pill, styles.pillGreen]}>Done</Text>
+                    )}
+                    {submitted && site.toolboxStatus === "amber" && (
+                      <Text style={[styles.pill, styles.pillAmber]}>Long val.</Text>
+                    )}
+                    {!submitted && (
+                      <Text style={[styles.pill, styles.pillRed]}>Missing</Text>
+                    )}
                   </View>
 
                   {/* Pending Inductions */}
@@ -462,7 +475,7 @@ function CompliancePDF({
                       styles.pill,
                       site.pendingInductions.count === 0 ? styles.pillGreen : styles.pillAmber,
                     ]}>
-                      {site.pendingInductions.count === 0 ? "Clear" : `${site.pendingInductions.count}`}
+                      {site.pendingInductions.count === 0 ? "Clear" : `${site.pendingInductions.count} pending`}
                     </Text>
                   </View>
 
@@ -472,7 +485,7 @@ function CompliancePDF({
                       styles.pill,
                       site.pendingDocs.count === 0 ? styles.pillGreen : styles.pillAmber,
                     ]}>
-                      {site.pendingDocs.count === 0 ? "Clear" : `${site.pendingDocs.count}`}
+                      {site.pendingDocs.count === 0 ? "Clear" : `${site.pendingDocs.count} pending`}
                     </Text>
                   </View>
 
@@ -480,8 +493,8 @@ function CompliancePDF({
                   <View style={styles.colStatus}>
                     <Text style={[
                       styles.pill,
-                      status === "On Track"      ? styles.pillStatusGreen :
-                      status === "Attention"     ? styles.pillStatusAmber : styles.pillStatusRed,
+                      status === "On Track"  ? styles.pillStatusGreen :
+                      status === "Attention" ? styles.pillStatusAmber : styles.pillStatusRed,
                     ]}>
                       {status}
                     </Text>
@@ -496,9 +509,7 @@ function CompliancePDF({
 
         {/* ── Footer — gold top border ── */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>
-            Holdpoint · Site Compliance
-          </Text>
+          <Text style={styles.footerText}>Holdpoint · Site Compliance</Text>
           <Text
             style={styles.footerPage}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
@@ -522,7 +533,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id and week_start are required" }, { status: 400 });
   }
 
-  // Fetch live compliance data from the compliance-data endpoint
+  // Fetch live compliance data
   const origin  = request.nextUrl.origin;
   const dataRes = await fetch(
     `${origin}/api/breadcrumb/compliance-data?company_id=${encodeURIComponent(companyId)}&week_start=${encodeURIComponent(weekStart)}`
