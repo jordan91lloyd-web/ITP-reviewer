@@ -125,7 +125,7 @@ const S = StyleSheet.create({
   },
   trow: {
     flexDirection:     "row",
-    paddingVertical:   6,
+    paddingVertical:   5,
     paddingHorizontal: 8,
     borderBottom:      1,
     borderColor:       C.rowDiv,
@@ -135,13 +135,13 @@ const S = StyleSheet.create({
     backgroundColor: C.rowAlt,
   },
 
-  // Column widths (total 100%)
-  colSite: { width: "40%", paddingRight: 8 },
-  colPre:  { width: "15%", alignItems: "center" },
-  colTb:   { width: "12%", alignItems: "center" },
-  colInd:  { width: "11%", alignItems: "center" },
+  // Column widths (total 100%; landscape A4 ~740pt usable)
+  colSite: { width: "38%", paddingRight: 8 },
+  colPre:  { width: "14%", alignItems: "center" },
+  colTb:   { width: "13%", alignItems: "center" },
+  colInd:  { width: "12%", alignItems: "center" },
   colDocs: { width: "11%", alignItems: "center" },
-  colStat: { width: "11%", alignItems: "flex-end" },
+  colStat: { width: "12%", alignItems: "flex-end" },
 
   // Table header labels
   th: {
@@ -159,7 +159,7 @@ const S = StyleSheet.create({
   },
 
   // Site column
-  siteName: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.text },
+  siteName: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.text },
   siteFlag: { fontSize: 7, color: C.amber, marginTop: 2, fontFamily: "Helvetica-Oblique" },
 
   // Prestart fraction (large)
@@ -167,7 +167,7 @@ const S = StyleSheet.create({
   preAmber: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
   preRed:   { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "center" },
   preDash:  { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.label, textAlign: "center" },
-  preDays:  { fontSize: 8, color: C.footer, textAlign: "center", marginTop: 2 },
+  preDays:  { fontSize: 7, color: C.footer, textAlign: "center", marginTop: 2 },
 
   // Toolbox
   tbGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
@@ -328,7 +328,7 @@ function CompliancePDF({
           {/* Header row */}
           <View style={S.thead}>
             <View style={S.colSite}><Text style={S.thLeft}>Site</Text></View>
-            <View style={S.colPre}><Text style={S.th}>Daily Prestart</Text></View>
+            <View style={S.colPre}><Text style={S.th}>Prestart</Text></View>
             <View style={S.colTb}><Text style={S.th}>Toolbox</Text></View>
             <View style={S.colInd}><Text style={S.th}>Inductions</Text></View>
             <View style={S.colDocs}><Text style={S.th}>Docs</Text></View>
