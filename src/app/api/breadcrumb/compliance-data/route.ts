@@ -910,6 +910,7 @@ export async function GET(request: NextRequest) {
         .from("site_compliance_snapshots")
         .upsert(upsertRows, { onConflict: "company_id,week_start,site_reference" });
       if (upsertError) {
+        console.error("[snapshot upsert error]", upsertError);
         errors.push(`snapshot upsert: ${upsertError.message}`);
       }
     } catch (e) {
