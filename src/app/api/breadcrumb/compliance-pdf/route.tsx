@@ -22,229 +22,211 @@ import {
 export const dynamic     = "force-dynamic";
 export const maxDuration = 60;
 
-// ── Brand colours ──────────────────────────────────────────────────────────────
+// ── Colours ────────────────────────────────────────────────────────────────────
 const C = {
-  navy:    "#1B2A3B",
+  slate:   "#2E3A4E",
   gold:    "#C8972A",
   white:   "#FFFFFF",
   green:   "#16A34A",
   amber:   "#D97706",
   red:     "#DC2626",
-  border:  "#E5E7EB",
-  grey:    "#9CA3AF",
-  text:    "#111827",
-  subText: "#6B7280",
-  rowAlt:  "#F9FAFB",
+  border:  "#E0E0E0",
+  altRow:  "#F8F8F8",
+  text:    "#111111",
+  label:   "#666666",
+  footer:  "#888888",
+  daygrey: "#CCCCCC",
 };
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const S = StyleSheet.create({
+
+  // Page
   page: {
     backgroundColor: C.white,
-    paddingBottom:   55,
     fontFamily:      "Helvetica",
     fontSize:        8,
+    paddingBottom:   44,
   },
 
-  // ── Header (full-width navy band) ──────────────────────────────────────────
+  // ── Header ─────────────────────────────────────────────────────────────────
   header: {
-    backgroundColor:   C.navy,
+    backgroundColor:   C.slate,
     flexDirection:     "row",
     justifyContent:    "space-between",
     alignItems:        "center",
-    paddingVertical:   20,
-    paddingHorizontal: 30,
-    marginBottom:      16,
+    paddingVertical:   24,
+    paddingHorizontal: 32,
+    marginBottom:      0,
   },
-  headerLeft: {
-    flexDirection: "column",
-  },
-  brandName: {
-    fontSize:      24,
+  hLeft:    { flexDirection: "column" },
+  hRight:   { alignItems: "flex-end" },
+  hBrand: {
+    fontSize:      22,
     fontFamily:    "Helvetica-Bold",
     color:         C.gold,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
-  brandTagline: {
+  hTagline: {
     fontSize:  9,
     color:     C.white,
     marginTop: 4,
     opacity:   0.85,
   },
-  headerRight: {
-    alignItems: "flex-end",
-  },
-  reportTitle: {
-    fontSize:   14,
+  hTitle: {
+    fontSize:   13,
     fontFamily: "Helvetica-Bold",
     color:      C.white,
   },
-  reportWeek: {
+  hWeek: {
     fontSize:  10,
     color:     C.gold,
     marginTop: 3,
   },
-  reportGenerated: {
+  hGenerated: {
     fontSize:  8,
     color:     C.white,
     marginTop: 3,
     opacity:   0.65,
   },
 
-  // ── Body content wrapper ───────────────────────────────────────────────────
-  body: {
-    paddingHorizontal: 30,
-  },
-
-  // ── Summary strip — white bg, gold bottom border ──────────────────────────
-  summaryStrip: {
+  // ── Summary bar ────────────────────────────────────────────────────────────
+  summaryBar: {
     flexDirection:     "row",
     backgroundColor:   C.white,
-    borderBottom:      2,
-    borderColor:       C.gold,
-    paddingVertical:   12,
-    paddingHorizontal: 14,
-    marginBottom:      16,
+    borderBottom:      1,
+    borderColor:       C.border,
+    paddingVertical:   16,
+    paddingHorizontal: 32,
+    marginBottom:      0,
   },
-  summaryItem: {
-    flex:       1,
-    alignItems: "center",
-  },
-  summaryDivider: {
+  statBox:   { flex: 1, alignItems: "center" },
+  statDivider: {
     width:           1,
     backgroundColor: C.border,
     marginVertical:  4,
   },
-  summaryValue: {
-    fontSize:   28,
+  statNum: {
+    fontSize:   26,
     fontFamily: "Helvetica-Bold",
     color:      C.text,
   },
-  summaryValueRed: {
-    fontSize:   28,
-    fontFamily: "Helvetica-Bold",
-    color:      C.red,
-  },
-  summaryValueGreen: {
-    fontSize:   28,
-    fontFamily: "Helvetica-Bold",
-    color:      C.green,
-  },
-  summaryLabel: {
+  statNumRed:   { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.red   },
+  statNumGreen: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.green },
+  statLabel: {
     fontSize:      8,
-    color:         C.subText,
+    color:         C.label,
     marginTop:     3,
     textAlign:     "center",
     textTransform: "uppercase",
   },
 
   // ── Table ──────────────────────────────────────────────────────────────────
-  table: {
-    width:        "100%",
-    borderRadius: 3,
-    overflow:     "hidden",
-    border:       1,
-    borderColor:  C.border,
+  tableWrap: {
+    marginHorizontal: 20,
+    marginTop:        16,
+    border:           1,
+    borderColor:      C.border,
+    borderRadius:     2,
+    overflow:         "hidden",
   },
   thead: {
     flexDirection:     "row",
-    backgroundColor:   C.navy,
+    backgroundColor:   C.slate,
     paddingVertical:   7,
     paddingHorizontal: 10,
     alignItems:        "center",
   },
   trow: {
     flexDirection:     "row",
-    paddingVertical:   8,
+    paddingVertical:   7,
     paddingHorizontal: 10,
     borderBottom:      1,
     borderColor:       C.border,
     alignItems:        "center",
   },
-  trowAlt: {
-    backgroundColor: C.rowAlt,
-  },
+  trowAlt: { backgroundColor: C.altRow },
 
-  // Column widths — SITE | M T W T F (×5) | TOOLBOX | PENDING | DOCS | STATUS
-  colSite:       { width: "24%", paddingRight: 6 },
-  colDay:        { width: "4%",  alignItems: "center", justifyContent: "center" },
-  colToolbox:    { width: "10%", alignItems: "center" },
-  colInductions: { width: "15%", alignItems: "center" },
-  colDocs:       { width: "15%", alignItems: "center" },
-  colStatus:     { width: "16%", alignItems: "center" },
+  // Columns — SITE(24%) M T W T F(4%×5=20%) TOOLBOX(10%) IND(12%) DOCS(12%) STATUS(14%)
+  // Total: 24+20+10+12+12+14 = 92% — remaining flex fills gaps
+  colSite:  { width: "24%", paddingRight: 6 },
+  colDay:   { width: "4%",  alignItems: "center", justifyContent: "center" },
+  colTb:    { width: "10%", alignItems: "center" },
+  colInd:   { width: "12%", alignItems: "center" },
+  colDocs:  { width: "12%", alignItems: "center" },
+  colStat:  { width: "14%", alignItems: "flex-end" },
 
-  // Header text
-  thText: {
+  // Header cells
+  th: {
     color:         C.white,
     fontFamily:    "Helvetica-Bold",
-    fontSize:      6.5,
+    fontSize:      7.5,
     textTransform: "uppercase",
     textAlign:     "center",
   },
-  thTextLeft: {
+  thLeft: {
     color:         C.white,
     fontFamily:    "Helvetica-Bold",
-    fontSize:      6.5,
+    fontSize:      7.5,
     textTransform: "uppercase",
   },
 
   // Site cell
-  tdSiteName: {
-    fontSize:   8.5,
+  siteName: {
+    fontSize:   9,
     fontFamily: "Helvetica-Bold",
     color:      C.text,
   },
-  tdGamingFlag: {
+  siteFlag: {
     fontSize:   7,
     color:      C.amber,
     fontFamily: "Helvetica-Oblique",
     marginTop:  2,
   },
 
-  // Day cell — 18×18 coloured View square, white text inside
-  // Background colour is applied via the dayCellGreen/Amber/Red/Grey overrides
-  dayCellBox: {
-    width:          18,
-    height:         18,
+  // Day cell — 16×16 View box (background on View, reliable in react-pdf)
+  dayBox: {
+    width:          16,
+    height:         16,
     borderRadius:   2,
     justifyContent: "center",
     alignItems:     "center",
   },
-  dayCellGreen: { backgroundColor: C.green },
-  dayCellAmber: { backgroundColor: C.amber },
-  dayCellRed:   { backgroundColor: C.red   },
-  dayCellGrey:  { backgroundColor: C.grey  },
-  dayCellLabel: {
-    fontSize:   8,
+  dayBoxGreen: { backgroundColor: C.green   },
+  dayBoxAmber: { backgroundColor: C.amber   },
+  dayBoxRed:   { backgroundColor: C.red     },
+  dayBoxGrey:  { backgroundColor: C.daygrey },
+  dayLabel: {
+    fontSize:   7.5,
     fontFamily: "Helvetica-Bold",
     color:      C.white,
     textAlign:  "center",
   },
-
-  // Pill chips
-  pill: {
-    borderRadius:      3,
-    paddingVertical:   2,
-    paddingHorizontal: 6,
-    fontSize:          7,
-    fontFamily:        "Helvetica-Bold",
-    textAlign:         "center",
+  dayLabelDark: {
+    fontSize:   7.5,
+    fontFamily: "Helvetica-Bold",
+    color:      "#555555",
+    textAlign:  "center",
   },
-  pillGreen: { backgroundColor: "#DCFCE7", color: C.green  },
-  pillAmber: { backgroundColor: "#FEF3C7", color: C.amber  },
-  pillRed:   { backgroundColor: "#FEE2E2", color: C.red    },
 
-  // Status pills — solid fill with white text
-  pillStatusGreen: { backgroundColor: C.green, color: C.white, borderRadius: 3 },
-  pillStatusAmber: { backgroundColor: C.amber, color: C.white, borderRadius: 3 },
-  pillStatusRed:   { backgroundColor: C.red,   color: C.white, borderRadius: 3 },
+  // Toolbox / status text cells
+  tbGreen:  { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
+  tbAmber:  { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
+  tbRed:    { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "center" },
+
+  countAmber: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
+  countGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
+
+  statGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "right" },
+  statAmber: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "right" },
+  statRed:   { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "right" },
 
   // ── Footer ─────────────────────────────────────────────────────────────────
   footer: {
     position:       "absolute",
-    bottom:         18,
-    left:           30,
-    right:          30,
+    bottom:         14,
+    left:           20,
+    right:          20,
     flexDirection:  "row",
     justifyContent: "space-between",
     alignItems:     "center",
@@ -252,14 +234,8 @@ const styles = StyleSheet.create({
     borderColor:    C.gold,
     paddingTop:     5,
   },
-  footerText: {
-    fontSize: 6.5,
-    color:    C.subText,
-  },
-  footerPage: {
-    fontSize: 6.5,
-    color:    C.subText,
-  },
+  footerLeft:  { fontSize: 7, color: C.footer },
+  footerRight: { fontSize: 7, color: C.footer },
 });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -318,8 +294,8 @@ function CompliancePDF({
   todayStr,
 }: {
   sites:     SiteData[];
-  weekStart: string;   // YYYY-MM-DD Monday
-  todayStr:  string;   // YYYY-MM-DD today in Sydney
+  weekStart: string;
+  todayStr:  string;
 }) {
   const weekdays      = getWeekdays(weekStart);
   const [y, m, d]     = weekStart.split("-").map(Number);
@@ -334,184 +310,173 @@ function CompliancePDF({
 
   const actionCount  = sites.filter(s => rowStatus(s, checkableDays) === "Action Needed").length;
   const onTrackCount = sites.filter(s => rowStatus(s, checkableDays) === "On Track").length;
-  const totalPending = sites.reduce((sum, s) => sum + s.pendingInductions.count + s.pendingDocs.count, 0);
+  const totalPending = sites.reduce((n, s) => n + s.pendingInductions.count + s.pendingDocs.count, 0);
 
   return (
     <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={S.page}>
 
-        {/* ── Header — full-width navy band ── */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.brandName}>HOLDPOINT</Text>
-            <Text style={styles.brandTagline}>Construction QA Platform</Text>
+        {/* ── Header ── */}
+        <View style={S.header}>
+          <View style={S.hLeft}>
+            <Text style={S.hBrand}>HOLDPOINT</Text>
+            <Text style={S.hTagline}>Construction QA Platform</Text>
           </View>
-          <View style={styles.headerRight}>
-            <Text style={styles.reportTitle}>Site Compliance Report</Text>
-            <Text style={styles.reportWeek}>
-              {fmtDate(weekStart)} – {fmtDate(fridayStr)}
-            </Text>
-            <Text style={styles.reportGenerated}>Generated {generatedAt} AEST</Text>
+          <View style={S.hRight}>
+            <Text style={S.hTitle}>Site Compliance Report</Text>
+            <Text style={S.hWeek}>Week of {fmtDate(weekStart)} – {fmtDate(fridayStr)}</Text>
+            <Text style={S.hGenerated}>Generated {generatedAt} AEST</Text>
           </View>
         </View>
 
-        <View style={styles.body}>
+        {/* ── Summary bar ── */}
+        <View style={S.summaryBar}>
+          <View style={S.statBox}>
+            <Text style={S.statNum}>{sites.length}</Text>
+            <Text style={S.statLabel}>Sites Tracked</Text>
+          </View>
+          <View style={S.statDivider} />
+          <View style={S.statBox}>
+            <Text style={S.statNumRed}>{actionCount}</Text>
+            <Text style={S.statLabel}>Action Required</Text>
+          </View>
+          <View style={S.statDivider} />
+          <View style={S.statBox}>
+            <Text style={S.statNum}>{totalPending}</Text>
+            <Text style={S.statLabel}>Total Pending</Text>
+          </View>
+          <View style={S.statDivider} />
+          <View style={S.statBox}>
+            <Text style={S.statNumGreen}>{onTrackCount}</Text>
+            <Text style={S.statLabel}>On Track</Text>
+          </View>
+        </View>
 
-          {/* ── Summary strip ── */}
-          <View style={styles.summaryStrip}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{sites.length}</Text>
-              <Text style={styles.summaryLabel}>Sites Tracked</Text>
+        {/* ── Table ── */}
+        <View style={S.tableWrap}>
+
+          {/* Header row */}
+          <View style={S.thead}>
+            <View style={S.colSite}>
+              <Text style={S.thLeft}>Site</Text>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValueRed}>{actionCount}</Text>
-              <Text style={styles.summaryLabel}>Action Required</Text>
+            {weekdays.map(wd => (
+              <View key={wd} style={S.colDay}>
+                <Text style={S.th}>
+                  {new Date(wd + "T00:00:00Z").toLocaleDateString("en-AU", { weekday: "narrow" })}
+                </Text>
+              </View>
+            ))}
+            <View style={S.colTb}>
+              <Text style={S.th}>Toolbox</Text>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{totalPending}</Text>
-              <Text style={styles.summaryLabel}>Total Pending</Text>
+            <View style={S.colInd}>
+              <Text style={S.th}>Inductions</Text>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValueGreen}>{onTrackCount}</Text>
-              <Text style={styles.summaryLabel}>On Track</Text>
+            <View style={S.colDocs}>
+              <Text style={S.th}>Docs</Text>
+            </View>
+            <View style={S.colStat}>
+              <Text style={S.th}>Status</Text>
             </View>
           </View>
 
-          {/* ── Compliance table ── */}
-          <View style={styles.table}>
+          {/* Data rows */}
+          {sites.map((site, idx) => {
+            const dayStatuses = site.prestartDayStatus ?? null;
+            const coveredDays = site.dailyPrestarts.days;
+            const status      = rowStatus(site, checkableDays);
+            const isAlt       = idx % 2 === 1;
+            const submitted   = site.toolboxTalk?.submitted ?? (site.toolboxStatus !== "red");
 
-            {/* Table header */}
-            <View style={styles.thead}>
-              <View style={styles.colSite}>
-                <Text style={styles.thTextLeft}>Site</Text>
-              </View>
-              {weekdays.map(wd => (
-                <View key={wd} style={styles.colDay}>
-                  <Text style={styles.thText}>
-                    {new Date(wd + "T00:00:00Z").toLocaleDateString("en-AU", { weekday: "narrow" })}
+            return (
+              <View
+                key={site.siteReference}
+                style={[S.trow, ...(isAlt ? [S.trowAlt] : [])]}
+                wrap={false}
+              >
+                {/* Site */}
+                <View style={S.colSite}>
+                  <Text style={S.siteName}>{site.siteName}</Text>
+                  {site.gamingFlagged && (
+                    <Text style={S.siteFlag}>! Long validity</Text>
+                  )}
+                </View>
+
+                {/* Day cells — coloured 16×16 View boxes */}
+                {weekdays.map(wd => {
+                  const ds: DayStatus =
+                    dayStatuses              ? (dayStatuses[wd] ?? "future") :
+                    wd > todayStr            ? "future"                       :
+                    coveredDays.includes(wd) ? "green"                        : "red";
+
+                  const boxStyle =
+                    ds === "green"  ? S.dayBoxGreen :
+                    ds === "amber"  ? S.dayBoxAmber :
+                    ds === "future" ? S.dayBoxGrey  : S.dayBoxRed;
+
+                  const label =
+                    ds === "green"  ? "OK" :
+                    ds === "amber"  ? "!"  :
+                    ds === "future" ? "-"  : "X";
+
+                  const labelStyle = ds === "future" ? S.dayLabelDark : S.dayLabel;
+
+                  return (
+                    <View key={wd} style={S.colDay}>
+                      <View style={[S.dayBox, boxStyle]}>
+                        <Text style={labelStyle}>{label}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+
+                {/* Toolbox */}
+                <View style={S.colTb}>
+                  <Text style={
+                    submitted && site.toolboxStatus === "green" ? S.tbGreen :
+                    submitted && site.toolboxStatus === "amber" ? S.tbAmber : S.tbRed
+                  }>
+                    {submitted && site.toolboxStatus === "green" ? "Done"      :
+                     submitted && site.toolboxStatus === "amber" ? "Long val." : "Missing"}
                   </Text>
                 </View>
-              ))}
-              <View style={styles.colToolbox}>
-                <Text style={styles.thText}>Toolbox</Text>
-              </View>
-              <View style={styles.colInductions}>
-                <Text style={styles.thText}>Pending</Text>
-              </View>
-              <View style={styles.colDocs}>
-                <Text style={styles.thText}>Docs</Text>
-              </View>
-              <View style={styles.colStatus}>
-                <Text style={styles.thText}>Status</Text>
-              </View>
-            </View>
 
-            {/* Table rows */}
-            {sites.map((site, idx) => {
-              const dayStatuses = site.prestartDayStatus ?? null;
-              const coveredDays = site.dailyPrestarts.days;
-              const status      = rowStatus(site, checkableDays);
-              const isAlt       = idx % 2 === 1;
-              const submitted   = site.toolboxTalk?.submitted ?? (site.toolboxStatus !== "red");
-
-              return (
-                <View key={site.siteReference} style={[styles.trow, ...(isAlt ? [styles.trowAlt] : [])]}>
-
-                  {/* Site name + gaming flag */}
-                  <View style={styles.colSite}>
-                    <Text style={styles.tdSiteName}>{site.siteName}</Text>
-                    {site.gamingFlagged && (
-                      <Text style={styles.tdGamingFlag}>⚠ Long validity</Text>
-                    )}
-                  </View>
-
-                  {/* Day cells — 18×18 coloured View squares.
-                      Background colour is on the View (reliable in @react-pdf/renderer).
-                      Uses prestartDayStatus map; falls back to days array. */}
-                  {weekdays.map(wd => {
-                    const ds: DayStatus =
-                      dayStatuses               ? (dayStatuses[wd] ?? "future") :
-                      wd > todayStr             ? "future"                       :
-                      coveredDays.includes(wd)  ? "green"                        : "red";
-
-                    const boxStyle =
-                      ds === "green"  ? styles.dayCellGreen :
-                      ds === "amber"  ? styles.dayCellAmber :
-                      ds === "future" ? styles.dayCellGrey  : styles.dayCellRed;
-
-                    const label =
-                      ds === "green"  ? "✓" :
-                      ds === "amber"  ? "!" :
-                      ds === "future" ? "—" : "✗";
-
-                    return (
-                      <View key={wd} style={styles.colDay}>
-                        <View style={[styles.dayCellBox, boxStyle]}>
-                          <Text style={styles.dayCellLabel}>{label}</Text>
-                        </View>
-                      </View>
-                    );
-                  })}
-
-                  {/* Toolbox */}
-                  <View style={styles.colToolbox}>
-                    {submitted && site.toolboxStatus === "green" && (
-                      <Text style={[styles.pill, styles.pillGreen]}>Done</Text>
-                    )}
-                    {submitted && site.toolboxStatus === "amber" && (
-                      <Text style={[styles.pill, styles.pillAmber]}>Long val.</Text>
-                    )}
-                    {!submitted && (
-                      <Text style={[styles.pill, styles.pillRed]}>Missing</Text>
-                    )}
-                  </View>
-
-                  {/* Pending Inductions */}
-                  <View style={styles.colInductions}>
-                    <Text style={[
-                      styles.pill,
-                      site.pendingInductions.count === 0 ? styles.pillGreen : styles.pillAmber,
-                    ]}>
-                      {site.pendingInductions.count === 0 ? "Clear" : `${site.pendingInductions.count} pending`}
-                    </Text>
-                  </View>
-
-                  {/* Pending Docs */}
-                  <View style={styles.colDocs}>
-                    <Text style={[
-                      styles.pill,
-                      site.pendingDocs.count === 0 ? styles.pillGreen : styles.pillAmber,
-                    ]}>
-                      {site.pendingDocs.count === 0 ? "Clear" : `${site.pendingDocs.count} pending`}
-                    </Text>
-                  </View>
-
-                  {/* Status */}
-                  <View style={styles.colStatus}>
-                    <Text style={[
-                      styles.pill,
-                      status === "On Track"  ? styles.pillStatusGreen :
-                      status === "Attention" ? styles.pillStatusAmber : styles.pillStatusRed,
-                    ]}>
-                      {status}
-                    </Text>
-                  </View>
-
+                {/* Inductions */}
+                <View style={S.colInd}>
+                  <Text style={site.pendingInductions.count === 0 ? S.countGreen : S.countAmber}>
+                    {site.pendingInductions.count === 0 ? "Clear" : String(site.pendingInductions.count)}
+                  </Text>
                 </View>
-              );
-            })}
 
-          </View>
+                {/* Docs */}
+                <View style={S.colDocs}>
+                  <Text style={site.pendingDocs.count === 0 ? S.countGreen : S.countAmber}>
+                    {site.pendingDocs.count === 0 ? "Clear" : String(site.pendingDocs.count)}
+                  </Text>
+                </View>
+
+                {/* Status */}
+                <View style={S.colStat}>
+                  <Text style={
+                    status === "On Track"  ? S.statGreen :
+                    status === "Attention" ? S.statAmber : S.statRed
+                  }>
+                    {status}
+                  </Text>
+                </View>
+
+              </View>
+            );
+          })}
+
         </View>
 
-        {/* ── Footer — gold top border ── */}
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>Holdpoint · Site Compliance</Text>
+        {/* ── Footer ── */}
+        <View style={S.footer} fixed>
+          <Text style={S.footerLeft}>Holdpoint · Confidential · Site Compliance Report</Text>
           <Text
-            style={styles.footerPage}
+            style={S.footerRight}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
             fixed
           />
@@ -533,7 +498,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id and week_start are required" }, { status: 400 });
   }
 
-  // Fetch live compliance data
   const origin  = request.nextUrl.origin;
   const dataRes = await fetch(
     `${origin}/api/breadcrumb/compliance-data?company_id=${encodeURIComponent(companyId)}&week_start=${encodeURIComponent(weekStart)}`
@@ -547,10 +511,7 @@ export async function GET(request: NextRequest) {
   const sites = (data.sites ?? []) as SiteData[];
 
   if (sites.length === 0) {
-    return NextResponse.json(
-      { error: "No site data available for this week." },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "No site data available for this week." }, { status: 404 });
   }
 
   const todayStr = getSydneyDateString(new Date().toISOString());
@@ -558,11 +519,7 @@ export async function GET(request: NextRequest) {
   let buffer: Buffer;
   try {
     buffer = await renderToBuffer(
-      <CompliancePDF
-        sites={sites}
-        weekStart={weekStart}
-        todayStr={todayStr}
-      />
+      <CompliancePDF sites={sites} weekStart={weekStart} todayStr={todayStr} />
     );
   } catch (err) {
     return NextResponse.json(
