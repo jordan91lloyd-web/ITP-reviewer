@@ -1,5 +1,5 @@
 // ─── GET /api/breadcrumb/compliance-pdf ───────────────────────────────────────
-// Fetches live compliance data and streams a portrait A4 PDF.
+// Fetches live compliance data and streams a landscape A4 PDF.
 // Data source: /api/breadcrumb/compliance-data (live Breadcrumb fetch).
 //
 // Query params:
@@ -125,7 +125,7 @@ const S = StyleSheet.create({
   },
   trow: {
     flexDirection:     "row",
-    paddingVertical:   8,
+    paddingVertical:   6,
     paddingHorizontal: 8,
     borderBottom:      1,
     borderColor:       C.rowDiv,
@@ -160,14 +160,14 @@ const S = StyleSheet.create({
 
   // Site column
   siteName: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.text },
-  siteFlag: { fontSize: 7, color: C.amber, marginTop: 2 },
+  siteFlag: { fontSize: 7, color: C.amber, marginTop: 2, fontFamily: "Helvetica-Oblique" },
 
   // Prestart fraction (large)
   preGreen: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
   preAmber: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.amber, textAlign: "center" },
   preRed:   { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.red,   textAlign: "center" },
   preDash:  { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.label, textAlign: "center" },
-  preDays:  { fontSize: 6,  color: C.label, textAlign: "center", marginTop: 2 },
+  preDays:  { fontSize: 8, color: C.footer, textAlign: "center", marginTop: 2 },
 
   // Toolbox
   tbGreen: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center" },
@@ -249,12 +249,12 @@ function getWeekdays(mondayStr: string): string[] {
   return days;
 }
 
-function rowStatus(site: SiteData, checkableDays: number): "On Track" | "Attention" | "Action Needed" {
+function rowStatus(site: SiteData, checkableDays: number): "On Track" | "Attention" | "Action Req." {
   const prestartOk = checkableDays === 0 || site.dailyPrestarts.count >= checkableDays;
   const tbOk       = site.toolboxStatus !== "red";
   const pendingOk  = site.pendingInductions.count === 0 && site.pendingDocs.count === 0;
   if (prestartOk && tbOk && pendingOk) return "On Track";
-  if (!prestartOk || site.toolboxStatus === "red") return "Action Needed";
+  if (!prestartOk || site.toolboxStatus === "red") return "Action Req.";
   return "Attention";
 }
 
@@ -278,13 +278,13 @@ function CompliancePDF({
     hour: "2-digit", minute: "2-digit", timeZone: "Australia/Sydney",
   });
 
-  const actionCount  = sites.filter(s => rowStatus(s, checkableDays) === "Action Needed").length;
+  const actionCount  = sites.filter(s => rowStatus(s, checkableDays) === "Action Req.").length;
   const onTrackCount = sites.filter(s => rowStatus(s, checkableDays) === "On Track").length;
   const totalPending = sites.reduce((n, s) => n + s.pendingInductions.count + s.pendingDocs.count, 0);
 
   return (
     <Document>
-      <Page size="A4" style={S.page}>
+      <Page size="A4" orientation="landscape" style={S.page}>
 
         {/* ── Header ── */}
         <View style={S.header}>
@@ -364,7 +364,7 @@ function CompliancePDF({
                 <View style={S.colSite}>
                   <Text style={S.siteName}>{site.siteName}</Text>
                   {site.gamingFlagged && (
-                    <Text style={S.siteFlag}>Long validity prestart detected</Text>
+                    <Text style={S.siteFlag}>! Long validity</Text>
                   )}
                 </View>
 
@@ -405,7 +405,7 @@ function CompliancePDF({
                 <View style={S.colStat}>
                   <Text style={
                     status === "On Track"  ? S.statusGreen :
-                    status === "Attention" ? S.statusAmber : S.statusRed
+                    status === "Attention" ? S.statusAmber  : S.statusRed
                   }>
                     {status}
                   </Text>
