@@ -37,13 +37,20 @@ interface SiteDiaryResult {
 }
 
 type TrafficLight = "green" | "amber" | "red" | "gray";
+type DayStatus    = "green" | "amber" | "red" | "future";
+type ToolboxStatus = "green" | "amber" | "red";
+type QualityRating = "Detailed" | "Adequate" | "Minimal" | "No content";
 
 interface SiteRow {
   site: string;
   mappedProjectId: string | null;
   prestartCount: number;
-  prestartDays: string[];   // YYYY-MM-DD strings of covered days
+  prestartDays: string[];   // YYYY-MM-DD strings of covered days (green or amber)
+  prestartDayStatus: Record<string, DayStatus> | null;
+  gamingFlagged: boolean;
+  longestValidityDays: number;
   toolboxDone: boolean;
+  toolboxStatus: ToolboxStatus;
   pendingInductions: number;
   pendingDocs: number;
   pendingInductionDetails: Array<{ title: string; supplier: string; dateSubmitted: string }>;
@@ -51,6 +58,9 @@ interface SiteRow {
   oldestPendingDate: string | null;
   siteDiary: SiteDiaryResult | null;
   diaryLoading: boolean;
+  qualityRating: QualityRating | null;
+  qualityScore: number | null;
+  qualitySummary: string | null;
 }
 
 interface ReportHistoryItem {
@@ -97,9 +107,16 @@ interface ApiSiteData {
   siteName: string;
   procoreProjectId: string | null;
   dailyPrestarts: ApiDailyPrestarts;
+  prestartDayStatus: Record<string, DayStatus> | null;
+  gamingFlagged: boolean;
+  longestValidityDays: number;
   toolboxTalk: ApiToolboxTalk;
+  toolboxStatus: ToolboxStatus;
   pendingInductions: { count: number; items: ApiInductionItem[] };
   pendingDocs: { count: number; items: ApiDocItem[] };
+  qualityRating: QualityRating | null;
+  qualityScore: number | null;
+  qualitySummary: string | null;
 }
 
 // ── Week helpers ───────────────────────────────────────────────────────────────
@@ -280,14 +297,22 @@ function Spinner({ className = "h-3 w-3" }: { className?: string }) {
 }
 
 // ── Prestart day grid ──────────────────────────────────────────────────────────
-// Shows Mon–Fri as individual green/red/gray cells instead of an X/5 pill.
+// Shows Mon–Fri as individual cells.
+// When prestartDayStatus is provided (API mode), uses it for colors:
+//   green  → normal submission (≤7d validity)   → green cell ✓
+//   amber  → only long-validity submission       → amber cell ⚠ (with tooltip)
+//   red    → no coverage                         → red cell ✗
+//   future → not yet due                         → gray cell —
+// Falls back to prestartDays array when status is not available (CSV / old snapshots).
 
 function PrestartDayGrid({
   prestartDays,
+  prestartDayStatus,
   weekdays,
   todayStr,
 }: {
   prestartDays: string[];
+  prestartDayStatus?: Record<string, DayStatus> | null;
   weekdays: string[];
   todayStr: string;
 }) {
@@ -295,24 +320,34 @@ function PrestartDayGrid({
   return (
     <div className="flex gap-0.5">
       {weekdays.map((wd, i) => {
-        const isFuture  = wd > todayStr;
-        const isCovered = prestartDays.includes(wd);
+        const status = prestartDayStatus ? prestartDayStatus[wd] : null;
+
         let cls: string;
         let label: string;
-        if (isFuture) {
-          cls   = "bg-gray-100 text-gray-400";
-          label = "—";
-        } else if (isCovered) {
-          cls   = "bg-green-100 text-green-700 font-bold";
-          label = "✓";
+        let tooltip: string;
+
+        if (status === "future" || (!status && wd > todayStr)) {
+          cls     = "bg-gray-100 text-gray-400";
+          label   = "—";
+          tooltip = wd;
+        } else if (status === "green" || (!status && prestartDays.includes(wd))) {
+          cls     = "bg-green-100 text-green-700 font-bold";
+          label   = "✓";
+          tooltip = wd;
+        } else if (status === "amber") {
+          cls     = "bg-amber-100 text-amber-700 font-bold";
+          label   = "⚠";
+          tooltip = `${wd} — covered by long-validity submission only`;
         } else {
-          cls   = "bg-red-100 text-red-600";
-          label = "✗";
+          cls     = "bg-red-100 text-red-600";
+          label   = "✗";
+          tooltip = wd;
         }
+
         return (
           <div
             key={wd}
-            title={wd}
+            title={tooltip}
             className={`w-6 h-6 text-[10px] flex flex-col items-center justify-center rounded ${cls}`}
           >
             <span className="leading-none">{labels[i]}</span>
@@ -322,6 +357,20 @@ function PrestartDayGrid({
       })}
     </div>
   );
+}
+
+// ── Quality pill ───────────────────────────────────────────────────────────────
+
+function QualityPill({ rating }: { rating: QualityRating | null }) {
+  if (!rating) return <Pill light="gray">—</Pill>;
+  const map: Record<QualityRating, { light: TrafficLight; label: string }> = {
+    "Detailed":   { light: "green", label: "Detailed"   },
+    "Adequate":   { light: "amber", label: "Adequate"   },
+    "Minimal":    { light: "red",   label: "Minimal"    },
+    "No content": { light: "red",   label: "No content" },
+  };
+  const { light, label } = map[rating];
+  return <Pill light={light}>{label}</Pill>;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -412,11 +461,15 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         }
 
         return {
-          site:          s.siteName,
+          site:              s.siteName,
           mappedProjectId,
-          prestartCount: s.dailyPrestarts.count,
-          prestartDays:  s.dailyPrestarts.days,
-          toolboxDone:   s.toolboxTalk.submitted,
+          prestartCount:     s.dailyPrestarts.count,
+          prestartDays:      s.dailyPrestarts.days,
+          prestartDayStatus: s.prestartDayStatus ?? null,
+          gamingFlagged:     s.gamingFlagged     ?? false,
+          longestValidityDays: s.longestValidityDays ?? 0,
+          toolboxDone:       s.toolboxTalk.submitted,
+          toolboxStatus:     (s.toolboxStatus ?? (s.toolboxTalk.submitted ? "green" : "red")) as ToolboxStatus,
           pendingInductions: s.pendingInductions.count,
           pendingDocs:       s.pendingDocs.count,
           pendingInductionDetails: s.pendingInductions.items.map(i => ({
@@ -430,8 +483,11 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             dateSubmitted: i.submittedDate,
           })),
           oldestPendingDate,
-          siteDiary:    null,
-          diaryLoading: true,
+          siteDiary:     null,
+          diaryLoading:  true,
+          qualityRating: (s.qualityRating as QualityRating | null) ?? null,
+          qualityScore:  s.qualityScore  ?? null,
+          qualitySummary: s.qualitySummary ?? null,
         };
       });
 
@@ -476,16 +532,26 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
         return a.localeCompare(b);
       });
 
-      return sortedSites.map(site => ({
-        site,
-        mappedProjectId: mapBySite.get(site) ?? null,
-        prestartCount:   calcPrestartCount(briefings ?? [], site, monday, friday),
-        prestartDays:    [],   // CSV mode — no per-day strings
-        toolboxDone:     calcToolboxDone(briefings ?? [], site),
-        ...calcApprovalKPIs(approvals ?? [], site),
-        siteDiary:    null,
-        diaryLoading: true,
-      }));
+      return sortedSites.map(site => {
+        const tbDone = calcToolboxDone(briefings ?? [], site);
+        return {
+          site,
+          mappedProjectId:   mapBySite.get(site) ?? null,
+          prestartCount:     calcPrestartCount(briefings ?? [], site, monday, friday),
+          prestartDays:      [],   // CSV mode — no per-day strings
+          prestartDayStatus: null,
+          gamingFlagged:     false,
+          longestValidityDays: 0,
+          toolboxDone:       tbDone,
+          toolboxStatus:     (tbDone ? "green" : "red") as ToolboxStatus,
+          ...calcApprovalKPIs(approvals ?? [], site),
+          siteDiary:     null,
+          diaryLoading:  true,
+          qualityRating:  null,
+          qualityScore:   null,
+          qualitySummary: null,
+        };
+      });
     },
     []
   );
@@ -668,7 +734,17 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
             const cData = await cached.json();
             if (cData?.report && Array.isArray(cData.report.site_data)) {
               const restored: SiteRow[] = (cData.report.site_data as SiteRow[]).map(r => ({
-                ...r, prestartDays: r.prestartDays ?? [], siteDiary: null, diaryLoading: true,
+                ...r,
+                prestartDays:      r.prestartDays ?? [],
+                prestartDayStatus: r.prestartDayStatus ?? null,
+                gamingFlagged:     r.gamingFlagged     ?? false,
+                longestValidityDays: r.longestValidityDays ?? 0,
+                toolboxStatus:     r.toolboxStatus ?? (r.toolboxDone ? "green" : "red"),
+                qualityRating:     r.qualityRating  ?? null,
+                qualityScore:      r.qualityScore   ?? null,
+                qualitySummary:    r.qualitySummary ?? null,
+                siteDiary:     null,
+                diaryLoading:  true,
               }));
               setSiteRows(restored);
               void loadSiteDiaries(effectiveMonday);
@@ -799,7 +875,17 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
         if (Array.isArray(report.site_data)) {
           const restored: SiteRow[] = (report.site_data as SiteRow[]).map(r => ({
-            ...r, prestartDays: r.prestartDays ?? [], siteDiary: null, diaryLoading: true,
+            ...r,
+            prestartDays:      r.prestartDays ?? [],
+            prestartDayStatus: r.prestartDayStatus ?? null,
+            gamingFlagged:     r.gamingFlagged     ?? false,
+            longestValidityDays: r.longestValidityDays ?? 0,
+            toolboxStatus:     r.toolboxStatus ?? (r.toolboxDone ? "green" : "red"),
+            qualityRating:     r.qualityRating  ?? null,
+            qualityScore:      r.qualityScore   ?? null,
+            qualitySummary:    r.qualitySummary ?? null,
+            siteDiary:     null,
+            diaryLoading:  true,
           }));
           setSiteRows(restored);
           const reportMonday = report.report_week_start
@@ -1314,6 +1400,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400 w-44">Site</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Daily Prestart</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Toolbox Talk</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Quality</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending Inductions</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Pending SWMS/Docs</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-gray-400">Site Diaries</th>
@@ -1324,7 +1411,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
               <tbody className="divide-y divide-gray-100">
                 {siteRows.map(row => {
                   const preLight   = prestartLight(row.prestartCount);
-                  const tbLight    = toolboxLight(row.toolboxDone);
+                  const tbLight    = row.toolboxStatus === "red" ? "red" : row.toolboxStatus === "amber" ? "amber" : "green";
                   const indLight   = countLight(row.pendingInductions);
                   const docLight   = countLight(row.pendingDocs);
                   const dLight     = diaryLight(row.siteDiary);
@@ -1343,7 +1430,17 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                         onClick={() => setExpandedSite(isExpanded ? null : row.site)}
                       >
                         <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900 text-xs leading-tight">{row.site}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-medium text-gray-900 text-xs leading-tight">{row.site}</span>
+                            {row.gamingFlagged && (
+                              <span
+                                className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 shrink-0 cursor-default"
+                                title={`Long-validity prestart detected (${row.longestValidityDays}d window) — may indicate gaming`}
+                              >
+                                ⚠ Long validity
+                              </span>
+                            )}
+                          </div>
                           {project && (
                             <div className="text-[10px] text-gray-400 mt-0.5 truncate">{project.name}</div>
                           )}
@@ -1351,26 +1448,37 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
 
                         {/* Daily Prestart — day grid */}
                         <td className="px-4 py-3">
-                          {row.prestartDays.length > 0 || mode === "csv" ? (
-                            mode === "csv" ? (
-                              <Pill light={preLight}>{row.prestartCount}/5</Pill>
-                            ) : (
-                              <PrestartDayGrid
-                                prestartDays={row.prestartDays}
-                                weekdays={weekdays}
-                                todayStr={todayStr}
-                              />
-                            )
+                          {mode === "csv" ? (
+                            <Pill light={preLight}>{row.prestartCount}/5</Pill>
                           ) : (
                             <PrestartDayGrid
                               prestartDays={row.prestartDays}
+                              prestartDayStatus={row.prestartDayStatus}
                               weekdays={weekdays}
                               todayStr={todayStr}
                             />
                           )}
                         </td>
 
-                        <td className="px-4 py-3"><Pill light={tbLight}>{row.toolboxDone ? "Done" : "Missing"}</Pill></td>
+                        {/* Toolbox Talk — amber when only long-validity submission */}
+                        <td className="px-4 py-3">
+                          {row.toolboxStatus === "green" ? (
+                            <Pill light="green">Done</Pill>
+                          ) : row.toolboxStatus === "amber" ? (
+                            <span title="Toolbox talk submitted but only via long-validity window (>7 days)">
+                              <Pill light="amber">Long validity</Pill>
+                            </span>
+                          ) : (
+                            <Pill light="red">Missing</Pill>
+                          )}
+                        </td>
+
+                        {/* Quality — from Claude scoring of prestart content */}
+                        <td className="px-4 py-3">
+                          <span title={row.qualitySummary ?? undefined}>
+                            <QualityPill rating={row.qualityRating} />
+                          </span>
+                        </td>
                         <td className="px-4 py-3">
                           <Pill light={indLight}>
                             {row.pendingInductions === 0 ? "Clear" : `${row.pendingInductions} pending`}
@@ -1405,7 +1513,7 @@ export default function SiteComplianceTab({ companyId, projects, isAdmin }: Prop
                       {/* ── Expanded detail row ── */}
                       {isExpanded && (
                         <tr key={`${row.site}-detail`}>
-                          <td colSpan={8} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                          <td colSpan={9} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
                               {row.pendingInductionDetails.length > 0 && (
