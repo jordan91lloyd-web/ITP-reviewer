@@ -97,18 +97,6 @@ function vendorProjectCounts(trade: string, tradeMap: TradeMap): Map<string, num
   return counts;
 }
 
-function cellBg(vendors: string[], vpCounts: Map<string, number>): string {
-  if (vendors.length === 0) return "transparent";
-  let max = 1;
-  for (const v of vendors) {
-    const c = vpCounts.get(v) ?? 1;
-    if (c > max) max = c;
-  }
-  if (max >= 3) return "#FEE2E2";
-  if (max >= 2) return "#FEF3C7";
-  return "#ffffff";
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ResourcingTab({ company_id, projects }: Props) {
@@ -211,13 +199,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     return count;
   }
 
-  // Trades that have at least one vendor across any project
-  const activeTrades = TRADES.filter(trade => {
-    const byProject = tradeMap[trade];
-    if (!byProject) return false;
-    return Object.values(byProject).some(v => v.length > 0);
-  });
-
   const conflictCount = loaded ? getConflicts() : 0;
 
   // ── Before load ────────────────────────────────────────────────────────────
@@ -272,10 +253,27 @@ export default function ResourcingTab({ company_id, projects }: Props) {
 
   // ── Loaded ─────────────────────────────────────────────────────────────────
 
-  // Pre-compute vendor-project counts per active trade (for cell colouring)
-  const vpCountsByTrade = new Map<string, Map<string, number>>();
-  for (const trade of activeTrades) {
-    vpCountsByTrade.set(trade, vendorProjectCounts(trade, tradeMap));
+  // Pre-compute vendor→projectCount for every trade column
+  const vpCountsByTrade: Record<string, Map<string, number>> = {};
+  for (const trade of TRADES) {
+    vpCountsByTrade[trade] = vendorProjectCounts(trade, tradeMap);
+  }
+
+  function vendorsForCell(projectId: string, trade: string): string[] {
+    return tradeMap[trade]?.[projectId] ?? [];
+  }
+
+  function bgForCell(vendors: string[], trade: string): string {
+    if (vendors.length === 0) return "transparent";
+    const counts = vpCountsByTrade[trade];
+    let max = 1;
+    for (const v of vendors) {
+      const c = counts.get(v) ?? 1;
+      if (c > max) max = c;
+    }
+    if (max >= 3) return "#FEE2E2";
+    if (max >= 2) return "#FEF3C7";
+    return "#ffffff";
   }
 
   return (
@@ -323,20 +321,17 @@ export default function ResourcingTab({ company_id, projects }: Props) {
           </div>
         )}
 
-        {/* Matrix: ROWS = projects, COLUMNS = trades */}
-        {activeTrades.length === 0 ? (
+        {visibleProjects.length === 0 ? (
           <p className="text-sm italic" style={{ color: "var(--hp-text-secondary)" }}>
             No commitments found across projects.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid var(--hp-border)" }}>
-            <table
-              className="border-collapse"
-              style={{ minWidth: activeTrades.length * 110 + 180, fontSize: 11 }}
-            >
+            <table className="border-collapse" style={{ fontSize: 11 }}>
+
+              {/* ── One <th> per trade — these are COLUMNS ── */}
               <thead>
                 <tr style={{ backgroundColor: "var(--hp-surface)" }}>
-                  {/* Project column header (sticky) */}
                   <th
                     className="text-left px-3 py-2 font-semibold sticky left-0 z-10"
                     style={{
@@ -350,8 +345,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                   >
                     Project
                   </th>
-                  {/* One column per active trade */}
-                  {activeTrades.map(trade => (
+                  {TRADES.map(trade => (
                     <th
                       key={trade}
                       className="px-2 py-2 font-medium text-center"
@@ -369,63 +363,68 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                   ))}
                 </tr>
               </thead>
+
+              {/* ── One <tr> per project — these are ROWS ── */}
               <tbody>
                 {visibleProjects.map((proj, i) => {
-                  const pid = String(proj.id);
-                  const rowBg = i % 2 === 0 ? "var(--hp-surface)" : "var(--hp-bg)";
+                  const pid    = String(proj.id);
+                  const rowBg  = i % 2 === 0 ? "var(--hp-surface)" : "var(--hp-bg)";
+                  const label  = shortName(proj.display_name ?? proj.name);
+
                   return (
                     <tr key={proj.id}>
-                      {/* Project name (sticky) */}
+
+                      {/* Project name cell — sticky left */}
                       <td
                         className="px-3 py-1.5 font-medium sticky left-0 z-10"
                         style={{
                           backgroundColor: rowBg,
-                          borderRight: "1px solid var(--hp-border)",
-                          color: "var(--hp-text)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxWidth: 180,
+                          borderRight:     "1px solid var(--hp-border)",
+                          color:           "var(--hp-text)",
+                          whiteSpace:      "nowrap",
+                          overflow:        "hidden",
+                          textOverflow:    "ellipsis",
+                          maxWidth:        180,
                         }}
                         title={proj.display_name ?? proj.name}
                       >
-                        {shortName(proj.display_name ?? proj.name)}
+                        {label}
                       </td>
-                      {/* One cell per active trade */}
-                      {activeTrades.map(trade => {
-                        const vendors = tradeMap[trade]?.[pid] ?? [];
-                        const vpCounts = vpCountsByTrade.get(trade)!;
-                        const bg = cellBg(vendors, vpCounts);
 
-                        // "Other" column: sort alpha, cap at 3 + "+N more"
-                        const displayVendors = trade === "Other"
+                      {/* One data cell per trade */}
+                      {TRADES.map(trade => {
+                        const vendors = vendorsForCell(pid, trade);
+                        const bg      = bgForCell(vendors, trade);
+
+                        const display = trade === "Other"
                           ? [...vendors].sort((a, b) => a.localeCompare(b))
                           : vendors;
-                        const capped   = displayVendors.slice(0, 3);
-                        const overflow = displayVendors.length - 3;
+                        const shown    = display.slice(0, 3);
+                        const overflow = display.length - 3;
 
                         return (
                           <td
                             key={trade}
                             className="px-2 py-1.5"
                             style={{
-                              borderLeft: "1px solid var(--hp-border)",
+                              borderLeft:      "1px solid var(--hp-border)",
                               backgroundColor: vendors.length > 0 ? bg : rowBg,
-                              verticalAlign: "top",
+                              verticalAlign:   "top",
                             }}
                           >
                             {vendors.length > 0 && (
                               <div className="flex flex-col gap-px">
-                                {capped.map(v => (
+                                {shown.map(v => (
                                   <span
                                     key={v}
-                                    className="block leading-tight"
                                     style={{
-                                      color: "var(--hp-text)",
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
-                                      whiteSpace: "nowrap",
-                                      maxWidth: 104,
+                                      display:       "block",
+                                      lineHeight:    1.3,
+                                      color:         "var(--hp-text)",
+                                      overflow:      "hidden",
+                                      textOverflow:  "ellipsis",
+                                      whiteSpace:    "nowrap",
+                                      maxWidth:      104,
                                     }}
                                     title={v}
                                   >
