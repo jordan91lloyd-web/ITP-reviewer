@@ -1,53 +1,121 @@
 // ─── POST /api/resourcing/classify ────────────────────────────────────────────
-// Classifies Australian construction contract titles into trade categories.
+// Classifies construction contract titles into trade categories using keyword
+// matching. No AI call — pure synchronous string matching.
 //
 // Body: { items: Array<{ id: string, title: string }> }
-// Returns: { classifications: Record<string, string> }  // { [id]: trade }
+// Returns: { classifications: Record<string, string> }
 
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 
-const TRADES = [
-  "Demolition", "Piling", "Concrete", "Waterproofing",
-  "Structural Steel", "Facade", "Carpentry", "Tiling", "Painting",
-  "Electrical", "Mechanical", "Plumbing", "Fire Services", "Lift",
-  "Scaffolding", "Metal & Balustrades", "Consulting", "Cleaning", "Other",
+const TRADE_RULES: Array<{ trade: string; keywords: string[] }> = [
+  { trade: "Demolition", keywords: [
+    "demo", "demolition", "excavat",
+    "earthwork", "bulk excav", "rock break",
+    "bulk earth",
+  ]},
+  { trade: "Piling", keywords: [
+    "pil", "micropile", "bored pier",
+    "screw pile", "ground anchor",
+  ]},
+  { trade: "Concrete", keywords: [
+    "concrete", "formwork", "reinforc",
+    " reo ", "shotcrete", "post tension",
+    "slip form", "in-situ", "precast",
+    "pour", "footing", "slab",
+  ]},
+  { trade: "Waterproofing", keywords: [
+    "waterproof", "tanking", "membrane",
+    "wet area", "proseal", "liquid",
+  ]},
+  { trade: "Structural Steel", keywords: [
+    "structural steel", "steel fabricat",
+    "steel erect", "steel sub", "steel work",
+    "intumescent",
+  ]},
+  { trade: "Facade", keywords: [
+    "facade", "cladding", "curtain wall",
+    "aluminium window", "aluminum window",
+    "glazing", "render", "external render",
+    "window", "roofing", "roof",
+  ]},
+  { trade: "Carpentry", keywords: [
+    "carpentry", "carpenter", "joinery",
+    "timber floor", "flooring install",
+    "floor sand", "door frame", "barn door",
+    "walls and ceil", "partition",
+    "wall and part", "framing", "fix out",
+    "fitout", "fit out", "fit-out",
+    "timber window", "door supply",
+    "change of hand door", "ezy jamb",
+  ]},
+  { trade: "Tiling", keywords: [
+    "tile", "tiling", "tiler",
+  ]},
+  { trade: "Painting", keywords: [
+    "paint", "coating",
+  ]},
+  { trade: "Electrical", keywords: [
+    "electric", "power install",
+    "data install", "comms", "ev charg",
+    "switchboard", "lighting install",
+  ]},
+  { trade: "Mechanical", keywords: [
+    "mechanical", "hvac", "aircon",
+    "air con", "ventilat", "air condition",
+    "ductwork",
+  ]},
+  { trade: "Plumbing", keywords: [
+    "plumb", "hydraulic", "stormwater",
+    "drainage", "sewer", "sanitary",
+  ]},
+  { trade: "Fire Services", keywords: [
+    "fire", "sprinkler", "fyrebox",
+    "firemaster", "smoke curtain",
+    "fire curtain", "fire shutter",
+    "ignis", "wet fire", "dry fire",
+  ]},
+  { trade: "Lift", keywords: [
+    "lift", "elevator", "car stacker",
+    "spacepark", "hoist", "escalator",
+  ]},
+  { trade: "Scaffolding", keywords: [
+    "scaffold", "edge protect",
+    "temporary works", "falsework",
+  ]},
+  { trade: "Metal & Balustrades", keywords: [
+    "balustrade", "handrail",
+    "metal stair", "metalwork",
+    "stair supply", "stair install",
+    "roller shutter", "steel stair",
+    "glass balustrade", "shower screen",
+    "webforge", "louvre",
+  ]},
+  { trade: "Consulting", keywords: [
+    "consult", "engineer", "engineering",
+    "architect", "bca", "access consult",
+    "acoustic", "survey", "geotechni",
+    "environmental", "assessment",
+    "inspection", "testing", "report",
+    "validation", "certif", "design",
+    "hydraulic engineer", "structural eng",
+    "civil eng", "fire eng", "facade eng",
+    "moisture", "mould", "contamina",
+    "remediat", "window test", "forma eng",
+  ]},
+  { trade: "Cleaning", keywords: [
+    "clean", "csia", "wash",
+  ]},
 ];
 
-const client = new Anthropic();
-
-const SYSTEM_PROMPT = `Classify each Australian construction contract title into exactly one trade category. Use ONLY the title text.
-
-Rules:
-- 'Structural Steel Subcontract' → Structural Steel
-- 'Demolition and Earthwork PO' → Demolition
-- 'Piling works' → Piling
-- 'Electrical' or 'HMP Electrical' → Electrical
-- 'Wet Fire' → Fire Services
-- 'Mechanical Works (Advanced Aircon)' → Mechanical
-- 'Waterproofing Subcontract - ...' → Waterproofing
-- 'Carpentry Works' → Carpentry
-- 'Tile Install' → Tiling
-- 'Painting Subcontract' → Painting
-- 'Hydraulic Works' → Plumbing
-- 'Post Tension' → Concrete
-- 'Shotcrete' → Concrete
-- 'Lift' or 'Car Stacker' → Lift
-- 'Scaffold...' → Scaffolding
-- 'Balustrade...' or 'Handrail...' or 'Metal Stairs...' → Metal & Balustrades
-- 'BCA Consultant' or '...engineer' or '...consulting' or '...assessment' or 'testing' or 'report' → Consulting
-- 'Cleaning' → Cleaning
-- 'Joinery...' or 'Timber Floor...' or 'Carpentry...' or 'Door...' → Carpentry
-- 'Windows and Doors...' or 'Facade...' or 'Render...' or 'Cladding...' → Facade
-- 'Roof...' → Facade
-- 'Walls and Ceilings...' or 'Partitions...' → Carpentry
-- Supply-only items (door hardware, appliances, supplies) → Other
-
-Categories (use EXACTLY these names):
-Demolition, Piling, Concrete, Waterproofing, Structural Steel, Facade, Carpentry, Tiling, Painting, Electrical, Mechanical, Plumbing, Fire Services, Lift, Scaffolding, Metal & Balustrades, Consulting, Cleaning, Other
-
-Return ONLY valid JSON: { "[id]": "[category]" }
-No markdown, no explanation.`;
+function classifyTitle(title: string): string {
+  const lower = title.toLowerCase();
+  for (const rule of TRADE_RULES) {
+    if (rule.keywords.some(kw => lower.includes(kw.toLowerCase()))) {
+      return rule.trade;
+    }
+  }
+  return "Other";
+}
 
 export async function POST(request: NextRequest) {
   let items: Array<{ id: string; title: string }>;
@@ -56,53 +124,14 @@ export async function POST(request: NextRequest) {
     if (!Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ classifications: {} });
     }
-    items = (body.items as Array<{ id: string; title: string; vendor?: string }>)
-      .map(i => ({ id: i.id, title: i.title }));
+    items = body.items as Array<{ id: string; title: string }>;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  // Send only id + title — no vendor name
-  const userText = JSON.stringify(items);
+  const classifications = Object.fromEntries(
+    items.map(item => [item.id, classifyTitle(item.title)]),
+  );
 
-  try {
-    const message = await client.messages.create({
-      model:      "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      system:     SYSTEM_PROMPT,
-      messages:   [{ role: "user", content: userText }],
-    });
-
-    const raw = message.content
-      .filter(b => b.type === "text")
-      .map(b => (b as { type: "text"; text: string }).text)
-      .join("");
-
-    // Strip markdown fences if present
-    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
-
-    let classifications: Record<string, string> = {};
-    try {
-      classifications = JSON.parse(jsonStr) as Record<string, string>;
-    } catch {
-      for (const item of items) classifications[item.id] = "Other";
-    }
-
-    // Validate — any unrecognised category → "Other"
-    const tradeSet = new Set(TRADES);
-    for (const [id, trade] of Object.entries(classifications)) {
-      if (!tradeSet.has(trade)) classifications[id] = "Other";
-    }
-    // Fill any items Claude missed
-    for (const item of items) {
-      if (!classifications[item.id]) classifications[item.id] = "Other";
-    }
-
-    return NextResponse.json({ classifications });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 502 },
-    );
-  }
+  return NextResponse.json({ classifications });
 }
