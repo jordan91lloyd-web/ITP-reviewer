@@ -1,6 +1,5 @@
 // ─── GET /api/resourcing/commitments ──────────────────────────────────────────
-// Fetches subcontract commitments for ONE project from Procore.
-// Tries both /commitments/contracts and /commitments/purchase_orders.
+// Fetches all commitments for one project from Procore.
 //
 // Query params:
 //   company_id  (required)
@@ -22,51 +21,6 @@ export interface Commitment {
   value:       number;
 }
 
-async function fetchEndpoint(
-  path: string,
-  projectId: string,
-  companyId: string,
-  accessToken: string,
-): Promise<Commitment[]> {
-  const url = new URL(`${PROCORE_BASE_URL}${path}`);
-  url.searchParams.set("project_id", projectId);
-  url.searchParams.set("company_id", companyId);
-  url.searchParams.set("per_page", "100");
-
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization:        `Bearer ${accessToken}`,
-      "Procore-Company-Id": companyId,
-    },
-    signal: AbortSignal.timeout(20_000),
-  });
-
-  if (!res.ok) return [];
-
-  const data: unknown = await res.json();
-  if (!Array.isArray(data)) return [];
-
-  return (data as Record<string, unknown>[])
-    .map(item => {
-      const vendor =
-        (item.vendor as Record<string, unknown> | null)?.name ??
-        (item.contract_company as Record<string, unknown> | null)?.name ??
-        "";
-      const value =
-        Number(item.grand_total ?? item.revised_contract_amount ?? 0) || 0;
-      const status = String(item.status ?? "").toLowerCase();
-
-      return {
-        id:          String(item.id ?? ""),
-        title:       String(item.title ?? item.number ?? ""),
-        vendor_name: String(vendor),
-        status,
-        value,
-      };
-    })
-    .filter(c => c.status !== "draft" && c.status !== "void");
-}
-
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("procore_access_token")?.value;
@@ -85,25 +39,49 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const [contracts, purchaseOrders] = await Promise.all([
-    fetchEndpoint(
-      "/rest/v1.0/commitments/contracts",
-      projectId, companyId, accessToken,
-    ),
-    fetchEndpoint(
-      "/rest/v1.0/commitments/purchase_orders",
-      projectId, companyId, accessToken,
-    ),
-  ]);
-
-  // Deduplicate by id
-  const seen = new Set<string>();
   const commitments: Commitment[] = [];
-  for (const c of [...contracts, ...purchaseOrders]) {
-    if (!seen.has(c.id)) {
-      seen.add(c.id);
-      commitments.push(c);
+  let page = 1;
+  const perPage = 100;
+
+  while (true) {
+    const url = new URL(`${PROCORE_BASE_URL}/rest/v1.0/commitments`);
+    url.searchParams.set("project_id", projectId);
+    url.searchParams.set("per_page",   String(perPage));
+    url.searchParams.set("page",       String(page));
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        Authorization:        `Bearer ${accessToken}`,
+        "Procore-Company-Id": companyId,
+      },
+      signal: AbortSignal.timeout(20_000),
+    });
+
+    if (!res.ok) break;
+
+    const data: unknown = await res.json();
+    if (!Array.isArray(data)) break;
+
+    const items = data as Record<string, unknown>[];
+    for (const item of items) {
+      const status = String(item.status ?? "").toLowerCase();
+      if (status === "draft" || status === "void") continue;
+
+      const vendor = item.vendor as Record<string, unknown> | null | undefined;
+      const vendorName = String(vendor?.name ?? "");
+      const value = Number(item.grand_total ?? item.revised_contract_amount ?? 0) || 0;
+
+      commitments.push({
+        id:          String(item.id ?? ""),
+        title:       String(item.title ?? item.number ?? ""),
+        vendor_name: vendorName,
+        status,
+        value,
+      });
     }
+
+    if (items.length < perPage) break;
+    page++;
   }
 
   return NextResponse.json({ commitments });
