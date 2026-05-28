@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
     url.searchParams.set("company_id", companyId);
     url.searchParams.set("per_page",   String(perPage));
     url.searchParams.set("page",       String(page));
+    url.searchParams.set("view",       "extended");
 
     const res = await fetch(url.toString(), {
       headers: {
@@ -85,8 +86,11 @@ export async function GET(request: NextRequest) {
       const status = String(item.status ?? "").toLowerCase();
       if (status === "draft" || status === "void") continue;
 
-      const vendor      = item.vendor as Record<string, unknown> | null | undefined;
-      const vendorName  = String(vendor?.name ?? "");
+      const vendor         = item.vendor          as Record<string, unknown> | null | undefined;
+      const contractCo     = item.contract_company as Record<string, unknown> | null | undefined;
+      const vendorName     = String(
+        vendor?.name ?? vendor?.business_name ?? contractCo?.name ?? ""
+      );
       const value       = Number(item.grand_total ?? item.revised_contract_amount ?? 0) || 0;
 
       commitments.push({
