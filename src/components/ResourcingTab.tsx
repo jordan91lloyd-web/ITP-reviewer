@@ -8,7 +8,7 @@
 // COLUMNS = trade categories (fixed order)
 
 import { useState } from "react";
-import { RefreshCw, AlertTriangle, CheckCircle } from "lucide-react";
+import { RefreshCw, AlertTriangle, Settings } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -19,27 +19,26 @@ const TRADES = [
   "Scaffolding", "Metal & Balustrades", "Consulting", "Cleaning", "Other",
 ] as const;
 
-// Short column header labels matching TRADES order
 const TRADE_LABELS: Record<string, string> = {
-  "Demolition":        "Demo",
-  "Piling":            "Piling",
-  "Concrete":          "Concrete",
-  "Waterproofing":     "Waterproof",
-  "Structural Steel":  "Steel",
-  "Facade":            "Facade",
-  "Carpentry":         "Carpentry",
-  "Tiling":            "Tiling",
-  "Painting":          "Painting",
-  "Electrical":        "Electrical",
-  "Mechanical":        "Mechanical",
-  "Plumbing":          "Plumbing",
-  "Fire Services":     "Fire",
-  "Lift":              "Lift",
-  "Scaffolding":       "Scaffold",
-  "Metal & Balustrades": "Metal",
-  "Consulting":        "Consulting",
-  "Cleaning":          "Cleaning",
-  "Other":             "Other",
+  "Demolition":          "Demolition",
+  "Piling":              "Piling",
+  "Concrete":            "Concrete",
+  "Waterproofing":       "Waterproofing",
+  "Structural Steel":    "Structural Steel",
+  "Facade":              "Facade",
+  "Carpentry":           "Carpentry",
+  "Tiling":              "Tiling",
+  "Painting":            "Painting",
+  "Electrical":          "Electrical",
+  "Mechanical":          "Mechanical",
+  "Plumbing":            "Plumbing",
+  "Fire Services":       "Fire Services",
+  "Lift":                "Lift",
+  "Scaffolding":         "Scaffolding",
+  "Metal & Balustrades": "Metal & Balustrades",
+  "Consulting":          "Consulting",
+  "Cleaning":            "Cleaning",
+  "Other":               "Other",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -72,6 +71,10 @@ function shortName(name: string): string {
     .slice(0, 26);
 }
 
+function truncate(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
 async function classifyTrades(
   items: Array<{ id: string; title: string }>,
 ): Promise<Record<string, string>> {
@@ -85,16 +88,23 @@ async function classifyTrades(
   return data.classifications ?? {};
 }
 
-// For a given trade column, build a map of vendor → number of projects it appears in
+// vendor → number of projects it appears in for a given trade
 function vendorProjectCounts(trade: string, tradeMap: TradeMap): Map<string, number> {
   const counts = new Map<string, number>();
-  const byProject = tradeMap[trade] ?? {};
-  for (const vendors of Object.values(byProject)) {
-    for (const v of vendors) {
-      counts.set(v, (counts.get(v) ?? 0) + 1);
-    }
+  for (const vendors of Object.values(tradeMap[trade] ?? {})) {
+    for (const v of vendors) counts.set(v, (counts.get(v) ?? 0) + 1);
   }
   return counts;
+}
+
+// Returns the max project-count for any vendor in this cell
+function maxVendorCount(vendors: string[], counts: Map<string, number>): number {
+  let max = 1;
+  for (const v of vendors) {
+    const c = counts.get(v) ?? 1;
+    if (c > max) max = c;
+  }
+  return max;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -106,6 +116,10 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   const [loaded, setLoaded]                 = useState(false);
   const [error, setError]                   = useState<string | null>(null);
   const [tradeMap, setTradeMap]             = useState<TradeMap>({});
+  const [hiddenIds, setHiddenIds]           = useState<Set<string>>(new Set());
+  const [manageOpen, setManageOpen]         = useState(false);
+  // expandedCells: "projectId:trade" → true
+  const [expandedCells, setExpandedCells]   = useState<Set<string>>(new Set());
 
   if (!company_id) {
     return (
@@ -115,19 +129,38 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     );
   }
 
-  const visibleProjects = projects
-    .filter(p => !p.is_hidden)
+  // All projects (for the manage panel), sorted alpha
+  const allProjects = projects
     .slice()
     .sort((a, b) =>
-      shortName(a.display_name ?? a.name)
-        .localeCompare(shortName(b.display_name ?? b.name)),
+      shortName(a.display_name ?? a.name).localeCompare(shortName(b.display_name ?? b.name)),
     );
+
+  const visibleProjects = allProjects.filter(p => !hiddenIds.has(String(p.id)));
+
+  function toggleHide(id: string) {
+    setHiddenIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleExpand(pid: string, trade: string) {
+    const key = `${pid}:${trade}`;
+    setExpandedCells(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   async function loadAll() {
     setLoading(true);
     setLoaded(false);
     setError(null);
     setTradeMap({});
+    setExpandedCells(new Set());
 
     const result: Record<string, Commitment[]> = {};
 
@@ -156,7 +189,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         }
       }
 
-      // Deduplicate items by id before classifying
       const allItems = Object.values(result)
         .flat()
         .filter((c, idx, arr) => arr.findIndex(x => x.id === c.id) === idx)
@@ -164,7 +196,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
 
       const classifications = await classifyTrades(allItems);
 
-      // Build tradeMap[trade][project_id] = [vendor names]
       const map: TradeMap = {};
       for (const [projectId, commitments] of Object.entries(result)) {
         for (const c of commitments) {
@@ -187,19 +218,20 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     }
   }
 
-  // ── Conflict detection (vendor in 3+ projects in same trade) ───────────────
-  function getConflicts(): number {
-    let count = 0;
+  // ── Conflict counts ────────────────────────────────────────────────────────
+  // redCount: vendor in 4+ projects; amberCount: vendor in exactly 3 projects
+  function getConflictCounts(): { redCount: number; amberCount: number } {
+    let redCount = 0; let amberCount = 0;
     for (const trade of TRADES) {
-      const vpCounts = vendorProjectCounts(trade, tradeMap);
-      for (const c of vpCounts.values()) {
-        if (c >= 3) count++;
+      for (const c of vendorProjectCounts(trade, tradeMap).values()) {
+        if (c >= 4) redCount++;
+        else if (c === 3) amberCount++;
       }
     }
-    return count;
+    return { redCount, amberCount };
   }
 
-  const conflictCount = loaded ? getConflicts() : 0;
+  const { redCount, amberCount } = loaded ? getConflictCounts() : { redCount: 0, amberCount: 0 };
 
   // ── Before load ────────────────────────────────────────────────────────────
   if (!loading && !loaded) {
@@ -251,35 +283,16 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     );
   }
 
-  // ── Loaded ─────────────────────────────────────────────────────────────────
-
-  // Pre-compute vendor→projectCount for every trade column
+  // ── Loaded — pre-compute per-trade counts ──────────────────────────────────
   const vpCountsByTrade: Record<string, Map<string, number>> = {};
   for (const trade of TRADES) {
     vpCountsByTrade[trade] = vendorProjectCounts(trade, tradeMap);
   }
 
-  function vendorsForCell(projectId: string, trade: string): string[] {
-    return tradeMap[trade]?.[projectId] ?? [];
-  }
-
-  function bgForCell(vendors: string[], trade: string): string {
-    if (vendors.length === 0) return "transparent";
-    const counts = vpCountsByTrade[trade];
-    let max = 1;
-    for (const v of vendors) {
-      const c = counts.get(v) ?? 1;
-      if (c > max) max = c;
-    }
-    if (max >= 3) return "#FEE2E2";
-    if (max >= 2) return "#FEF3C7";
-    return "#ffffff";
-  }
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: "var(--hp-bg)" }}>
 
-      {/* Header */}
+      {/* ── Top bar ── */}
       <div
         className="shrink-0 flex items-center justify-between px-5 py-3"
         style={{ backgroundColor: "var(--hp-surface)", borderBottom: "1px solid var(--hp-border)" }}
@@ -287,60 +300,136 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         <h2 className="text-sm font-semibold" style={{ color: "var(--hp-text)" }}>
           Subcontractor Matrix
         </h2>
-        <button
-          onClick={() => void loadAll()}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded"
-          style={{ backgroundColor: "var(--hp-warm-100)", color: "var(--hp-warm-800)" }}
-        >
-          <RefreshCw className="h-3 w-3" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Manage Projects */}
+          <div className="relative">
+            <button
+              onClick={() => setManageOpen(o => !o)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded"
+              style={{
+                backgroundColor: manageOpen ? "var(--hp-warm-100)" : "transparent",
+                border: "1px solid var(--hp-border)",
+                color: "var(--hp-text-secondary)",
+              }}
+            >
+              <Settings className="h-3 w-3" />
+              Manage Projects
+            </button>
+
+            {manageOpen && (
+              <div
+                className="absolute right-0 top-full mt-1 z-50 rounded-lg shadow-lg overflow-y-auto"
+                style={{
+                  backgroundColor: "var(--hp-surface)",
+                  border: "1px solid var(--hp-border)",
+                  minWidth: 220,
+                  maxHeight: 320,
+                }}
+              >
+                <div className="px-3 py-2" style={{ borderBottom: "1px solid var(--hp-border)" }}>
+                  <p className="text-xs font-semibold" style={{ color: "var(--hp-text)" }}>Show / hide projects</p>
+                </div>
+                {allProjects.map(proj => {
+                  const pid = String(proj.id);
+                  const hidden = hiddenIds.has(pid);
+                  return (
+                    <label
+                      key={pid}
+                      className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-black/5"
+                      style={{ fontSize: 12 }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!hidden}
+                        onChange={() => toggleHide(pid)}
+                        className="rounded"
+                      />
+                      <span style={{ color: hidden ? "var(--hp-text-secondary)" : "var(--hp-text)" }}>
+                        {shortName(proj.display_name ?? proj.name)}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => void loadAll()}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded"
+            style={{ backgroundColor: "var(--hp-warm-100)", color: "var(--hp-warm-800)" }}
+          >
+            <RefreshCw className="h-3 w-3" />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto px-5 py-4">
-
-        {/* Conflict banner */}
-        {conflictCount > 0 ? (
-          <div
-            className="mb-4 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm"
-            style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#7f1d1d" }}
-          >
-            <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: "#dc2626" }} />
-            <span>
-              <strong>{conflictCount} conflict{conflictCount > 1 ? "s" : ""}</strong>
-              {" — "}same contractor active across 3+ projects in the same trade
-            </span>
+      {/* ── Conflict banner (only if conflicts exist) ── */}
+      {(redCount > 0 || amberCount > 0) && (
+        <div
+          className="shrink-0 flex items-center gap-3 px-5 py-2"
+          style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}
+        >
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" style={{ color: "#d97706" }} />
+          <div className="flex items-center gap-3 text-xs">
+            {redCount > 0 && (
+              <span style={{ color: "#991b1b", fontWeight: 600 }}>
+                {redCount} conflict{redCount > 1 ? "s" : ""} — same contractor across 4+ projects
+              </span>
+            )}
+            {redCount > 0 && amberCount > 0 && (
+              <span style={{ color: "#6b7280" }}>·</span>
+            )}
+            {amberCount > 0 && (
+              <span style={{ color: "#92400e" }}>
+                {amberCount} watch — same contractor across 3 projects
+              </span>
+            )}
           </div>
-        ) : (
-          <div
-            className="mb-4 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm"
-            style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", color: "#14532d" }}
-          >
-            <CheckCircle className="h-4 w-4 shrink-0" style={{ color: "#16a34a" }} />
-            <span>No conflicts detected</span>
-          </div>
-        )}
+        </div>
+      )}
 
+      {/* ── Table ── */}
+      <div className="flex-1 overflow-auto">
         {visibleProjects.length === 0 ? (
-          <p className="text-sm italic" style={{ color: "var(--hp-text-secondary)" }}>
-            No commitments found across projects.
+          <p className="text-sm italic px-5 py-4" style={{ color: "var(--hp-text-secondary)" }}>
+            No projects visible. Use Manage Projects to show projects.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid var(--hp-border)" }}>
-            <table className="border-collapse" style={{ fontSize: 11 }}>
-
-              {/* ── One <th> per trade — these are COLUMNS ── */}
+          // Wrap in position:relative so the manage-projects dropdown closes on outside click
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+          <div
+            style={{ width: "100%" }}
+            onClick={e => {
+              // Close manage panel if clicking outside it
+              const t = e.target as HTMLElement;
+              if (!t.closest("[data-manage-panel]")) setManageOpen(false);
+            }}
+          >
+            <table
+              className="border-collapse w-full"
+              style={{ fontSize: 11 }}
+            >
+              {/* ── COLUMNS = trades ── */}
               <thead>
-                <tr style={{ backgroundColor: "var(--hp-surface)" }}>
+                <tr>
+                  {/* Sticky project column */}
                   <th
-                    className="text-left px-3 py-2 font-semibold sticky left-0 z-10"
+                    className="sticky left-0 z-20 text-left"
                     style={{
                       backgroundColor: "var(--hp-surface)",
-                      borderBottom: "1px solid var(--hp-border)",
-                      borderRight:  "1px solid var(--hp-border)",
-                      width: 180,
-                      minWidth: 180,
-                      color: "var(--hp-text)",
+                      borderBottom: "2px solid #E5E7EB",
+                      borderRight:  "1px solid #E5E7EB",
+                      width: 160,
+                      minWidth: 160,
+                      padding: "8px 10px",
+                      verticalAlign: "bottom",
+                      color: "#6B7280",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
                     }}
                   >
                     Project
@@ -348,12 +437,21 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                   {TRADES.map(trade => (
                     <th
                       key={trade}
-                      className="px-2 py-2 font-medium text-center"
                       style={{
-                        borderBottom: "1px solid var(--hp-border)",
-                        borderLeft:   "1px solid var(--hp-border)",
-                        color: "var(--hp-text-secondary)",
-                        minWidth: 110,
+                        borderBottom: "2px solid #E5E7EB",
+                        borderLeft:   "1px solid #E5E7EB",
+                        minWidth: 100,
+                        maxWidth: 160,
+                        padding: "8px 4px",
+                        verticalAlign: "bottom",
+                        writingMode: "vertical-rl",
+                        transform: "rotate(180deg)",
+                        height: 120,
+                        color: "#6B7280",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
                         whiteSpace: "nowrap",
                       }}
                       title={trade}
@@ -364,77 +462,142 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                 </tr>
               </thead>
 
-              {/* ── One <tr> per project — these are ROWS ── */}
+              {/* ── ROWS = projects ── */}
               <tbody>
                 {visibleProjects.map((proj, i) => {
                   const pid    = String(proj.id);
-                  const rowBg  = i % 2 === 0 ? "var(--hp-surface)" : "var(--hp-bg)";
-                  const label  = shortName(proj.display_name ?? proj.name);
+                  const rowBg  = i % 2 === 0 ? "#ffffff" : "#F9FAFB";
 
                   return (
                     <tr key={proj.id}>
-
-                      {/* Project name cell — sticky left */}
+                      {/* Project name — sticky left */}
                       <td
-                        className="px-3 py-1.5 font-medium sticky left-0 z-10"
+                        className="sticky left-0 z-10"
                         style={{
                           backgroundColor: rowBg,
-                          borderRight:     "1px solid var(--hp-border)",
-                          color:           "var(--hp-text)",
-                          whiteSpace:      "nowrap",
-                          overflow:        "hidden",
-                          textOverflow:    "ellipsis",
-                          maxWidth:        180,
+                          borderBottom: "1px solid #E5E7EB",
+                          borderRight:  "1px solid #E5E7EB",
+                          padding: "6px 10px",
+                          width: 160,
+                          minWidth: 160,
+                          maxWidth: 160,
+                          verticalAlign: "top",
                         }}
                         title={proj.display_name ?? proj.name}
                       >
-                        {label}
+                        <span
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            fontWeight: 600,
+                            color: "var(--hp-text)",
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {shortName(proj.display_name ?? proj.name)}
+                        </span>
                       </td>
 
-                      {/* One data cell per trade */}
+                      {/* One cell per trade */}
                       {TRADES.map(trade => {
-                        const vendors = vendorsForCell(pid, trade);
-                        const bg      = bgForCell(vendors, trade);
+                        const vendors  = tradeMap[trade]?.[pid] ?? [];
+                        const counts   = vpCountsByTrade[trade];
+                        const maxCount = vendors.length > 0 ? maxVendorCount(vendors, counts) : 1;
+                        const cellKey  = `${pid}:${trade}`;
+                        const expanded = expandedCells.has(cellKey);
 
-                        const display = trade === "Other"
+                        // Cell colours
+                        let bgColor   = rowBg;
+                        let textColor = "var(--hp-text)";
+                        let fontWeight: number | string = 400;
+                        if (vendors.length > 0) {
+                          if      (maxCount >= 4) { bgColor = "#FEE2E2"; textColor = "#991B1B"; fontWeight = 600; }
+                          else if (maxCount === 3) { bgColor = "#FEF3C7"; textColor = "#92400E"; }
+                          else                     { bgColor = "#ffffff"; }
+                        }
+
+                        const display  = trade === "Other"
                           ? [...vendors].sort((a, b) => a.localeCompare(b))
                           : vendors;
-                        const shown    = display.slice(0, 3);
-                        const overflow = display.length - 3;
+                        const shown    = expanded ? display : display.slice(0, 2);
+                        const overflow = display.length - 2;
 
                         return (
                           <td
                             key={trade}
-                            className="px-2 py-1.5"
                             style={{
-                              borderLeft:      "1px solid var(--hp-border)",
-                              backgroundColor: vendors.length > 0 ? bg : rowBg,
+                              borderBottom:    "1px solid #E5E7EB",
+                              borderLeft:      "1px solid #E5E7EB",
+                              backgroundColor: bgColor,
+                              padding:         "6px 8px",
                               verticalAlign:   "top",
+                              minWidth:        100,
+                              maxWidth:        160,
                             }}
                           >
                             {vendors.length > 0 && (
-                              <div className="flex flex-col gap-px">
-                                {shown.map(v => (
-                                  <span
-                                    key={v}
+                              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                {shown.map(v => {
+                                  // Show amber dot for 2-project vendors (no bg change at level 2)
+                                  const vCount = counts.get(v) ?? 1;
+                                  const showDot = vCount === 2;
+                                  return (
+                                    <span
+                                      key={v}
+                                      style={{
+                                        display:      "block",
+                                        lineHeight:   1.35,
+                                        color:        textColor,
+                                        fontWeight,
+                                        overflow:     "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace:   "nowrap",
+                                        maxWidth:     144,
+                                      }}
+                                      title={v}
+                                    >
+                                      {showDot && (
+                                        <span style={{ color: "#d97706", marginRight: 3 }}>•</span>
+                                      )}
+                                      {truncate(v, 20)}
+                                    </span>
+                                  );
+                                })}
+                                {!expanded && overflow > 0 && (
+                                  <button
+                                    onClick={() => toggleExpand(pid, trade)}
                                     style={{
-                                      display:       "block",
-                                      lineHeight:    1.3,
-                                      color:         "var(--hp-text)",
-                                      overflow:      "hidden",
-                                      textOverflow:  "ellipsis",
-                                      whiteSpace:    "nowrap",
-                                      maxWidth:      104,
+                                      background:  "none",
+                                      border:      "none",
+                                      padding:     0,
+                                      cursor:      "pointer",
+                                      color:       "#6B7280",
+                                      fontStyle:   "italic",
+                                      fontSize:    10,
+                                      textAlign:   "left",
                                     }}
-                                    title={v}
                                   >
-                                    {v}
-                                  </span>
-                                ))}
-                                {overflow > 0 && (
-                                  <span style={{ color: "var(--hp-text-secondary)", fontStyle: "italic" }}>
                                     +{overflow} more
-                                  </span>
+                                  </button>
+                                )}
+                                {expanded && display.length > 2 && (
+                                  <button
+                                    onClick={() => toggleExpand(pid, trade)}
+                                    style={{
+                                      background:  "none",
+                                      border:      "none",
+                                      padding:     0,
+                                      cursor:      "pointer",
+                                      color:       "#6B7280",
+                                      fontStyle:   "italic",
+                                      fontSize:    10,
+                                      textAlign:   "left",
+                                    }}
+                                  >
+                                    show less
+                                  </button>
                                 )}
                               </div>
                             )}
