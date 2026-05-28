@@ -1697,7 +1697,10 @@ export default function DashboardPage() {
 
       {/* ── Resourcing tab ── */}
       {dashboardView === "resourcing" && (
-        <ResourcingTab companyId={selectedCompany?.id ?? null} />
+        <ResourcingTab
+          company_id={selectedCompany?.id ?? null}
+          projects={projects}
+        />
       )}
 
       {/* ── ITP Reviews tab ── */}
