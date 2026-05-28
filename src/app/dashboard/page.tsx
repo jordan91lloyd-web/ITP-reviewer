@@ -12,6 +12,7 @@ import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
 import InsightsTab from "@/components/InsightsTab";
 import QueuePanel from "@/components/QueuePanel";
+import ResourcingTab from "@/components/ResourcingTab";
 import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
@@ -689,7 +690,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "resourcing";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [insightsFetched, setInsightsFetched] = useState(false);
 
@@ -1595,6 +1596,7 @@ export default function DashboardPage() {
           ["insights",        "Insights",        "sparkles"],
           ["itp_reviews",     "ITP Reviews",     null],
           ["site_compliance", "Site Compliance", null],
+          ["resourcing",      "Resourcing",      null],
           ["queue",           "Queue",           null],
         ] as [DashboardView, string, string | null][]).map(([view, baseLabel, icon]) => {
           const runningCount = view === "queue"
@@ -1691,6 +1693,11 @@ export default function DashboardPage() {
           jobs={queueJobs}
           onDismiss={(job_id) => setQueueJobs(prev => prev.filter(j => j.job_id !== job_id))}
         />
+      )}
+
+      {/* ── Resourcing tab ── */}
+      {dashboardView === "resourcing" && (
+        <ResourcingTab companyId={selectedCompany?.id ?? null} />
       )}
 
       {/* ── ITP Reviews tab ── */}
