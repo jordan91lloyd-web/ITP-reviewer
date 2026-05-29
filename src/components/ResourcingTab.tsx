@@ -484,6 +484,46 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLocked]);
 
+  // ── Drag-to-pan on shared scroll container when locked ────────────────────
+  useEffect(() => {
+    const el = sharedScrollRef.current;
+    if (!el || !isLocked) return;
+
+    el.style.cursor = "grab";
+
+    let isDown      = false;
+    let startX      = 0;
+    let scrollStart = 0;
+
+    const onMouseDown = (e: MouseEvent) => {
+      isDown      = true;
+      startX      = e.pageX;
+      scrollStart = el.scrollLeft;
+      el.style.cursor = "grabbing";
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDown) return;
+      e.preventDefault();
+      el.scrollLeft = scrollStart - (e.pageX - startX);
+    };
+    const onMouseUp = () => {
+      isDown          = false;
+      el.style.cursor = "grab";
+    };
+
+    el.addEventListener("mousedown",     onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup",   onMouseUp);
+
+    return () => {
+      el.removeEventListener("mousedown",     onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup",   onMouseUp);
+      el.style.cursor = "default";
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocked]);
+
   const allProjects = projects
     .slice()
     .sort((a, b) => shortName(a.display_name ?? a.name).localeCompare(shortName(b.display_name ?? b.name)));
@@ -874,6 +914,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
             style={{
               overflowX: isLocked ? "scroll" : "hidden",
               overflowY: "visible",
+              cursor: isLocked ? "grab" : "default",
             }}
           >
             {visible.length === 0 ? (
