@@ -107,33 +107,43 @@ async function classifyStages(
   return d.classifications ?? {};
 }
 
-// vendorStageCount[vendorName][stageIndex] = number of projects with that vendor at that stage
-function buildVendorStageCount(
+// activeVendorStageCount[vendorName][stageIndex] = number of projects where:
+//   (a) that vendor is in that stage, AND
+//   (b) that stage is "active" for that project (within 3 stages of current position)
+function buildActiveVendorStageCount(
   visiblePids: string[],
   map: StageMap,
+  stageIndices: Record<string, number>,
 ): Record<string, Record<number, number>> {
-  const vsc: Record<string, Record<number, number>> = {};
+  const avsc: Record<string, Record<number, number>> = {};
   for (const pid of visiblePids) {
+    const currentIdx = stageIndices[pid] ?? DEFAULT_IDX;
     for (let i = 0; i < STAGES.length; i++) {
+      if (Math.abs(i - currentIdx) > 3) continue; // stage not active for this project
       for (const v of map[STAGES[i]]?.[pid] ?? []) {
-        if (!vsc[v]) vsc[v] = {};
-        vsc[v][i] = (vsc[v][i] ?? 0) + 1;
+        if (!avsc[v]) avsc[v] = {};
+        avsc[v][i] = (avsc[v][i] ?? 0) + 1;
       }
     }
   }
-  return vsc;
+  return avsc;
 }
 
+// Returns conflict level for a cell. Only flags a conflict when:
+//   1. The stage is active for this project (within 3 of its current stage), AND
+//   2. The vendor appears in the same stage for 3+ other projects that are also active there.
 function getCellConflictLevel(
   pid: string,
   stageIndex: number,
+  currentIdx: number,
   map: StageMap,
-  vsc: Record<string, Record<number, number>>,
+  avsc: Record<string, Record<number, number>>,
 ): 0 | 3 | 4 {
+  if (Math.abs(stageIndex - currentIdx) > 3) return 0;
   const vendors = map[STAGES[stageIndex]]?.[pid] ?? [];
   let max = 0;
   for (const v of vendors) {
-    const count = vsc[v]?.[stageIndex] ?? 0;
+    const count = avsc[v]?.[stageIndex] ?? 0;
     if (count > max) max = count;
   }
   if (max >= 4) return 4;
@@ -339,7 +349,7 @@ function ProjectRow({
           {STAGES.map((stage, stageIdx) => {
             const vendors     = stageMap[stage]?.[pid] ?? [];
             if (stageIdx === 0) console.log("[ResourcingTab] getVendors", pid, stageIdx, stage, vendors);
-            const conflictLvl = getCellConflictLevel(pid, stageIdx, stageMap, vsc);
+            const conflictLvl = getCellConflictLevel(pid, stageIdx, currentIdx, stageMap, vsc);
             const cellKey     = `${pid}:${stage}`;
             const isExpanded  = expanded.has(cellKey);
             const isCurrent   = stageIdx === currentIdx;
@@ -712,7 +722,11 @@ export default function ResourcingTab({ company_id, projects }: Props) {
 
   // ── Conflict data ──────────────────────────────────────────────────────────
 
-  const vsc = buildVendorStageCount(visible.map(p => String(p.id)), effectiveStageMap);
+  const vsc = buildActiveVendorStageCount(
+    visible.map(p => String(p.id)),
+    effectiveStageMap,
+    stageIndices,
+  );
 
   function conflictCounts() {
     let red = 0, amber = 0;
@@ -731,7 +745,14 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         const stageIdx = Number(stageIdxStr);
         const stage    = STAGES[stageIdx];
         const projectNames = visible
-          .filter(p => effectiveStageMap[stage]?.[String(p.id)]?.includes(vendor))
+          .filter(p => {
+            const pid2 = String(p.id);
+            const pidCurrentIdx = stageIndices[pid2] ?? DEFAULT_IDX;
+            return (
+              Math.abs(stageIdx - pidCurrentIdx) <= 3 &&
+              effectiveStageMap[stage]?.[pid2]?.includes(vendor)
+            );
+          })
           .map(p => shortName(p.display_name ?? p.name));
         conflictRows.push({ vendor, stage, count, projectNames });
       }
