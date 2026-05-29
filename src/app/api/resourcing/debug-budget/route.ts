@@ -1,9 +1,9 @@
 // ─── GET /api/resourcing/debug-budget ─────────────────────────────────────────
-// Debug route — fetches raw budget data for one project so we can inspect
-// the data shape before building real resourcing value features.
+// Debug route — fetches raw data from the Reporting View to inspect whether
+// vendor/subcontractor data is present in budget detail rows.
 //
 // Query params:
-//   project_id  (required) — defaults to 598134325830369 if omitted
+//   project_id  — defaults to 598134325830369 if omitted
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -13,8 +13,9 @@ const PROCORE_BASE_URL =
     ? "https://api.procore.com"
     : "https://sandbox.procore.com";
 
-const COMPANY_ID       = "598134325535477";
-const TEST_COMMITMENT  = "598134325632497"; // Structural Steel — Fed Rd
+const COMPANY_ID        = "598134325535477";
+const REPORTING_VIEW_ID = "598134325655435"; // "Reporting View" — suspected to contain vendor data
+const TEST_COMMITMENT   = "598134325632497"; // Structural Steel — Fed Rd
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -30,47 +31,58 @@ export async function GET(request: NextRequest) {
     "Procore-Company-Id": COMPANY_ID,
   };
 
-  const result: Record<string, unknown> = { project_id: projectId };
+  const result: Record<string, unknown> = { project_id: projectId, view_id: REPORTING_VIEW_ID };
 
-  // ── 1. Budget views ──────────────────────────────────────────────────────────
+  // ── 1. Reporting View detail rows ────────────────────────────────────────────
   try {
-    const url = `${PROCORE_BASE_URL}/rest/v1.0/budget_views?project_id=${projectId}&company_id=${COMPANY_ID}`;
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(15_000) });
+    const url = new URL(`${PROCORE_BASE_URL}/rest/v1.0/budget_views/${REPORTING_VIEW_ID}/detail_rows`);
+    url.searchParams.set("project_id", projectId);
+    url.searchParams.set("company_id", COMPANY_ID);
+    url.searchParams.set("per_page",   "20");
+
+    const res  = await fetch(url.toString(), { headers, signal: AbortSignal.timeout(15_000) });
     const data: unknown = await res.json();
-    result.budget_views_status = res.status;
-    result.budget_views = data;
 
-    // Pick first view id for the detail rows call
-    if (Array.isArray(data) && data.length > 0) {
-      const first = data[0] as { id?: unknown; name?: unknown };
-      result.first_view_id   = first.id;
-      result.first_view_name = first.name;
+    result.detail_rows_status = res.status;
 
-      // ── 2. Budget view detail rows ───────────────────────────────────────────
-      try {
-        const detailUrl = `${PROCORE_BASE_URL}/rest/v1.0/budget_views/${String(first.id)}/detail_rows?project_id=${projectId}&per_page=20`;
-        const detailRes = await fetch(detailUrl, { headers, signal: AbortSignal.timeout(15_000) });
-        const detailData: unknown = await detailRes.json();
-        result.detail_rows_status = detailRes.status;
-        result.detail_rows = detailData;
-      } catch (e) {
-        result.detail_rows_error = e instanceof Error ? e.message : String(e);
+    if (Array.isArray(data)) {
+      result.total_rows_returned = data.length;
+
+      // Field names from first row — tells us what fields Procore returns
+      if (data.length > 0) {
+        result.field_names = Object.keys(data[0] as object);
       }
+
+      // First 5 rows in full so we can see if vendor appears anywhere
+      result.first_5_rows = data.slice(0, 5);
+    } else {
+      result.detail_rows_raw = data;
     }
   } catch (e) {
-    result.budget_views_error = e instanceof Error ? e.message : String(e);
+    result.detail_rows_error = e instanceof Error ? e.message : String(e);
   }
 
-  // ── 3. Commitment line items ─────────────────────────────────────────────────
+  // ── 2. Commitment line items (for comparison) ────────────────────────────────
   try {
-    const lineUrl = `${PROCORE_BASE_URL}/rest/v1.0/commitments/${TEST_COMMITMENT}/line_items?project_id=${projectId}&company_id=${COMPANY_ID}&per_page=20`;
-    const lineRes = await fetch(lineUrl, { headers, signal: AbortSignal.timeout(15_000) });
-    const lineData: unknown = await lineRes.json();
-    result.commitment_line_items_status     = lineRes.status;
-    result.commitment_line_items_commitment = TEST_COMMITMENT;
-    result.commitment_line_items            = lineData;
+    const url = new URL(`${PROCORE_BASE_URL}/rest/v1.0/commitments/${TEST_COMMITMENT}/line_items`);
+    url.searchParams.set("project_id", projectId);
+    url.searchParams.set("company_id", COMPANY_ID);
+    url.searchParams.set("per_page",   "20");
+
+    const res  = await fetch(url.toString(), { headers, signal: AbortSignal.timeout(15_000) });
+    const data: unknown = await res.json();
+
+    result.line_items_status     = res.status;
+    result.line_items_commitment = TEST_COMMITMENT;
+
+    if (Array.isArray(data)) {
+      result.line_items_field_names = data.length > 0 ? Object.keys(data[0] as object) : [];
+      result.line_items_first_5     = data.slice(0, 5);
+    } else {
+      result.line_items_raw = data;
+    }
   } catch (e) {
-    result.commitment_line_items_error = e instanceof Error ? e.message : String(e);
+    result.line_items_error = e instanceof Error ? e.message : String(e);
   }
 
   return NextResponse.json(result, { status: 200 });
