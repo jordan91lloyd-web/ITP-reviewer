@@ -3,8 +3,8 @@
 // ─── ResourcingTab ────────────────────────────────────────────────────────────
 // Programme-aligned subcontractor matrix.
 // Each project row has independently draggable stage cells.
-// Buffer columns on each side allow scrolling to first/last stage.
-// TODAY line is fixed at PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH = 460px.
+// LEFT_BUFFER empty cells on left, RIGHT_BUFFER on right, so all stages reachable.
+// TODAY line is fixed at 520px from page left edge.
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { RefreshCw, Settings, X } from "lucide-react";
@@ -13,9 +13,13 @@ import { RefreshCw, Settings, X } from "lucide-react";
 
 const STAGE_WIDTH       = 130;
 const PROJECT_COL_WIDTH = 200;
-const BUFFER_COLS       = 10;
-const TODAY_OFFSET      = 2;
-const TODAY_LEFT        = PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH; // 460px
+const LEFT_BUFFER       = 5;   // empty cells before stage 0
+const RIGHT_BUFFER      = 8;   // empty cells after stage 21
+const TODAY_LEFT        = 520; // fixed px from page left edge (measured from screenshot)
+
+// Distance from the left edge of the scroll area to the TODAY line.
+// Scroll area starts at PROJECT_COL_WIDTH (200px). TODAY_LEFT is 520px from page left.
+const todayLineLeft = TODAY_LEFT - PROJECT_COL_WIDTH; // 320px
 
 const STAGES = [
   "Demolition", "Excavation", "Piling & Retention", "In-Ground Services",
@@ -27,26 +31,26 @@ const STAGES = [
 ] as const;
 type Stage = (typeof STAGES)[number];
 
-// Total scroll content: BUFFER_COLS + 22 stages + BUFFER_COLS = 42 columns
-const TOTAL_COLS  = BUFFER_COLS + STAGES.length + BUFFER_COLS;
-const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH; // 5460px
+// Total content: LEFT_BUFFER + 22 stages + RIGHT_BUFFER = 35 columns = 4550px
+const TOTAL_COLS  = LEFT_BUFFER + STAGES.length + RIGHT_BUFFER;
+const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH; // 4550px
 
 const DEFAULT_IDX = 0; // "Demolition" — stage 0 at TODAY on first load
 
-// Stage N sits at content pixel (BUFFER_COLS + N) * STAGE_WIDTH.
-// To place stage N under TODAY (TODAY_OFFSET columns from scroll-area left):
-//   scrollLeft = (BUFFER_COLS + N) * STAGE_WIDTH - TODAY_OFFSET * STAGE_WIDTH
-//              = (BUFFER_COLS - TODAY_OFFSET + N) * STAGE_WIDTH
-//              = (10 - 2 + N) * STAGE_WIDTH = (8 + N) * STAGE_WIDTH
-// Stage 0  → scrollLeft = 8  * 130 = 1040
-// Stage 21 → scrollLeft = 29 * 130 = 3770
+// Scroll formula: place stage N under the TODAY line.
+//   Stage N starts at content pixel (LEFT_BUFFER + N) * STAGE_WIDTH.
+//   TODAY sits at todayLineLeft (320px) from scroll-area left edge.
+//   So scrollLeft = (LEFT_BUFFER + N) * STAGE_WIDTH - todayLineLeft
+//                 = (5 + N) * 130 - 320
+//   Stage 0  → 650 - 320 = 330px
+//   Stage 21 → 3380 - 320 = 3060px
 function stageToScrollLeft(n: number): number {
   const clamped = Math.max(0, Math.min(STAGES.length - 1, n));
-  return (BUFFER_COLS - TODAY_OFFSET + clamped) * STAGE_WIDTH;
+  return (LEFT_BUFFER + clamped) * STAGE_WIDTH - todayLineLeft;
 }
 // Inverse: stage index from scrollLeft
 function scrollLeftToStage(scrollLeft: number): number {
-  const n = Math.round(scrollLeft / STAGE_WIDTH) - (BUFFER_COLS - TODAY_OFFSET);
+  const n = Math.round((scrollLeft + todayLineLeft) / STAGE_WIDTH) - LEFT_BUFFER;
   return Math.max(0, Math.min(STAGES.length - 1, n));
 }
 
@@ -280,7 +284,7 @@ function ProjectRow({
         <div style={{ display: "flex", width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
 
           {/* Left buffer */}
-          {Array.from({ length: BUFFER_COLS }).map((_, i) => (
+          {Array.from({ length: LEFT_BUFFER }).map((_, i) => (
             <div key={`l${i}`} style={{
               minWidth: STAGE_WIDTH, width: STAGE_WIDTH, flexShrink: 0,
               background: "#FAFAFA", borderRight: "1px solid #F8FAFC",
@@ -382,7 +386,7 @@ function ProjectRow({
           })}
 
           {/* Right buffer */}
-          {Array.from({ length: BUFFER_COLS }).map((_, i) => (
+          {Array.from({ length: RIGHT_BUFFER }).map((_, i) => (
             <div key={`r${i}`} style={{
               minWidth: STAGE_WIDTH, width: STAGE_WIDTH, flexShrink: 0,
               background: "#FAFAFA", borderRight: "1px solid #F8FAFC",
@@ -416,6 +420,15 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   const scrollsSetRef   = useRef(false);
   const stageIndicesRef = useRef<Record<string, number>>({});
   stageIndicesRef.current = stageIndices;
+
+  // ── Debug scroll math on mount ───────────────────────────────────────────────
+  useEffect(() => {
+    console.log("[ResourcingTab] todayLineLeft:", todayLineLeft);
+    console.log("[ResourcingTab] stage 0  scrollLeft:", stageToScrollLeft(0));
+    console.log("[ResourcingTab] stage 21 scrollLeft:", stageToScrollLeft(21));
+    console.log("[ResourcingTab] content width:", TOTAL_WIDTH);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Load saved offsets on mount ──────────────────────────────────────────────
   useEffect(() => {
