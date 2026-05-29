@@ -41,9 +41,9 @@ type Stage = (typeof STAGES)[number];
 
 const STAGE_W      = 130;
 const PROJ_W       = 180;
-const TODAY_OFFSET = 2;                          // stages from scroll-area left edge to TODAY line
-const TODAY_LINE   = PROJ_W + TODAY_OFFSET * STAGE_W; // 440px
-const DEFAULT_IDX  = 5;                          // "Structure"
+const TODAY_OFFSET = 0;                          // TODAY line sits at left edge of scroll area
+const TODAY_LINE   = PROJ_W + TODAY_OFFSET * STAGE_W; // 180px — right of project column
+const DEFAULT_IDX  = 2;                          // default scrollLeft = 2*130 = 260 (Piling & Retention)
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -82,11 +82,38 @@ async function classifyStages(
   return d.classifications ?? {};
 }
 
-function vendorCounts(stage: string, stageMap: StageMap): Map<string, number> {
-  const m = new Map<string, number>();
-  for (const vs of Object.values(stageMap[stage] ?? {}))
-    for (const v of vs) m.set(v, (m.get(v) ?? 0) + 1);
-  return m;
+// vendorStageCount[vendorName][stageIndex] = number of projects with that vendor at that stage
+function buildVendorStageCount(
+  visiblePids: string[],
+  map: StageMap,
+): Record<string, Record<number, number>> {
+  const vsc: Record<string, Record<number, number>> = {};
+  for (const pid of visiblePids) {
+    for (let i = 0; i < STAGES.length; i++) {
+      for (const v of map[STAGES[i]]?.[pid] ?? []) {
+        if (!vsc[v]) vsc[v] = {};
+        vsc[v][i] = (vsc[v][i] ?? 0) + 1;
+      }
+    }
+  }
+  return vsc;
+}
+
+function getCellConflictLevel(
+  pid: string,
+  stageIndex: number,
+  map: StageMap,
+  vsc: Record<string, Record<number, number>>,
+): 0 | 3 | 4 {
+  const vendors = map[STAGES[stageIndex]]?.[pid] ?? [];
+  let max = 0;
+  for (const v of vendors) {
+    const count = vsc[v]?.[stageIndex] ?? 0;
+    if (count > max) max = count;
+  }
+  if (max >= 4) return 4;
+  if (max >= 3) return 3;
+  return 0;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -136,7 +163,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       const si = stageIndicesRef.current;
       for (const [pid, el] of rowScrollRefs.current) {
         const stageIdx = si[pid] ?? DEFAULT_IDX;
-        el.scrollLeft = Math.max(0, (stageIdx - TODAY_OFFSET) * STAGE_W);
+        el.scrollLeft = stageIdx * STAGE_W; // TODAY at left edge: scrollLeft = stageIdx * STAGE_W
       }
       scrollsSetRef.current = true;
     }, 50);
@@ -254,11 +281,13 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     finally { setLoading(false); }
   }
 
+  const vsc = buildVendorStageCount(visible.map(p => String(p.id)), stageMap);
+
   function conflictCounts() {
     let red = 0, amber = 0;
-    for (const s of STAGES) for (const c of vendorCounts(s, stageMap).values()) {
-      if (c >= 4) red++; else if (c === 3) amber++;
-    }
+    for (const stageCounts of Object.values(vsc))
+      for (const count of Object.values(stageCounts))
+        if (count >= 4) red++; else if (count >= 3) amber++;
     return { red, amber };
   }
   const { red: redCount, amber: amberCount } = loaded ? conflictCounts() : { red: 0, amber: 0 };
@@ -343,9 +372,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   );
 
   // ── Loaded ──────────────────────────────────────────────────────────────────
-
-  const vcByStage: Record<string, Map<string, number>> = {};
-  for (const s of STAGES) vcByStage[s] = vendorCounts(s, stageMap);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#F8FAFC" }}>
@@ -503,48 +529,43 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                       if (el) rowScrollRefs.current.set(pid, el);
                       else rowScrollRefs.current.delete(pid);
                     }}
-                    style={{ flex: 1, overflowX: "scroll", cursor: "grab" }}
+                    style={{ flex: 1, minWidth: 0, overflowX: "scroll", cursor: "grab" }}
                     onMouseDown={e => handleMouseDown(pid, e)}
                     onMouseMove={e => handleMouseMove(pid, e)}
                     onMouseUp={e => handleMouseUp(pid, e)}
                     onMouseLeave={e => handleMouseLeave(pid, e)}
                   >
-                    <div style={{ display: "flex", width: STAGES.length * STAGE_W }}>
+                    <div style={{
+                      display: "flex",
+                      width: STAGES.length * STAGE_W,
+                      minWidth: STAGES.length * STAGE_W,
+                    }}>
                       {STAGES.map((stage, stageIdx) => {
-                        const vendors    = stageMap[stage]?.[pid] ?? [];
-                        const counts     = vcByStage[stage];
-                        const maxC       = vendors.length
-                          ? Math.max(...vendors.map(v => counts.get(v) ?? 1))
-                          : 1;
-                        const cellKey    = `${pid}:${stage}`;
-                        const isExpanded = expanded.has(cellKey);
-                        const isCurrent  = stageIdx === currentIdx;
-                        const isPast     = stageIdx < currentIdx;
+                        const vendors      = stageMap[stage]?.[pid] ?? [];
+                        const conflictLvl  = getCellConflictLevel(pid, stageIdx, stageMap, vsc);
+                        const cellKey      = `${pid}:${stage}`;
+                        const isExpanded   = expanded.has(cellKey);
+                        const isCurrent    = stageIdx === currentIdx;
+                        const isPast       = stageIdx < currentIdx;
 
-                        // Colours
-                        let bg:          string = isPast ? "#F8FAFC" : "#fff";
+                        // Background: conflict overrides past/future; current just adds left border
+                        let bg: string;
+                        if      (conflictLvl === 4) bg = "#FFF1F2";
+                        else if (conflictLvl === 3) bg = "#FFFBEB";
+                        else if (isPast)            bg = "#F8FAFC";
+                        else                        bg = "#fff";
+
+                        // Current stage: red left border only (bg already set above)
+                        const leftBorder = isCurrent ? "3px solid #EF4444" : "none";
+
                         let vendorColor: string = isPast ? "#CBD5E1" : "#334155";
                         let labelColor:  string = isPast ? "#E2E8F0" : "#CBD5E1";
                         let fw:          number = 400;
-                        let leftBorder:  string = "none";
 
                         if (isCurrent) {
-                          bg          = "#fff";
                           labelColor  = "#EF4444";
                           vendorColor = "#0F172A";
                           fw          = 600;
-                          leftBorder  = "3px solid #EF4444";
-                        }
-
-                        // Conflict overrides (bg + left border only)
-                        if (vendors.length > 0 && maxC >= 4) {
-                          bg         = "#FFF1F2";
-                          leftBorder = `${isCurrent ? "3px" : "2px"} solid #EF4444`;
-                          vendorColor = isPast ? "#CBD5E1" : "#334155";
-                        } else if (vendors.length > 0 && maxC === 3) {
-                          bg         = "#FFFBEB";
-                          leftBorder = `${isCurrent ? "3px" : "2px"} solid #F59E0B`;
-                          vendorColor = isPast ? "#CBD5E1" : "#334155";
                         }
 
                         const display  = [...vendors].sort((a, b) => a.localeCompare(b));
@@ -557,8 +578,8 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                             style={{
                               width: STAGE_W, minWidth: STAGE_W, flexShrink: 0,
                               background: bg,
-                              borderLeft:  leftBorder,
-                              borderRight: "1px solid #F1F5F9",
+                              borderLeft:   leftBorder,
+                              borderRight:  "1px solid #F1F5F9",
                               borderBottom: "1px solid #F1F5F9",
                               padding: "8px 10px",
                               minHeight: 80,
@@ -584,7 +605,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                             {vendors.length > 0 && (
                               <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                                 {shown.map(v => {
-                                  const vc = counts.get(v) ?? 1;
+                                  const vc = vsc[v]?.[stageIdx] ?? 0;
                                   return (
                                     <span
                                       key={v}
