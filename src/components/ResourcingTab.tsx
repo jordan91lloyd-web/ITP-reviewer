@@ -13,7 +13,7 @@ import { RefreshCw, Settings, X } from "lucide-react";
 
 const STAGE_WIDTH       = 130;
 const PROJECT_COL_WIDTH = 200;
-const BUFFER_COLS       = 6;
+const BUFFER_COLS       = 10;
 const TODAY_OFFSET      = 5;
 const TODAY_LEFT        = PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH; // 850px
 
@@ -27,24 +27,26 @@ const STAGES = [
 ] as const;
 type Stage = (typeof STAGES)[number];
 
-// Total scroll content: BUFFER_COLS + 22 stages + BUFFER_COLS = 34 columns
+// Total scroll content: BUFFER_COLS + 22 stages + BUFFER_COLS = 42 columns
 const TOTAL_COLS  = BUFFER_COLS + STAGES.length + BUFFER_COLS;
-const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH; // 4420px
+const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH; // 5460px
 
-const DEFAULT_IDX = 5; // "Structure"
+const DEFAULT_IDX = 0; // "Demolition" — stage 0 at TODAY on first load
 
 // Stage N sits at content pixel (BUFFER_COLS + N) * STAGE_WIDTH.
 // To place stage N under TODAY (TODAY_OFFSET columns from scroll-area left):
 //   scrollLeft = (BUFFER_COLS + N) * STAGE_WIDTH - TODAY_OFFSET * STAGE_WIDTH
 //              = (BUFFER_COLS - TODAY_OFFSET + N) * STAGE_WIDTH
-//              = (6 - 5 + N) * STAGE_WIDTH = (1 + N) * STAGE_WIDTH
+//              = (10 - 5 + N) * STAGE_WIDTH = (5 + N) * STAGE_WIDTH
+// Stage 0  → scrollLeft = 5  * 130 = 650
+// Stage 21 → scrollLeft = 26 * 130 = 3380
 function stageToScrollLeft(n: number): number {
   const clamped = Math.max(0, Math.min(STAGES.length - 1, n));
-  return (1 + clamped) * STAGE_WIDTH;
+  return (BUFFER_COLS - TODAY_OFFSET + clamped) * STAGE_WIDTH;
 }
 // Inverse: stage index from scrollLeft
 function scrollLeftToStage(scrollLeft: number): number {
-  const n = Math.round(scrollLeft / STAGE_WIDTH) - 1;
+  const n = Math.round(scrollLeft / STAGE_WIDTH) - (BUFFER_COLS - TODAY_OFFSET);
   return Math.max(0, Math.min(STAGES.length - 1, n));
 }
 
