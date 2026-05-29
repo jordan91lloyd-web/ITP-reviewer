@@ -4,7 +4,7 @@
 // Programme-aligned subcontractor matrix.
 // Each project row has independently draggable stage cells.
 // LEFT_BUFFER empty cells on left, RIGHT_BUFFER on right, so all stages reachable.
-// TODAY line is fixed at 520px from page left edge.
+// TODAY line uses position:absolute inside the table container — zoom-independent.
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { RefreshCw, Settings, X } from "lucide-react";
@@ -13,13 +13,13 @@ import { RefreshCw, Settings, X } from "lucide-react";
 
 const STAGE_WIDTH       = 130;
 const PROJECT_COL_WIDTH = 200;
-const LEFT_BUFFER       = 5;   // empty cells before stage 0
-const RIGHT_BUFFER      = 8;   // empty cells after stage 21
-const TODAY_LEFT        = 520; // fixed px from page left edge (measured from screenshot)
+const LEFT_BUFFER       = 6;  // empty cells before stage 0
+const RIGHT_BUFFER      = 8;  // empty cells after stage 21
+const TODAY_OFFSET      = 3;  // TODAY line is this many columns into the scroll area
 
-// Distance from the left edge of the scroll area to the TODAY line.
-// Scroll area starts at PROJECT_COL_WIDTH (200px). TODAY_LEFT is 520px from page left.
-const todayLineLeft = TODAY_LEFT - PROJECT_COL_WIDTH; // 320px
+// Absolute left position of the TODAY line within the table container (not viewport).
+// left = project column + TODAY_OFFSET columns into scroll area = 200 + 3*130 = 590px
+const TODAY_ABS_LEFT = PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH; // 590px
 
 const STAGES = [
   "Demolition", "Excavation", "Piling & Retention", "In-Ground Services",
@@ -31,26 +31,26 @@ const STAGES = [
 ] as const;
 type Stage = (typeof STAGES)[number];
 
-// Total content: LEFT_BUFFER + 22 stages + RIGHT_BUFFER = 35 columns = 4550px
+// Total content: LEFT_BUFFER + 22 stages + RIGHT_BUFFER = 36 columns = 4680px
 const TOTAL_COLS  = LEFT_BUFFER + STAGES.length + RIGHT_BUFFER;
-const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH; // 4550px
+const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH; // 4680px
 
 const DEFAULT_IDX = 0; // "Demolition" — stage 0 at TODAY on first load
 
 // Scroll formula: place stage N under the TODAY line.
-//   Stage N starts at content pixel (LEFT_BUFFER + N) * STAGE_WIDTH.
-//   TODAY sits at todayLineLeft (320px) from scroll-area left edge.
-//   So scrollLeft = (LEFT_BUFFER + N) * STAGE_WIDTH - todayLineLeft
-//                 = (5 + N) * 130 - 320
-//   Stage 0  → 650 - 320 = 330px
-//   Stage 21 → 3380 - 320 = 3060px
+//   Stage N sits at content pixel (LEFT_BUFFER + N) * STAGE_WIDTH from scroll-area left.
+//   TODAY sits at TODAY_OFFSET * STAGE_WIDTH from scroll-area left.
+//   scrollLeft = (LEFT_BUFFER + N - TODAY_OFFSET) * STAGE_WIDTH
+//              = (6 - 3 + N) * 130 = (3 + N) * 130
+//   Stage 0  → 3  * 130 = 390px
+//   Stage 21 → 24 * 130 = 3120px
 function stageToScrollLeft(n: number): number {
   const clamped = Math.max(0, Math.min(STAGES.length - 1, n));
-  return (LEFT_BUFFER + clamped) * STAGE_WIDTH - todayLineLeft;
+  return (LEFT_BUFFER - TODAY_OFFSET + clamped) * STAGE_WIDTH;
 }
 // Inverse: stage index from scrollLeft
 function scrollLeftToStage(scrollLeft: number): number {
-  const n = Math.round((scrollLeft + todayLineLeft) / STAGE_WIDTH) - LEFT_BUFFER;
+  const n = Math.round(scrollLeft / STAGE_WIDTH) - (LEFT_BUFFER - TODAY_OFFSET);
   return Math.max(0, Math.min(STAGES.length - 1, n));
 }
 
@@ -283,7 +283,7 @@ function ProjectRow({
       >
         <div style={{ display: "flex", width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
 
-          {/* Left buffer */}
+          {/* Left buffer — LEFT_BUFFER cols */}
           {Array.from({ length: LEFT_BUFFER }).map((_, i) => (
             <div key={`l${i}`} style={{
               minWidth: STAGE_WIDTH, width: STAGE_WIDTH, flexShrink: 0,
@@ -423,7 +423,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
 
   // ── Debug scroll math on mount ───────────────────────────────────────────────
   useEffect(() => {
-    console.log("[ResourcingTab] todayLineLeft:", todayLineLeft);
+    console.log("[ResourcingTab] TODAY_ABS_LEFT:", TODAY_ABS_LEFT);
     console.log("[ResourcingTab] stage 0  scrollLeft:", stageToScrollLeft(0));
     console.log("[ResourcingTab] stage 21 scrollLeft:", stageToScrollLeft(21));
     console.log("[ResourcingTab] content width:", TOTAL_WIDTH);
@@ -662,21 +662,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         .rsc-ghost:hover { background: #F1F5F9 !important; }
       `}</style>
 
-      {/* TODAY LINE — fixed, full viewport height */}
-      <div aria-hidden style={{
-        position: "fixed", left: TODAY_LEFT, top: 0,
-        width: 2, height: "100vh",
-        background: "repeating-linear-gradient(to bottom, #EF4444 0px, #EF4444 8px, transparent 8px, transparent 16px)",
-        zIndex: 30, pointerEvents: "none",
-      }} />
-      <div aria-hidden style={{
-        position: "fixed", left: TODAY_LEFT + 6, top: 108,
-        background: "#EF4444", color: "#fff",
-        fontSize: 10, fontWeight: 600, lineHeight: 1,
-        padding: "3px 7px", borderRadius: 4,
-        zIndex: 31, pointerEvents: "none",
-      }}>TODAY</div>
-
       {/* ── Top bar ── */}
       <div style={{
         flexShrink: 0, display: "flex", alignItems: "center", gap: 10,
@@ -749,30 +734,50 @@ export default function ResourcingTab({ company_id, projects }: Props) {
 
       {/* ── Data rows ── */}
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-        {visible.length === 0 ? (
-          <div style={{ padding: "24px 20px", fontSize: 13, color: "#64748B", fontStyle: "italic" }}>
-            No projects visible. Use Manage to show projects.
-          </div>
-        ) : (
-          visible.map(proj => {
-            const pid = String(proj.id);
-            return (
-              <ProjectRow
-                key={pid}
-                pid={pid}
-                displayName={proj.display_name ?? proj.name}
-                currentIdx={stageIndices[pid] ?? DEFAULT_IDX}
-                stageMap={stageMap}
-                vsc={vsc}
-                expanded={expanded}
-                onToggleExpand={toggleExpand}
-                onSnap={handleSnap}
-                onPositionChange={handlePositionChange}
-                onRegisterRef={handleRegisterRef}
-              />
-            );
-          })
-        )}
+        {/* Table container — TODAY line is absolute inside here, zoom-independent */}
+        <div style={{ position: "relative" }}>
+
+          {/* TODAY line — absolute, spans full height of table */}
+          <div aria-hidden style={{
+            position: "absolute", left: TODAY_ABS_LEFT, top: 0, bottom: 0,
+            width: 2,
+            background: "repeating-linear-gradient(to bottom, #EF4444 0px, #EF4444 8px, transparent 8px, transparent 16px)",
+            zIndex: 20, pointerEvents: "none",
+          }} />
+          {/* TODAY label */}
+          <div aria-hidden style={{
+            position: "absolute", left: TODAY_ABS_LEFT + 6, top: 8,
+            background: "#EF4444", color: "#fff",
+            fontSize: 10, fontWeight: 600, lineHeight: 1,
+            padding: "3px 7px", borderRadius: 4,
+            zIndex: 21, pointerEvents: "none",
+          }}>TODAY</div>
+
+          {visible.length === 0 ? (
+            <div style={{ padding: "24px 20px", fontSize: 13, color: "#64748B", fontStyle: "italic" }}>
+              No projects visible. Use Manage to show projects.
+            </div>
+          ) : (
+            visible.map(proj => {
+              const pid = String(proj.id);
+              return (
+                <ProjectRow
+                  key={pid}
+                  pid={pid}
+                  displayName={proj.display_name ?? proj.name}
+                  currentIdx={stageIndices[pid] ?? DEFAULT_IDX}
+                  stageMap={stageMap}
+                  vsc={vsc}
+                  expanded={expanded}
+                  onToggleExpand={toggleExpand}
+                  onSnap={handleSnap}
+                  onPositionChange={handlePositionChange}
+                  onRegisterRef={handleRegisterRef}
+                />
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* ── Conflicts Modal ── */}
