@@ -1,117 +1,131 @@
 // ─── POST /api/resourcing/classify ────────────────────────────────────────────
-// Classifies construction contract titles into trade categories using keyword
-// matching. No AI call — pure synchronous string matching.
+// Classifies construction contract titles into construction programme stages
+// using keyword matching. No AI call — pure synchronous string matching.
 //
 // Body: { items: Array<{ id: string, title: string }> }
 // Returns: { classifications: Record<string, string> }
 
 import { NextRequest, NextResponse } from "next/server";
 
-const TRADE_RULES: Array<{ trade: string; keywords: string[] }> = [
-  { trade: "Demolition", keywords: [
-    "demo", "demolition", "excavat",
-    "earthwork", "bulk excav", "rock break",
-    "bulk earth",
+const STAGE_RULES: Array<{ stage: string; keywords: string[] }> = [
+  { stage: "Demolition", keywords: [
+    "demo", "demolition",
   ]},
-  { trade: "Piling", keywords: [
-    "pil", "micropile", "bored pier",
-    "screw pile", "ground anchor",
+  { stage: "Excavation", keywords: [
+    "excavat", "earthwork", "bulk earth", "rock break",
+    "civil king", "civil work",
   ]},
-  { trade: "Concrete", keywords: [
-    "concrete", "formwork", "reinforc",
-    " reo ", "shotcrete", "post tension",
-    "slip form", "in-situ", "precast",
-    "pour", "footing", "slab",
+  { stage: "Piling & Retention", keywords: [
+    "pil", "micropile", "bored pier", "screw pile",
+    "retention", "retaining", "shoring", "ground anchor",
   ]},
-  { trade: "Waterproofing", keywords: [
-    "waterproof", "tanking", "membrane",
-    "wet area", "proseal", "liquid",
+  { stage: "In-Ground Services", keywords: [
+    "in-ground", "underground", "sewer", "drainage",
+    "stormwater", "hydraulic", "conduit",
   ]},
-  { trade: "Structural Steel", keywords: [
-    "structural steel", "steel fabricat",
-    "steel erect", "steel sub", "steel work",
-    "intumescent",
+  { stage: "Basement Construction", keywords: [
+    "basement", "raft", "podium slab",
+    "post tension", "shotcrete", "formwork",
+    "concrete", "reinforc", " reo ", "footing", "slab",
   ]},
-  { trade: "Facade", keywords: [
+  { stage: "Structure", keywords: [
+    "structural steel", "steel fabricat", "steel erect",
+    "steel sub", "intumescent", "structure", "framing steel",
+  ]},
+  { stage: "Facade & Windows", keywords: [
     "facade", "cladding", "curtain wall",
-    "aluminium window", "aluminum window",
-    "glazing", "render", "external render",
-    "window", "roofing", "roof",
+    "aluminium window", "aluminum window", "glazing",
+    "render", "external render", "window", "louvre",
+    "external wall",
   ]},
-  { trade: "Carpentry", keywords: [
-    "carpentry", "carpenter", "joinery",
-    "timber floor", "flooring install",
-    "floor sand", "door frame", "barn door",
-    "walls and ceil", "partition",
-    "wall and part", "framing", "fix out",
-    "fitout", "fit out", "fit-out",
-    "timber window", "door supply",
-    "change of hand door", "ezy jamb",
+  { stage: "Roofing", keywords: [
+    "roof", "roofing",
   ]},
-  { trade: "Tiling", keywords: [
+  { stage: "Services Rough-In", keywords: [
+    "rough-in", "rough in", "first fix",
+    "mechanical", "hvac", "aircon", "air con",
+    "ventilat", "air condition", "ductwork",
+    "electric", "switchboard", "conduit rough",
+    "plumb rough", "fire rough", "sprinkler rough",
+    "sprinkler", "fire", "wet fire", "dry fire",
+    "plumb", "fyrebox", "firemaster",
+  ]},
+  { stage: "Partitions & Framing", keywords: [
+    "partition", "framing", "stud wall",
+    "light gauge", "metal stud",
+  ]},
+  { stage: "Sheeting", keywords: [
+    "sheet", "plasterboard", "gyprock",
+    "gyproc", "drywall", "shadowline",
+  ]},
+  { stage: "Waterproofing", keywords: [
+    "waterproof", "tanking", "membrane",
+    "wet area", "proseal", "liquid applied",
+  ]},
+  { stage: "Tiling", keywords: [
     "tile", "tiling", "tiler",
   ]},
-  { trade: "Painting", keywords: [
+  { stage: "Joinery", keywords: [
+    "joinery", "cabinet", "kitchen",
+    "vanity", "wardrobe", "joiner",
+  ]},
+  { stage: "Ceilings", keywords: [
+    "ceiling", "soffit", "bulkhead",
+    "suspended ceiling", "plaster ceiling",
+  ]},
+  { stage: "Painting", keywords: [
     "paint", "coating",
   ]},
-  { trade: "Electrical", keywords: [
-    "electric", "power install",
-    "data install", "comms", "ev charg",
-    "switchboard", "lighting install",
+  { stage: "Flooring", keywords: [
+    "floor", "flooring", "timber floor",
+    "carpet", "vinyl", "epoxy floor",
+    "concrete polish", "floor sand",
+    "floor finish", "screed",
   ]},
-  { trade: "Mechanical", keywords: [
-    "mechanical", "hvac", "aircon",
-    "air con", "ventilat", "air condition",
-    "ductwork",
+  { stage: "Services Fit-Off", keywords: [
+    "fit-off", "fit off", "second fix",
+    "final fix", "services fit",
   ]},
-  { trade: "Plumbing", keywords: [
-    "plumb", "hydraulic", "stormwater",
-    "drainage", "sewer", "sanitary",
+  { stage: "Fixtures & Appliances", keywords: [
+    "fixture", "appliance", "tapware",
+    "toilet", "basin", "sink", "oven",
+    "dishwasher", "supply of appliance",
+    "door hardware", "hardware supply",
   ]},
-  { trade: "Fire Services", keywords: [
-    "fire", "sprinkler", "fyrebox",
-    "firemaster", "smoke curtain",
-    "fire curtain", "fire shutter",
-    "ignis", "wet fire", "dry fire",
-  ]},
-  { trade: "Lift", keywords: [
-    "lift", "elevator", "car stacker",
-    "spacepark", "hoist", "escalator",
-  ]},
-  { trade: "Scaffolding", keywords: [
+  { stage: "External Works", keywords: [
+    "external", "landscap", "paving",
+    "driveway", "fence", "gate", "pool",
+    "external civil", "carpark", "line mark",
     "scaffold", "edge protect",
     "temporary works", "falsework",
-  ]},
-  { trade: "Metal & Balustrades", keywords: [
     "balustrade", "handrail",
     "metal stair", "metalwork",
     "stair supply", "stair install",
     "roller shutter", "steel stair",
     "glass balustrade", "shower screen",
-    "webforge", "louvre",
+    "webforge",
   ]},
-  { trade: "Consulting", keywords: [
-    "consult", "engineer", "engineering",
-    "architect", "bca", "access consult",
-    "acoustic", "survey", "geotechni",
-    "environmental", "assessment",
-    "inspection", "testing", "report",
-    "validation", "certif", "design",
-    "hydraulic engineer", "structural eng",
-    "civil eng", "fire eng", "facade eng",
-    "moisture", "mould", "contamina",
-    "remediat", "window test", "forma eng",
+  { stage: "Testing & Commissioning", keywords: [
+    "test", "commission", "inspect", "certif",
+    "bca", "access consult", "acoustic",
+    "survey", "geotechni", "assessment",
+    "validation", "report", "consult",
+    "engineer", "engineering", "architect",
+    "moisture", "mould", "contamina", "remediat",
+    "window test", "facade eng", "clean", "csia", "wash",
   ]},
-  { trade: "Cleaning", keywords: [
-    "clean", "csia", "wash",
+  { stage: "Defects & Handover", keywords: [
+    "defect", "handover", "rectif",
+    "make good", "completion", "pc items",
+    "practical completion",
   ]},
 ];
 
 function classifyTitle(title: string): string {
   const lower = title.toLowerCase();
-  for (const rule of TRADE_RULES) {
+  for (const rule of STAGE_RULES) {
     if (rule.keywords.some(kw => lower.includes(kw.toLowerCase()))) {
-      return rule.trade;
+      return rule.stage;
     }
   }
   return "Other";

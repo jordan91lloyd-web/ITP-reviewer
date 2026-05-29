@@ -1,45 +1,47 @@
 "use client";
 
 // ─── ResourcingTab ────────────────────────────────────────────────────────────
-// Loads subcontractor commitments across all projects, classifies them by trade,
-// and renders a project × trade conflict matrix.
+// Loads subcontractor commitments across all projects, classifies them by
+// construction programme stage, and renders a project × stage matrix with:
+//   - Programme position indicator (current stage per row)
+//   - Past / present / future cell shading
+//   - Conflict colouring (same vendor across multiple projects)
+//   - Manage Projects hide/show panel
 //
-// ROWS    = projects (alphabetical by short name)
-// COLUMNS = trade categories (fixed order)
+// ROWS    = projects (alphabetical)
+// COLUMNS = construction programme stages (fixed order)
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw, AlertTriangle, Settings } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const TRADES = [
-  "Demolition", "Piling", "Concrete", "Waterproofing",
-  "Structural Steel", "Facade", "Carpentry", "Tiling", "Painting",
-  "Electrical", "Mechanical", "Plumbing", "Fire Services", "Lift",
-  "Scaffolding", "Metal & Balustrades", "Consulting", "Cleaning", "Other",
+const STAGES = [
+  "Demolition",
+  "Excavation",
+  "Piling & Retention",
+  "In-Ground Services",
+  "Basement Construction",
+  "Structure",
+  "Facade & Windows",
+  "Roofing",
+  "Services Rough-In",
+  "Partitions & Framing",
+  "Sheeting",
+  "Waterproofing",
+  "Tiling",
+  "Joinery",
+  "Ceilings",
+  "Painting",
+  "Flooring",
+  "Services Fit-Off",
+  "Fixtures & Appliances",
+  "External Works",
+  "Testing & Commissioning",
+  "Defects & Handover",
 ] as const;
 
-const TRADE_LABELS: Record<string, string> = {
-  "Demolition":          "Demolition",
-  "Piling":              "Piling",
-  "Concrete":            "Concrete",
-  "Waterproofing":       "Waterproofing",
-  "Structural Steel":    "Structural Steel",
-  "Facade":              "Facade",
-  "Carpentry":           "Carpentry",
-  "Tiling":              "Tiling",
-  "Painting":            "Painting",
-  "Electrical":          "Electrical",
-  "Mechanical":          "Mechanical",
-  "Plumbing":            "Plumbing",
-  "Fire Services":       "Fire Services",
-  "Lift":                "Lift",
-  "Scaffolding":         "Scaffolding",
-  "Metal & Balustrades": "Metal & Balustrades",
-  "Consulting":          "Consulting",
-  "Cleaning":            "Cleaning",
-  "Other":               "Other",
-};
+type Stage = typeof STAGES[number];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -56,8 +58,8 @@ interface Props {
   projects:   Array<{ id: number; name: string; display_name?: string; is_hidden?: boolean }>;
 }
 
-// tradeMap[trade][project_id] = [vendor names]
-type TradeMap = Record<string, Record<string, string[]>>;
+// stageMap[stage][project_id] = [vendor names]
+type StageMap = Record<string, Record<string, string[]>>;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -68,14 +70,14 @@ function shortName(name: string): string {
     .replace(/\bno\.\s*\d+\b/gi, "")
     .trim()
     .replace(/\s+/g, " ")
-    .slice(0, 26);
+    .slice(0, 24);
 }
 
 function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
 }
 
-async function classifyTrades(
+async function classifyStages(
   items: Array<{ id: string; title: string }>,
 ): Promise<Record<string, string>> {
   if (items.length === 0) return {};
@@ -88,16 +90,14 @@ async function classifyTrades(
   return data.classifications ?? {};
 }
 
-// vendor → number of projects it appears in for a given trade
-function vendorProjectCounts(trade: string, tradeMap: TradeMap): Map<string, number> {
+function vendorProjectCounts(stage: string, stageMap: StageMap): Map<string, number> {
   const counts = new Map<string, number>();
-  for (const vendors of Object.values(tradeMap[trade] ?? {})) {
+  for (const vendors of Object.values(stageMap[stage] ?? {})) {
     for (const v of vendors) counts.set(v, (counts.get(v) ?? 0) + 1);
   }
   return counts;
 }
 
-// Returns the max project-count for any vendor in this cell
 function maxVendorCount(vendors: string[], counts: Map<string, number>): number {
   let max = 1;
   for (const v of vendors) {
@@ -115,11 +115,22 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   const [loadingIdx, setLoadingIdx]         = useState(0);
   const [loaded, setLoaded]                 = useState(false);
   const [error, setError]                   = useState<string | null>(null);
-  const [tradeMap, setTradeMap]             = useState<TradeMap>({});
+  const [stageMap, setStageMap]             = useState<StageMap>({});
   const [hiddenIds, setHiddenIds]           = useState<Set<string>>(new Set());
   const [manageOpen, setManageOpen]         = useState(false);
-  // expandedCells: "projectId:trade" → true
   const [expandedCells, setExpandedCells]   = useState<Set<string>>(new Set());
+  // offsets[project_id] = current stage name
+  const [offsets, setOffsets]               = useState<Record<string, string>>({});
+  const [savingOffset, setSavingOffset]     = useState<string | null>(null);
+
+  // ── Load saved offsets on mount ────────────────────────────────────────────
+  useEffect(() => {
+    if (!company_id) return;
+    fetch(`/api/resourcing/project-offsets?company_id=${company_id}`)
+      .then(r => r.ok ? r.json() : {})
+      .then((data: Record<string, string>) => setOffsets(data))
+      .catch(() => {});
+  }, [company_id]);
 
   if (!company_id) {
     return (
@@ -129,7 +140,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     );
   }
 
-  // All projects (for the manage panel), sorted alpha
   const allProjects = projects
     .slice()
     .sort((a, b) =>
@@ -146,8 +156,8 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     });
   }
 
-  function toggleExpand(pid: string, trade: string) {
-    const key = `${pid}:${trade}`;
+  function toggleExpand(pid: string, stage: string) {
+    const key = `${pid}:${stage}`;
     setExpandedCells(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
@@ -155,11 +165,28 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     });
   }
 
+  async function saveOffset(projectId: string, stage: string) {
+    setSavingOffset(projectId);
+    setOffsets(prev => ({ ...prev, [projectId]: stage }));
+    try {
+      await fetch("/api/resourcing/project-offset", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          company_id:    String(company_id),
+          project_id:    projectId,
+          current_stage: stage,
+        }),
+      });
+    } catch { /* silent — local state already updated */ }
+    finally { setSavingOffset(null); }
+  }
+
   async function loadAll() {
     setLoading(true);
     setLoaded(false);
     setError(null);
-    setTradeMap({});
+    setStageMap({});
     setExpandedCells(new Set());
 
     const result: Record<string, Commitment[]> = {};
@@ -194,22 +221,22 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         .filter((c, idx, arr) => arr.findIndex(x => x.id === c.id) === idx)
         .map(c => ({ id: c.id, title: c.title }));
 
-      const classifications = await classifyTrades(allItems);
+      const classifications = await classifyStages(allItems);
 
-      const map: TradeMap = {};
+      const map: StageMap = {};
       for (const [projectId, commitments] of Object.entries(result)) {
         for (const c of commitments) {
-          const trade = classifications[c.id] ?? "Other";
-          if (!map[trade]) map[trade] = {};
-          if (!map[trade][projectId]) map[trade][projectId] = [];
-          const vendors = map[trade][projectId];
+          const stage = classifications[c.id] ?? "Other";
+          if (!map[stage]) map[stage] = {};
+          if (!map[stage][projectId]) map[stage][projectId] = [];
+          const vendors = map[stage][projectId];
           if (c.vendor_name && !vendors.includes(c.vendor_name)) {
             vendors.push(c.vendor_name);
           }
         }
       }
 
-      setTradeMap(map);
+      setStageMap(map);
       setLoaded(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -219,12 +246,11 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   }
 
   // ── Conflict counts ────────────────────────────────────────────────────────
-  // redCount: vendor in 4+ projects; amberCount: vendor in exactly 3 projects
   function getConflictCounts(): { redCount: number; amberCount: number } {
     let redCount = 0; let amberCount = 0;
-    for (const trade of TRADES) {
-      for (const c of vendorProjectCounts(trade, tradeMap).values()) {
-        if (c >= 4) redCount++;
+    for (const stage of STAGES) {
+      for (const c of vendorProjectCounts(stage, stageMap).values()) {
+        if      (c >= 4) redCount++;
         else if (c === 3) amberCount++;
       }
     }
@@ -283,14 +309,23 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     );
   }
 
-  // ── Loaded — pre-compute per-trade counts ──────────────────────────────────
-  const vpCountsByTrade: Record<string, Map<string, number>> = {};
-  for (const trade of TRADES) {
-    vpCountsByTrade[trade] = vendorProjectCounts(trade, tradeMap);
+  // ── Loaded — pre-compute per-stage counts ──────────────────────────────────
+  const vpCountsByStage: Record<string, Map<string, number>> = {};
+  for (const stage of STAGES) {
+    vpCountsByStage[stage] = vendorProjectCounts(stage, stageMap);
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: "var(--hp-bg)" }}>
+    <div
+      className="flex-1 flex flex-col overflow-hidden"
+      style={{ backgroundColor: "var(--hp-bg)" }}
+      onClick={e => {
+        if (!(e.target as HTMLElement).closest("[data-manage-panel]")) {
+          setManageOpen(false);
+        }
+      }}
+    >
 
       {/* ── Top bar ── */}
       <div
@@ -302,9 +337,9 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         </h2>
         <div className="flex items-center gap-2">
           {/* Manage Projects */}
-          <div className="relative">
+          <div className="relative" data-manage-panel>
             <button
-              onClick={() => setManageOpen(o => !o)}
+              onClick={e => { e.stopPropagation(); setManageOpen(o => !o); }}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded"
               style={{
                 backgroundColor: manageOpen ? "var(--hp-warm-100)" : "transparent",
@@ -315,7 +350,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
               <Settings className="h-3 w-3" />
               Manage Projects
             </button>
-
             {manageOpen && (
               <div
                 className="absolute right-0 top-full mt-1 z-50 rounded-lg shadow-lg overflow-y-auto"
@@ -330,7 +364,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                   <p className="text-xs font-semibold" style={{ color: "var(--hp-text)" }}>Show / hide projects</p>
                 </div>
                 {allProjects.map(proj => {
-                  const pid = String(proj.id);
+                  const pid    = String(proj.id);
                   const hidden = hiddenIds.has(pid);
                   return (
                     <label
@@ -365,7 +399,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         </div>
       </div>
 
-      {/* ── Conflict banner (only if conflicts exist) ── */}
+      {/* ── Conflict banner ── */}
       {(redCount > 0 || amberCount > 0) && (
         <div
           className="shrink-0 flex items-center gap-3 px-5 py-2"
@@ -397,219 +431,245 @@ export default function ResourcingTab({ company_id, projects }: Props) {
             No projects visible. Use Manage Projects to show projects.
           </p>
         ) : (
-          // Wrap in position:relative so the manage-projects dropdown closes on outside click
-          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-          <div
-            style={{ width: "100%" }}
-            onClick={e => {
-              // Close manage panel if clicking outside it
-              const t = e.target as HTMLElement;
-              if (!t.closest("[data-manage-panel]")) setManageOpen(false);
-            }}
-          >
-            <table
-              className="border-collapse w-full"
-              style={{ fontSize: 11 }}
-            >
-              {/* ── COLUMNS = trades ── */}
-              <thead>
-                <tr>
-                  {/* Sticky project column */}
+          <table className="border-collapse" style={{ fontSize: 11, width: "max-content", minWidth: "100%" }}>
+
+            {/* ── THEAD: stage column headers (rotated) ── */}
+            <thead>
+              <tr>
+                {/* Sticky project + stage-selector column */}
+                <th
+                  className="sticky left-0 z-20 text-left"
+                  style={{
+                    backgroundColor: "var(--hp-surface)",
+                    borderBottom: "2px solid #E5E7EB",
+                    borderRight:  "1px solid #E5E7EB",
+                    width: 200,
+                    minWidth: 200,
+                    padding: "8px 10px",
+                    verticalAlign: "bottom",
+                    color: "#6B7280",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Project
+                </th>
+                {STAGES.map(stage => (
                   <th
-                    className="sticky left-0 z-20 text-left"
+                    key={stage}
                     style={{
-                      backgroundColor: "var(--hp-surface)",
                       borderBottom: "2px solid #E5E7EB",
-                      borderRight:  "1px solid #E5E7EB",
-                      width: 160,
-                      minWidth: 160,
-                      padding: "8px 10px",
+                      borderLeft:   "1px solid #E5E7EB",
+                      minWidth: 90,
+                      maxWidth: 130,
+                      padding: "8px 4px",
                       verticalAlign: "bottom",
+                      writingMode: "vertical-rl",
+                      transform: "rotate(180deg)",
+                      height: 130,
                       color: "#6B7280",
                       fontSize: 10,
                       fontWeight: 600,
                       textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      letterSpacing: "0.04em",
+                      whiteSpace: "nowrap",
                     }}
+                    title={stage}
                   >
-                    Project
+                    {stage}
                   </th>
-                  {TRADES.map(trade => (
-                    <th
-                      key={trade}
+                ))}
+              </tr>
+            </thead>
+
+            {/* ── TBODY: one row per project ── */}
+            <tbody>
+              {visibleProjects.map((proj, rowIdx) => {
+                const pid          = String(proj.id);
+                const rowBg        = rowIdx % 2 === 0 ? "#ffffff" : "#F9FAFB";
+                const currentStage = offsets[pid] ?? "";
+                const currentIdx   = currentStage ? STAGES.indexOf(currentStage as Stage) : -1;
+
+                return (
+                  <tr key={proj.id}>
+                    {/* ── Project name + stage selector (sticky left) ── */}
+                    <td
+                      className="sticky left-0 z-10"
                       style={{
-                        borderBottom: "2px solid #E5E7EB",
-                        borderLeft:   "1px solid #E5E7EB",
-                        minWidth: 100,
-                        maxWidth: 160,
-                        padding: "8px 4px",
-                        verticalAlign: "bottom",
-                        writingMode: "vertical-rl",
-                        transform: "rotate(180deg)",
-                        height: 120,
-                        color: "#6B7280",
-                        fontSize: 10,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        whiteSpace: "nowrap",
+                        backgroundColor: rowBg,
+                        borderBottom: "1px solid #E5E7EB",
+                        borderRight:  "1px solid #E5E7EB",
+                        padding: "6px 8px",
+                        width: 200,
+                        minWidth: 200,
+                        maxWidth: 200,
+                        verticalAlign: "top",
                       }}
-                      title={trade}
                     >
-                      {TRADE_LABELS[trade] ?? trade}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              {/* ── ROWS = projects ── */}
-              <tbody>
-                {visibleProjects.map((proj, i) => {
-                  const pid    = String(proj.id);
-                  const rowBg  = i % 2 === 0 ? "#ffffff" : "#F9FAFB";
-
-                  return (
-                    <tr key={proj.id}>
-                      {/* Project name — sticky left */}
-                      <td
-                        className="sticky left-0 z-10"
+                      <div
                         style={{
-                          backgroundColor: rowBg,
-                          borderBottom: "1px solid #E5E7EB",
-                          borderRight:  "1px solid #E5E7EB",
-                          padding: "6px 10px",
-                          width: 160,
-                          minWidth: 160,
-                          maxWidth: 160,
-                          verticalAlign: "top",
+                          fontWeight: 600,
+                          color: "var(--hp-text)",
+                          lineHeight: 1.3,
+                          marginBottom: 4,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                         title={proj.display_name ?? proj.name}
                       >
-                        <span
+                        {shortName(proj.display_name ?? proj.name)}
+                      </div>
+                      {/* Stage selector */}
+                      <select
+                        value={currentStage}
+                        onChange={e => void saveOffset(pid, e.target.value)}
+                        disabled={savingOffset === pid}
+                        style={{
+                          fontSize: 10,
+                          padding: "2px 4px",
+                          borderRadius: 4,
+                          border: "1px solid #D1D5DB",
+                          backgroundColor: "#fff",
+                          color: currentStage ? "#374151" : "#9CA3AF",
+                          width: "100%",
+                          cursor: "pointer",
+                          opacity: savingOffset === pid ? 0.5 : 1,
+                        }}
+                      >
+                        <option value="">Set current stage…</option>
+                        {STAGES.map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* ── One cell per stage ── */}
+                    {STAGES.map((stage, stageIdx) => {
+                      const vendors   = stageMap[stage]?.[pid] ?? [];
+                      const counts    = vpCountsByStage[stage];
+                      const maxCount  = vendors.length > 0 ? maxVendorCount(vendors, counts) : 1;
+                      const cellKey   = `${pid}:${stage}`;
+                      const expanded  = expandedCells.has(cellKey);
+
+                      // Programme position relative to current stage
+                      const isCurrent = currentIdx >= 0 && stageIdx === currentIdx;
+                      const isPast    = currentIdx >= 0 && stageIdx < currentIdx;
+                      // (isFuture = currentIdx >= 0 && stageIdx > currentIdx, or no stage set)
+
+                      // Conflict colour takes priority over past/future shading
+                      let bgColor   = isPast ? "#F3F4F6" : "#ffffff";
+                      let textColor = isPast ? "#9CA3AF" : "var(--hp-text)";
+                      let fontWeight: number | string = isPast ? 400 : 400;
+
+                      if (vendors.length > 0) {
+                        if      (maxCount >= 4) { bgColor = "#FEE2E2"; textColor = "#991B1B"; fontWeight = 600; }
+                        else if (maxCount === 3) { bgColor = "#FEF3C7"; textColor = "#92400E"; }
+                        else if (maxCount === 1 && isPast) { bgColor = "#F3F4F6"; textColor = "#9CA3AF"; }
+                        else    { bgColor = "#ffffff"; }
+                      }
+
+                      const display  = [...vendors].sort((a, b) => a.localeCompare(b));
+                      const shown    = expanded ? display : display.slice(0, 2);
+                      const overflow = display.length - 2;
+
+                      return (
+                        <td
+                          key={stage}
                           style={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            fontWeight: 600,
-                            color: "var(--hp-text)",
-                            lineHeight: 1.3,
+                            borderBottom: "1px solid #E5E7EB",
+                            borderLeft:   isCurrent
+                              ? "3px solid #EF4444"
+                              : "1px solid #E5E7EB",
+                            backgroundColor: bgColor,
+                            padding:         "6px 8px",
+                            verticalAlign:   "top",
+                            minWidth: 90,
+                            maxWidth: 130,
+                            position: "relative",
                           }}
                         >
-                          {shortName(proj.display_name ?? proj.name)}
-                        </span>
-                      </td>
+                          {/* Red today indicator */}
+                          {isCurrent && (
+                            <div
+                              style={{
+                                position:   "absolute",
+                                top:        0,
+                                left:       "50%",
+                                transform:  "translateX(-50%)",
+                                color:      "#EF4444",
+                                fontSize:   8,
+                                lineHeight: 1,
+                                userSelect: "none",
+                              }}
+                            >
+                              ▼
+                            </div>
+                          )}
 
-                      {/* One cell per trade */}
-                      {TRADES.map(trade => {
-                        const vendors  = tradeMap[trade]?.[pid] ?? [];
-                        const counts   = vpCountsByTrade[trade];
-                        const maxCount = vendors.length > 0 ? maxVendorCount(vendors, counts) : 1;
-                        const cellKey  = `${pid}:${trade}`;
-                        const expanded = expandedCells.has(cellKey);
-
-                        // Cell colours
-                        let bgColor   = rowBg;
-                        let textColor = "var(--hp-text)";
-                        let fontWeight: number | string = 400;
-                        if (vendors.length > 0) {
-                          if      (maxCount >= 4) { bgColor = "#FEE2E2"; textColor = "#991B1B"; fontWeight = 600; }
-                          else if (maxCount === 3) { bgColor = "#FEF3C7"; textColor = "#92400E"; }
-                          else                     { bgColor = "#ffffff"; }
-                        }
-
-                        const display  = trade === "Other"
-                          ? [...vendors].sort((a, b) => a.localeCompare(b))
-                          : vendors;
-                        const shown    = expanded ? display : display.slice(0, 2);
-                        const overflow = display.length - 2;
-
-                        return (
-                          <td
-                            key={trade}
-                            style={{
-                              borderBottom:    "1px solid #E5E7EB",
-                              borderLeft:      "1px solid #E5E7EB",
-                              backgroundColor: bgColor,
-                              padding:         "6px 8px",
-                              verticalAlign:   "top",
-                              minWidth:        100,
-                              maxWidth:        160,
-                            }}
-                          >
-                            {vendors.length > 0 && (
-                              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                {shown.map(v => {
-                                  // Show amber dot for 2-project vendors (no bg change at level 2)
-                                  const vCount = counts.get(v) ?? 1;
-                                  const showDot = vCount === 2;
-                                  return (
-                                    <span
-                                      key={v}
-                                      style={{
-                                        display:      "block",
-                                        lineHeight:   1.35,
-                                        color:        textColor,
-                                        fontWeight,
-                                        overflow:     "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace:   "nowrap",
-                                        maxWidth:     144,
-                                      }}
-                                      title={v}
-                                    >
-                                      {showDot && (
-                                        <span style={{ color: "#d97706", marginRight: 3 }}>•</span>
-                                      )}
-                                      {truncate(v, 20)}
-                                    </span>
-                                  );
-                                })}
-                                {!expanded && overflow > 0 && (
-                                  <button
-                                    onClick={() => toggleExpand(pid, trade)}
+                          {vendors.length > 0 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: isCurrent ? 8 : 0 }}>
+                              {shown.map(v => {
+                                const vCount  = counts.get(v) ?? 1;
+                                const showDot = vCount === 2;
+                                return (
+                                  <span
+                                    key={v}
                                     style={{
-                                      background:  "none",
-                                      border:      "none",
-                                      padding:     0,
-                                      cursor:      "pointer",
-                                      color:       "#6B7280",
-                                      fontStyle:   "italic",
-                                      fontSize:    10,
-                                      textAlign:   "left",
+                                      display:      "block",
+                                      lineHeight:   1.35,
+                                      color:        textColor,
+                                      fontWeight,
+                                      overflow:     "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace:   "nowrap",
+                                      maxWidth:     118,
                                     }}
+                                    title={v}
                                   >
-                                    +{overflow} more
-                                  </button>
-                                )}
-                                {expanded && display.length > 2 && (
-                                  <button
-                                    onClick={() => toggleExpand(pid, trade)}
-                                    style={{
-                                      background:  "none",
-                                      border:      "none",
-                                      padding:     0,
-                                      cursor:      "pointer",
-                                      color:       "#6B7280",
-                                      fontStyle:   "italic",
-                                      fontSize:    10,
-                                      textAlign:   "left",
-                                    }}
-                                  >
-                                    show less
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                                    {showDot && (
+                                      <span style={{ color: "#d97706", marginRight: 2 }}>•</span>
+                                    )}
+                                    {truncate(v, 20)}
+                                  </span>
+                                );
+                              })}
+                              {!expanded && overflow > 0 && (
+                                <button
+                                  onClick={() => toggleExpand(pid, stage)}
+                                  style={{
+                                    background: "none", border: "none", padding: 0,
+                                    cursor: "pointer", color: "#6B7280",
+                                    fontStyle: "italic", fontSize: 10, textAlign: "left",
+                                  }}
+                                >
+                                  +{overflow} more
+                                </button>
+                              )}
+                              {expanded && display.length > 2 && (
+                                <button
+                                  onClick={() => toggleExpand(pid, stage)}
+                                  style={{
+                                    background: "none", border: "none", padding: 0,
+                                    cursor: "pointer", color: "#6B7280",
+                                    fontStyle: "italic", fontSize: 10, textAlign: "left",
+                                  }}
+                                >
+                                  show less
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
