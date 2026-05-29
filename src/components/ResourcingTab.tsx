@@ -6,9 +6,10 @@
 // Each row's stage cells are independently drag-to-scroll.
 // Snapping on mouseup sets current stage for that project.
 // TODAY line is fixed at PROJ_W + 2 * STAGE_W = 440px.
+// No shared header row — stage name is shown inside each cell.
 
 import { useState, useEffect, useRef } from "react";
-import { RefreshCw, Settings, X, Eye, EyeOff } from "lucide-react";
+import { RefreshCw, Settings, X } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -38,11 +39,11 @@ const STAGES = [
 ] as const;
 type Stage = (typeof STAGES)[number];
 
-const STAGE_W      = 130;                        // px per stage column
-const PROJ_W       = 180;                        // px sticky project column
+const STAGE_W      = 130;
+const PROJ_W       = 180;
 const TODAY_OFFSET = 2;                          // stages from scroll-area left edge to TODAY line
-const TODAY_LINE   = PROJ_W + TODAY_OFFSET * STAGE_W; // 440px from table-area left
-const DEFAULT_IDX  = 5;                          // "Structure" — default stage when no saved offset
+const TODAY_LINE   = PROJ_W + TODAY_OFFSET * STAGE_W; // 440px
+const DEFAULT_IDX  = 5;                          // "Structure"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -62,10 +63,10 @@ function shortName(name: string): string {
     .replace(/\s*[-–]\s*(stage|lot|package)\s*\d+.*$/i, "")
     .replace(/\bpty\.?\s*ltd\.?\b/gi, "")
     .replace(/\bno\.\s*\d+\b/gi, "")
-    .trim().replace(/\s+/g, " ").slice(0, 22);
+    .trim().replace(/\s+/g, " ").slice(0, 26);
 }
 
-function trunc(s: string, n = 18): string {
+function trunc(s: string, n = 16): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
 }
 
@@ -91,25 +92,25 @@ function vendorCounts(stage: string, stageMap: StageMap): Map<string, number> {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function ResourcingTab({ company_id, projects }: Props) {
-  const [loading, setLoading]         = useState(false);
-  const [loadingName, setLoadingName] = useState("");
-  const [loadingIdx, setLoadingIdx]   = useState(0);
-  const [loaded, setLoaded]           = useState(false);
-  const [error, setError]             = useState<string | null>(null);
-  const [stageMap, setStageMap]       = useState<StageMap>({});
-  const [hiddenIds, setHiddenIds]     = useState<Set<string>>(new Set());
-  const [manageOpen, setManageOpen]   = useState(false);
-  const [expanded, setExpanded]       = useState<Set<string>>(new Set());
-  // stageIndices[pid] = current stage index (0–21), used for cell shading + "Currently:" label
+  const [loading, setLoading]           = useState(false);
+  const [loadingName, setLoadingName]   = useState("");
+  const [loadingIdx, setLoadingIdx]     = useState(0);
+  const [loaded, setLoaded]             = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+  const [stageMap, setStageMap]         = useState<StageMap>({});
+  const [hiddenIds, setHiddenIds]       = useState<Set<string>>(new Set());
+  const [manageOpen, setManageOpen]     = useState(false);
+  const [expanded, setExpanded]         = useState<Set<string>>(new Set());
+  const [draggingRow, setDraggingRow]   = useState<string | null>(null);
+  // stageIndices[pid] = current stage index (0–21)
   const [stageIndices, setStageIndices] = useState<Record<string, number>>({});
 
-  // Refs that don't need to trigger re-renders
-  const rowScrollRefs  = useRef<Map<string, HTMLDivElement>>(new Map());
-  const dragState      = useRef<Map<string, { isDown: boolean; startX: number; scrollStart: number }>>(new Map());
-  const saveDebounce   = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const scrollsSetRef  = useRef(false);
+  const rowScrollRefs   = useRef<Map<string, HTMLDivElement>>(new Map());
+  const dragState       = useRef<Map<string, { isDown: boolean; startX: number; scrollStart: number }>>(new Map());
+  const saveDebounce    = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const scrollsSetRef   = useRef(false);
   const stageIndicesRef = useRef<Record<string, number>>({});
-  stageIndicesRef.current = stageIndices; // always current, no closure staleness
+  stageIndicesRef.current = stageIndices;
 
   // ── Load saved offsets on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -127,9 +128,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       .catch(() => {});
   }, [company_id]);
 
-  // ── Set initial scroll positions after data loads ───────────────────────────
-  // Runs when loaded→true OR when stageIndices first arrives (whichever is later).
-  // scrollsSetRef prevents re-running on every drag update.
+  // ── Set initial scroll positions after data loads ────────────────────────────
   useEffect(() => {
     if (!loaded) { scrollsSetRef.current = false; return; }
     if (scrollsSetRef.current) return;
@@ -142,7 +141,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       scrollsSetRef.current = true;
     }, 50);
     return () => clearTimeout(t);
-  }, [loaded, stageIndices]); // stageIndices dep handles: offsets arrive after load
+  }, [loaded, stageIndices]);
 
   const allProjects = projects
     .slice()
@@ -157,7 +156,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     setExpanded(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n; });
   }
 
-  // ── Drag-to-scroll handlers ──────────────────────────────────────────────────
+  // ── Drag-to-scroll ────────────────────────────────────────────────────────────
 
   function handleMouseDown(pid: string, e: React.MouseEvent<HTMLDivElement>) {
     dragState.current.set(pid, {
@@ -165,6 +164,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       startX: e.pageX,
       scrollStart: e.currentTarget.scrollLeft,
     });
+    setDraggingRow(pid);
     e.currentTarget.style.cursor = "grabbing";
     e.currentTarget.style.userSelect = "none";
   }
@@ -175,7 +175,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     e.preventDefault();
     const el = e.currentTarget;
     el.scrollLeft = state.scrollStart - (e.pageX - state.startX);
-    // Update current stage live so cell shading responds during drag
     const idx = Math.min(
       Math.max(Math.round(el.scrollLeft / STAGE_W) + TODAY_OFFSET, 0),
       STAGES.length - 1,
@@ -186,14 +185,13 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   function finishDrag(pid: string, el: HTMLDivElement) {
     if (!dragState.current.has(pid)) return;
     dragState.current.delete(pid);
+    setDraggingRow(null);
     el.style.cursor = "grab";
     el.style.userSelect = "";
-    // Snap to nearest stage column boundary
     const snapScrollIdx = Math.round(el.scrollLeft / STAGE_W);
     el.scrollTo({ left: snapScrollIdx * STAGE_W, behavior: "smooth" });
     const currentIdx = Math.min(snapScrollIdx + TODAY_OFFSET, STAGES.length - 1);
     setStageIndices(prev => ({ ...prev, [pid]: currentIdx }));
-    // Debounce save to Supabase
     clearTimeout(saveDebounce.current[pid]);
     saveDebounce.current[pid] = setTimeout(() => {
       if (!company_id) return;
@@ -214,14 +212,11 @@ export default function ResourcingTab({ company_id, projects }: Props) {
 
   function handleMouseLeave(pid: string, e: React.MouseEvent<HTMLDivElement>) {
     const state = dragState.current.get(pid);
-    if (state?.isDown) {
-      finishDrag(pid, e.currentTarget);
-    } else {
-      e.currentTarget.style.cursor = "grab";
-    }
+    if (state?.isDown) finishDrag(pid, e.currentTarget);
+    else e.currentTarget.style.cursor = "grab";
   }
 
-  // ── Load all project commitments ─────────────────────────────────────────────
+  // ── Load commitments ──────────────────────────────────────────────────────────
 
   async function loadAll() {
     setLoading(true); setLoaded(false); setError(null);
@@ -259,7 +254,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     finally { setLoading(false); }
   }
 
-  // ── Conflict counts ────────────────────────────────────────────────────────
   function conflictCounts() {
     let red = 0, amber = 0;
     for (const s of STAGES) for (const c of vendorCounts(s, stageMap).values()) {
@@ -272,36 +266,32 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   // ── Pre-load states ────────────────────────────────────────────────────────
 
   if (!company_id) return (
-    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#6B7280" }}>
-      <p style={{ fontSize: 14, fontStyle: "italic" }}>Select a company to view resourcing.</p>
+    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ fontSize: 14, color: "#64748B", fontStyle: "italic" }}>Select a company to view resourcing.</p>
     </div>
   );
 
   if (!loading && !loaded) {
-    const estSecs = Math.ceil(visible.length * 0.5);
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "#FAFAFA" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "#F8FAFC" }}>
         <div style={{
-          background: "#fff", borderRadius: 16, border: "1px solid #E5E7EB",
-          padding: "40px 48px", maxWidth: 440, width: "100%", textAlign: "center",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          background: "#fff", borderRadius: 16,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+          padding: "40px 44px", maxWidth: 360, width: "100%", textAlign: "center",
         }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: "#6B7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>
-            Resourcing
-          </p>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0F172A", margin: "0 0 8px 0" }}>
             Subcontractor Matrix
           </h2>
-          <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28 }}>
-            Fetches commitments across all <strong>{visible.length}</strong> projects.
-            Takes ~{estSecs}s.
+          <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 28px 0", lineHeight: 1.5 }}>
+            Fetches live commitments across <strong style={{ color: "#0F172A" }}>{visible.length}</strong> projects
+            and maps them to the construction programme.
           </p>
           <button
             onClick={() => void loadAll()}
             style={{
-              background: "#111827", color: "#fff", border: "none", borderRadius: 10,
-              padding: "12px 32px", fontSize: 14, fontWeight: 600, cursor: "pointer",
-              width: "100%",
+              background: "#0F172A", color: "#fff", border: "none", borderRadius: 10,
+              padding: "11px 32px", fontSize: 14, fontWeight: 600, cursor: "pointer",
+              width: "100%", letterSpacing: "0.01em",
             }}
           >
             Load Data
@@ -314,26 +304,29 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   if (loading) {
     const pct = visible.length > 0 ? Math.round((loadingIdx / visible.length) * 100) : 0;
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "#FAFAFA" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "#F8FAFC" }}>
         <div style={{
-          background: "#fff", borderRadius: 16, border: "1px solid #E5E7EB",
-          padding: "40px 48px", maxWidth: 440, width: "100%",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          background: "#fff", borderRadius: 16,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+          padding: "40px 44px", maxWidth: 360, width: "100%",
         }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", marginBottom: 6 }}>
-            Loading commitments
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0F172A", margin: "0 0 6px 0" }}>
+            Subcontractor Matrix
+          </h2>
+          <p style={{ fontSize: 13, color: "#64748B", margin: "0 0 24px 0" }}>
+            Loading project {loadingIdx} of {visible.length}
           </p>
-          <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 20 }}>
-            {loadingName} — {loadingIdx} of {visible.length} projects
-          </p>
-          <div style={{ background: "#F3F4F6", borderRadius: 99, height: 6, overflow: "hidden" }}>
+          {/* Progress bar */}
+          <div style={{ background: "#E2E8F0", borderRadius: 99, height: 4, overflow: "hidden", marginBottom: 10 }}>
             <div style={{
               height: "100%", borderRadius: 99,
-              width: `${pct}%`, background: "#111827",
-              transition: "width 0.3s ease",
+              width: `${pct}%`, background: "#6366F1",
+              transition: "width 0.35s ease",
             }} />
           </div>
-          <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 8, textAlign: "right" }}>{pct}%</p>
+          <p style={{ fontSize: 13, color: "#94A3B8", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {loadingName}
+          </p>
         </div>
       </div>
     );
@@ -343,7 +336,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
       <p style={{ fontSize: 13, color: "#EF4444" }}>{error}</p>
       <button onClick={() => void loadAll()}
-        style={{ fontSize: 12, padding: "8px 20px", borderRadius: 8, border: "1px solid #E5E7EB", cursor: "pointer", background: "#fff" }}>
+        style={{ fontSize: 12, padding: "8px 20px", borderRadius: 8, border: "1px solid #E2E8F0", cursor: "pointer", background: "#fff", color: "#475569" }}>
         Retry
       </button>
     </div>
@@ -354,81 +347,86 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   const vcByStage: Record<string, Map<string, number>> = {};
   for (const s of STAGES) vcByStage[s] = vendorCounts(s, stageMap);
 
-  const HEADER_H   = 52;
-  const ROW_MIN_H  = 64;
-
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#FAFAFA" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#F8FAFC" }}>
 
       {/* Hide scrollbars on row scroll containers */}
       <style>{`
         .rsc-row-scroll::-webkit-scrollbar { display: none; }
         .rsc-row-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .rsc-btn-ghost:hover { background: #F1F5F9 !important; }
+        .rsc-more-btn:hover { text-decoration: underline; }
       `}</style>
 
       {/* ── Top bar ── */}
       <div style={{
-        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 20px", height: 52, background: "#fff", borderBottom: "1px solid #E5E7EB",
+        flexShrink: 0, display: "flex", alignItems: "center", gap: 12,
+        padding: "0 20px", height: 56, background: "#fff",
+        borderBottom: "1px solid #E2E8F0",
       }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0F172A", margin: 0, marginRight: 4 }}>
           Subcontractor Matrix
         </h2>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            onClick={() => setManageOpen(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              fontSize: 12, padding: "6px 14px", borderRadius: 8,
-              border: "1px solid #E5E7EB", background: "#fff",
-              color: "#374151", cursor: "pointer", fontWeight: 500,
-            }}
-          >
-            <Settings size={13} /> Manage
-          </button>
-          <button
-            onClick={() => void loadAll()}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              fontSize: 12, padding: "6px 14px", borderRadius: 8,
-              border: "1px solid #E5E7EB", background: "#fff",
-              color: "#374151", cursor: "pointer", fontWeight: 500,
-            }}
-          >
-            <RefreshCw size={13} /> Refresh
-          </button>
-        </div>
-      </div>
 
-      {/* ── Conflict summary bar ── */}
-      {(redCount > 0 || amberCount > 0) && (
-        <div style={{
-          flexShrink: 0, display: "flex", alignItems: "center", gap: 16,
-          padding: "8px 20px", background: "#fff", borderBottom: "1px solid #E5E7EB", fontSize: 12,
-        }}>
-          {redCount > 0 && (
-            <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#EF4444", fontWeight: 600 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#EF4444", display: "inline-block" }} />
-              {redCount} conflict{redCount > 1 ? "s" : ""}
-            </span>
-          )}
-          {redCount > 0 && amberCount > 0 && <span style={{ color: "#D1D5DB" }}>|</span>}
-          {amberCount > 0 && (
-            <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#F59E0B", fontWeight: 500 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#F59E0B", display: "inline-block" }} />
-              {amberCount} watch
-            </span>
-          )}
-          <span style={{ color: "#D1D5DB", marginLeft: 4, fontWeight: 400 }}>
-            — same contractor across {redCount > 0 ? "4+" : "3"} projects in same stage
+        {/* Conflict pills */}
+        {redCount > 0 && (
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            background: "#FEE2E2", color: "#991B1B",
+            fontSize: 12, fontWeight: 500,
+            padding: "4px 10px", borderRadius: 999,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#EF4444", display: "inline-block" }} />
+            {redCount} conflict{redCount > 1 ? "s" : ""}
           </span>
-        </div>
-      )}
+        )}
+        {amberCount > 0 && (
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            background: "#FEF3C7", color: "#92400E",
+            fontSize: 12, fontWeight: 500,
+            padding: "4px 10px", borderRadius: 999,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F59E0B", display: "inline-block" }} />
+            {amberCount} watch
+          </span>
+        )}
+
+        <div style={{ flex: 1 }} />
+
+        {/* Action buttons */}
+        <button
+          className="rsc-btn-ghost"
+          onClick={() => setManageOpen(true)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontSize: 12, padding: "6px 12px", borderRadius: 8,
+            border: "1px solid #E2E8F0", background: "#fff",
+            color: "#475569", cursor: "pointer", fontWeight: 500,
+            transition: "background 0.1s",
+          }}
+        >
+          <Settings size={13} /> Manage
+        </button>
+        <button
+          className="rsc-btn-ghost"
+          onClick={() => void loadAll()}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontSize: 12, padding: "6px 12px", borderRadius: 8,
+            border: "1px solid #E2E8F0", background: "#fff",
+            color: "#475569", cursor: "pointer", fontWeight: 500,
+            transition: "background 0.1s",
+          }}
+        >
+          <RefreshCw size={13} /> Refresh
+        </button>
+      </div>
 
       {/* ── Table area ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
 
-        {/* TODAY LINE — fixed absolute, spans full table height including header */}
+        {/* TODAY LINE */}
         <div
           aria-hidden
           style={{
@@ -436,100 +434,64 @@ export default function ResourcingTab({ company_id, projects }: Props) {
             left: TODAY_LINE,
             top: 0, bottom: 0, width: 0,
             borderLeft: "2px dashed #EF4444",
+            opacity: 0.8,
             zIndex: 20,
             pointerEvents: "none",
           }}
         >
           <span style={{
-            position: "absolute", top: 6, left: 4,
-            fontSize: 9, fontWeight: 700, color: "#EF4444",
-            letterSpacing: "0.08em", textTransform: "uppercase",
-            lineHeight: 1, background: "#FAFAFA",
-            padding: "1px 3px", borderRadius: 3,
+            position: "absolute", top: 8, left: 5,
+            fontSize: 10, fontWeight: 600, color: "#EF4444",
+            background: "#FEE2E2",
+            padding: "2px 6px", borderRadius: 4,
+            lineHeight: 1.4, whiteSpace: "nowrap",
           }}>
-            TODAY ▼
+            TODAY
           </span>
-        </div>
-
-        {/* ── HEADER ROW — fixed, does not scroll ── */}
-        <div style={{
-          flexShrink: 0,
-          display: "flex",
-          height: HEADER_H,
-          background: "#FAFAFA",
-          borderBottom: "2px solid #E5E7EB",
-          zIndex: 12,
-        }}>
-          {/* Project column label */}
-          <div style={{
-            width: PROJ_W, minWidth: PROJ_W, flexShrink: 0,
-            borderRight: "1px solid #E5E7EB",
-            display: "flex", alignItems: "flex-end",
-            padding: "0 12px 8px 12px",
-            fontSize: 11, fontWeight: 600, color: "#6B7280",
-            letterSpacing: "0.05em", textTransform: "uppercase",
-          }}>
-            PROJECT
-          </div>
-          {/* Stage headers — overflow hidden, never scroll */}
-          <div style={{ flex: 1, overflow: "hidden" }}>
-            <div style={{ display: "flex", width: STAGES.length * STAGE_W }}>
-              {STAGES.map(stage => (
-                <div
-                  key={stage}
-                  style={{
-                    width: STAGE_W, minWidth: STAGE_W, flexShrink: 0,
-                    display: "flex", alignItems: "flex-end", justifyContent: "center",
-                    padding: "0 4px 8px 4px",
-                    borderRight: "1px solid #F3F4F6",
-                    fontSize: 11, fontWeight: 500, color: "#6B7280",
-                    letterSpacing: "0.04em", textTransform: "uppercase",
-                    textAlign: "center", overflow: "hidden",
-                  }}
-                  title={stage}
-                >
-                  <span style={{ display: "block", lineHeight: 1.3 }}>{stage}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* ── DATA ROWS — vertically scrollable ── */}
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
           {visible.length === 0 ? (
-            <div style={{ padding: "24px 20px", fontSize: 13, color: "#6B7280", fontStyle: "italic" }}>
+            <div style={{ padding: "24px 20px", fontSize: 13, color: "#64748B", fontStyle: "italic" }}>
               No projects visible. Use Manage to show projects.
             </div>
           ) : (
-            visible.map((proj, rowIdx) => {
+            visible.map(proj => {
               const pid        = String(proj.id);
               const currentIdx = stageIndices[pid] ?? DEFAULT_IDX;
-              const rowBg      = rowIdx % 2 === 0 ? "#ffffff" : "#FAFAFA";
+              const isDragging = draggingRow === pid;
 
               return (
-                <div key={proj.id} style={{ display: "flex", borderBottom: "1px solid #E5E7EB" }}>
-
-                  {/* Project name cell — outside scroll container, naturally fixed */}
+                <div
+                  key={proj.id}
+                  style={{
+                    display: "flex",
+                    borderBottom: "1px solid #F1F5F9",
+                    background: "#fff",
+                    transition: "box-shadow 0.15s",
+                    boxShadow: isDragging ? "0 4px 12px rgba(0,0,0,0.08)" : "none",
+                  }}
+                >
+                  {/* Project name cell */}
                   <div style={{
                     width: PROJ_W, minWidth: PROJ_W, flexShrink: 0,
-                    background: rowBg,
-                    borderRight: "1px solid #E5E7EB",
-                    padding: "10px 12px",
+                    borderRight: "1px solid #E2E8F0",
+                    padding: "14px 14px",
                     display: "flex", flexDirection: "column", justifyContent: "center",
-                    minHeight: ROW_MIN_H,
+                    minHeight: 80,
                   }}>
                     <span
                       style={{
-                        fontSize: 13, fontWeight: 600, color: "#111827",
+                        fontSize: 13, fontWeight: 600, color: "#0F172A",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        display: "block",
+                        display: "block", lineHeight: 1.4,
                       }}
                       title={proj.display_name ?? proj.name}
                     >
                       {shortName(proj.display_name ?? proj.name)}
                     </span>
-                    <span style={{ fontSize: 10, color: "#9CA3AF", display: "block", marginTop: 3 }}>
+                    <span style={{ fontSize: 11, color: "#64748B", display: "block", marginTop: 3, fontStyle: "italic" }}>
                       Currently: {STAGES[Math.min(currentIdx, STAGES.length - 1)]}
                     </span>
                   </div>
@@ -559,15 +521,30 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                         const isCurrent  = stageIdx === currentIdx;
                         const isPast     = stageIdx < currentIdx;
 
-                        // Cell background: conflict overrides past/future shading
-                        let bg:   string = isPast ? "#F3F4F6" : "#ffffff";
-                        let text: string = isPast ? "#9CA3AF" : "#111827";
-                        let fw:   number = 400;
-                        if (vendors.length > 0) {
-                          if      (maxC >= 4) { bg = "#FEE2E2"; text = "#991B1B"; fw = 600; }
-                          else if (maxC === 3) { bg = "#FEF3C7"; text = "#92400E"; }
-                          else if (isPast)    { bg = "#F3F4F6"; text = "#9CA3AF"; }
-                          else               { bg = "#ffffff"; }
+                        // Colours
+                        let bg:          string = isPast ? "#F8FAFC" : "#fff";
+                        let vendorColor: string = isPast ? "#CBD5E1" : "#334155";
+                        let labelColor:  string = isPast ? "#E2E8F0" : "#CBD5E1";
+                        let fw:          number = 400;
+                        let leftBorder:  string = "none";
+
+                        if (isCurrent) {
+                          bg          = "#fff";
+                          labelColor  = "#EF4444";
+                          vendorColor = "#0F172A";
+                          fw          = 600;
+                          leftBorder  = "3px solid #EF4444";
+                        }
+
+                        // Conflict overrides (bg + left border only)
+                        if (vendors.length > 0 && maxC >= 4) {
+                          bg         = "#FFF1F2";
+                          leftBorder = `${isCurrent ? "3px" : "2px"} solid #EF4444`;
+                          vendorColor = isPast ? "#CBD5E1" : "#334155";
+                        } else if (vendors.length > 0 && maxC === 3) {
+                          bg         = "#FFFBEB";
+                          leftBorder = `${isCurrent ? "3px" : "2px"} solid #F59E0B`;
+                          vendorColor = isPast ? "#CBD5E1" : "#334155";
                         }
 
                         const display  = [...vendors].sort((a, b) => a.localeCompare(b));
@@ -580,29 +557,32 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                             style={{
                               width: STAGE_W, minWidth: STAGE_W, flexShrink: 0,
                               background: bg,
-                              borderLeft:  isCurrent ? "3px solid #EF4444" : "none",
-                              borderRight: "1px solid #F3F4F6",
-                              padding: "8px",
-                              position: "relative",
-                              minHeight: ROW_MIN_H,
+                              borderLeft:  leftBorder,
+                              borderRight: "1px solid #F1F5F9",
+                              borderBottom: "1px solid #F1F5F9",
+                              padding: "8px 10px",
+                              minHeight: 80,
                               boxSizing: "border-box",
                             }}
                           >
-                            {/* Current stage marker */}
-                            {isCurrent && (
-                              <span style={{
-                                position: "absolute", top: 2, left: "50%",
-                                transform: "translateX(-50%)",
-                                fontSize: 8, color: "#EF4444",
-                                lineHeight: 1, userSelect: "none",
-                              }}>▼</span>
-                            )}
+                            {/* Stage name inside cell */}
+                            <div style={{
+                              fontSize: 9,
+                              color: labelColor,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.08em",
+                              lineHeight: 1.3,
+                              marginBottom: vendors.length > 0 ? 5 : 0,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}>
+                              {stage}
+                            </div>
 
+                            {/* Vendors */}
                             {vendors.length > 0 && (
-                              <div style={{
-                                display: "flex", flexDirection: "column", gap: 2,
-                                marginTop: isCurrent ? 10 : 0,
-                              }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                                 {shown.map(v => {
                                   const vc = counts.get(v) ?? 1;
                                   return (
@@ -611,33 +591,38 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                                       title={v}
                                       style={{
                                         display: "block", fontSize: 11,
-                                        color: text, fontWeight: fw, lineHeight: 1.35,
+                                        color: vendorColor, fontWeight: fw,
+                                        lineHeight: 1.5,
                                         overflow: "hidden", textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap", maxWidth: STAGE_W - 16,
+                                        whiteSpace: "nowrap", maxWidth: STAGE_W - 20,
                                       }}
                                     >
-                                      {vc === 2 && <span style={{ color: "#F59E0B", marginRight: 2 }}>•</span>}
+                                      {vc === 2 && (
+                                        <span style={{ color: "#F59E0B", marginRight: 3 }}>•</span>
+                                      )}
                                       {trunc(v)}
                                     </span>
                                   );
                                 })}
                                 {!isExpanded && overflow > 0 && (
                                   <button
+                                    className="rsc-more-btn"
                                     onClick={() => toggleExpand(pid, stage)}
                                     style={{
                                       background: "none", border: "none", padding: 0,
-                                      cursor: "pointer", fontSize: 10, color: "#9CA3AF",
-                                      fontStyle: "italic", textAlign: "left",
+                                      cursor: "pointer", fontSize: 10, color: "#6366F1",
+                                      textAlign: "left", lineHeight: 1.5,
                                     }}
                                   >+{overflow} more</button>
                                 )}
                                 {isExpanded && display.length > 2 && (
                                   <button
+                                    className="rsc-more-btn"
                                     onClick={() => toggleExpand(pid, stage)}
                                     style={{
                                       background: "none", border: "none", padding: 0,
-                                      cursor: "pointer", fontSize: 10, color: "#9CA3AF",
-                                      fontStyle: "italic", textAlign: "left",
+                                      cursor: "pointer", fontSize: 10, color: "#6366F1",
+                                      textAlign: "left", lineHeight: 1.5,
                                     }}
                                   >show less</button>
                                 )}
@@ -661,7 +646,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
           style={{
             position: "fixed", inset: 0, zIndex: 50,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(0,0,0,0.25)",
+            background: "rgba(0,0,0,0.3)",
             backdropFilter: "blur(4px)",
           }}
           onClick={() => setManageOpen(false)}
@@ -669,27 +654,34 @@ export default function ResourcingTab({ company_id, projects }: Props) {
           <div
             style={{
               background: "#fff", borderRadius: 16,
-              border: "1px solid #E5E7EB",
-              width: 360, maxHeight: "70vh",
+              border: "1px solid #E2E8F0",
+              width: 400, maxHeight: "72vh",
               display: "flex", flexDirection: "column",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
             }}
             onClick={e => e.stopPropagation()}
           >
+            {/* Modal header */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 20px", borderBottom: "1px solid #E5E7EB", flexShrink: 0,
+              padding: "18px 20px", borderBottom: "1px solid #F1F5F9", flexShrink: 0,
             }}>
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#111827" }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#0F172A" }}>
                 Manage Projects
               </h3>
               <button
                 onClick={() => setManageOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", padding: 4 }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#94A3B8", padding: 4, fontSize: 18, lineHeight: 1,
+                  display: "flex", alignItems: "center",
+                }}
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
+
+            {/* Project list */}
             <div style={{ overflowY: "auto", flex: 1 }}>
               {allProjects.map(proj => {
                 const pid    = String(proj.id);
@@ -699,22 +691,41 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                     key={pid}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "10px 20px", borderBottom: "1px solid #F3F4F6", cursor: "pointer",
+                      padding: "11px 20px", borderBottom: "1px solid #F8FAFC",
+                      cursor: "pointer",
                     }}
                     onClick={() => toggleHide(pid)}
                   >
-                    <span style={{ fontSize: 13, color: hidden ? "#9CA3AF" : "#111827", fontWeight: hidden ? 400 : 500 }}>
+                    <span style={{
+                      fontSize: 13, color: hidden ? "#94A3B8" : "#0F172A",
+                      fontWeight: hidden ? 400 : 500,
+                    }}>
                       {shortName(proj.display_name ?? proj.name)}
                     </span>
-                    <span style={{ color: hidden ? "#D1D5DB" : "#10B981", flexShrink: 0 }}>
-                      {hidden ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </span>
+                    {/* CSS toggle switch */}
+                    <div style={{
+                      width: 36, height: 20, borderRadius: 999,
+                      background: hidden ? "#E2E8F0" : "#6366F1",
+                      position: "relative", flexShrink: 0,
+                      transition: "background 0.2s",
+                    }}>
+                      <div style={{
+                        position: "absolute",
+                        top: 2, left: hidden ? 2 : 18,
+                        width: 16, height: 16, borderRadius: "50%",
+                        background: "#fff",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                        transition: "left 0.2s",
+                      }} />
+                    </div>
                   </div>
                 );
               })}
             </div>
-            <div style={{ padding: "12px 20px", borderTop: "1px solid #E5E7EB", flexShrink: 0 }}>
-              <p style={{ margin: 0, fontSize: 11, color: "#9CA3AF", textAlign: "center" }}>
+
+            {/* Footer */}
+            <div style={{ padding: "12px 20px", borderTop: "1px solid #F1F5F9", flexShrink: 0 }}>
+              <p style={{ margin: 0, fontSize: 11, color: "#94A3B8", textAlign: "center" }}>
                 {hiddenIds.size > 0
                   ? `${hiddenIds.size} project${hiddenIds.size > 1 ? "s" : ""} hidden`
                   : "All projects visible"}
