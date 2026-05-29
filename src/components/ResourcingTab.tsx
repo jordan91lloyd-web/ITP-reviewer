@@ -41,9 +41,9 @@ type Stage = (typeof STAGES)[number];
 
 const STAGE_W      = 130;
 const PROJ_W       = 180;
-const TODAY_OFFSET = 0;                          // TODAY line sits at left edge of scroll area
-const TODAY_LINE   = PROJ_W + TODAY_OFFSET * STAGE_W; // 180px — right of project column
-const DEFAULT_IDX  = 2;                          // default scrollLeft = 2*130 = 260 (Piling & Retention)
+const TODAY_OFFSET = 3;                          // TODAY line is 3 stage-widths from scroll area left
+const TODAY_LINE   = PROJ_W + TODAY_OFFSET * STAGE_W; // 570px from viewport left
+const DEFAULT_IDX  = 5;                          // "Structure" → initial scrollLeft = (5-3)*130 = 260
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -163,7 +163,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       const si = stageIndicesRef.current;
       for (const [pid, el] of rowScrollRefs.current) {
         const stageIdx = si[pid] ?? DEFAULT_IDX;
-        el.scrollLeft = stageIdx * STAGE_W; // TODAY at left edge: scrollLeft = stageIdx * STAGE_W
+        el.scrollLeft = Math.max(0, (stageIdx - TODAY_OFFSET) * STAGE_W);
       }
       scrollsSetRef.current = true;
     }, 50);
@@ -449,32 +449,34 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         </button>
       </div>
 
-      {/* ── Table area ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
+      {/* TODAY LINE — fixed over viewport, not scrolled */}
+      <div aria-hidden style={{
+        position: "fixed",
+        left: TODAY_LINE,
+        top: 0,
+        width: 2,
+        height: "100vh",
+        background: "repeating-linear-gradient(to bottom, #EF4444 0px, #EF4444 8px, transparent 8px, transparent 14px)",
+        zIndex: 20,
+        pointerEvents: "none",
+      }} />
+      <div aria-hidden style={{
+        position: "fixed",
+        left: TODAY_LINE + 5,
+        top: 120,
+        background: "#EF4444",
+        color: "#fff",
+        fontSize: 10,
+        fontWeight: 600,
+        padding: "2px 6px",
+        borderRadius: 4,
+        lineHeight: 1.4,
+        zIndex: 21,
+        pointerEvents: "none",
+      }}>TODAY</div>
 
-        {/* TODAY LINE */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: TODAY_LINE,
-            top: 0, bottom: 0, width: 0,
-            borderLeft: "2px dashed #EF4444",
-            opacity: 0.8,
-            zIndex: 20,
-            pointerEvents: "none",
-          }}
-        >
-          <span style={{
-            position: "absolute", top: 8, left: 5,
-            fontSize: 10, fontWeight: 600, color: "#EF4444",
-            background: "#FEE2E2",
-            padding: "2px 6px", borderRadius: 4,
-            lineHeight: 1.4, whiteSpace: "nowrap",
-          }}>
-            TODAY
-          </span>
-        </div>
+      {/* ── Table area ── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* ── DATA ROWS — vertically scrollable ── */}
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
@@ -517,7 +519,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                     >
                       {shortName(proj.display_name ?? proj.name)}
                     </span>
-                    <span style={{ fontSize: 11, color: "#64748B", display: "block", marginTop: 3, fontStyle: "italic" }}>
+                    <span style={{ fontSize: 11, color: "#64748B", display: "block", marginTop: 3 }}>
                       Currently: {STAGES[Math.min(currentIdx, STAGES.length - 1)]}
                     </span>
                   </div>
@@ -535,11 +537,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                     onMouseUp={e => handleMouseUp(pid, e)}
                     onMouseLeave={e => handleMouseLeave(pid, e)}
                   >
-                    <div style={{
-                      display: "flex",
-                      width: STAGES.length * STAGE_W,
-                      minWidth: STAGES.length * STAGE_W,
-                    }}>
+                    <div style={{ display: "flex" }}>
                       {STAGES.map((stage, stageIdx) => {
                         const vendors      = stageMap[stage]?.[pid] ?? [];
                         const conflictLvl  = getCellConflictLevel(pid, stageIdx, stageMap, vsc);
@@ -548,25 +546,19 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                         const isCurrent    = stageIdx === currentIdx;
                         const isPast       = stageIdx < currentIdx;
 
-                        // Background: conflict overrides past/future; current just adds left border
+                        // Background: conflict overrides past/future; current adds left border only
                         let bg: string;
                         if      (conflictLvl === 4) bg = "#FFF1F2";
                         else if (conflictLvl === 3) bg = "#FFFBEB";
                         else if (isPast)            bg = "#F8FAFC";
                         else                        bg = "#fff";
 
-                        // Current stage: red left border only (bg already set above)
                         const leftBorder = isCurrent ? "3px solid #EF4444" : "none";
 
-                        let vendorColor: string = isPast ? "#CBD5E1" : "#334155";
-                        let labelColor:  string = isPast ? "#E2E8F0" : "#CBD5E1";
-                        let fw:          number = 400;
-
-                        if (isCurrent) {
-                          labelColor  = "#EF4444";
-                          vendorColor = "#0F172A";
-                          fw          = 600;
-                        }
+                        // Text contrast
+                        const labelColor:  string = isCurrent ? "#EF4444" : isPast ? "#94A3B8" : "#64748B";
+                        const vendorColor: string = isCurrent ? "#0F172A" : isPast ? "#94A3B8" : "#1E293B";
+                        const vendorFw:    number = isCurrent ? 600 : isPast ? 400 : 500;
 
                         const display  = [...vendors].sort((a, b) => a.localeCompare(b));
                         const shown    = isExpanded ? display : display.slice(0, 2);
@@ -589,6 +581,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                             {/* Stage name inside cell */}
                             <div style={{
                               fontSize: 9,
+                              fontWeight: 600,
                               color: labelColor,
                               textTransform: "uppercase",
                               letterSpacing: "0.08em",
@@ -611,9 +604,9 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                                       key={v}
                                       title={v}
                                       style={{
-                                        display: "block", fontSize: 11,
-                                        color: vendorColor, fontWeight: fw,
-                                        lineHeight: 1.5,
+                                        display: "block", fontSize: 12,
+                                        color: vendorColor, fontWeight: vendorFw,
+                                        lineHeight: 1.6,
                                         overflow: "hidden", textOverflow: "ellipsis",
                                         whiteSpace: "nowrap", maxWidth: STAGE_W - 20,
                                       }}
@@ -631,8 +624,8 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                                     onClick={() => toggleExpand(pid, stage)}
                                     style={{
                                       background: "none", border: "none", padding: 0,
-                                      cursor: "pointer", fontSize: 10, color: "#6366F1",
-                                      textAlign: "left", lineHeight: 1.5,
+                                      cursor: "pointer", fontSize: 11, fontWeight: 500,
+                                      color: "#6366F1", textAlign: "left", lineHeight: 1.5,
                                     }}
                                   >+{overflow} more</button>
                                 )}
@@ -642,8 +635,8 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                                     onClick={() => toggleExpand(pid, stage)}
                                     style={{
                                       background: "none", border: "none", padding: 0,
-                                      cursor: "pointer", fontSize: 10, color: "#6366F1",
-                                      textAlign: "left", lineHeight: 1.5,
+                                      cursor: "pointer", fontSize: 11, fontWeight: 500,
+                                      color: "#6366F1", textAlign: "left", lineHeight: 1.5,
                                     }}
                                   >show less</button>
                                 )}
@@ -652,6 +645,8 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                           </div>
                         );
                       })}
+                      {/* Right padding — allows last stage to scroll to TODAY line */}
+                      <div style={{ minWidth: 600, flexShrink: 0 }} />
                     </div>
                   </div>
                 </div>
