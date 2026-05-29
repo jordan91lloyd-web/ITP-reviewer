@@ -4,7 +4,7 @@
 // Programme-aligned subcontractor matrix.
 // Each project row has independently draggable stage cells.
 // Buffer columns on each side allow scrolling to first/last stage.
-// TODAY line is fixed at PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH = 850px.
+// TODAY line is fixed at PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH = 460px.
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { RefreshCw, Settings, X } from "lucide-react";
@@ -14,8 +14,8 @@ import { RefreshCw, Settings, X } from "lucide-react";
 const STAGE_WIDTH       = 130;
 const PROJECT_COL_WIDTH = 200;
 const BUFFER_COLS       = 10;
-const TODAY_OFFSET      = 5;
-const TODAY_LEFT        = PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH; // 850px
+const TODAY_OFFSET      = 2;
+const TODAY_LEFT        = PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH; // 460px
 
 const STAGES = [
   "Demolition", "Excavation", "Piling & Retention", "In-Ground Services",
@@ -37,9 +37,9 @@ const DEFAULT_IDX = 0; // "Demolition" — stage 0 at TODAY on first load
 // To place stage N under TODAY (TODAY_OFFSET columns from scroll-area left):
 //   scrollLeft = (BUFFER_COLS + N) * STAGE_WIDTH - TODAY_OFFSET * STAGE_WIDTH
 //              = (BUFFER_COLS - TODAY_OFFSET + N) * STAGE_WIDTH
-//              = (10 - 5 + N) * STAGE_WIDTH = (5 + N) * STAGE_WIDTH
-// Stage 0  → scrollLeft = 5  * 130 = 650
-// Stage 21 → scrollLeft = 26 * 130 = 3380
+//              = (10 - 2 + N) * STAGE_WIDTH = (8 + N) * STAGE_WIDTH
+// Stage 0  → scrollLeft = 8  * 130 = 1040
+// Stage 21 → scrollLeft = 29 * 130 = 3770
 function stageToScrollLeft(n: number): number {
   const clamped = Math.max(0, Math.min(STAGES.length - 1, n));
   return (BUFFER_COLS - TODAY_OFFSET + clamped) * STAGE_WIDTH;
@@ -290,6 +290,7 @@ function ProjectRow({
           {/* 22 stage cells */}
           {STAGES.map((stage, stageIdx) => {
             const vendors     = stageMap[stage]?.[pid] ?? [];
+            if (stageIdx === 0) console.log("[ResourcingTab] getVendors", pid, stageIdx, stage, vendors);
             const conflictLvl = getCellConflictLevel(pid, stageIdx, stageMap, vsc);
             const cellKey     = `${pid}:${stage}`;
             const isExpanded  = expanded.has(cellKey);
@@ -521,6 +522,8 @@ export default function ResourcingTab({ company_id, projects }: Props) {
           if (c.vendor_name && !map[stage][pid].includes(c.vendor_name)) map[stage][pid].push(c.vendor_name);
         }
       }
+      console.log("[ResourcingTab] stageMap keys:", Object.keys(map));
+      console.log("[ResourcingTab] stageMap sample:", JSON.stringify(Object.entries(map).slice(0, 2)));
       setStageMap(map); setLoaded(true);
     } catch (e) { setError(e instanceof Error ? e.message : "Failed to load"); }
     finally { setLoading(false); }
