@@ -2,12 +2,12 @@
 
 // ─── ResourcingTab ────────────────────────────────────────────────────────────
 // Programme-aligned subcontractor matrix.
-// Each project row has independently draggable stage cells.
-// LEFT_BUFFER empty cells on left, RIGHT_BUFFER on right, so all stages reachable.
+// Unlocked: each row drags independently.
+// Locked: all rows scroll as a single unit; per-row drag is disabled.
 // TODAY line uses position:absolute inside the table container — zoom-independent.
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { RefreshCw, Settings, X } from "lucide-react";
+import { RefreshCw, Settings, X, Lock, Unlock, Sparkles } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -17,9 +17,9 @@ const LEFT_BUFFER       = 6;  // empty cells before stage 0
 const RIGHT_BUFFER      = 8;  // empty cells after stage 21
 const TODAY_OFFSET      = 3;  // TODAY line is this many columns into the scroll area
 
-// Absolute left position of the TODAY line within the table container (not viewport).
-// left = project column + TODAY_OFFSET columns into scroll area = 200 + 3*130 = 590px
-const TODAY_ABS_LEFT = PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH; // 590px
+// Absolute left of TODAY line within the table container.
+// = project column + TODAY_OFFSET columns = 200 + 3*130 = 590px
+const TODAY_ABS_LEFT = PROJECT_COL_WIDTH + TODAY_OFFSET * STAGE_WIDTH;
 
 const STAGES = [
   "Demolition", "Excavation", "Piling & Retention", "In-Ground Services",
@@ -33,22 +33,16 @@ type Stage = (typeof STAGES)[number];
 
 // Total content: LEFT_BUFFER + 22 stages + RIGHT_BUFFER = 36 columns = 4680px
 const TOTAL_COLS  = LEFT_BUFFER + STAGES.length + RIGHT_BUFFER;
-const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH; // 4680px
+const TOTAL_WIDTH = TOTAL_COLS * STAGE_WIDTH;
 
-const DEFAULT_IDX = 0; // "Demolition" — stage 0 at TODAY on first load
+const DEFAULT_IDX = 0;
 
-// Scroll formula: place stage N under the TODAY line.
-//   Stage N sits at content pixel (LEFT_BUFFER + N) * STAGE_WIDTH from scroll-area left.
-//   TODAY sits at TODAY_OFFSET * STAGE_WIDTH from scroll-area left.
-//   scrollLeft = (LEFT_BUFFER + N - TODAY_OFFSET) * STAGE_WIDTH
-//              = (6 - 3 + N) * 130 = (3 + N) * 130
-//   Stage 0  → 3  * 130 = 390px
-//   Stage 21 → 24 * 130 = 3120px
+// scrollLeft = (LEFT_BUFFER - TODAY_OFFSET + N) * STAGE_WIDTH = (3 + N) * 130
+// Stage 0 → 390px, Stage 21 → 3120px
 function stageToScrollLeft(n: number): number {
   const clamped = Math.max(0, Math.min(STAGES.length - 1, n));
   return (LEFT_BUFFER - TODAY_OFFSET + clamped) * STAGE_WIDTH;
 }
-// Inverse: stage index from scrollLeft
 function scrollLeftToStage(scrollLeft: number): number {
   const n = Math.round(scrollLeft / STAGE_WIDTH) - (LEFT_BUFFER - TODAY_OFFSET);
   return Math.max(0, Math.min(STAGES.length - 1, n));
@@ -135,17 +129,20 @@ function getCellConflictLevel(
 // ── useDragScroll hook ────────────────────────────────────────────────────────
 // Attaches drag-to-scroll to a div ref. mousemove/mouseup on window so
 // dragging works even when cursor leaves the element quickly.
+// No-ops when isLocked = true.
 
 function useDragScroll(
-  ref:               React.RefObject<HTMLDivElement | null>,
-  onSnap:            (stageIndex: number) => void,
-  onPositionChange:  (stageIndex: number) => void,
+  ref:              React.RefObject<HTMLDivElement | null>,
+  onSnap:           (stageIndex: number) => void,
+  onPositionChange: (stageIndex: number) => void,
+  isLocked:         boolean,
 ): void {
-  // Store callbacks in refs so we never need to re-register listeners
-  const snapRef = useRef(onSnap);
-  const posRef  = useRef(onPositionChange);
-  snapRef.current = onSnap;
-  posRef.current  = onPositionChange;
+  const snapRef   = useRef(onSnap);
+  const posRef    = useRef(onPositionChange);
+  const lockedRef = useRef(isLocked);
+  snapRef.current   = onSnap;
+  posRef.current    = onPositionChange;
+  lockedRef.current = isLocked;
 
   useEffect(() => {
     const el = ref.current;
@@ -157,6 +154,7 @@ function useDragScroll(
     let hasMoved    = false;
 
     const onMouseDown = (e: MouseEvent) => {
+      if (lockedRef.current) return;
       isDown      = true;
       hasMoved    = false;
       startX      = e.pageX;
@@ -165,16 +163,16 @@ function useDragScroll(
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!isDown) return;
-      hasMoved       = true;
-      el.scrollLeft  = scrollStart - (e.pageX - startX);
+      if (!isDown || lockedRef.current) return;
+      hasMoved      = true;
+      el.scrollLeft = scrollStart - (e.pageX - startX);
       posRef.current(scrollLeftToStage(el.scrollLeft));
     };
 
     const onMouseUp = () => {
       if (!isDown) return;
       isDown          = false;
-      el.style.cursor = "grab";
+      el.style.cursor = lockedRef.current ? "default" : "grab";
       if (!hasMoved) return;
       const clamped = scrollLeftToStage(el.scrollLeft);
       el.scrollTo({ left: stageToScrollLeft(clamped), behavior: "smooth" });
@@ -194,7 +192,7 @@ function useDragScroll(
       window.removeEventListener("mouseup",   onMouseUp);
       el.removeEventListener("mouseleave",    onMouseLeave);
     };
-  // ref is a stable object — effect runs once per mount
+  // ref is stable — effect runs once per mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref]);
 }
@@ -208,6 +206,7 @@ interface ProjectRowProps {
   stageMap:         StageMap;
   vsc:              Record<string, Record<number, number>>;
   expanded:         Set<string>;
+  isLocked:         boolean;
   onToggleExpand:   (pid: string, stage: string) => void;
   onSnap:           (pid: string, idx: number) => void;
   onPositionChange: (pid: string, idx: number) => void;
@@ -215,28 +214,19 @@ interface ProjectRowProps {
 }
 
 function ProjectRow({
-  pid, displayName, currentIdx, stageMap, vsc, expanded,
+  pid, displayName, currentIdx, stageMap, vsc, expanded, isLocked,
   onToggleExpand, onSnap, onPositionChange, onRegisterRef,
 }: ProjectRowProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSnap = useCallback(
-    (idx: number) => onSnap(pid, idx),
-    [pid, onSnap],
-  );
-  const handlePos = useCallback(
-    (idx: number) => onPositionChange(pid, idx),
-    [pid, onPositionChange],
-  );
+  const handleSnap = useCallback((idx: number) => onSnap(pid, idx), [pid, onSnap]);
+  const handlePos  = useCallback((idx: number) => onPositionChange(pid, idx), [pid, onPositionChange]);
 
-  useDragScroll(scrollRef, handleSnap, handlePos);
+  useDragScroll(scrollRef, handleSnap, handlePos, isLocked);
 
-  // Set initial scroll position on mount (handles re-shown rows after toggle)
+  // Set initial scroll position on mount
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft = stageToScrollLeft(currentIdx);
-    }
-  // Only on mount — parent's useEffect handles the initial API-data load case
+    if (scrollRef.current) scrollRef.current.scrollLeft = stageToScrollLeft(currentIdx);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -248,6 +238,8 @@ function ProjectRow({
       borderBottom: "1px solid #F1F5F9",
       minHeight: 80,
       background: "#fff",
+      // Explicit width in locked mode so shared scroll container measures full scroll range
+      ...(isLocked ? { minWidth: PROJECT_COL_WIDTH + TOTAL_WIDTH } : {}),
     }}>
       {/* Sticky project name column */}
       <div style={{
@@ -258,13 +250,10 @@ function ProjectRow({
         borderRight: "1px solid #E2E8F0",
         display: "flex", flexDirection: "column", justifyContent: "center",
       }}>
-        <div
-          style={{
-            fontSize: 13, fontWeight: 600, color: "#0F172A",
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}
-          title={displayName}
-        >
+        <div style={{
+          fontSize: 13, fontWeight: 600, color: "#0F172A",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }} title={displayName}>
           {shortName(displayName)}
         </div>
         <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>
@@ -272,18 +261,24 @@ function ProjectRow({
         </div>
       </div>
 
-      {/* Horizontally draggable stage cells */}
+      {/* Stage cells — in locked mode overflow:hidden (parent shared scroll drives panning) */}
       <div
         className="rsc-row-scroll"
         ref={el => {
           scrollRef.current = el;
           onRegisterRef(pid, el);
         }}
-        style={{ flex: 1, minWidth: 0, overflowX: "scroll", cursor: "grab" }}
+        style={{
+          flex:     isLocked ? "none" : 1,
+          width:    isLocked ? TOTAL_WIDTH : undefined,
+          minWidth: 0,
+          overflowX: isLocked ? "hidden" : "scroll",
+          cursor:    isLocked ? "default" : "grab",
+        }}
       >
         <div style={{ display: "flex", width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
 
-          {/* Left buffer — LEFT_BUFFER cols */}
+          {/* Left buffer */}
           {Array.from({ length: LEFT_BUFFER }).map((_, i) => (
             <div key={`l${i}`} style={{
               minWidth: STAGE_WIDTH, width: STAGE_WIDTH, flexShrink: 0,
@@ -301,18 +296,17 @@ function ProjectRow({
             const isCurrent   = stageIdx === currentIdx;
             const isPast      = stageIdx < currentIdx;
 
-            // Background: conflict overrides shading; current adds red border only
             let bg: string;
             if      (conflictLvl === 4) bg = "#FFF1F2";
             else if (conflictLvl === 3) bg = "#FFFBEB";
             else if (isPast)            bg = "#F8FAFC";
             else                        bg = "#fff";
 
-            const leftBorder   = isCurrent ? "3px solid #EF4444" : "1px solid #F1F5F9";
-            const labelColor   = isCurrent ? "#EF4444" : isPast ? "#CBD5E1" : "#94A3B8";
+            const leftBorder          = isCurrent ? "3px solid #EF4444" : "1px solid #F1F5F9";
+            const labelColor          = isCurrent ? "#EF4444" : isPast ? "#CBD5E1" : "#94A3B8";
             const labelWeight: number = isCurrent ? 700 : 400;
-            const vendorColor  = isCurrent ? "#0F172A" : isPast ? "#94A3B8" : "#334155";
-            const vendorSize   = isCurrent ? 12 : 11;
+            const vendorColor         = isCurrent ? "#0F172A" : isPast ? "#94A3B8" : "#334155";
+            const vendorSize          = isCurrent ? 12 : 11;
             const vendorWeight: number = isCurrent ? 600 : 400;
 
             const display  = [...vendors].sort((a, b) => a.localeCompare(b));
@@ -330,7 +324,6 @@ function ProjectRow({
                 minHeight: 80,
                 boxSizing: "border-box",
               }}>
-                {/* Stage label */}
                 <div style={{
                   fontSize: 9, fontWeight: labelWeight, color: labelColor,
                   textTransform: "uppercase", letterSpacing: "0.08em",
@@ -341,7 +334,6 @@ function ProjectRow({
                   {stage}
                 </div>
 
-                {/* Vendors */}
                 {vendors.length > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     {shown.map(v => {
@@ -402,26 +394,37 @@ function ProjectRow({
 // ── ResourcingTab ─────────────────────────────────────────────────────────────
 
 export default function ResourcingTab({ company_id, projects }: Props) {
-  const [loading, setLoading]           = useState(false);
-  const [loadingName, setLoadingName]   = useState("");
-  const [loadingIdx, setLoadingIdx]     = useState(0);
-  const [loaded, setLoaded]             = useState(false);
-  const [error, setError]               = useState<string | null>(null);
-  const [stageMap, setStageMap]         = useState<StageMap>({});
-  const [hiddenIds, setHiddenIds]       = useState<Set<string>>(new Set());
-  const [manageOpen, setManageOpen]     = useState(false);
+  const [loading, setLoading]             = useState(false);
+  const [loadingName, setLoadingName]     = useState("");
+  const [loadingIdx, setLoadingIdx]       = useState(0);
+  const [loaded, setLoaded]               = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
+  const [stageMap, setStageMap]           = useState<StageMap>({});
+  const [hiddenIds, setHiddenIds]         = useState<Set<string>>(new Set());
+  const [manageOpen, setManageOpen]       = useState(false);
   const [conflictsOpen, setConflictsOpen] = useState(false);
-  const [expanded, setExpanded]         = useState<Set<string>>(new Set());
-  // stageIndices[pid] = current stage index (0–21)
-  const [stageIndices, setStageIndices] = useState<Record<string, number>>({});
+  const [expanded, setExpanded]           = useState<Set<string>>(new Set());
+  const [stageIndices, setStageIndices]   = useState<Record<string, number>>({});
+
+  // Lock state — persisted to localStorage
+  const [isLocked, setIsLocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("rsc-locked") === "true";
+  });
+
+  // AI analysis panel
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [aiText, setAiText]           = useState("");
+  const [aiLoading, setAiLoading]     = useState(false);
 
   const rowScrollRefs   = useRef<Map<string, HTMLDivElement>>(new Map());
   const saveDebounce    = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const scrollsSetRef   = useRef(false);
   const stageIndicesRef = useRef<Record<string, number>>({});
+  const sharedScrollRef = useRef<HTMLDivElement | null>(null);
   stageIndicesRef.current = stageIndices;
 
-  // ── Debug scroll math on mount ───────────────────────────────────────────────
+  // ── Debug scroll math on mount ─────────────────────────────────────────────
   useEffect(() => {
     console.log("[ResourcingTab] TODAY_ABS_LEFT:", TODAY_ABS_LEFT);
     console.log("[ResourcingTab] stage 0  scrollLeft:", stageToScrollLeft(0));
@@ -430,7 +433,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Load saved offsets on mount ──────────────────────────────────────────────
+  // ── Load saved offsets on mount ────────────────────────────────────────────
   useEffect(() => {
     if (!company_id) return;
     fetch(`/api/resourcing/project-offsets?company_id=${company_id}`)
@@ -446,8 +449,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       .catch(() => {});
   }, [company_id]);
 
-  // ── Set initial scroll positions after data loads ────────────────────────────
-  // Handles the case where API offsets arrive after rows first render.
+  // ── Set initial scroll positions after data loads ──────────────────────────
   useEffect(() => {
     if (!loaded) { scrollsSetRef.current = false; return; }
     if (scrollsSetRef.current) return;
@@ -462,6 +464,26 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     return () => clearTimeout(t);
   }, [loaded, stageIndices]);
 
+  // ── Sync scroll positions when locking / unlocking ────────────────────────
+  useEffect(() => {
+    if (isLocked) {
+      // Set shared container to match the first row's current scroll position
+      const el = sharedScrollRef.current;
+      if (el) {
+        const [firstRowEl] = rowScrollRefs.current.values();
+        el.scrollLeft = firstRowEl ? firstRowEl.scrollLeft : stageToScrollLeft(DEFAULT_IDX);
+      }
+    } else {
+      // Restore each row to its own saved stage position
+      const si = stageIndicesRef.current;
+      for (const [pid, el] of rowScrollRefs.current) {
+        el.scrollLeft = stageToScrollLeft(si[pid] ?? DEFAULT_IDX);
+      }
+    }
+  // Only run when isLocked changes, not on every render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocked]);
+
   const allProjects = projects
     .slice()
     .sort((a, b) => shortName(a.display_name ?? a.name).localeCompare(shortName(b.display_name ?? b.name)));
@@ -474,8 +496,15 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     const k = `${pid}:${stage}`;
     setExpanded(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n; });
   }
+  function toggleLock() {
+    setIsLocked(prev => {
+      const next = !prev;
+      localStorage.setItem("rsc-locked", String(next));
+      return next;
+    });
+  }
 
-  // ── Snap / position callbacks ─────────────────────────────────────────────────
+  // ── Snap / position callbacks ──────────────────────────────────────────────
 
   const handleSnap = useCallback((pid: string, idx: number) => {
     setStageIndices(prev => ({ ...prev, [pid]: idx }));
@@ -502,7 +531,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     else rowScrollRefs.current.delete(pid);
   }, []);
 
-  // ── Load commitments ──────────────────────────────────────────────────────────
+  // ── Load commitments ───────────────────────────────────────────────────────
 
   async function loadAll() {
     setLoading(true); setLoaded(false); setError(null);
@@ -542,7 +571,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     finally { setLoading(false); }
   }
 
-  // ── Conflict data ─────────────────────────────────────────────────────────────
+  // ── Conflict data ──────────────────────────────────────────────────────────
 
   const vsc = buildVendorStageCount(visible.map(p => String(p.id)), stageMap);
 
@@ -555,7 +584,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   }
   const { red: redCount, amber: amberCount } = loaded ? conflictCounts() : { red: 0, amber: 0 };
 
-  // Conflict rows for modal: each (vendor, stage) with 3+ projects
   const conflictRows: ConflictRow[] = [];
   if (loaded) {
     for (const [vendor, stageCounts] of Object.entries(vsc)) {
@@ -570,6 +598,52 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       }
     }
     conflictRows.sort((a, b) => b.count - a.count);
+  }
+
+  // ── AI analysis ───────────────────────────────────────────────────────────
+
+  async function runAiAnalysis() {
+    if (aiLoading) return;
+    setAiText("");
+    setAiLoading(true);
+
+    const projectSummary = visible.map(p => {
+      const pid       = String(p.id);
+      const stageName = STAGES[stageIndices[pid] ?? DEFAULT_IDX];
+      return `${shortName(p.display_name ?? p.name)}: ${stageName}`;
+    }).join("\n");
+
+    const conflictSummary = conflictRows.length > 0
+      ? conflictRows.map(r =>
+          `${r.vendor} — ${r.stage} (${r.count} projects: ${r.projectNames.join(", ")})`
+        ).join("\n")
+      : "No significant conflicts detected.";
+
+    try {
+      const res = await fetch("/api/resourcing/analyse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectSummary, conflictSummary }),
+      });
+
+      if (!res.ok || !res.body) {
+        setAiText("Failed to connect to AI. Please try again.");
+        return;
+      }
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      while (!done) {
+        const { value, done: d } = await reader.read();
+        done = d;
+        if (value) setAiText(prev => prev + decoder.decode(value, { stream: true }));
+      }
+    } catch (e) {
+      setAiText("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   // ── Pre-load states ────────────────────────────────────────────────────────
@@ -651,7 +725,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     </div>
   );
 
-  // ── Loaded ──────────────────────────────────────────────────────────────────
+  // ── Loaded ─────────────────────────────────────────────────────────────────
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#F8FAFC" }}>
@@ -660,6 +734,10 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         .rsc-row-scroll::-webkit-scrollbar { display: none; }
         .rsc-row-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .rsc-ghost:hover { background: #F1F5F9 !important; }
+        .rsc-shared-scroll::-webkit-scrollbar { height: 5px; }
+        .rsc-shared-scroll::-webkit-scrollbar-track { background: #F1F5F9; }
+        .rsc-shared-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        @keyframes rsc-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }
       `}</style>
 
       {/* ── Top bar ── */}
@@ -672,39 +750,64 @@ export default function ResourcingTab({ company_id, projects }: Props) {
           Subcontractor Matrix
         </h2>
 
-        {/* Conflict pills — clickable to open conflicts modal */}
+        {/* Conflict pills */}
         {redCount > 0 && (
-          <button
-            onClick={() => setConflictsOpen(true)}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              background: "#FEE2E2", color: "#991B1B",
-              fontSize: 12, fontWeight: 500,
-              padding: "4px 10px", borderRadius: 999,
-              border: "none", cursor: "pointer",
-            }}
-          >
+          <button onClick={() => setConflictsOpen(true)} style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            background: "#FEE2E2", color: "#991B1B",
+            fontSize: 12, fontWeight: 500, padding: "4px 10px", borderRadius: 999,
+            border: "none", cursor: "pointer",
+          }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#EF4444", display: "inline-block" }} />
             {redCount} conflict{redCount > 1 ? "s" : ""}
           </button>
         )}
         {amberCount > 0 && (
-          <button
-            onClick={() => setConflictsOpen(true)}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              background: "#FEF3C7", color: "#92400E",
-              fontSize: 12, fontWeight: 500,
-              padding: "4px 10px", borderRadius: 999,
-              border: "none", cursor: "pointer",
-            }}
-          >
+          <button onClick={() => setConflictsOpen(true)} style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            background: "#FEF3C7", color: "#92400E",
+            fontSize: 12, fontWeight: 500, padding: "4px 10px", borderRadius: 999,
+            border: "none", cursor: "pointer",
+          }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F59E0B", display: "inline-block" }} />
             {amberCount} watch
           </button>
         )}
 
         <div style={{ flex: 1 }} />
+
+        {/* AI Analysis */}
+        <button
+          className="rsc-ghost"
+          onClick={() => setAiPanelOpen(o => !o)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontSize: 12, padding: "6px 12px", borderRadius: 8,
+            border: "1px solid #E2E8F0",
+            background: aiPanelOpen ? "#F5F3FF" : "#fff",
+            color: aiPanelOpen ? "#6366F1" : "#475569",
+            cursor: "pointer", fontWeight: 500,
+          }}
+        >
+          <Sparkles size={13} /> AI Analysis
+        </button>
+
+        {/* Lock / Unlock */}
+        <button
+          className="rsc-ghost"
+          onClick={toggleLock}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontSize: 12, padding: "6px 12px", borderRadius: 8,
+            border: isLocked ? "1px solid #BBF7D0" : "1px solid #E2E8F0",
+            background: isLocked ? "#DCFCE7" : "#fff",
+            color: isLocked ? "#166534" : "#475569",
+            cursor: "pointer", fontWeight: 500,
+          }}
+        >
+          {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
+          {isLocked ? "Locked" : "Lock"}
+        </button>
 
         <button
           className="rsc-ghost"
@@ -732,19 +835,30 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         </button>
       </div>
 
+      {/* Lock banner */}
+      {isLocked && (
+        <div style={{
+          flexShrink: 0, padding: "6px 20px",
+          background: "#F0FDF4", borderBottom: "1px solid #BBF7D0",
+          fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 6,
+        }}>
+          <Lock size={11} />
+          Matrix locked — scroll horizontally to pan all rows together. Click Unlock to adjust individual stages.
+        </div>
+      )}
+
       {/* ── Data rows ── */}
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-        {/* Table container — TODAY line is absolute inside here, zoom-independent */}
+        {/* Table container — TODAY line absolute inside here */}
         <div style={{ position: "relative" }}>
 
-          {/* TODAY line — absolute, spans full height of table */}
+          {/* TODAY line */}
           <div aria-hidden style={{
             position: "absolute", left: TODAY_ABS_LEFT, top: 0, bottom: 0,
             width: 2,
             background: "repeating-linear-gradient(to bottom, #EF4444 0px, #EF4444 8px, transparent 8px, transparent 16px)",
             zIndex: 20, pointerEvents: "none",
           }} />
-          {/* TODAY label */}
           <div aria-hidden style={{
             position: "absolute", left: TODAY_ABS_LEFT + 6, top: 8,
             background: "#EF4444", color: "#fff",
@@ -753,32 +867,148 @@ export default function ResourcingTab({ company_id, projects }: Props) {
             zIndex: 21, pointerEvents: "none",
           }}>TODAY</div>
 
-          {visible.length === 0 ? (
-            <div style={{ padding: "24px 20px", fontSize: 13, color: "#64748B", fontStyle: "italic" }}>
-              No projects visible. Use Manage to show projects.
-            </div>
-          ) : (
-            visible.map(proj => {
-              const pid = String(proj.id);
-              return (
-                <ProjectRow
-                  key={pid}
-                  pid={pid}
-                  displayName={proj.display_name ?? proj.name}
-                  currentIdx={stageIndices[pid] ?? DEFAULT_IDX}
-                  stageMap={stageMap}
-                  vsc={vsc}
-                  expanded={expanded}
-                  onToggleExpand={toggleExpand}
-                  onSnap={handleSnap}
-                  onPositionChange={handlePositionChange}
-                  onRegisterRef={handleRegisterRef}
-                />
-              );
-            })
-          )}
+          {/* Shared scroll wrapper — in locked mode this handles horizontal pan */}
+          <div
+            ref={sharedScrollRef}
+            className={isLocked ? "rsc-shared-scroll" : undefined}
+            style={{
+              overflowX: isLocked ? "scroll" : "hidden",
+              overflowY: "visible",
+            }}
+          >
+            {visible.length === 0 ? (
+              <div style={{ padding: "24px 20px", fontSize: 13, color: "#64748B", fontStyle: "italic" }}>
+                No projects visible. Use Manage to show projects.
+              </div>
+            ) : (
+              visible.map(proj => {
+                const pid = String(proj.id);
+                return (
+                  <ProjectRow
+                    key={pid}
+                    pid={pid}
+                    displayName={proj.display_name ?? proj.name}
+                    currentIdx={stageIndices[pid] ?? DEFAULT_IDX}
+                    stageMap={stageMap}
+                    vsc={vsc}
+                    expanded={expanded}
+                    isLocked={isLocked}
+                    onToggleExpand={toggleExpand}
+                    onSnap={handleSnap}
+                    onPositionChange={handlePositionChange}
+                    onRegisterRef={handleRegisterRef}
+                  />
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
+
+      {/* ── AI Analysis Panel (right slide-in) ── */}
+      {aiPanelOpen && (
+        <div style={{
+          position: "fixed", right: 0, top: 0, bottom: 0, width: 400,
+          background: "#fff", borderLeft: "1px solid #E2E8F0",
+          display: "flex", flexDirection: "column",
+          boxShadow: "-8px 0 32px rgba(0,0,0,0.08)",
+          zIndex: 40,
+        }}>
+          {/* Panel header */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "18px 20px", borderBottom: "1px solid #F1F5F9", flexShrink: 0,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Sparkles size={15} style={{ color: "#6366F1" }} />
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#0F172A" }}>
+                AI Resourcing Analysis
+              </h3>
+            </div>
+            <button
+              onClick={() => setAiPanelOpen(false)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 4, display: "flex" }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Panel body */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+            {!aiText && !aiLoading && (
+              <div style={{ textAlign: "center", paddingTop: 40 }}>
+                <p style={{ fontSize: 13, color: "#64748B", lineHeight: 1.6, marginBottom: 24 }}>
+                  Analyse subcontractor conflicts, identify overloaded trades, and get recommended actions based on current programme positions.
+                </p>
+                {!loaded && (
+                  <p style={{ fontSize: 12, color: "#F59E0B", marginBottom: 16 }}>
+                    Load resourcing data first before running analysis.
+                  </p>
+                )}
+                <button
+                  onClick={() => void runAiAnalysis()}
+                  disabled={!loaded}
+                  style={{
+                    background: loaded ? "#6366F1" : "#E2E8F0",
+                    color: loaded ? "#fff" : "#94A3B8",
+                    border: "none", borderRadius: 10,
+                    padding: "10px 28px", fontSize: 13, fontWeight: 600,
+                    cursor: loaded ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Run Analysis
+                </button>
+              </div>
+            )}
+
+            {aiLoading && !aiText && (
+              <div style={{ textAlign: "center", paddingTop: 40 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: "#EEF2FF", margin: "0 auto 16px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  animation: "rsc-pulse 1.5s ease-in-out infinite",
+                }}>
+                  <Sparkles size={16} style={{ color: "#6366F1" }} />
+                </div>
+                <p style={{ fontSize: 13, color: "#64748B" }}>Analysing resourcing data…</p>
+              </div>
+            )}
+
+            {aiText && (
+              <>
+                <div style={{
+                  fontSize: 13, color: "#1E293B", lineHeight: 1.7,
+                  whiteSpace: "pre-wrap",
+                }}>
+                  {aiText}
+                  {aiLoading && (
+                    <span style={{
+                      display: "inline-block", width: 2, height: "1em",
+                      background: "#6366F1", marginLeft: 2, verticalAlign: "text-bottom",
+                      animation: "rsc-pulse 0.8s ease-in-out infinite",
+                    }} />
+                  )}
+                </div>
+                {!aiLoading && (
+                  <button
+                    onClick={() => void runAiAnalysis()}
+                    style={{
+                      marginTop: 24, background: "none",
+                      border: "1px solid #E2E8F0", borderRadius: 8,
+                      padding: "7px 16px", fontSize: 12, fontWeight: 500,
+                      color: "#475569", cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 6,
+                    }}
+                  >
+                    <RefreshCw size={12} /> Re-run
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Conflicts Modal ── */}
       {conflictsOpen && (
@@ -799,7 +1029,6 @@ export default function ResourcingTab({ company_id, projects }: Props) {
             }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Modal header */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "18px 24px", borderBottom: "1px solid #F1F5F9", flexShrink: 0,
@@ -812,15 +1041,12 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                   Same contractor across 3+ projects in the same stage
                 </p>
               </div>
-              <button
-                onClick={() => setConflictsOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 4, display: "flex" }}
-              >
+              <button onClick={() => setConflictsOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 4, display: "flex" }}>
                 <X size={18} />
               </button>
             </div>
 
-            {/* Table */}
             <div style={{ overflowY: "auto", flex: 1 }}>
               {conflictRows.length === 0 ? (
                 <div style={{ padding: "24px", fontSize: 13, color: "#64748B", textAlign: "center" }}>
@@ -828,12 +1054,9 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                 </div>
               ) : (
                 <>
-                  {/* Table header */}
                   <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1.5fr 3fr 56px",
-                    padding: "10px 24px",
-                    background: "#F8FAFC",
+                    display: "grid", gridTemplateColumns: "2fr 1.5fr 3fr 56px",
+                    padding: "10px 24px", background: "#F8FAFC",
                     borderBottom: "1px solid #E2E8F0",
                     fontSize: 11, fontWeight: 600, color: "#64748B",
                     letterSpacing: "0.05em", textTransform: "uppercase",
@@ -845,27 +1068,18 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                     <div style={{ textAlign: "center" }}>Count</div>
                   </div>
 
-                  {/* Table rows */}
                   {conflictRows.map((row, i) => (
                     <div
                       key={`${row.vendor}-${row.stage}-${i}`}
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "2fr 1.5fr 3fr 56px",
-                        padding: "12px 24px",
-                        borderBottom: "1px solid #F1F5F9",
+                        display: "grid", gridTemplateColumns: "2fr 1.5fr 3fr 56px",
+                        padding: "12px 24px", borderBottom: "1px solid #F1F5F9",
                         alignItems: "start",
                       }}
                     >
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A", paddingRight: 8 }}>
-                        {row.vendor}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#475569", paddingRight: 8 }}>
-                        {row.stage}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5 }}>
-                        {row.projectNames.join(", ")}
-                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A", paddingRight: 8 }}>{row.vendor}</div>
+                      <div style={{ fontSize: 12, color: "#475569", paddingRight: 8 }}>{row.stage}</div>
+                      <div style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5 }}>{row.projectNames.join(", ")}</div>
                       <div style={{ textAlign: "center" }}>
                         <span style={{
                           display: "inline-block",
@@ -910,13 +1124,9 @@ export default function ResourcingTab({ company_id, projects }: Props) {
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "18px 20px", borderBottom: "1px solid #F1F5F9", flexShrink: 0,
             }}>
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#0F172A" }}>
-                Manage Projects
-              </h3>
-              <button
-                onClick={() => setManageOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 4, display: "flex" }}
-              >
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#0F172A" }}>Manage Projects</h3>
+              <button onClick={() => setManageOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 4, display: "flex" }}>
                 <X size={18} />
               </button>
             </div>
@@ -937,19 +1147,15 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                     <span style={{ fontSize: 13, color: hidden ? "#94A3B8" : "#0F172A", fontWeight: hidden ? 400 : 500 }}>
                       {shortName(proj.display_name ?? proj.name)}
                     </span>
-                    {/* CSS toggle */}
                     <div style={{
                       width: 36, height: 20, borderRadius: 999,
                       background: hidden ? "#E2E8F0" : "#6366F1",
-                      position: "relative", flexShrink: 0,
-                      transition: "background 0.2s",
+                      position: "relative", flexShrink: 0, transition: "background 0.2s",
                     }}>
                       <div style={{
-                        position: "absolute",
-                        top: 2, left: hidden ? 2 : 18,
+                        position: "absolute", top: 2, left: hidden ? 2 : 18,
                         width: 16, height: 16, borderRadius: "50%",
-                        background: "#fff",
-                        boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                        background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
                         transition: "left 0.2s",
                       }} />
                     </div>
