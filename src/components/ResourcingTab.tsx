@@ -7,7 +7,7 @@
 // TODAY line uses position:absolute inside the table container — zoom-independent.
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { RefreshCw, Settings, X, Lock, Unlock, Sparkles } from "lucide-react";
+import { RefreshCw, Settings, X, Lock, Unlock, Sparkles, Pencil } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -64,6 +64,21 @@ interface ConflictRow {
   stage:  string;
   count:  number;
   projectNames: string[];
+}
+
+interface VendorOverride {
+  vendor_name:     string;
+  project_id:      string;
+  override_stage:  string;
+  original_stage?: string;
+}
+
+interface PopoverState {
+  vendor:  string;
+  pid:     string;
+  stage:   string; // stage the vendor is currently shown in
+  x:       number; // viewport x
+  y:       number; // viewport y
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -124,6 +139,38 @@ function getCellConflictLevel(
   if (max >= 4) return 4;
   if (max >= 3) return 3;
   return 0;
+}
+
+// Applies vendor overrides to a raw stageMap — moves each overridden vendor to
+// their override_stage, removing them from whichever stage they currently sit in.
+function applyOverrides(rawMap: StageMap, overrides: VendorOverride[]): StageMap {
+  if (!overrides.length) return rawMap;
+  // Deep copy of every stage that has entries
+  const result: StageMap = {};
+  for (const [stage, pids] of Object.entries(rawMap)) {
+    result[stage] = {};
+    for (const [pid, vendors] of Object.entries(pids)) {
+      result[stage][pid] = [...vendors];
+    }
+  }
+  for (const { vendor_name, project_id, override_stage } of overrides) {
+    // Remove from every stage other than the override stage
+    for (const stage of Object.keys(result)) {
+      if (stage === override_stage) continue;
+      const arr = result[stage]?.[project_id];
+      if (arr) {
+        const idx = arr.indexOf(vendor_name);
+        if (idx >= 0) arr.splice(idx, 1);
+      }
+    }
+    // Add to override stage
+    if (!result[override_stage]) result[override_stage] = {};
+    if (!result[override_stage][project_id]) result[override_stage][project_id] = [];
+    if (!result[override_stage][project_id].includes(vendor_name)) {
+      result[override_stage][project_id].push(vendor_name);
+    }
+  }
+  return result;
 }
 
 // ── useDragScroll hook ────────────────────────────────────────────────────────
@@ -200,22 +247,24 @@ function useDragScroll(
 // ── ProjectRow ────────────────────────────────────────────────────────────────
 
 interface ProjectRowProps {
-  pid:              string;
-  displayName:      string;
-  currentIdx:       number;
-  stageMap:         StageMap;
-  vsc:              Record<string, Record<number, number>>;
-  expanded:         Set<string>;
-  isLocked:         boolean;
-  onToggleExpand:   (pid: string, stage: string) => void;
-  onSnap:           (pid: string, idx: number) => void;
-  onPositionChange: (pid: string, idx: number) => void;
-  onRegisterRef:    (pid: string, el: HTMLDivElement | null) => void;
+  pid:               string;
+  displayName:       string;
+  currentIdx:        number;
+  stageMap:          StageMap;
+  vsc:               Record<string, Record<number, number>>;
+  expanded:          Set<string>;
+  isLocked:          boolean;
+  overriddenVendors: Set<string>; // entries are `${vendor_name}:${pid}`
+  onToggleExpand:    (pid: string, stage: string) => void;
+  onSnap:            (pid: string, idx: number) => void;
+  onPositionChange:  (pid: string, idx: number) => void;
+  onRegisterRef:     (pid: string, el: HTMLDivElement | null) => void;
+  onVendorClick:     (vendor: string, pid: string, stage: string, x: number, y: number) => void;
 }
 
 function ProjectRow({
   pid, displayName, currentIdx, stageMap, vsc, expanded, isLocked,
-  onToggleExpand, onSnap, onPositionChange, onRegisterRef,
+  overriddenVendors, onToggleExpand, onSnap, onPositionChange, onRegisterRef, onVendorClick,
 }: ProjectRowProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -337,17 +386,41 @@ function ProjectRow({
                 {vendors.length > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     {shown.map(v => {
-                      const vc = vsc[v]?.[stageIdx] ?? 0;
+                      const vc         = vsc[v]?.[stageIdx] ?? 0;
+                      const isOverride = overriddenVendors.has(`${v}:${pid}`);
                       return (
-                        <span key={v} title={v} style={{
-                          display: "block",
-                          fontSize: vendorSize, fontWeight: vendorWeight,
-                          color: vendorColor, lineHeight: 1.6,
-                          overflow: "hidden", textOverflow: "ellipsis",
-                          whiteSpace: "nowrap", maxWidth: STAGE_WIDTH - 20,
-                        }}>
-                          {vc === 2 && <span style={{ color: "#F59E0B", marginRight: 3 }}>•</span>}
-                          {trunc(v)}
+                        <span
+                          key={v}
+                          title={`${v} — click to reassign stage`}
+                          className="rsc-vendor-span"
+                          onClick={e => {
+                            e.stopPropagation();
+                            onVendorClick(v, pid, stage, e.clientX, e.clientY);
+                          }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 2,
+                            fontSize: vendorSize, fontWeight: vendorWeight,
+                            color: vendorColor, lineHeight: 1.6,
+                            cursor: "pointer",
+                            overflow: "hidden",
+                            maxWidth: STAGE_WIDTH - 12,
+                          }}
+                        >
+                          {isOverride && (
+                            <span style={{ color: "#F59E0B", flexShrink: 0, fontSize: 8 }}>●</span>
+                          )}
+                          {!isOverride && vc === 2 && (
+                            <span style={{ color: "#F59E0B", flexShrink: 0 }}>•</span>
+                          )}
+                          <span style={{
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                            flex: 1,
+                          }}>
+                            {trunc(v)}
+                          </span>
+                          <span className="rsc-pencil" style={{ flexShrink: 0 }}>
+                            <Pencil size={9} />
+                          </span>
                         </span>
                       );
                     })}
@@ -417,6 +490,12 @@ export default function ResourcingTab({ company_id, projects }: Props) {
   const [aiText, setAiText]           = useState("");
   const [aiLoading, setAiLoading]     = useState(false);
 
+  // Vendor overrides + reassign popover
+  const [vendorOverrides, setVendorOverrides]   = useState<VendorOverride[]>([]);
+  const [popover, setPopover]                   = useState<PopoverState | null>(null);
+  const [popoverStage, setPopoverStage]         = useState("");
+  const [popoverSaving, setPopoverSaving]       = useState(false);
+
   const rowScrollRefs   = useRef<Map<string, HTMLDivElement>>(new Map());
   const saveDebounce    = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const scrollsSetRef   = useRef(false);
@@ -463,6 +542,17 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     }, 50);
     return () => clearTimeout(t);
   }, [loaded, stageIndices]);
+
+  // ── Load vendor overrides when data finishes loading ──────────────────────
+  useEffect(() => {
+    if (!loaded || !company_id) return;
+    fetch(`/api/resourcing/vendor-override?company_id=${company_id}`)
+      .then(r => r.ok ? r.json() : { overrides: [] })
+      .then((data: { overrides?: VendorOverride[] }) => {
+        setVendorOverrides(data.overrides ?? []);
+      })
+      .catch(() => {});
+  }, [loaded, company_id]);
 
   // ── Sync scroll positions when locking / unlocking ────────────────────────
   useEffect(() => {
@@ -611,9 +701,18 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     finally { setLoading(false); }
   }
 
+  // ── Effective stage map (raw + vendor overrides applied) ──────────────────
+
+  const effectiveStageMap = applyOverrides(stageMap, vendorOverrides);
+
+  // Set of `${vendor_name}:${project_id}` for O(1) override lookup in cells
+  const overriddenVendors = new Set(
+    vendorOverrides.map(o => `${o.vendor_name}:${o.project_id}`),
+  );
+
   // ── Conflict data ──────────────────────────────────────────────────────────
 
-  const vsc = buildVendorStageCount(visible.map(p => String(p.id)), stageMap);
+  const vsc = buildVendorStageCount(visible.map(p => String(p.id)), effectiveStageMap);
 
   function conflictCounts() {
     let red = 0, amber = 0;
@@ -632,12 +731,50 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         const stageIdx = Number(stageIdxStr);
         const stage    = STAGES[stageIdx];
         const projectNames = visible
-          .filter(p => stageMap[stage]?.[String(p.id)]?.includes(vendor))
+          .filter(p => effectiveStageMap[stage]?.[String(p.id)]?.includes(vendor))
           .map(p => shortName(p.display_name ?? p.name));
         conflictRows.push({ vendor, stage, count, projectNames });
       }
     }
     conflictRows.sort((a, b) => b.count - a.count);
+  }
+
+  // ── Vendor override callbacks ─────────────────────────────────────────────
+
+  const handleVendorClick = useCallback((vendor: string, pid: string, stage: string, x: number, y: number) => {
+    setPopover({ vendor, pid, stage, x, y });
+    setPopoverStage(stage);
+  }, []);
+
+  async function handleVendorSave() {
+    if (!popover || !company_id || !popoverStage) return;
+    setPopoverSaving(true);
+    try {
+      await fetch("/api/resourcing/vendor-override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id:     String(company_id),
+          vendor_name:    popover.vendor,
+          project_id:     popover.pid,
+          override_stage: popoverStage,
+          original_stage: popover.stage,
+        }),
+      });
+      // Update local override state — upsert by vendor+pid key
+      setVendorOverrides(prev => {
+        const filtered = prev.filter(o => !(o.vendor_name === popover.vendor && o.project_id === popover.pid));
+        return [...filtered, {
+          vendor_name:    popover.vendor,
+          project_id:     popover.pid,
+          override_stage: popoverStage,
+          original_stage: popover.stage,
+        }];
+      });
+      setPopover(null);
+    } finally {
+      setPopoverSaving(false);
+    }
   }
 
   // ── AI analysis ───────────────────────────────────────────────────────────
@@ -778,6 +915,9 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         .rsc-shared-scroll::-webkit-scrollbar-track { background: #F1F5F9; }
         .rsc-shared-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
         @keyframes rsc-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }
+        .rsc-vendor-span .rsc-pencil { display: none; opacity: 0.5; }
+        .rsc-vendor-span:hover .rsc-pencil { display: inline-flex; }
+        .rsc-vendor-span:hover { text-decoration: underline; text-decoration-color: #CBD5E1; text-decoration-style: dashed; }
       `}</style>
 
       {/* ── Top bar ── */}
@@ -930,14 +1070,16 @@ export default function ResourcingTab({ company_id, projects }: Props) {
                     pid={pid}
                     displayName={proj.display_name ?? proj.name}
                     currentIdx={stageIndices[pid] ?? DEFAULT_IDX}
-                    stageMap={stageMap}
+                    stageMap={effectiveStageMap}
                     vsc={vsc}
                     expanded={expanded}
                     isLocked={isLocked}
+                    overriddenVendors={overriddenVendors}
                     onToggleExpand={toggleExpand}
                     onSnap={handleSnap}
                     onPositionChange={handlePositionChange}
                     onRegisterRef={handleRegisterRef}
+                    onVendorClick={handleVendorClick}
                   />
                 );
               })
@@ -1049,6 +1191,85 @@ export default function ResourcingTab({ company_id, projects }: Props) {
             )}
           </div>
         </div>
+      )}
+
+      {/* ── Vendor Reassign Popover ── */}
+      {popover && (
+        <>
+          {/* Click-outside backdrop */}
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 48 }}
+            onClick={() => setPopover(null)}
+          />
+          <div style={{
+            position: "fixed",
+            left: Math.min(popover.x + 8, (typeof window !== "undefined" ? window.innerWidth : 1200) - 292),
+            top:  Math.min(popover.y + 8, (typeof window !== "undefined" ? window.innerHeight : 800) - 220),
+            width: 280,
+            background: "#fff",
+            border: "1px solid #E2E8F0",
+            borderRadius: 12,
+            padding: "16px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            zIndex: 49,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+              Reassign vendor
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {popover.vendor}
+            </div>
+            <div style={{ fontSize: 11, color: "#64748B", marginBottom: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {shortName(projects.find(p => String(p.id) === popover.pid)?.display_name ?? projects.find(p => String(p.id) === popover.pid)?.name ?? popover.pid)}
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 500, color: "#475569", display: "block", marginBottom: 4 }}>
+                Move to
+              </label>
+              <select
+                value={popoverStage}
+                onChange={e => setPopoverStage(e.target.value)}
+                style={{
+                  width: "100%", fontSize: 12, padding: "6px 8px",
+                  border: "1px solid #E2E8F0", borderRadius: 8,
+                  background: "#F8FAFC", color: "#0F172A",
+                  cursor: "pointer",
+                }}
+              >
+                {STAGES.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => setPopover(null)}
+                style={{
+                  flex: 1, fontSize: 12, fontWeight: 500,
+                  padding: "7px 0", borderRadius: 8,
+                  border: "1px solid #E2E8F0", background: "#fff",
+                  color: "#475569", cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleVendorSave()}
+                disabled={popoverSaving || popoverStage === popover.stage}
+                style={{
+                  flex: 1, fontSize: 12, fontWeight: 600,
+                  padding: "7px 0", borderRadius: 8,
+                  border: "none",
+                  background: (popoverSaving || popoverStage === popover.stage) ? "#E2E8F0" : "#0F172A",
+                  color: (popoverSaving || popoverStage === popover.stage) ? "#94A3B8" : "#fff",
+                  cursor: (popoverSaving || popoverStage === popover.stage) ? "not-allowed" : "pointer",
+                }}
+              >
+                {popoverSaving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ── Conflicts Modal ── */}
