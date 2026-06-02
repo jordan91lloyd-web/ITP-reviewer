@@ -1681,9 +1681,7 @@ export default function DashboardPage() {
       {/* ── Site Compliance tab ── */}
       {dashboardView === "site_compliance" && (
         <SiteComplianceTab
-          companyId={selectedCompany?.id ?? null}
-          projects={projects}
-          isAdmin={isAdmin}
+          companyId={String(selectedCompany?.id ?? "")}
         />
       )}
 
