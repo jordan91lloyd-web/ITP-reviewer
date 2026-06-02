@@ -7,7 +7,7 @@
 // TODAY line uses position:absolute inside the table container — zoom-independent.
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { RefreshCw, Settings, X, Lock, Unlock, Sparkles, Pencil } from "lucide-react";
+import { RefreshCw, Settings, X, Lock, Unlock, Sparkles, Pencil, Send } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -495,10 +495,18 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     return localStorage.getItem("rsc-locked") === "true";
   });
 
-  // AI analysis panel
-  const [aiPanelOpen, setAiPanelOpen] = useState(false);
-  const [aiText, setAiText]           = useState("");
-  const [aiLoading, setAiLoading]     = useState(false);
+  // Chat panel
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
+
+  interface ChatMessage { role: "user" | "assistant"; content: string; }
+  const WELCOME_MSG: ChatMessage = {
+    role: "assistant",
+    content: "Hi! Ask me anything about your subcontractor resourcing. For example:\n- How many projects is Aluxus on?\n- Who is our most overloaded contractor?\n- Which trades have active conflicts?\n- Is Civil King stretched right now?",
+  };
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([WELCOME_MSG]);
+  const [chatInput, setChatInput]       = useState("");
+  const [chatLoading, setChatLoading]   = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
   // Vendor overrides + reassign popover
   const [vendorOverrides, setVendorOverrides]   = useState<VendorOverride[]>([]);
@@ -798,13 +806,9 @@ export default function ResourcingTab({ company_id, projects }: Props) {
     }
   }
 
-  // ── AI analysis ───────────────────────────────────────────────────────────
+  // ── Chat helpers ──────────────────────────────────────────────────────────
 
-  async function runAiAnalysis() {
-    if (aiLoading) return;
-    setAiText("");
-    setAiLoading(true);
-
+  function buildChatContext() {
     const projectSummary = visible.map(p => {
       const pid       = String(p.id);
       const stageName = STAGES[stageIndices[pid] ?? DEFAULT_IDX];
@@ -815,17 +819,54 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       ? conflictRows.map(r =>
           `${r.vendor} — ${r.stage} (${r.count} projects: ${r.projectNames.join(", ")})`
         ).join("\n")
-      : "No significant conflicts detected.";
+      : "No active conflicts detected.";
+
+    const vendorData = visible.map(p => {
+      const pid        = String(p.id);
+      const currentIdx = stageIndices[pid] ?? DEFAULT_IDX;
+      const vendors: string[] = [];
+      for (let i = 0; i < STAGES.length; i++) {
+        if (Math.abs(i - currentIdx) > 3) continue;
+        for (const v of effectiveStageMap[STAGES[i]]?.[pid] ?? []) {
+          if (!vendors.includes(v)) vendors.push(v);
+        }
+      }
+      const stageName = STAGES[Math.min(currentIdx, STAGES.length - 1)];
+      return `${shortName(p.display_name ?? p.name)} (${stageName}): [${vendors.join(", ")}]`;
+    }).join("\n");
+
+    return { projectSummary, conflictSummary, vendorData };
+  }
+
+  async function sendChatMessage() {
+    const text = chatInput.trim();
+    if (!text || chatLoading) return;
+
+    const userMsg: { role: "user" | "assistant"; content: string } = { role: "user", content: text };
+    const newMessages = [...chatMessages, userMsg];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setChatLoading(true);
+
+    // Scroll to bottom
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+
+    // Placeholder assistant message that we'll stream into
+    const placeholderIdx = newMessages.length;
+    setChatMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
     try {
       const res = await fetch("/api/resourcing/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectSummary, conflictSummary }),
+        body: JSON.stringify({
+          messages: newMessages.filter(m => m.content !== "").map(m => ({ role: m.role, content: m.content })),
+          context: buildChatContext(),
+        }),
       });
 
       if (!res.ok || !res.body) {
-        setAiText("Failed to connect to AI. Please try again.");
+        setChatMessages(prev => prev.map((m, i) => i === placeholderIdx ? { ...m, content: "Failed to connect. Please try again." } : m));
         return;
       }
 
@@ -835,12 +876,21 @@ export default function ResourcingTab({ company_id, projects }: Props) {
       while (!done) {
         const { value, done: d } = await reader.read();
         done = d;
-        if (value) setAiText(prev => prev + decoder.decode(value, { stream: true }));
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          setChatMessages(prev => prev.map((m, i) =>
+            i === placeholderIdx ? { ...m, content: m.content + chunk } : m
+          ));
+          chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
       }
     } catch (e) {
-      setAiText("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+      setChatMessages(prev => prev.map((m, i) =>
+        i === placeholderIdx ? { ...m, content: "Error: " + (e instanceof Error ? e.message : "Unknown") } : m
+      ));
     } finally {
-      setAiLoading(false);
+      setChatLoading(false);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   }
 
@@ -977,16 +1027,16 @@ export default function ResourcingTab({ company_id, projects }: Props) {
 
         <div style={{ flex: 1 }} />
 
-        {/* AI Analysis */}
+        {/* Chat Assistant */}
         <button
           className="rsc-ghost"
-          onClick={() => setAiPanelOpen(o => !o)}
+          onClick={() => setChatPanelOpen(o => !o)}
           style={{
             display: "flex", alignItems: "center", gap: 6,
             fontSize: 12, padding: "6px 12px", borderRadius: 8,
             border: "1px solid #E2E8F0",
-            background: aiPanelOpen ? "#F5F3FF" : "#fff",
-            color: aiPanelOpen ? "#6366F1" : "#475569",
+            background: chatPanelOpen ? "#F5F3FF" : "#fff",
+            color: chatPanelOpen ? "#6366F1" : "#475569",
             cursor: "pointer", fontWeight: 500,
           }}
         >
@@ -1109,8 +1159,8 @@ export default function ResourcingTab({ company_id, projects }: Props) {
         </div>
       </div>
 
-      {/* ── AI Analysis Panel (right slide-in) ── */}
-      {aiPanelOpen && (
+      {/* ── Chat Panel (right slide-in) ── */}
+      {chatPanelOpen && (
         <div style={{
           position: "fixed", right: 0, top: 0, bottom: 0, width: 400,
           background: "#fff", borderLeft: "1px solid #E2E8F0",
@@ -1118,7 +1168,7 @@ export default function ResourcingTab({ company_id, projects }: Props) {
           boxShadow: "-8px 0 32px rgba(0,0,0,0.08)",
           zIndex: 40,
         }}>
-          {/* Panel header */}
+          {/* Header */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "18px 20px", borderBottom: "1px solid #F1F5F9", flexShrink: 0,
@@ -1126,90 +1176,85 @@ export default function ResourcingTab({ company_id, projects }: Props) {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Sparkles size={15} style={{ color: "#6366F1" }} />
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#0F172A" }}>
-                AI Resourcing Analysis
+                Resourcing Assistant
               </h3>
             </div>
             <button
-              onClick={() => setAiPanelOpen(false)}
+              onClick={() => setChatPanelOpen(false)}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 4, display: "flex" }}
             >
               <X size={18} />
             </button>
           </div>
 
-          {/* Panel body */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
-            {!aiText && !aiLoading && (
-              <div style={{ textAlign: "center", paddingTop: 40 }}>
-                <p style={{ fontSize: 13, color: "#64748B", lineHeight: 1.6, marginBottom: 24 }}>
-                  Analyse subcontractor conflicts, identify overloaded trades, and get recommended actions based on current programme positions.
-                </p>
-                {!loaded && (
-                  <p style={{ fontSize: 12, color: "#F59E0B", marginBottom: 16 }}>
-                    Load resourcing data first before running analysis.
-                  </p>
-                )}
-                <button
-                  onClick={() => void runAiAnalysis()}
-                  disabled={!loaded}
-                  style={{
-                    background: loaded ? "#6366F1" : "#E2E8F0",
-                    color: loaded ? "#fff" : "#94A3B8",
-                    border: "none", borderRadius: 10,
-                    padding: "10px 28px", fontSize: 13, fontWeight: 600,
-                    cursor: loaded ? "pointer" : "not-allowed",
-                  }}
-                >
-                  Run Analysis
-                </button>
-              </div>
-            )}
-
-            {aiLoading && !aiText && (
-              <div style={{ textAlign: "center", paddingTop: 40 }}>
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+            {chatMessages.map((msg, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
                 <div style={{
-                  width: 32, height: 32, borderRadius: "50%",
-                  background: "#EEF2FF", margin: "0 auto 16px",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  animation: "rsc-pulse 1.5s ease-in-out infinite",
+                  maxWidth: "80%", padding: "10px 14px", borderRadius: 12,
+                  background: msg.role === "user" ? "#6366F1" : "#F1F5F9",
+                  color: msg.role === "user" ? "#fff" : "#0F172A",
+                  fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap",
                 }}>
-                  <Sparkles size={16} style={{ color: "#6366F1" }} />
-                </div>
-                <p style={{ fontSize: 13, color: "#64748B" }}>Analysing resourcing data…</p>
-              </div>
-            )}
-
-            {aiText && (
-              <>
-                <div style={{
-                  fontSize: 13, color: "#1E293B", lineHeight: 1.7,
-                  whiteSpace: "pre-wrap",
-                }}>
-                  {aiText}
-                  {aiLoading && (
-                    <span style={{
-                      display: "inline-block", width: 2, height: "1em",
-                      background: "#6366F1", marginLeft: 2, verticalAlign: "text-bottom",
-                      animation: "rsc-pulse 0.8s ease-in-out infinite",
-                    }} />
+                  {msg.content === "" && chatLoading && i === chatMessages.length - 1 ? (
+                    <span style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#94A3B8", animation: "rsc-pulse 1s ease-in-out infinite" }} />
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#94A3B8", animation: "rsc-pulse 1s ease-in-out 0.2s infinite" }} />
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#94A3B8", animation: "rsc-pulse 1s ease-in-out 0.4s infinite" }} />
+                    </span>
+                  ) : (
+                    <>
+                      {msg.content}
+                      {chatLoading && i === chatMessages.length - 1 && msg.role === "assistant" && (
+                        <span style={{
+                          display: "inline-block", width: 2, height: "1em",
+                          background: "#6366F1", marginLeft: 2, verticalAlign: "text-bottom",
+                          animation: "rsc-pulse 0.8s ease-in-out infinite",
+                        }} />
+                      )}
+                    </>
                   )}
                 </div>
-                {!aiLoading && (
-                  <button
-                    onClick={() => void runAiAnalysis()}
-                    style={{
-                      marginTop: 24, background: "none",
-                      border: "1px solid #E2E8F0", borderRadius: 8,
-                      padding: "7px 16px", fontSize: 12, fontWeight: 500,
-                      color: "#475569", cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 6,
-                    }}
-                  >
-                    <RefreshCw size={12} /> Re-run
-                  </button>
-                )}
-              </>
-            )}
+              </div>
+            ))}
+            <div ref={chatBottomRef} />
+          </div>
+
+          {/* Input */}
+          <div style={{
+            flexShrink: 0, padding: "12px 16px",
+            borderTop: "1px solid #F1F5F9",
+            display: "flex", gap: 8,
+          }}>
+            <input
+              type="text"
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendChatMessage(); } }}
+              placeholder={loaded ? "Ask about resourcing…" : "Load data first…"}
+              disabled={!loaded || chatLoading}
+              style={{
+                flex: 1, fontSize: 13, padding: "8px 12px",
+                border: "1px solid #E2E8F0", borderRadius: 8,
+                background: loaded ? "#fff" : "#F8FAFC",
+                color: "#0F172A", outline: "none",
+              }}
+            />
+            <button
+              onClick={() => void sendChatMessage()}
+              disabled={!chatInput.trim() || !loaded || chatLoading}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                border: "none",
+                background: (!chatInput.trim() || !loaded || chatLoading) ? "#E2E8F0" : "#6366F1",
+                color: (!chatInput.trim() || !loaded || chatLoading) ? "#94A3B8" : "#fff",
+                cursor: (!chatInput.trim() || !loaded || chatLoading) ? "not-allowed" : "pointer",
+              }}
+            >
+              <Send size={14} />
+            </button>
           </div>
         </div>
       )}
