@@ -55,7 +55,7 @@ This commits all changes and pushes to GitHub (`jordan91lloyd-web/itp-reviewer`)
 
 Breadcrumb is a site access / induction platform used on Fleek construction sites. Integration may be built to pull site attendance, induction status, and supplier data into Holdpoint.
 
-Breadcrumb API spec is available at `docs/breadcrumb-api.json` — refer to this for all endpoint shapes, request bodies, and response schemas before building any Breadcrumb integration.
+Full API spec available at `docs/breadcrumb-api.json` — reference this for all endpoint shapes, request bodies, response schemas, and available parameters before building any Breadcrumb feature.
 
 ---
 
