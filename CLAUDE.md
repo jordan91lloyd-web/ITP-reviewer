@@ -51,6 +51,14 @@ This commits all changes and pushes to GitHub (`jordan91lloyd-web/itp-reviewer`)
 
 ---
 
+## Breadcrumb integration
+
+Breadcrumb is a site access / induction platform used on Fleek construction sites. Integration may be built to pull site attendance, induction status, and supplier data into Holdpoint.
+
+Breadcrumb API spec is available at `docs/breadcrumb-api.json` — refer to this for all endpoint shapes, request bodies, and response schemas before building any Breadcrumb integration.
+
+---
+
 ## What this app does
 
 **Holdpoint** is a Next.js construction QA platform that reviews Inspection and Test Plan (ITP) packages using Claude AI. QA managers connect their Procore account, select a project and ITP inspection, and the app fetches the inspection data, downloads all attached evidence (PDFs, images, emails, Word docs), and returns a structured quality assessment: a numeric score (0–100), a score band, an audit readiness rating ("commercial confidence"), evidence gaps, key issues, and recommended next actions.
