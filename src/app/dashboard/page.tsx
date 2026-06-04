@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useAttentionTracker } from "@/hooks/useAttentionTracker";
 import ReviewResults from "@/components/ReviewResults";
 import SiteComplianceTab from "@/components/SiteComplianceTab";
+import HoldPointTab from "@/components/HoldPointTab";
 import InsightsTab from "@/components/InsightsTab";
 import QueuePanel from "@/components/QueuePanel";
 import ResourcingTab from "@/components/ResourcingTab";
@@ -690,7 +691,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "resourcing";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "resourcing" | "hold_points";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [insightsFetched, setInsightsFetched] = useState(false);
 
@@ -1596,6 +1597,7 @@ export default function DashboardPage() {
           ["insights",        "Insights",        "sparkles"],
           ["itp_reviews",     "ITP Reviews",     null],
           ["site_compliance", "Site Compliance", null],
+          ["hold_points",     "Hold Points",     null],
           ["resourcing",      "Resourcing",      null],
           ["queue",           "Queue",           null],
         ] as [DashboardView, string, string | null][]).map(([view, baseLabel, icon]) => {
@@ -1682,6 +1684,14 @@ export default function DashboardPage() {
       {dashboardView === "site_compliance" && (
         <SiteComplianceTab
           companyId={String(selectedCompany?.id ?? "")}
+        />
+      )}
+
+      {/* ── Hold Points tab ── */}
+      {dashboardView === "hold_points" && (
+        <HoldPointTab
+          company_id={String(selectedCompany?.id ?? "")}
+          projects={projects}
         />
       )}
 
