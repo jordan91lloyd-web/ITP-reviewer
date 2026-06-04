@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Download, RefreshCw, Plus, X, Search, FileText, ChevronDown, ChevronRight } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -15,31 +15,11 @@ interface HoldPoint {
   completed:         boolean;
 }
 
-interface DrawingItem {
-  id:              string;
-  number:          string;
-  title:           string;
-  revision_number: string;
-  pdf_url:         string;
-  source:          "drawing";
-}
-
-interface DocItem {
-  id:             string;
-  name:           string;
-  name_with_path: string;
-  download_url:   string;
-  source:         "document";
-}
-
 interface UploadItem {
   id:     string;
-  title:  string;
-  data:   string; // base64
-  source: "upload";
+  title:  string;  // filename without .pdf
+  base64: string;
 }
-
-type SelectableItem = DrawingItem | DocItem | UploadItem;
 
 interface DashboardProject {
   id:           number;
@@ -102,16 +82,12 @@ function fmtDate(iso: string) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function HoldPointTab({ company_id, projects }: Props) {
-  // Step: 0=select project, 1=select docs, 2=generating, 3=register
+  // Step: 0=select project, 1=upload docs, 2=generating, 3=register
   const [step, setStep]                       = useState<0|1|2|3>(0);
   const [selectedProjectId, setProjectId]     = useState<string>("");
   const [selectedProjectName, setProjectName] = useState<string>("");
-  const [drawings, setDrawings]               = useState<DrawingItem[]>([]);
-  const [documents, setDocuments]             = useState<DocItem[]>([]);
   const [uploads, setUploads]                 = useState<UploadItem[]>([]);
-  const [docsLoading, setDocsLoading]         = useState(false);
-  const [selectedIds, setSelectedIds]         = useState<Set<string>>(new Set());
-  const [searchDoc, setSearchDoc]             = useState("");
+  const [isDragging, setIsDragging]           = useState(false);
   const [generating, setGenerating]           = useState(false);
   const [holdPoints, setHoldPoints]           = useState<HoldPoint[]>([]);
   const [generatedAt, setGeneratedAt]         = useState<string | null>(null);
@@ -140,111 +116,70 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     return json.register ?? null;
   }, [company_id]);
 
-  // ── Fetch documents for selected project ──────────────────────────────────
-  const fetchDocuments = useCallback(async (projId: string) => {
-    setDocsLoading(true);
-    try {
-      const res = await fetch(`/api/holdpoint/documents?company_id=${company_id}&project_id=${projId}`);
-      const json = await res.json() as { drawings: DrawingItem[]; documents: DocItem[] };
-      setDrawings(json.drawings ?? []);
-      setDocuments(json.documents ?? []);
-    } finally {
-      setDocsLoading(false);
-    }
-  }, [company_id]);
-
   async function handleProjectChange(projId: string) {
     setProjectId(projId);
     const proj = projects.find(p => String(p.id) === projId);
     setProjectName(proj?.display_name ?? proj?.name ?? "");
-    setSelectedIds(new Set());
     setUploads([]);
     setHoldPoints([]);
     setGeneratedAt(null);
     if (!projId) return;
 
-    // Check for existing register
     const saved = await loadSaved(projId);
     if (saved) {
       setHoldPoints(saved.hold_points);
       setGeneratedAt(saved.generated_at);
       setStep(3);
     } else {
-      await fetchDocuments(projId);
       setStep(1);
     }
   }
 
-  // ── File upload ────────────────────────────────────────────────────────────
-  function handleFileUpload(files: FileList | null) {
+  // ── File handling ──────────────────────────────────────────────────────────
+  function handleFiles(files: FileList | null) {
     if (!files) return;
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(",")[1];
-        const item: UploadItem = {
-          id:     `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          title:  file.name.replace(/\.pdf$/i, ""),
-          data:   base64,
-          source: "upload",
+    Array.from(files)
+      .filter(f => f.name.toLowerCase().endsWith(".pdf"))
+      .forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          const title  = file.name.replace(/\.pdf$/i, "");
+          setUploads(prev => {
+            if (prev.some(u => u.title === title)) return prev;
+            return [...prev, {
+              id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              title,
+              base64,
+            }];
+          });
         };
-        setUploads(prev => [...prev, item]);
-        setSelectedIds(prev => new Set([...prev, item.id]));
-      };
-      reader.readAsDataURL(file);
-    });
+        reader.readAsDataURL(file);
+      });
   }
 
-  // ── Selection helpers ──────────────────────────────────────────────────────
-  function toggleItem(id: string) {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-
-  function selectAllOfType(items: SelectableItem[]) {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      items.forEach(it => next.add(it.id));
-      return next;
-    });
+  function removeUpload(id: string) {
+    setUploads(prev => prev.filter(u => u.id !== id));
   }
 
   // ── Generate ───────────────────────────────────────────────────────────────
   async function generate() {
-    const allItems: SelectableItem[] = [...drawings, ...documents, ...uploads];
-    const selected = allItems.filter(it => selectedIds.has(it.id));
-    if (!selected.length) return;
-
+    if (!uploads.length) return;
     setGenerating(true);
     setStep(2);
-
-    type SelectedPayload = {
-      id: string; title: string; pdf_url?: string;
-      download_url?: string; source: string; data?: string;
-    };
-
-    const selectedPayload: SelectedPayload[] = selected.map(it => {
-      if (it.source === "drawing") {
-        return { id: it.id, title: `${it.number} — ${it.title}`, pdf_url: it.pdf_url, source: "drawing" };
-      }
-      if (it.source === "document") {
-        return { id: it.id, title: it.name, download_url: it.download_url, source: "document" };
-      }
-      return { id: it.id, title: it.title, data: it.data, source: "upload" };
-    });
-
     try {
       const res = await fetch("/api/holdpoint/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
           company_id,
-          project_id:    selectedProjectId,
-          project_name:  selectedProjectName,
-          selected_items: selectedPayload,
+          project_id:   selectedProjectId,
+          project_name: selectedProjectName,
+          documents:    uploads.map(u => ({
+            title:      u.title,
+            base64:     u.base64,
+            media_type: "application/pdf",
+          })),
         }),
       });
       const json = await res.json() as { hold_points: HoldPoint[] };
@@ -340,18 +275,9 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     return true;
   });
 
-  const grouped = groupByStage(filteredHPs);
-
-  // ── Filtered document list ─────────────────────────────────────────────────
-  const filtDrawings = drawings.filter(d =>
-    !searchDoc || `${d.number} ${d.title}`.toLowerCase().includes(searchDoc.toLowerCase()),
-  );
-  const filtDocs = documents.filter(d =>
-    !searchDoc || d.name.toLowerCase().includes(searchDoc.toLowerCase()),
-  );
-
-  const selectedCount = selectedIds.size;
-  const estSeconds    = selectedCount * 15;
+  const grouped   = groupByStage(filteredHPs);
+  const docCount  = uploads.length;
+  const estSeconds = docCount * 15;
 
   // ── Step 0: Project selection ──────────────────────────────────────────────
   if (step === 0) {
@@ -383,11 +309,12 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     );
   }
 
-  // ── Step 1: Document selection ─────────────────────────────────────────────
+  // ── Step 1: Upload portal ──────────────────────────────────────────────────
   if (step === 1) {
     return (
-      <div style={{ fontFamily: "system-ui, sans-serif" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: 640 }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <button
             onClick={() => setStep(0)}
             style={{ background: "none", border: "none", color: "#6366F1", cursor: "pointer", fontSize: 13 }}
@@ -397,155 +324,87 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0F172A", margin: 0 }}>
             {selectedProjectName}
           </h2>
-          <span style={{ fontSize: 13, color: "#64748B" }}>— Select documents to analyse</span>
         </div>
 
-        {/* Search + Upload */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-          <div style={{ position: "relative", flex: 1 }}>
-            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
-            <input
-              type="text"
-              placeholder="Search documents..."
-              value={searchDoc}
-              onChange={e => setSearchDoc(e.target.value)}
-              style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 13 }}
-            />
+        {/* Drop zone */}
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={e => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
+          style={{
+            border: `2px dashed ${isDragging ? "#6366F1" : "#CBD5E1"}`,
+            borderRadius: 12,
+            padding: "44px 24px",
+            textAlign: "center",
+            cursor: "pointer",
+            background: isDragging ? "#EEF2FF" : "#FAFAFA",
+            transition: "border-color 0.15s, background 0.15s",
+          }}
+        >
+          <FileText size={40} style={{ color: "#94A3B8", marginBottom: 14 }} />
+          <div style={{ fontSize: 16, fontWeight: 600, color: "#0F172A", marginBottom: 8 }}>
+            Upload Documents to Analyse
           </div>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 13, color: "#475569", cursor: "pointer", whiteSpace: "nowrap" }}
-          >
-            <Plus size={14} /> Upload PDF
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf"
-            multiple
-            style={{ display: "none" }}
-            onChange={e => handleFileUpload(e.target.files)}
-          />
+          <div style={{ fontSize: 14, color: "#64748B", marginBottom: 12 }}>
+            Drag and drop PDFs here, or click to browse
+          </div>
+          <div style={{ fontSize: 12, color: "#94A3B8", lineHeight: 1.6 }}>
+            Supports: Specifications, Structural Notes, PCA Reports,<br />
+            Facade Reports, Engineering Consultant Reports
+          </div>
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf"
+          multiple
+          style={{ display: "none" }}
+          onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
+        />
 
-        {docsLoading ? (
-          <div style={{ color: "#64748B", padding: "20px 0" }}>Loading documents...</div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            {/* Drawings */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#0F172A", margin: 0 }}>
-                  Drawings ({filtDrawings.length})
-                </h3>
+        {/* Uploaded file list */}
+        {uploads.length > 0 && (
+          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+            {uploads.map(u => (
+              <div
+                key={u.id}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 14px", background: "#F8FAFC",
+                  border: "1px solid #E2E8F0", borderRadius: 8,
+                }}
+              >
+                <FileText size={16} style={{ color: "#6366F1", flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 13, color: "#0F172A" }}>{u.title}.pdf</span>
                 <button
-                  onClick={() => selectAllOfType(filtDrawings)}
-                  style={{ fontSize: 12, color: "#6366F1", background: "none", border: "none", cursor: "pointer" }}
+                  onClick={() => removeUpload(u.id)}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 0 }}
                 >
-                  Select all
+                  <X size={14} />
                 </button>
               </div>
-              <div style={{ border: "1px solid #E2E8F0", borderRadius: 8, maxHeight: 400, overflowY: "auto" }}>
-                {filtDrawings.length === 0 && (
-                  <div style={{ padding: 16, color: "#94A3B8", fontSize: 13 }}>No drawings found.</div>
-                )}
-                {filtDrawings.map(d => (
-                  <label
-                    key={d.id}
-                    style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderBottom: "1px solid #F1F5F9", cursor: "pointer" }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(d.id)}
-                      onChange={() => toggleItem(d.id)}
-                      style={{ marginTop: 2, accentColor: "#6366F1" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>{d.number}</div>
-                      <div style={{ fontSize: 12, color: "#64748B" }}>{d.title}{d.revision_number ? ` Rev ${d.revision_number}` : ""}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Documents + Uploads */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#0F172A", margin: 0 }}>
-                  Documents ({filtDocs.length + uploads.length})
-                </h3>
-                <button
-                  onClick={() => selectAllOfType([...filtDocs, ...uploads])}
-                  style={{ fontSize: 12, color: "#6366F1", background: "none", border: "none", cursor: "pointer" }}
-                >
-                  Select all
-                </button>
-              </div>
-              <div style={{ border: "1px solid #E2E8F0", borderRadius: 8, maxHeight: 400, overflowY: "auto" }}>
-                {filtDocs.length === 0 && uploads.length === 0 && (
-                  <div style={{ padding: 16, color: "#94A3B8", fontSize: 13 }}>No PDF documents found.</div>
-                )}
-                {/* Uploaded files */}
-                {uploads.map(u => (
-                  <label key={u.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderBottom: "1px solid #F1F5F9", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(u.id)}
-                      onChange={() => toggleItem(u.id)}
-                      style={{ marginTop: 2, accentColor: "#6366F1" }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#6366F1" }}>{u.title}</div>
-                      <div style={{ fontSize: 11, color: "#94A3B8" }}>Uploaded</div>
-                    </div>
-                    <button onClick={() => { setUploads(p => p.filter(x => x.id !== u.id)); setSelectedIds(p => { const n = new Set(p); n.delete(u.id); return n; }); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8" }}>
-                      <X size={13} />
-                    </button>
-                  </label>
-                ))}
-                {/* Procore docs */}
-                {filtDocs.map(d => (
-                  <label key={d.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderBottom: "1px solid #F1F5F9", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(d.id)}
-                      onChange={() => toggleItem(d.id)}
-                      style={{ marginTop: 2, accentColor: "#6366F1" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>{d.name}</div>
-                      {d.name_with_path !== d.name && (
-                        <div style={{ fontSize: 11, color: "#94A3B8" }}>{d.name_with_path}</div>
-                      )}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         )}
 
         {/* Generate button */}
-        <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ marginTop: 20 }}>
           <button
             onClick={() => void generate()}
-            disabled={selectedCount === 0}
+            disabled={docCount === 0}
             style={{
-              padding: "10px 24px", background: selectedCount === 0 ? "#E2E8F0" : "#0F172A",
-              color: selectedCount === 0 ? "#94A3B8" : "#FFFFFF",
+              padding: "10px 24px",
+              background: docCount === 0 ? "#E2E8F0" : "#0F172A",
+              color: docCount === 0 ? "#94A3B8" : "#FFFFFF",
               border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
-              cursor: selectedCount === 0 ? "default" : "pointer",
+              cursor: docCount === 0 ? "default" : "pointer",
             }}
           >
-            Generate Register
+            {docCount === 0
+              ? "Analyse documents"
+              : `Analyse ${docCount} document${docCount !== 1 ? "s" : ""} (~${estSeconds} seconds)`}
           </button>
-          {selectedCount > 0 && (
-            <span style={{ fontSize: 13, color: "#64748B" }}>
-              {selectedCount} document{selectedCount !== 1 ? "s" : ""} selected
-              {" "}· ~{estSeconds}s estimated
-            </span>
-          )}
         </div>
       </div>
     );
@@ -559,10 +418,9 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           Generating hold point register...
         </div>
         <div style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>
-          Analysing {selectedCount} document{selectedCount !== 1 ? "s" : ""} with Claude AI.
+          Analysing {docCount} document{docCount !== 1 ? "s" : ""} with Claude AI.
           This may take ~{estSeconds} seconds.
         </div>
-        {/* Animated progress bar */}
         <div style={{ width: 320, margin: "0 auto", height: 6, background: "#E2E8F0", borderRadius: 4, overflow: "hidden" }}>
           <div style={{
             height: "100%", background: "#6366F1", borderRadius: 4,
@@ -602,7 +460,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={async () => { await fetchDocuments(selectedProjectId); setStep(1); }}
+            onClick={() => { setUploads([]); setStep(1); }}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 13, color: "#475569", cursor: "pointer" }}
           >
             <RefreshCw size={13} /> Re-generate
@@ -665,7 +523,10 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           {uniqueParties.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
         {(filterStage || filterTrade || filterParty || searchRegister) && (
-          <button onClick={() => { setFilterStage(""); setFilterTrade(""); setFilterParty(""); setSearchRegister(""); }} style={{ fontSize: 12, color: "#94A3B8", background: "none", border: "none", cursor: "pointer" }}>
+          <button
+            onClick={() => { setFilterStage(""); setFilterTrade(""); setFilterParty(""); setSearchRegister(""); }}
+            style={{ fontSize: 12, color: "#94A3B8", background: "none", border: "none", cursor: "pointer" }}
+          >
             Clear filters
           </button>
         )}

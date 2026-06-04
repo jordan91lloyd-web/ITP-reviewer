@@ -1,6 +1,7 @@
 // POST /api/holdpoint/generate
-// Downloads selected Procore documents, extracts hold points via Claude,
-// deduplicates, sorts, numbers, saves to Supabase, and returns the register.
+// Body: { company_id, project_id, project_name, documents: [{ title, base64, media_type }] }
+// Sends each PDF to Claude, extracts hold points, deduplicates, sorts, numbers,
+// saves to Supabase holdpoint_registers, and returns the register.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -8,10 +9,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 300;
-
-const PROCORE_BASE = process.env.PROCORE_ENV === "production"
-  ? "https://api.procore.com"
-  : "https://sandbox.procore.com";
 
 const STAGE_ORDER = [
   "Demolition",
@@ -23,13 +20,10 @@ const STAGE_ORDER = [
   "Defects & Handover",
 ];
 
-interface SelectedItem {
-  id:           string;
-  title:        string;
-  pdf_url?:     string;   // drawing
-  download_url?: string;  // document
-  source:       "drawing" | "document" | "upload";
-  data?:        string;   // base64 for uploaded files
+interface DocumentInput {
+  title:      string;
+  base64:     string;
+  media_type: "application/pdf";
 }
 
 interface RawHoldPoint {
@@ -52,24 +46,9 @@ function getSupabase() {
   );
 }
 
-async function requireAuth(): Promise<string | null> {
+async function requireAuth(): Promise<boolean> {
   const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
-}
-
-async function downloadPdf(url: string, token: string): Promise<Buffer | null> {
-  if (!url) return null;
-  try {
-    const isS3 = !url.includes("procore.com") || url.includes("s3.");
-    const headers: Record<string, string> = {};
-    if (!isS3) headers.Authorization = `Bearer ${token}`;
-    const res = await fetch(url, { headers });
-    if (!res.ok) return null;
-    const buf = await res.arrayBuffer();
-    return Buffer.from(buf);
-  } catch {
-    return null;
-  }
+  return !!cookieStore.get("procore_access_token")?.value;
 }
 
 const SYSTEM_PROMPT = `You are a construction quality assurance specialist. Extract all hold points from this construction document.
@@ -121,7 +100,6 @@ async function extractHoldPoints(
       .map(b => b.text)
       .join("");
 
-    // Extract JSON array
     const match = text.match(/\[[\s\S]*\]/);
     if (!match) return [];
     return JSON.parse(match[0]) as RawHoldPoint[];
@@ -156,14 +134,15 @@ function sortAndNumber(items: RawHoldPoint[]): HoldPoint[] {
 }
 
 export async function POST(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!await requireAuth()) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
 
   let body: {
-    company_id?:     string;
-    project_id?:     string;
-    project_name?:   string;
-    selected_items?: SelectedItem[];
+    company_id?:   string;
+    project_id?:   string;
+    project_name?: string;
+    documents?:    DocumentInput[];
   };
   try {
     body = await request.json() as typeof body;
@@ -171,29 +150,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { company_id, project_id, project_name, selected_items } = body;
-  if (!company_id || !project_id || !project_name || !selected_items?.length) {
-    return NextResponse.json({ error: "company_id, project_id, project_name, and selected_items required" }, { status: 400 });
+  const { company_id, project_id, project_name, documents } = body;
+  if (!company_id || !project_id || !project_name || !documents?.length) {
+    return NextResponse.json(
+      { error: "company_id, project_id, project_name, and documents required" },
+      { status: 400 },
+    );
   }
 
   const client    = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const allRaw: RawHoldPoint[] = [];
 
-  for (const item of selected_items) {
-    let pdfBase64: string | null = null;
-
-    if (item.source === "upload" && item.data) {
-      // Already base64
-      pdfBase64 = item.data;
-    } else {
-      const url = item.pdf_url || item.download_url || "";
-      const buf = await downloadPdf(url, token);
-      if (buf) pdfBase64 = buf.toString("base64");
-    }
-
-    if (!pdfBase64) continue;
-
-    const points = await extractHoldPoints(client, item.title, pdfBase64);
+  for (const doc of documents) {
+    if (!doc.base64) continue;
+    const points = await extractHoldPoints(client, doc.title, doc.base64);
     allRaw.push(...points);
   }
 
