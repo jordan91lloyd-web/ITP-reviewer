@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { RefreshCw, Download } from "lucide-react";
+import { RefreshCw, Download, Settings, X } from "lucide-react";
 
 type PrestartDay = boolean | null;
 
@@ -27,18 +27,25 @@ interface ComplianceData {
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"] as const;
 
 export default function SiteComplianceTab({ companyId }: { companyId: string }) {
-  const [data,       setData]       = useState<ComplianceData | null>(null);
-  const [loading,    setLoading]    = useState(true);
-  const [notes,      setNotes]      = useState<Record<string, string>>({});
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [data,           setData]           = useState<ComplianceData | null>(null);
+  const [loading,        setLoading]        = useState(true);
+  const [notes,          setNotes]          = useState<Record<string, string>>({});
+  const [pdfLoading,     setPdfLoading]     = useState(false);
+  const [hiddenSites,    setHiddenSites]    = useState<Set<string>>(new Set());
+  const [manageOpen,     setManageOpen]     = useState(false);
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/breadcrumb/compliance-data?company_id=${companyId}`);
-      const json = (await res.json()) as ComplianceData;
+      const [complianceRes, hiddenRes] = await Promise.all([
+        fetch(`/api/breadcrumb/compliance-data?company_id=${companyId}`),
+        fetch(`/api/breadcrumb/hidden-sites?company_id=${companyId}`),
+      ]);
+      const json   = (await complianceRes.json()) as ComplianceData;
+      const hidden = (await hiddenRes.json()) as { hidden: string[] };
       setData(json);
+      setHiddenSites(new Set(hidden.hidden ?? []));
       const init: Record<string, string> = {};
       for (const s of json.sites) init[s.siteReference] = s.notes;
       setNotes(init);
@@ -74,14 +81,34 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
     });
   }
 
+  async function toggleHideSite(siteReference: string) {
+    const isHidden = hiddenSites.has(siteReference);
+    // Optimistic update
+    setHiddenSites(prev => {
+      const next = new Set(prev);
+      if (isHidden) next.delete(siteReference); else next.add(siteReference);
+      return next;
+    });
+    await fetch("/api/breadcrumb/hidden-sites", {
+      method:  isHidden ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ company_id: companyId, site_reference: siteReference }),
+    });
+  }
+
   async function downloadPdf() {
     if (!data) return;
     setPdfLoading(true);
     try {
+      // Pass only visible sites to the PDF
+      const visibleData: ComplianceData = {
+        ...data,
+        sites: data.sites.filter(s => !hiddenSites.has(s.siteReference)),
+      };
       const res  = await fetch("/api/breadcrumb/compliance-pdf", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ data, companyName: "Fleek Constructions" }),
+        body:    JSON.stringify({ data: visibleData, companyName: "Fleek Constructions" }),
       });
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
@@ -127,6 +154,7 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
   }
 
   const { weekStart, weekDates, weekDays, today, sites } = data;
+  const visibleSites = sites.filter(s => !hiddenSites.has(s.siteReference));
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif" }}>
@@ -136,9 +164,25 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
           <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", margin: 0 }}>Site Compliance</h2>
           <div style={{ fontSize: 13, color: "#64748B", marginTop: 4 }}>
             Week of {fmtWeekLabel(weekStart)}
+            {sites.length > 0 && (
+              <span style={{ marginLeft: 10, color: "#94A3B8" }}>
+                Showing {visibleSites.length} of {sites.length} sites
+              </span>
+            )}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setManageOpen(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "8px 14px", background: "#F1F5F9",
+              border: "1px solid #E2E8F0", borderRadius: 8,
+              cursor: "pointer", fontSize: 13, color: "#475569",
+            }}
+          >
+            <Settings size={14} /> Manage Sites
+          </button>
           <button
             onClick={() => void load()}
             style={{
@@ -167,11 +211,11 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
         </div>
       </div>
 
-      {/* Table */}
-      <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #E2E8F0" }}>
+      {/* Scrollable table */}
+      <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 200px)", borderRadius: 10, border: "1px solid #E2E8F0" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0" }}>
+          <thead style={{ position: "sticky", top: 0, zIndex: 10, background: "#F8FAFC" }}>
+            <tr style={{ borderBottom: "2px solid #E2E8F0" }}>
               <th style={{ ...TH, textAlign: "left", width: 200, paddingLeft: 16 }}>SITE</th>
               {weekDates.map((d, i) => (
                 <th key={i} style={{ ...TH, width: 52, color: d > today ? "#CBD5E1" : "#64748B" }}>
@@ -186,7 +230,7 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
             </tr>
           </thead>
           <tbody>
-            {sites.map((site, si) => (
+            {visibleSites.map((site, si) => (
               <tr
                 key={site.siteReference}
                 style={{ borderBottom: "1px solid #F1F5F9", background: si % 2 === 0 ? "#FFFFFF" : "#FAFAFA" }}
@@ -268,9 +312,101 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
         </table>
       </div>
 
-      {sites.length === 0 && !loading && (
+      {visibleSites.length === 0 && !loading && (
         <div style={{ textAlign: "center", padding: "40px 0", color: "#94A3B8", fontSize: 14 }}>
-          No sites found for this company in Breadcrumb.
+          {sites.length === 0
+            ? "No sites found for this company in Breadcrumb."
+            : "All sites are hidden. Use Manage Sites to show them."}
+        </div>
+      )}
+
+      {/* Manage Sites modal */}
+      {manageOpen && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setManageOpen(false); }}
+        >
+          <div style={{
+            background: "#FFFFFF", borderRadius: 12, width: 480,
+            maxHeight: "80vh", display: "flex", flexDirection: "column",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          }}>
+            {/* Modal header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", borderBottom: "1px solid #E2E8F0" }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0F172A" }}>Manage Sites</h3>
+              <button
+                onClick={() => setManageOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 4 }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Site list */}
+            <div style={{ overflowY: "auto", flex: 1, padding: "8px 0" }}>
+              {sites.length === 0 && (
+                <div style={{ padding: "24px", color: "#94A3B8", fontSize: 14, textAlign: "center" }}>
+                  No sites available.
+                </div>
+              )}
+              {sites.map(site => {
+                const hidden = hiddenSites.has(site.siteReference);
+                return (
+                  <div
+                    key={site.siteReference}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "12px 24px",
+                      opacity: hidden ? 0.45 : 1,
+                      borderBottom: "1px solid #F8FAFC",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{site.siteName}</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{site.siteReference}</div>
+                    </div>
+                    {/* Toggle */}
+                    <button
+                      onClick={() => void toggleHideSite(site.siteReference)}
+                      style={{
+                        width: 44, height: 24, borderRadius: 12, border: "none",
+                        cursor: "pointer", position: "relative", flexShrink: 0,
+                        background: hidden ? "#E2E8F0" : "#22C55E",
+                        transition: "background 0.15s",
+                      }}
+                      title={hidden ? "Show site" : "Hide site"}
+                    >
+                      <span style={{
+                        position: "absolute", top: 3,
+                        left: hidden ? 3 : 23,
+                        width: 18, height: 18, borderRadius: "50%",
+                        background: "#FFFFFF",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                        transition: "left 0.15s",
+                      }} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal footer */}
+            <div style={{ padding: "16px 24px", borderTop: "1px solid #E2E8F0", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setManageOpen(false)}
+                style={{
+                  padding: "8px 20px", background: "#0F172A", border: "none",
+                  borderRadius: 8, fontSize: 13, color: "#FFFFFF", cursor: "pointer",
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -285,6 +421,7 @@ const TH: React.CSSProperties = {
   textAlign:     "center",
   letterSpacing: "0.05em",
   userSelect:    "none",
+  background:    "#F8FAFC",
 };
 
 const TD: React.CSSProperties = {
