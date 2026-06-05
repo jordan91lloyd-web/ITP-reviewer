@@ -130,9 +130,8 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
   }
 
   function DayCell({ val }: { val: PrestartDay }) {
-    if (val === null) return <span style={{ color: "#94A3B8", fontWeight: 600, fontSize: 15 }}>–</span>;
-    if (val)          return <span style={{ color: "#16A34A", fontWeight: 700, fontSize: 16 }}>✓</span>;
-    return              <span style={{ color: "#DC2626", fontWeight: 700, fontSize: 16 }}>✗</span>;
+    const bg = val === null ? "#E5E7EB" : val ? "#16A34A" : "#DC2626";
+    return <div style={{ width: 10, height: 10, borderRadius: "50%", background: bg, margin: "0 auto" }} />;
   }
 
   if (loading) {
@@ -218,10 +217,11 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
             <tr style={{ borderBottom: "2px solid #E2E8F0" }}>
               <th style={{ ...TH, textAlign: "left", width: 200, paddingLeft: 16 }}>SITE</th>
               {weekDates.map((d, i) => (
-                <th key={i} style={{ ...TH, width: 52, color: d > today ? "#CBD5E1" : "#64748B" }}>
+                <th key={i} style={{ ...TH, width: 44, color: d > today ? "#CBD5E1" : "#64748B", ...(i === 4 ? { borderRight: "2px solid #F1F5F9" } : {}) }}>
                   {weekDays[i].split(" ")[0].toUpperCase()}
                 </th>
               ))}
+              <th style={{ ...TH, width: 64 }}>SCORE</th>
               <th style={{ ...TH, width: 80 }}>TOOLBOX</th>
               <th style={{ ...TH, width: 100 }}>INDUCTIONS</th>
               <th style={{ ...TH, width: 60 }}>DOCS</th>
@@ -242,17 +242,26 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
 
                 {/* Day columns */}
                 {DAY_KEYS.map((k, i) => (
-                  <td key={k} style={{ ...TD, textAlign: "center" }}>
+                  <td key={k} style={{ ...TD, textAlign: "center", ...(i === 4 ? { borderRight: "2px solid #F1F5F9" } : {}) }}>
                     <DayCell val={weekDates[i] > today ? null : (site.prestart[k] ?? null)} />
                   </td>
                 ))}
 
+                {/* Score */}
+                {(() => {
+                  const y = weekDates.filter(d => d <= today).length;
+                  const x = DAY_KEYS.filter((k, i) => weekDates[i] <= today && site.prestart[k] === true).length;
+                  const color = y === 0 ? "#94A3B8" : x === y ? "#16A34A" : x >= Math.ceil(y / 2) ? "#D97706" : "#DC2626";
+                  return (
+                    <td style={{ ...TD, textAlign: "center", fontSize: 14, fontWeight: 700, color }}>
+                      {y === 0 ? "–" : `${x}/${y}`}
+                    </td>
+                  );
+                })()}
+
                 {/* Toolbox */}
                 <td style={{ ...TD, textAlign: "center" }}>
-                  {site.toolbox
-                    ? <span style={{ color: "#16A34A", fontWeight: 700, fontSize: 16 }}>✓</span>
-                    : <span style={{ color: "#DC2626", fontWeight: 700, fontSize: 16 }}>✗</span>
-                  }
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: site.toolbox ? "#16A34A" : "#DC2626", margin: "0 auto" }} />
                 </td>
 
                 {/* Pending inductions */}
