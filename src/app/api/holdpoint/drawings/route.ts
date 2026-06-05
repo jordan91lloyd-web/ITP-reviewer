@@ -73,18 +73,35 @@ export async function GET(request: NextRequest) {
     // ignore — return empty if Procore unavailable
   }
 
-  const totalDrawings = all.length;
+  // Deduplicate — keep only the latest revision per drawing number
+  const latestByNumber = new Map<string, DrawingRevision>();
+  for (const drawing of all) {
+    const num      = drawing.number ?? "";
+    const existing = latestByNumber.get(num);
+    if (!existing) {
+      latestByNumber.set(num, drawing);
+    } else {
+      const existingRev = parseInt(existing.revision_number ?? "") || 0;
+      const newRev      = parseInt(drawing.revision_number  ?? "") || 0;
+      if (newRev > existingRev ||
+          (newRev === existingRev && (drawing.revision_number ?? "") > (existing.revision_number ?? ""))) {
+        latestByNumber.set(num, drawing);
+      }
+    }
+  }
+  const deduplicated  = Array.from(latestByNumber.values());
+  const totalDrawings = deduplicated.length;
   const recommendedIds = new Set<number>();
 
   // 1. Keyword matches in title
-  for (const d of all) {
+  for (const d of deduplicated) {
     const tl = (d.title ?? "").toLowerCase();
     if (KEYWORDS.some(kw => tl.includes(kw))) recommendedIds.add(d.id);
   }
 
   // 2. First 3 per discipline
   const discCounts = new Map<string, number>();
-  for (const d of all) {
+  for (const d of deduplicated) {
     const prefix = getPrefix(d.number ?? "");
     const count  = discCounts.get(prefix) ?? 0;
     if (count < 3) {
@@ -93,7 +110,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const recommended = all
+  const recommended = deduplicated
     .filter(d => recommendedIds.has(d.id) && d.pdf_url)
     .sort((a, b) => (a.number ?? "").localeCompare(b.number ?? ""))
     .map(d => {

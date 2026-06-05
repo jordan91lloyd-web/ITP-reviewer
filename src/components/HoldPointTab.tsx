@@ -354,6 +354,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // ══════════════════════════════════════════════════════════════════════════════
   if (step === 0) {
     return (
+      <div style={{ height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
       <div style={{ padding: "40px 0", maxWidth: 480 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>
           Hold Point Register
@@ -375,6 +376,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           <div style={{ marginTop: 16, fontSize: 13, color: "#64748B" }}>Loading project data...</div>
         )}
       </div>
+      </div>
     );
   }
 
@@ -383,6 +385,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // ══════════════════════════════════════════════════════════════════════════════
   if (step === 1) {
     return (
+      <div style={{ height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
       <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: 720 }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
@@ -557,6 +560,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           <div style={{ marginTop: 8, fontSize: 12, color: "#94A3B8" }}>Estimated time: ~{estSeconds} seconds</div>
         )}
       </div>
+      </div>
     );
   }
 
@@ -569,6 +573,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     const pct        = total > 0 ? Math.round(((genIndex + 1) / total) * 100) : 20;
 
     return (
+      <div style={{ height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
       <div style={{ padding: "60px 0", maxWidth: 520 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: "#0F172A", marginBottom: 6 }}>
           Generating Hold Point Register
@@ -607,6 +612,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
+      </div>
     );
   }
 
@@ -615,7 +621,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // ══════════════════════════════════════════════════════════════════════════════
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ fontFamily: "system-ui, sans-serif", height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
       {/* Top bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
