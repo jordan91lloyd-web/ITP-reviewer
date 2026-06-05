@@ -354,7 +354,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // ══════════════════════════════════════════════════════════════════════════════
   if (step === 0) {
     return (
-      <div style={{ height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
+      <div style={{ height: "calc(100vh - 160px)", overflowY: "auto", paddingBottom: 40 }}>
       <div style={{ padding: "40px 0", maxWidth: 480 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>
           Hold Point Register
@@ -385,8 +385,8 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // ══════════════════════════════════════════════════════════════════════════════
   if (step === 1) {
     return (
-      <div style={{ height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
-      <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: 720 }}>
+      <div style={{ height: "calc(100vh - 160px)", overflowY: "auto", paddingBottom: 40 }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: 720, padding: "24px 20px 0" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
           <button onClick={() => setStep(0)} style={BACK_BTN}>← Back</button>
@@ -488,12 +488,15 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         </div>
 
         {/* B — Upload additional documents */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>
-            + Add documents
+        <div style={{ marginBottom: 28, paddingTop: 8, borderTop: "1px solid #E2E8F0" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#0F172A" }}>ADDITIONAL DOCUMENTS</div>
+            {uploads.length > 0 && (
+              <span style={{ fontSize: 12, color: "#6366F1", fontWeight: 600 }}>{uploads.length} added</span>
+            )}
           </div>
-          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 10 }}>
-            For: facade reports, PCA schedules, engineering reports, consultant specifications
+          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 0 }}>
+            Facade reports · PCA schedules · Engineering reports · Consultant specifications
           </div>
 
           {/* Drop zone */}
@@ -503,14 +506,18 @@ export default function HoldPointTab({ company_id, projects }: Props) {
             onDragLeave={() => setIsDragging(false)}
             onDrop={e => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
             style={{
-              border: `2px dashed ${isDragging ? "#6366F1" : "#CBD5E1"}`,
-              borderRadius: 10, padding: "24px 20px", textAlign: "center",
+              border: `2px dashed ${isDragging ? "#6366F1" : "#E2E8F0"}`,
+              borderRadius: 12, padding: 24, textAlign: "center",
               cursor: "pointer", background: isDragging ? "#EEF2FF" : "#FAFAFA",
               transition: "border-color 0.15s, background 0.15s",
+              marginTop: 16,
             }}
           >
-            <FileText size={28} style={{ color: "#94A3B8", marginBottom: 8 }} />
-            <div style={{ fontSize: 13, color: "#64748B" }}>Drag and drop PDFs here, or click to browse</div>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+              Drop PDFs here or click to browse
+            </div>
+            <div style={{ fontSize: 12, color: "#94A3B8" }}>PDF files only</div>
           </div>
           <input
             ref={fileInputRef}
@@ -523,7 +530,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
 
           {/* Uploaded chips */}
           {uploads.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
               {uploads.map(u => (
                 <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 20, fontSize: 13, color: "#334155" }}>
                   <FileText size={13} style={{ color: "#6366F1" }} />
@@ -573,7 +580,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     const pct        = total > 0 ? Math.round(((genIndex + 1) / total) * 100) : 20;
 
     return (
-      <div style={{ height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
+      <div style={{ height: "calc(100vh - 160px)", overflowY: "auto", paddingBottom: 40 }}>
       <div style={{ padding: "60px 0", maxWidth: 520 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: "#0F172A", marginBottom: 6 }}>
           Generating Hold Point Register
@@ -621,7 +628,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // ══════════════════════════════════════════════════════════════════════════════
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 40 }}>
+    <div style={{ fontFamily: "system-ui, sans-serif", height: "calc(100vh - 160px)", overflowY: "auto", paddingBottom: 40 }}>
       {/* Top bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
