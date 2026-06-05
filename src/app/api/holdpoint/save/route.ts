@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json({ register: null });
+  if (!data)  return NextResponse.json({ register: null });
 
   return NextResponse.json({
     register: {
@@ -67,7 +67,10 @@ export async function POST(request: NextRequest) {
 
   const { company_id, project_id, project_name, hold_points } = body;
   if (!company_id || !project_id || !project_name || !hold_points) {
-    return NextResponse.json({ error: "company_id, project_id, project_name, hold_points required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "company_id, project_id, project_name, hold_points required" },
+      { status: 400 },
+    );
   }
 
   const supabase = getSupabase();

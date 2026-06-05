@@ -1,0 +1,112 @@
+// GET /api/holdpoint/drawings?company_id=X&project_id=Y
+// Returns recommended drawing revisions from Procore.
+// Recommended = keyword match in title OR first 3 per discipline.
+
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+
+export const dynamic = "force-dynamic";
+
+const PROCORE_BASE = process.env.PROCORE_ENV === "production"
+  ? "https://api.procore.com"
+  : "https://sandbox.procore.com";
+
+const KEYWORDS = [
+  "note", "general", "legend", "criteria", "specification", "spec",
+  "design", "cover", "schedule", "standard", "typical", "requirement",
+  "inspection", "hold point", "quality",
+];
+
+const DISCIPLINE_NAMES: Record<string, string> = {
+  S: "Structural",    A: "Architectural", E: "Electrical",
+  M: "Mechanical",   P: "Plumbing",       F: "Fire",
+  C: "Civil",        L: "Landscape",
+};
+
+interface DrawingRevision {
+  id:               number;
+  number?:          string;
+  title?:           string;
+  revision_number?: string;
+  pdf_url?:         string;
+}
+
+function getPrefix(drawingNumber: string): string {
+  const m = drawingNumber.match(/^([A-Za-z]+)/);
+  return m ? m[1].toUpperCase() : "OTHER";
+}
+
+async function requireAuth(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("procore_access_token")?.value ?? null;
+}
+
+export async function GET(request: NextRequest) {
+  const token = await requireAuth();
+  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  const companyId = request.nextUrl.searchParams.get("company_id");
+  const projectId = request.nextUrl.searchParams.get("project_id");
+  if (!companyId || !projectId) {
+    return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
+  }
+
+  const all: DrawingRevision[] = [];
+  try {
+    let page = 1;
+    while (true) {
+      const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/drawing_revisions?current=true&per_page=500&page=${page}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization:       `Bearer ${token}`,
+          "Procore-Company-Id": companyId,
+        },
+      });
+      if (!res.ok) break;
+      const data = await res.json() as DrawingRevision[];
+      if (!Array.isArray(data) || data.length === 0) break;
+      all.push(...data);
+      if (data.length < 500) break;
+      page++;
+    }
+  } catch {
+    // ignore — return empty if Procore unavailable
+  }
+
+  const totalDrawings = all.length;
+  const recommendedIds = new Set<number>();
+
+  // 1. Keyword matches in title
+  for (const d of all) {
+    const tl = (d.title ?? "").toLowerCase();
+    if (KEYWORDS.some(kw => tl.includes(kw))) recommendedIds.add(d.id);
+  }
+
+  // 2. First 3 per discipline
+  const discCounts = new Map<string, number>();
+  for (const d of all) {
+    const prefix = getPrefix(d.number ?? "");
+    const count  = discCounts.get(prefix) ?? 0;
+    if (count < 3) {
+      recommendedIds.add(d.id);
+      discCounts.set(prefix, count + 1);
+    }
+  }
+
+  const recommended = all
+    .filter(d => recommendedIds.has(d.id) && d.pdf_url)
+    .sort((a, b) => (a.number ?? "").localeCompare(b.number ?? ""))
+    .map(d => {
+      const prefix = getPrefix(d.number ?? "");
+      return {
+        id:              d.id,
+        number:          d.number          ?? "",
+        title:           d.title           ?? "",
+        revision_number: d.revision_number ?? "",
+        pdf_url:         d.pdf_url         ?? "",
+        discipline:      DISCIPLINE_NAMES[prefix] ?? prefix,
+      };
+    });
+
+  return NextResponse.json({ recommended, total_drawings: totalDrawings });
+}
