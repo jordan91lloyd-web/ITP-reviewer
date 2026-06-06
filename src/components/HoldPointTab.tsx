@@ -257,8 +257,9 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         try {
           storagePath = await uploadFileToStorage(f.file);
         } catch (err) {
-          console.error(`[add-docs] Upload failed: ${f.title}`, err);
-          errors.push(`Failed to upload ${f.title}.pdf`);
+          console.error("Upload failed for", f.file.name, ":", err);
+          const msg = err instanceof Error ? err.message : String(err);
+          errors.push(`Failed to upload ${f.title}.pdf: ${msg}`);
           continue;
         }
 
@@ -342,8 +343,8 @@ export default function HoldPointTab({ company_id, projects }: Props) {
       setAddDocsOpen(false);
       setAddDocFiles([]);
 
+      // Fade out new-row highlight after 3 seconds; toast stays until manually closed
       setTimeout(() => setNewHpIds(new Set()), 3000);
-      setTimeout(() => setMergeToast(null), 6000);
     } catch {
       setAddDocsError("Something went wrong. Please try again.");
     } finally {
@@ -860,21 +861,30 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         </div>
       </div>
 
-      {/* Merge success toast */}
+      {/* Merge result banner — stays until manually closed */}
       {mergeToast && (
-        <div style={{ padding: "10px 14px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, marginBottom: 12, fontSize: 13 }}>
+        <div style={{
+          padding: "10px 14px",
+          background: mergeToast.errors.length > 0 ? "#FFFBEB" : "#F0FDF4",
+          border: `1px solid ${mergeToast.errors.length > 0 ? "#FDE68A" : "#BBF7D0"}`,
+          borderRadius: 8, marginBottom: 12, fontSize: 13,
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#15803D" }}>
             <span style={{ fontWeight: 700 }}>✓</span>
             <span>
               {mergeToast.count} new hold point{mergeToast.count !== 1 ? "s" : ""} added from {mergeToast.docs} document{mergeToast.docs !== 1 ? "s" : ""}
             </span>
-            <button onClick={() => setMergeToast(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#86EFAC", padding: 0 }}>
-              <X size={13} />
+            <button onClick={() => setMergeToast(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 0, display: "flex", alignItems: "center" }}>
+              <X size={14} />
             </button>
           </div>
           {mergeToast.errors.length > 0 && (
-            <div style={{ marginTop: 6, color: "#B45309", fontSize: 12 }}>
-              {mergeToast.errors.map((e, i) => <div key={i}>⚠ {e}</div>)}
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+              {mergeToast.errors.map((e, i) => (
+                <div key={i} style={{ fontSize: 12, color: "#92400E", background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 6, padding: "4px 8px" }}>
+                  ⚠ {e}
+                </div>
+              ))}
             </div>
           )}
         </div>
