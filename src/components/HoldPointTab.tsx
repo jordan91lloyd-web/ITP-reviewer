@@ -214,7 +214,10 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     const { data, error } = await supabase.storage
       .from("holdpoint-uploads")
       .upload(path, file, { contentType: "application/pdf", upsert: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("Storage upload error:", JSON.stringify(error));
+      throw new Error(`Upload failed: ${error.message}`);
+    }
     return data.path;
   }
 

@@ -86,8 +86,11 @@ export async function POST(request: NextRequest) {
     .download(document.storage_path);
 
   if (downloadError || !blob) {
-    console.error("[analyse-doc] Download failed:", downloadError);
-    return NextResponse.json({ error: "Failed to download document from storage" }, { status: 500 });
+    console.error("Storage download error:", JSON.stringify(downloadError));
+    return NextResponse.json(
+      { error: downloadError?.message ?? "Failed to download document from storage", hold_points: [] },
+      { status: 500 },
+    );
   }
 
   const buffer = await blob.arrayBuffer();
