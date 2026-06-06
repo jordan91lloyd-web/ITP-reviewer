@@ -35,8 +35,8 @@ interface DrawingInput {
 }
 
 interface UploadInput {
-  title:  string;
-  base64: string;
+  title:        string;
+  storage_path: string;
 }
 
 interface RawHoldPoint {
@@ -193,7 +193,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "At least one drawing or upload required" }, { status: 400 });
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const supabase = getSupabase();
   const allRaw: RawHoldPoint[] = [];
   const sourcesUsed: string[] = [];
 
@@ -206,15 +207,29 @@ export async function POST(request: NextRequest) {
   }
 
   for (const upload of uploads) {
-    if (!upload.base64) continue;
-    const points = await extractHoldPoints(client, upload.title, "", upload.base64);
-    sourcesUsed.push(upload.title);
-    allRaw.push(...points);
+    if (!upload.storage_path) continue;
+    try {
+      const { data: blob, error } = await supabase.storage
+        .from("holdpoint-uploads")
+        .download(upload.storage_path);
+      if (error || !blob) {
+        console.warn(`[generate] Failed to download upload "${upload.title}":`, error);
+        continue;
+      }
+      const buf    = await blob.arrayBuffer();
+      const base64 = Buffer.from(buf).toString("base64");
+      const points = await extractHoldPoints(client, upload.title, "", base64);
+      sourcesUsed.push(upload.title);
+      allRaw.push(...points);
+      // Delete from storage after successful extraction
+      await supabase.storage.from("holdpoint-uploads").remove([upload.storage_path]);
+    } catch (err) {
+      console.error(`[generate] Error processing upload "${upload.title}":`, err);
+    }
   }
 
   const holdPoints = sortAndNumber(deduplicateHoldPoints(allRaw));
 
-  const supabase = getSupabase();
   await supabase
     .from("holdpoint_registers")
     .upsert(

@@ -1,10 +1,17 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { createClient } from "@supabase/supabase-js";
 import {
   Download, RefreshCw, Plus, X, Search, FileText,
   ChevronDown, ChevronRight,
 } from "lucide-react";
+
+// Browser-side Supabase client (anon/publishable key — safe for client)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+);
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -16,6 +23,8 @@ interface HoldPoint {
   source:            string;
 }
 
+type RawHoldPoint = Omit<HoldPoint, "id">;
+
 interface DrawingItem {
   id:              number;
   number:          string;
@@ -26,9 +35,9 @@ interface DrawingItem {
 }
 
 interface UploadItem {
-  id:     string;
-  title:  string;
-  base64: string;
+  id:    string;
+  title: string;
+  file:  File;
 }
 
 interface DashboardProject {
@@ -103,6 +112,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // Step 2 — generating
   const [genDocNames, setGenDocNames]           = useState<string[]>([]);
   const [genIndex, setGenIndex]                 = useState(0);
+  const [genUploadMsg, setGenUploadMsg]         = useState("");
   const genIntervalRef                          = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   // Step 3 — register
@@ -190,17 +200,22 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     Array.from(files)
       .filter(f => f.name.toLowerCase().endsWith(".pdf"))
       .forEach(file => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(",")[1];
-          const title  = file.name.replace(/\.pdf$/i, "");
-          setUploads(prev => {
-            if (prev.some(u => u.title === title)) return prev;
-            return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title, base64 }];
-          });
-        };
-        reader.readAsDataURL(file);
+        const title = file.name.replace(/\.pdf$/i, "");
+        setUploads(prev => {
+          if (prev.some(u => u.title === title)) return prev;
+          return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title, file }];
+        });
       });
+  }
+
+  async function uploadFileToStorage(file: File): Promise<string> {
+    const safeName = file.name.replace(/\s/g, "-");
+    const path     = `uploads/${Date.now()}-${safeName}`;
+    const { data, error } = await supabase.storage
+      .from("holdpoint-uploads")
+      .upload(path, file, { contentType: "application/pdf", upsert: false });
+    if (error) throw new Error(error.message);
+    return data.path;
   }
 
   // ── Add Documents modal helpers ──────────────────────────────────────────────
@@ -210,16 +225,11 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     Array.from(files)
       .filter(f => f.name.toLowerCase().endsWith(".pdf"))
       .forEach(file => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(",")[1];
-          const title  = file.name.replace(/\.pdf$/i, "");
-          setAddDocFiles(prev => {
-            if (prev.some(u => u.title === title)) return prev;
-            return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title, base64 }];
-          });
-        };
-        reader.readAsDataURL(file);
+        const title = file.name.replace(/\.pdf$/i, "");
+        setAddDocFiles(prev => {
+          if (prev.some(u => u.title === title)) return prev;
+          return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title, file }];
+        });
       });
   }
 
@@ -228,58 +238,111 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     setAddDocsRunning(true);
     setAddDocsSlowWarning(false);
     setAddDocsError(null);
-    setAddDocsProgress(`Analysing ${addDocFiles[0].title}...`);
 
-    // Show slow-warning after 60 seconds
+    // Show slow-warning after 60 seconds of total elapsed time
     clearTimeout(addDocsSlowTimerRef.current);
     addDocsSlowTimerRef.current = setTimeout(() => setAddDocsSlowWarning(true), 60_000);
 
+    const allRaw:  RawHoldPoint[] = [];
+    const errors:  string[]       = [];
+
     try {
-      const res  = await fetch("/api/holdpoint/add-documents", {
+      for (const f of addDocFiles) {
+        // 1. Upload to Supabase Storage
+        setAddDocsProgress(`Uploading ${f.title}...`);
+        let storagePath: string;
+        try {
+          storagePath = await uploadFileToStorage(f.file);
+        } catch (err) {
+          console.error(`[add-docs] Upload failed: ${f.title}`, err);
+          errors.push(`Failed to upload ${f.title}.pdf`);
+          continue;
+        }
+
+        // 2. Analyse via route (downloads from storage, extracts, deletes)
+        setAddDocsProgress(`Analysing ${f.title}...`);
+        try {
+          const res = await fetch("/api/holdpoint/analyse-doc", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({
+              company_id,
+              project_id: projectId,
+              document:   { title: f.title, storage_path: storagePath },
+            }),
+          });
+          if (!res.ok) {
+            const isTimeout = res.status === 504;
+            throw new Error(isTimeout ? "timeout" : `HTTP ${res.status}`);
+          }
+          const json = await res.json() as { hold_points: RawHoldPoint[] };
+          allRaw.push(...(json.hold_points ?? []));
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`[add-docs] Analyse failed: ${f.title}`, err);
+          errors.push(
+            msg === "timeout"
+              ? `Analysis timed out for ${f.title}.pdf — try a smaller file`
+              : `Failed to analyse ${f.title}.pdf`,
+          );
+        }
+      }
+
+      // 3. Merge new hold points with existing (dedup + number + save)
+      setAddDocsProgress("Saving...");
+      const existing     = holdPointsRef.current;
+      const existingKeys = new Set(
+        existing.map(hp => `${hp.description.trim().toLowerCase()}|${hp.stage.toLowerCase()}`),
+      );
+      const lastNum = existing.reduce((max, hp) => {
+        return Math.max(max, parseInt(hp.id.replace("HP-", "")) || 0);
+      }, 0);
+
+      const seenNew = new Set<string>();
+      const dedupedRaw = allRaw.filter(item => {
+        const key = `${item.description.trim().toLowerCase()}|${item.stage.toLowerCase()}`;
+        if (existingKeys.has(key) || seenNew.has(key)) return false;
+        seenNew.add(key);
+        return true;
+      });
+
+      const sortedNew = [...dedupedRaw].sort((a, b) => {
+        const si = STAGE_ORDER.indexOf(a.stage);
+        const sj = STAGE_ORDER.indexOf(b.stage);
+        return (si === -1 ? 999 : si) - (sj === -1 ? 999 : sj);
+      });
+
+      const numberedNew: HoldPoint[] = sortedNew.map((item, i) => ({
+        ...item,
+        id: `HP-${String(lastNum + i + 1).padStart(3, "0")}`,
+      }));
+
+      const merged = [...existing, ...numberedNew];
+      holdPointsRef.current = merged;
+      setHoldPoints(merged);
+
+      // Save merged list
+      await fetch("/api/holdpoint/save", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
           company_id,
-          project_id:            projectId,
-          project_name:          projectName,
-          existing_hold_points:  holdPointsRef.current,
-          documents:             addDocFiles.map(f => ({ title: f.title, base64: f.base64 })),
+          project_id:   projectId,
+          project_name: projectName,
+          hold_points:  merged,
         }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        const isTimeout = res.status === 504 || text.toLowerCase().includes("timeout");
-        setAddDocsError(
-          isTimeout
-            ? "Analysis timed out. Try uploading one document at a time."
-            : `Request failed (${res.status}). Please try again.`,
-        );
-        return;
-      }
-
-      const json = await res.json() as {
-        new_hold_points: HoldPoint[];
-        new_count:       number;
-        merged_total:    number;
-        errors:          string[];
-      };
-
-      const newIds = new Set(json.new_hold_points.map(hp => hp.id));
-      const merged = [...holdPointsRef.current, ...json.new_hold_points];
-      holdPointsRef.current = merged;
-      setHoldPoints(merged);
+      const newIds = new Set(numberedNew.map(hp => hp.id));
       setNewHpIds(newIds);
-      setMergeToast({ count: json.new_count, docs: addDocFiles.length, errors: json.errors ?? [] });
+      setMergeToast({ count: numberedNew.length, docs: addDocFiles.length, errors });
       setAddDocsOpen(false);
       setAddDocFiles([]);
 
-      // Fade out highlight after 3 seconds
       setTimeout(() => setNewHpIds(new Set()), 3000);
-      // Clear toast after 6 seconds
       setTimeout(() => setMergeToast(null), 6000);
     } catch {
-      setAddDocsError("Analysis timed out. Try uploading one document at a time.");
+      setAddDocsError("Something went wrong. Please try again.");
     } finally {
       clearTimeout(addDocsSlowTimerRef.current);
       setAddDocsRunning(false);
@@ -301,9 +364,24 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     ];
     setGenDocNames(docNames);
     setGenIndex(0);
+    setGenUploadMsg("");
     setStep(2);
 
-    // Simulate per-doc progress (advances every ~20s)
+    // 1. Upload any user-provided files to Supabase Storage first
+    const storageUploads: { title: string; storage_path: string }[] = [];
+    for (const u of uploads) {
+      setGenUploadMsg(`Uploading ${u.title}...`);
+      try {
+        const storagePath = await uploadFileToStorage(u.file);
+        storageUploads.push({ title: u.title, storage_path: storagePath });
+      } catch (err) {
+        console.error(`[generate] Upload failed: ${u.title}`, err);
+        // Skip the file — don't abort the whole generation
+      }
+    }
+    setGenUploadMsg("");
+
+    // 2. Start analysis progress simulation
     clearInterval(genIntervalRef.current);
     genIntervalRef.current = setInterval(() => {
       setGenIndex(prev => Math.min(prev + 1, totalDocs - 1));
@@ -318,7 +396,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           project_id:   projectId,
           project_name: projectName,
           drawings:     selDrawings.map(d => ({ id: d.id, number: d.number, title: d.title, pdf_url: d.pdf_url })),
-          uploads:      uploads.map(u => ({ title: u.title, base64: u.base64 })),
+          uploads:      storageUploads,
         }),
       });
       const json = await res.json() as { hold_points: HoldPoint[] };
@@ -684,11 +762,20 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           Generating Hold Point Register
         </div>
         <div style={{ fontSize: 13, color: "#475569", marginBottom: 4 }}>
-          {currentDoc ? `Analysing ${currentDoc}...` : "Preparing documents..."}
+          {genUploadMsg
+            ? genUploadMsg
+            : currentDoc ? `Analysing ${currentDoc}...` : "Preparing documents..."}
         </div>
-        <div style={{ fontSize: 12, color: "#94A3B8", marginBottom: 24 }}>
-          ({genIndex + 1} of {total}) · ~{(total - genIndex) * 20}s remaining
-        </div>
+        {!genUploadMsg && (
+          <div style={{ fontSize: 12, color: "#94A3B8", marginBottom: 24 }}>
+            ({genIndex + 1} of {total}) · ~{(total - genIndex) * 20}s remaining
+          </div>
+        )}
+        {genUploadMsg && (
+          <div style={{ fontSize: 12, color: "#94A3B8", marginBottom: 24 }}>
+            Uploading to secure storage before analysis...
+          </div>
+        )}
 
         {/* Progress bar */}
         <div style={{ height: 6, background: "#E2E8F0", borderRadius: 4, overflow: "hidden", marginBottom: 20 }}>
