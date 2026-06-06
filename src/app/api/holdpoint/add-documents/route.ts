@@ -87,41 +87,37 @@ async function extractHoldPoints(
   title:     string,
   pdfBase64: string,
 ): Promise<RawHoldPoint[]> {
-  try {
-    const response = await client.messages.create({
-      model:      "claude-sonnet-4-6",
-      max_tokens: 2000,
-      system:     SYSTEM_PROMPT,
-      messages: [{
-        role: "user",
-        content: [
-          {
-            type: "document",
-            source: {
-              type:       "base64",
-              media_type: "application/pdf",
-              data:       pdfBase64,
-            },
-          } as Anthropic.DocumentBlockParam,
-          {
-            type: "text",
-            text: `Document: ${title}\nPlease extract all hold points.`,
+  const response = await client.messages.create({
+    model:      "claude-sonnet-4-6",
+    max_tokens: 2000,
+    system:     SYSTEM_PROMPT,
+    messages: [{
+      role: "user",
+      content: [
+        {
+          type: "document",
+          source: {
+            type:       "base64",
+            media_type: "application/pdf",
+            data:       pdfBase64,
           },
-        ],
-      }],
-    });
+        } as Anthropic.DocumentBlockParam,
+        {
+          type: "text",
+          text: `Document: ${title}\nPlease extract all hold points.`,
+        },
+      ],
+    }],
+  });
 
-    const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map(b => b.text)
-      .join("");
+  const text = response.content
+    .filter((b): b is Anthropic.TextBlock => b.type === "text")
+    .map(b => b.text)
+    .join("");
 
-    const match = text.match(/\[[\s\S]*\]/);
-    if (!match) return [];
-    return JSON.parse(match[0]) as RawHoldPoint[];
-  } catch {
-    return [];
-  }
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) return [];
+  return JSON.parse(match[0]) as RawHoldPoint[];
 }
 
 export async function POST(request: NextRequest) {
@@ -165,12 +161,20 @@ export async function POST(request: NextRequest) {
     return Math.max(max, n);
   }, 0);
 
-  // Extract from each new document
+  // Extract from each new document — continue on per-document errors
   const allRaw: RawHoldPoint[] = [];
+  const errors: string[] = [];
   for (const doc of documents) {
     if (!doc.base64) continue;
-    const points = await extractHoldPoints(client, doc.title, doc.base64);
-    allRaw.push(...points);
+    try {
+      console.log(`[add-documents] Analysing: ${doc.title}`);
+      const points = await extractHoldPoints(client, doc.title, doc.base64);
+      console.log(`[add-documents] Extracted ${points.length} hold points from: ${doc.title}`);
+      allRaw.push(...points);
+    } catch (err) {
+      console.error(`[add-documents] Failed to analyse: ${doc.title}`, err);
+      errors.push(`Failed to analyse ${doc.title}.pdf`);
+    }
   }
 
   // Deduplicate against existing and within new batch
@@ -217,5 +221,6 @@ export async function POST(request: NextRequest) {
     new_hold_points: numberedNew,
     new_count:       numberedNew.length,
     merged_total:    merged.length,
+    errors,
   });
 }

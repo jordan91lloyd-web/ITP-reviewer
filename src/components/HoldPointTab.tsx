@@ -128,8 +128,11 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   const [addDocsDragging, setAddDocsDragging]   = useState(false);
   const [addDocsRunning, setAddDocsRunning]     = useState(false);
   const [addDocsProgress, setAddDocsProgress]   = useState("");
+  const [addDocsSlowWarning, setAddDocsSlowWarning] = useState(false);
+  const [addDocsError, setAddDocsError]         = useState<string | null>(null);
+  const addDocsSlowTimerRef                     = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [newHpIds, setNewHpIds]                 = useState<Set<string>>(new Set());
-  const [mergeToast, setMergeToast]             = useState<{ count: number; docs: number } | null>(null);
+  const [mergeToast, setMergeToast]             = useState<{ count: number; docs: number; errors: string[] } | null>(null);
   const addDocsFileRef                          = useRef<HTMLInputElement | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -223,7 +226,13 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   async function runAddDocuments() {
     if (addDocFiles.length === 0) return;
     setAddDocsRunning(true);
+    setAddDocsSlowWarning(false);
+    setAddDocsError(null);
     setAddDocsProgress(`Analysing ${addDocFiles[0].title}...`);
+
+    // Show slow-warning after 60 seconds
+    clearTimeout(addDocsSlowTimerRef.current);
+    addDocsSlowTimerRef.current = setTimeout(() => setAddDocsSlowWarning(true), 60_000);
 
     try {
       const res  = await fetch("/api/holdpoint/add-documents", {
@@ -237,10 +246,23 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           documents:             addDocFiles.map(f => ({ title: f.title, base64: f.base64 })),
         }),
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        const isTimeout = res.status === 504 || text.toLowerCase().includes("timeout");
+        setAddDocsError(
+          isTimeout
+            ? "Analysis timed out. Try uploading one document at a time."
+            : `Request failed (${res.status}). Please try again.`,
+        );
+        return;
+      }
+
       const json = await res.json() as {
         new_hold_points: HoldPoint[];
         new_count:       number;
         merged_total:    number;
+        errors:          string[];
       };
 
       const newIds = new Set(json.new_hold_points.map(hp => hp.id));
@@ -248,16 +270,20 @@ export default function HoldPointTab({ company_id, projects }: Props) {
       holdPointsRef.current = merged;
       setHoldPoints(merged);
       setNewHpIds(newIds);
-      setMergeToast({ count: json.new_count, docs: addDocFiles.length });
+      setMergeToast({ count: json.new_count, docs: addDocFiles.length, errors: json.errors ?? [] });
       setAddDocsOpen(false);
       setAddDocFiles([]);
 
       // Fade out highlight after 3 seconds
       setTimeout(() => setNewHpIds(new Set()), 3000);
-      // Clear toast after 5 seconds
-      setTimeout(() => setMergeToast(null), 5000);
+      // Clear toast after 6 seconds
+      setTimeout(() => setMergeToast(null), 6000);
+    } catch {
+      setAddDocsError("Analysis timed out. Try uploading one document at a time.");
     } finally {
+      clearTimeout(addDocsSlowTimerRef.current);
       setAddDocsRunning(false);
+      setAddDocsSlowWarning(false);
       setAddDocsProgress("");
     }
   }
@@ -746,12 +772,21 @@ export default function HoldPointTab({ company_id, projects }: Props) {
 
       {/* Merge success toast */}
       {mergeToast && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, marginBottom: 12, fontSize: 13, color: "#15803D" }}>
-          <span style={{ fontWeight: 700 }}>✓</span>
-          {mergeToast.count} new hold point{mergeToast.count !== 1 ? "s" : ""} added from {mergeToast.docs} document{mergeToast.docs !== 1 ? "s" : ""}
-          <button onClick={() => setMergeToast(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#86EFAC", padding: 0 }}>
-            <X size={13} />
-          </button>
+        <div style={{ padding: "10px 14px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, marginBottom: 12, fontSize: 13 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#15803D" }}>
+            <span style={{ fontWeight: 700 }}>✓</span>
+            <span>
+              {mergeToast.count} new hold point{mergeToast.count !== 1 ? "s" : ""} added from {mergeToast.docs} document{mergeToast.docs !== 1 ? "s" : ""}
+            </span>
+            <button onClick={() => setMergeToast(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#86EFAC", padding: 0 }}>
+              <X size={13} />
+            </button>
+          </div>
+          {mergeToast.errors.length > 0 && (
+            <div style={{ marginTop: 6, color: "#B45309", fontSize: 12 }}>
+              {mergeToast.errors.map((e, i) => <div key={i}>⚠ {e}</div>)}
+            </div>
+          )}
         </div>
       )}
 
@@ -974,10 +1009,30 @@ export default function HoldPointTab({ company_id, projects }: Props) {
               )}
             </div>
 
-            {addDocsRunning ? (
+            {addDocsError ? (
+              /* Error state */
+              <div style={{ padding: "20px 0" }}>
+                <div style={{ padding: "12px 16px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 13, color: "#B91C1C", marginBottom: 16 }}>
+                  {addDocsError}
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => { setAddDocsError(null); }}
+                    style={GHOST_BTN}
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            ) : addDocsRunning ? (
               /* Progress state */
               <div style={{ padding: "24px 0", textAlign: "center" }}>
                 <div style={{ fontSize: 14, color: "#475569", marginBottom: 8 }}>{addDocsProgress}</div>
+                {addDocsSlowWarning && (
+                  <div style={{ fontSize: 12, color: "#92400E", marginBottom: 10 }}>
+                    Still analysing... large documents may take up to 2 minutes
+                  </div>
+                )}
                 <div style={{ height: 4, background: "#E2E8F0", borderRadius: 4, overflow: "hidden" }}>
                   <div style={{ height: "100%", background: "#6366F1", borderRadius: 4, width: "60%", animation: "indeterminate 1.4s ease infinite" }} />
                 </div>
