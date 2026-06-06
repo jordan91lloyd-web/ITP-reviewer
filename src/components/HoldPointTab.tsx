@@ -122,6 +122,16 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   const [addingToStage, setAddingToStage]       = useState<string | null>(null);
   const [addForm, setAddForm]                   = useState({ description: "", responsible_party: "" });
 
+  // Add Documents modal
+  const [addDocsOpen, setAddDocsOpen]           = useState(false);
+  const [addDocFiles, setAddDocFiles]           = useState<UploadItem[]>([]);
+  const [addDocsDragging, setAddDocsDragging]   = useState(false);
+  const [addDocsRunning, setAddDocsRunning]     = useState(false);
+  const [addDocsProgress, setAddDocsProgress]   = useState("");
+  const [newHpIds, setNewHpIds]                 = useState<Set<string>>(new Set());
+  const [mergeToast, setMergeToast]             = useState<{ count: number; docs: number } | null>(null);
+  const addDocsFileRef                          = useRef<HTMLInputElement | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // ── Project selection ────────────────────────────────────────────────────────
@@ -188,6 +198,68 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         };
         reader.readAsDataURL(file);
       });
+  }
+
+  // ── Add Documents modal helpers ──────────────────────────────────────────────
+
+  function handleAddDocFiles(files: FileList | null) {
+    if (!files) return;
+    Array.from(files)
+      .filter(f => f.name.toLowerCase().endsWith(".pdf"))
+      .forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          const title  = file.name.replace(/\.pdf$/i, "");
+          setAddDocFiles(prev => {
+            if (prev.some(u => u.title === title)) return prev;
+            return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title, base64 }];
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+  }
+
+  async function runAddDocuments() {
+    if (addDocFiles.length === 0) return;
+    setAddDocsRunning(true);
+    setAddDocsProgress(`Analysing ${addDocFiles[0].title}...`);
+
+    try {
+      const res  = await fetch("/api/holdpoint/add-documents", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          company_id,
+          project_id:            projectId,
+          project_name:          projectName,
+          existing_hold_points:  holdPointsRef.current,
+          documents:             addDocFiles.map(f => ({ title: f.title, base64: f.base64 })),
+        }),
+      });
+      const json = await res.json() as {
+        new_hold_points: HoldPoint[];
+        new_count:       number;
+        merged_total:    number;
+      };
+
+      const newIds = new Set(json.new_hold_points.map(hp => hp.id));
+      const merged = [...holdPointsRef.current, ...json.new_hold_points];
+      holdPointsRef.current = merged;
+      setHoldPoints(merged);
+      setNewHpIds(newIds);
+      setMergeToast({ count: json.new_count, docs: addDocFiles.length });
+      setAddDocsOpen(false);
+      setAddDocFiles([]);
+
+      // Fade out highlight after 3 seconds
+      setTimeout(() => setNewHpIds(new Set()), 3000);
+      // Clear toast after 5 seconds
+      setTimeout(() => setMergeToast(null), 5000);
+    } finally {
+      setAddDocsRunning(false);
+      setAddDocsProgress("");
+    }
   }
 
   // ── Generate ─────────────────────────────────────────────────────────────────
@@ -650,6 +722,12 @@ export default function HoldPointTab({ company_id, projects }: Props) {
             <RefreshCw size={13} /> Re-generate
           </button>
           <button
+            onClick={() => { setAddDocFiles([]); setAddDocsOpen(true); }}
+            style={GHOST_BTN}
+          >
+            <Plus size={13} /> Add Documents
+          </button>
+          <button
             onClick={() => void doSave(holdPointsRef.current)}
             disabled={saving}
             style={{ ...GHOST_BTN, background: "#6366F1", borderColor: "transparent", color: "#FFFFFF", opacity: saving ? 0.6 : 1 }}
@@ -665,6 +743,17 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Merge success toast */}
+      {mergeToast && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, marginBottom: 12, fontSize: 13, color: "#15803D" }}>
+          <span style={{ fontWeight: 700 }}>✓</span>
+          {mergeToast.count} new hold point{mergeToast.count !== 1 ? "s" : ""} added from {mergeToast.docs} document{mergeToast.docs !== 1 ? "s" : ""}
+          <button onClick={() => setMergeToast(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#86EFAC", padding: 0 }}>
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       {/* Summary pills */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
@@ -770,7 +859,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
                     return (
                       <div
                         key={hp.id}
-                        style={{ display: "grid", gridTemplateColumns: "64px 1fr 180px 200px 32px", padding: "8px 16px", borderBottom: "1px solid #F8FAFC", background: ri % 2 === 0 ? "#FFFFFF" : "#FAFAFA", alignItems: "center", fontSize: 13 }}
+                        style={{ display: "grid", gridTemplateColumns: "64px 1fr 180px 200px 32px", padding: "8px 16px", borderBottom: "1px solid #F8FAFC", background: newHpIds.has(hp.id) ? "#EFF6FF" : ri % 2 === 0 ? "#FFFFFF" : "#FAFAFA", alignItems: "center", fontSize: 13, transition: "background 1s ease" }}
                       >
                         <span style={{ fontSize: 11, fontWeight: 700, color: "#6366F1" }}>{hp.id}</span>
 
@@ -858,6 +947,119 @@ export default function HoldPointTab({ company_id, projects }: Props) {
             </div>
           );
         })
+      )}
+
+      {/* Add Documents modal */}
+      {addDocsOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          onClick={e => { if (e.target === e.currentTarget && !addDocsRunning) { setAddDocsOpen(false); setAddDocFiles([]); } }}
+        >
+          <div style={{ background: "#FFFFFF", borderRadius: "16px 16px 0 0", padding: 28, width: "100%", maxWidth: 600, boxShadow: "0 -4px 32px rgba(0,0,0,0.12)" }}>
+            {/* Modal header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: "#0F172A" }}>Add Documents to Register</div>
+                <div style={{ fontSize: 13, color: "#64748B", marginTop: 3 }}>
+                  Upload additional reports to extract new hold points and merge into the existing register
+                </div>
+              </div>
+              {!addDocsRunning && (
+                <button
+                  onClick={() => { setAddDocsOpen(false); setAddDocFiles([]); }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 0, marginLeft: 12 }}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {addDocsRunning ? (
+              /* Progress state */
+              <div style={{ padding: "24px 0", textAlign: "center" }}>
+                <div style={{ fontSize: 14, color: "#475569", marginBottom: 8 }}>{addDocsProgress}</div>
+                <div style={{ height: 4, background: "#E2E8F0", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: "#6366F1", borderRadius: 4, width: "60%", animation: "indeterminate 1.4s ease infinite" }} />
+                </div>
+                <style>{`@keyframes indeterminate { 0%{transform:translateX(-100%)} 100%{transform:translateX(260%)} }`}</style>
+              </div>
+            ) : (
+              <>
+                {/* Drop zone */}
+                <div
+                  onClick={() => addDocsFileRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setAddDocsDragging(true); }}
+                  onDragLeave={() => setAddDocsDragging(false)}
+                  onDrop={e => { e.preventDefault(); setAddDocsDragging(false); handleAddDocFiles(e.dataTransfer.files); }}
+                  style={{
+                    border: `2px dashed ${addDocsDragging ? "#6366F1" : "#E2E8F0"}`,
+                    borderRadius: 12, padding: 32, textAlign: "center",
+                    cursor: "pointer", background: addDocsDragging ? "#EEF2FF" : "#FAFAFA",
+                    transition: "border-color 0.15s, background 0.15s",
+                    marginTop: 16, marginBottom: 16,
+                  }}
+                >
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                    Drop PDFs here or click to browse
+                  </div>
+                  <div style={{ fontSize: 12, color: "#94A3B8" }}>
+                    Facade reports · PCA schedules · Engineering reports
+                  </div>
+                </div>
+                <input
+                  ref={addDocsFileRef}
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={e => { handleAddDocFiles(e.target.files); e.target.value = ""; }}
+                />
+
+                {/* File chips */}
+                {addDocFiles.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                    {addDocFiles.map(f => (
+                      <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 20, fontSize: 13, color: "#334155" }}>
+                        <FileText size={13} style={{ color: "#6366F1" }} />
+                        {f.title}.pdf
+                        <button
+                          onClick={() => setAddDocFiles(prev => prev.filter(x => x.id !== f.id))}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 0, marginLeft: 2, display: "flex", alignItems: "center" }}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => { setAddDocsOpen(false); setAddDocFiles([]); }}
+                    style={GHOST_BTN}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => void runAddDocuments()}
+                    disabled={addDocFiles.length === 0}
+                    style={{
+                      padding: "9px 20px", borderRadius: 8, border: "none",
+                      background: addDocFiles.length === 0 ? "#E2E8F0" : "#6366F1",
+                      color: addDocFiles.length === 0 ? "#94A3B8" : "#FFFFFF",
+                      fontSize: 14, fontWeight: 600,
+                      cursor: addDocFiles.length === 0 ? "default" : "pointer",
+                    }}
+                  >
+                    Analyse &amp; Merge
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
