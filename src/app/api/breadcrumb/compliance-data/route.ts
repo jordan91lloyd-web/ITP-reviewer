@@ -104,9 +104,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id required" }, { status: 400 });
   }
 
-  const today     = sydneyTodayStr();
-  const weekStart = getWeekStart(today);
-  const weekEnd   = addDays(weekStart, 4);
+  const today          = sydneyTodayStr();
+  const currentWeekMon = getWeekStart(today);
+
+  // Accept an explicit week_start param; fall back to the current week.
+  // Validated as YYYY-MM-DD to reject garbage values.
+  const requestedWS   = request.nextUrl.searchParams.get("week_start");
+  const weekStart     = (requestedWS && /^\d{4}-\d{2}-\d{2}$/.test(requestedWS))
+    ? requestedWS
+    : currentWeekMon;
+  const isCurrentWeek = weekStart === currentWeekMon;
+
+  const weekEnd   = addDays(weekStart, 4);          // Friday of the requested week
   const weekDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i));
   const weekDays  = weekDates.map(fmtLabel);
   const dayKeys   = ["mon", "tue", "wed", "thu", "fri"] as const;
@@ -216,19 +225,23 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Toolbox: must fall within the requested week (Mon–Fri).
+    // Using weekEnd (not today) fixes an off-by-one bug when viewing past weeks:
+    // fd <= today would include toolboxes from subsequent weeks.
     const toolbox = (toolboxBySite.get(siteRef) ?? []).some(f => {
       const fd = f.fillDate?.substring(0, 10) ?? "";
-      return fd >= weekStart && fd <= today;
+      return fd >= weekStart && fd <= weekEnd;
     });
 
     const pendingInductions = inductionsBySite.get(siteRef) ?? 0;
     const pendingDocs       = docsBySite.get(siteRef) ?? 0;
     const notes             = notesMap.get(siteRef) ?? "";
 
-    const pastKeys    = dayKeys.filter((_, i) => weekDates[i] <= today);
-    const allCovered  = pastKeys.every(k => prestart[k] === true);
+    const pastKeys   = dayKeys.filter((_, i) => weekDates[i] <= today);
+    const allCovered = pastKeys.every(k => prestart[k] === true);
+    // Monday exemption only applies to the current week (toolbox may not be done yet on Mon morning).
     const status: "On Track" | "Action Req." =
-      allCovered && (toolbox || isMonday) ? "On Track" : "Action Req.";
+      allCovered && (toolbox || (isCurrentWeek && isMonday)) ? "On Track" : "Action Req.";
 
     return { siteReference: siteRef, siteName, prestart, toolbox, pendingInductions, pendingDocs, notes, status };
   }).sort((a, b) => a.siteName.localeCompare(b.siteName));
