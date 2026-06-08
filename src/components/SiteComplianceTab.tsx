@@ -28,18 +28,21 @@ const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"] as const;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-/** Returns the Monday of the current week in YYYY-MM-DD, in Australia/Sydney timezone. */
+/** Returns the Monday of the current week in YYYY-MM-DD, in Australia/Sydney timezone.
+ *  Uses T00:00:00Z (UTC parse) + UTC accessors so arithmetic is timezone-neutral.
+ *  todayStr from toLocaleDateString is already the Sydney calendar date; treating it
+ *  as UTC midnight is safe because we only compare and display calendar dates. */
 function getSydneyCurrentWeekStart(): string {
   const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
-  const d   = new Date(todayStr + "T00:00:00");
-  const day = d.getDay();
-  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  const d   = new Date(todayStr + "T00:00:00Z");
+  const day = d.getUTCDay(); // 0=Sun … 6=Sat
+  d.setUTCDate(d.getUTCDate() + (day === 0 ? -6 : 1 - day));
   return d.toISOString().substring(0, 10);
 }
 
 function addDaysLocal(dateStr: string, n: number): string {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + n);
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().substring(0, 10);
 }
 
@@ -167,9 +170,10 @@ export default function SiteComplianceTab({ companyId }: { companyId: string }) 
   // ── Formatting ───────────────────────────────────────────────────────────────
 
   function fmtWeekLabel(ws: string) {
-    const d = new Date(ws + "T00:00:00");
+    const d = new Date(ws + "T00:00:00Z");
     return d.toLocaleDateString("en-AU", {
       weekday: "long", day: "2-digit", month: "long", year: "numeric",
+      timeZone: "UTC",
     });
   }
 

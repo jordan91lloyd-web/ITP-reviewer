@@ -26,11 +26,18 @@ function sydneyTodayStr(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
 }
 
+// All date helpers parse YYYY-MM-DD strings as UTC midnight (Z suffix) and use
+// UTC accessors so arithmetic is timezone-neutral. The YYYY-MM-DD string from
+// sydneyTodayStr() is the Sydney calendar date; treating it as UTC midnight for
+// arithmetic is safe because we only compare and display calendar dates, not
+// absolute timestamps.
+
 function getWeekStart(todayStr: string): string {
-  const d = new Date(todayStr + "T00:00:00");
-  const day = d.getDay();
+  // Return the Monday of the week containing todayStr (Mon = start of week).
+  const d   = new Date(todayStr + "T00:00:00Z");
+  const day = d.getUTCDay(); // 0=Sun … 6=Sat
   const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
+  d.setUTCDate(d.getUTCDate() + diff);
   return toYMD(d);
 }
 
@@ -39,15 +46,15 @@ function toYMD(d: Date): string {
 }
 
 function addDays(dateStr: string, n: number): string {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + n);
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
   return toYMD(d);
 }
 
 function fmtLabel(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
+  const d     = new Date(dateStr + "T00:00:00Z");
   const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return `${names[d.getDay()]} ${String(d.getDate()).padStart(2, "0")}`;
+  return `${names[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
 function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }

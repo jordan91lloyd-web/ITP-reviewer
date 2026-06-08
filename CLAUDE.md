@@ -53,9 +53,28 @@ This commits all changes and pushes to GitHub (`jordan91lloyd-web/itp-reviewer`)
 
 ## Breadcrumb integration
 
-Breadcrumb is a site access / induction platform used on Fleek construction sites. Integration may be built to pull site attendance, induction status, and supplier data into Holdpoint.
+Breadcrumb is a site access / induction platform used on Fleek construction sites. Integration pulls site attendance, induction status, and supplier doc data into the **Site Compliance** tab on the dashboard.
 
 Full API spec available at `docs/breadcrumb-api.json` — reference this for all endpoint shapes, request bodies, response schemas, and available parameters before building any Breadcrumb feature.
+
+### Site Compliance tab
+
+- Component: `src/components/SiteComplianceTab.tsx`
+- API route: `src/app/api/breadcrumb/compliance-data/route.ts`
+- Supabase tables: `site_compliance_notes` (per-site per-week notes), `compliance_hidden_sites` (hidden site refs)
+
+**Week calculation rules (critical):**
+- Week = Monday–Friday only (5 columns). No weekends.
+- Week anchor = the Monday of the Sydney-local calendar week.
+- `getSydneyCurrentWeekStart()` uses `toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })` to get today's Sydney date as YYYY-MM-DD, then parses it with `T00:00:00Z` (UTC parse) and uses `getUTCDay()`/`setUTCDate()` for arithmetic. This avoids UTC-drift in browsers that are UTC+10.
+- All date helpers in both the component and the API route must use `T00:00:00Z` and UTC accessors (`getUTCDay`, `setUTCDate`, `getUTCDate`, `toISOString`). Never use `T00:00:00` (local parse) followed by `toISOString()` — this drifts the date by one day in Sydney (UTC+10).
+- `fmtWeekLabel()` also passes `timeZone: "UTC"` to `toLocaleDateString` to avoid further drift.
+
+**Score column:** `x/y` where `y` = number of Mon–Fri days up to and including today, `x` = days with prestart done. Shows `–` before any past days, green at `x===y`, amber at `x >= ceil(y/2)`, red otherwise.
+
+**Status logic:** "On Track" requires all past days to have prestart AND a toolbox talk this week. Monday exemption: on Monday of the current week the toolbox is not yet required (it may not have happened yet). The exemption only applies to `isCurrentWeek === true`.
+
+**Week navigation:** ChevronLeft/Right buttons in the header. `selectedWeekStart` state drives `week_start` query param in the compliance-data fetch. The "next" button is disabled when already on the current week. Notes are saved against `selectedWeekStart`.
 
 ---
 
