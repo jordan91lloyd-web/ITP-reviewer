@@ -76,6 +76,10 @@ Full API spec available at `docs/breadcrumb-api.json` — reference this for all
 
 **Week navigation:** ChevronLeft/Right buttons in the header. `selectedWeekStart` state drives `week_start` query param in the compliance-data fetch. The "next" button is disabled when already on the current week. Notes are saved against `selectedWeekStart`.
 
+**Day-bucketing rule (critical):** A daily brief counts for a working day if its timestamp falls within that day in Australia/Sydney time (00:00–23:59 Sydney, inclusive), regardless of the brief's start time. Day-bucketing is done via `toSydneyDate()` in `compliance-data/route.ts`, which calls `new Date(ts).toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })`. This correctly handles all timestamp formats the Breadcrumb API may return: UTC-with-Z (`"2026-06-08T18:00:00Z"` → Sydney `"2026-06-09"`), offset-aware (`"+10:00"`), and naive local strings. Never use `.substring(0, 10)` directly on a Breadcrumb timestamp — always use `toSydneyDate()`.
+
+Timestamp field names: `fillDate` (from `/integration/v2/report/form-report`, type `date-time`), `endDate` (from `/integration/v2/report/form-data` → `filledFormInfo.endDate`, type `date-time`). The `form-report` call sets `convertDateTimeToLocalTimezone: true`; the `form-data` call does not — both must go through `toSydneyDate()` so they are compared on the same timezone basis. The Breadcrumb endpoint ignores date-filter params and returns all history; day-matching is done client-side (server-side in the route) by filtering the full returned set to the current Mon–Fri Sydney week.
+
 ---
 
 ## What this app does

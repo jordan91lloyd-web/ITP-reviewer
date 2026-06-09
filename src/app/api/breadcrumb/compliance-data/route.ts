@@ -32,6 +32,21 @@ function sydneyTodayStr(): string {
 // arithmetic is safe because we only compare and display calendar dates, not
 // absolute timestamps.
 
+// toSydneyDate converts ANY datetime string from the Breadcrumb API to the
+// YYYY-MM-DD calendar date in Australia/Sydney time. This handles all timestamp
+// formats the API may return:
+//   - UTC with Z:      "2026-06-08T18:00:00Z"          → "2026-06-09" (4am Sydney)
+//   - With offset:     "2026-06-09T04:00:00+10:00"      → "2026-06-09"
+//   - Naive local:     "2026-06-09T04:00:00"            → "2026-06-09" (treated as UTC
+//                       by new Date(); UTC+0 4am = Sydney 2pm same day ✓)
+// Always use this instead of .substring(0, 10) for Breadcrumb timestamps.
+function toSydneyDate(ts: string | undefined | null): string | null {
+  if (!ts) return null;
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return ts.substring(0, 10); // malformed: best-effort slice
+  return d.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
+}
+
 function getWeekStart(todayStr: string): string {
   // Return the Monday of the week containing todayStr (Mon = start of week).
   const d   = new Date(todayStr + "T00:00:00Z");
@@ -153,12 +168,13 @@ export async function GET(request: NextRequest) {
   }
 
   // ── 3. Fetch endDates for this-week prestarts ─────────────────────────────────
+  // Use toSydneyDate() so a 4am brief on Tuesday is bucketed to Tuesday, not Monday.
   const thisWeekPrestarts = prestarts.filter(f => {
-    const d = f.fillDate?.substring(0, 10) ?? "";
+    const d = toSydneyDate(f.fillDate) ?? "";
     return d >= weekStart && d <= weekEnd;
   });
 
-  const endDateMap = new Map<number, string>(); // formDataId → endDate YYYY-MM-DD
+  const endDateMap = new Map<number, string>(); // formDataId → endDate YYYY-MM-DD (Sydney)
   for (let i = 0; i < thisWeekPrestarts.length; i += 5) {
     const batch = thisWeekPrestarts.slice(i, i + 5);
     await Promise.all(batch.map(async f => {
@@ -166,7 +182,10 @@ export async function GET(request: NextRequest) {
         type FDRes = { result?: { filledFormInfo?: { endDate?: string } } };
         const d = (await bcPost("/integration/v2/report/form-data", { formDataId: f.formDataId })) as FDRes;
         const ed = d?.result?.filledFormInfo?.endDate;
-        if (ed) endDateMap.set(f.formDataId, ed.substring(0, 10));
+        // form-data call has no convertDateTimeToLocalTimezone — use toSydneyDate
+        // so the endDate is in the same timezone as the fillDate comparison.
+        const edSydney = toSydneyDate(ed);
+        if (edSydney) endDateMap.set(f.formDataId, edSydney);
       } catch { /* skip */ }
     }));
     if (i + 5 < thisWeekPrestarts.length) await sleep(200);
@@ -212,7 +231,7 @@ export async function GET(request: NextRequest) {
   for (const n of notesRows ?? []) notesMap.set(n.site_reference, n.notes ?? "");
 
   // ── 7. Build per-site rows ───────────────────────────────────────────────────
-  const isMonday = new Date(today + "T00:00:00").getDay() === 1;
+  const isMonday = new Date(today + "T00:00:00Z").getUTCDay() === 1;
   const allRefs  = new Set([...siteMap.keys(), ...prestartsBySite.keys(), ...toolboxBySite.keys()]);
 
   const sites = Array.from(allRefs).map(siteRef => {
@@ -225,7 +244,7 @@ export async function GET(request: NextRequest) {
       const key    = dayKeys[d];
       if (dayStr > today) { prestart[key] = null; continue; }
       prestart[key] = sitePrestarts.some(p => {
-        const start = p.fillDate?.substring(0, 10);
+        const start = toSydneyDate(p.fillDate);
         if (!start) return false;
         const end = endDateMap.get(p.formDataId) ?? start;
         return start <= dayStr && end >= dayStr;
@@ -236,7 +255,7 @@ export async function GET(request: NextRequest) {
     // Using weekEnd (not today) fixes an off-by-one bug when viewing past weeks:
     // fd <= today would include toolboxes from subsequent weeks.
     const toolbox = (toolboxBySite.get(siteRef) ?? []).some(f => {
-      const fd = f.fillDate?.substring(0, 10) ?? "";
+      const fd = toSydneyDate(f.fillDate) ?? "";
       return fd >= weekStart && fd <= weekEnd;
     });
 
