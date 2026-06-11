@@ -15,6 +15,7 @@
 
 import { useState, useEffect } from "react";
 import type { ReviewResult, ScoreBreakdown, CategoryScore, CommercialConfidence, SkippedFile } from "@/lib/types";
+import { BAND_THRESHOLDS, getBandLabel } from "@/lib/scoreBand";
 
 // ── Section keys ─────────────────────────────────────────────────────────
 
@@ -63,8 +64,8 @@ const UNIDENTIFIED = "Not confidently identified";
 
 function getQAStatus(result: ReviewResult): "strong" | "acceptable" | "high-risk" {
   const cc = result.commercial_confidence?.rating ?? "medium";
-  if (result.total_score >= 85 && cc === "high") return "strong";
-  if (result.total_score < 50 || cc === "low") return "high-risk";
+  if (result.total_score >= BAND_THRESHOLDS.compliant && cc === "high") return "strong";
+  if (result.total_score < BAND_THRESHOLDS.significant_gaps || cc === "low") return "high-risk";
   return "acceptable";
 }
 
@@ -112,16 +113,16 @@ export default function ReviewResults({ result, onReset, skippedFiles, descripti
   // ── QA Status ────────────────────────────────────────────────────────────
   const qaStatus = getQAStatus(result);
 
-  // ── Colour helpers ───────────────────────────────────────────────────────
+  // ── Colour helpers — thresholds from BAND_THRESHOLDS (@/lib/scoreBand) ──────
   const scoreColour =
-    result.total_score >= 80 ? "text-green-600" :
-    result.total_score >= 55 ? "text-yellow-500" :
-                               "text-red-500";
+    result.total_score >= BAND_THRESHOLDS.compliant        ? "text-green-600" :
+    result.total_score >= BAND_THRESHOLDS.minor_gaps       ? "text-yellow-500" :
+                                                             "text-red-500";
 
   const scoreBgColour =
-    result.total_score >= 80 ? "bg-green-50 border-green-200" :
-    result.total_score >= 55 ? "bg-yellow-50 border-yellow-200" :
-                               "bg-red-50 border-red-200";
+    result.total_score >= BAND_THRESHOLDS.compliant        ? "bg-green-50 border-green-200" :
+    result.total_score >= BAND_THRESHOLDS.minor_gaps       ? "bg-yellow-50 border-yellow-200" :
+                                                             "bg-red-50 border-red-200";
 
   const assessmentStyle: Record<string, string> = {
     "compliant":         "bg-green-100 text-green-800",
@@ -130,12 +131,8 @@ export default function ReviewResults({ result, onReset, skippedFiles, descripti
     "critical_risk":     "bg-red-100 text-red-800",
   };
 
-  const assessmentLabel: Record<string, string> = {
-    "compliant":         "Compliant",
-    "minor_gaps":        "Minor gaps",
-    "significant_gaps":  "Significant gaps",
-    "critical_risk":     "Critical risk",
-  };
+  // assessmentLabel uses getBandLabel from @/lib/scoreBand
+  const assessmentLabel = (band: string) => getBandLabel(band);
 
   const confidenceColour =
     result.confidence === "high"   ? "text-green-600" :
@@ -347,7 +344,7 @@ export default function ReviewResults({ result, onReset, skippedFiles, descripti
                   assessmentStyle[result.package_assessment] ?? "bg-gray-100 text-gray-700"
                 }`}
               >
-                {assessmentLabel[result.package_assessment] ?? result.package_assessment}
+                {assessmentLabel(result.package_assessment)}
               </span>
               <p className="mt-3 text-xs text-gray-400 leading-snug">Evidence quality rating</p>
             </div>

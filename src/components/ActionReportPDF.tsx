@@ -20,6 +20,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
+import { getScoreBand, getBandLabel } from "@/lib/scoreBand";
 
 // ── Colours ───────────────────────────────────────────────────────────────────
 
@@ -48,20 +49,7 @@ function pillBg(band: string | null): string {
   return C.textMuted;
 }
 
-function bandLabel(band: string | null): string {
-  if (band === "compliant")        return "Compliant";
-  if (band === "minor_gaps")       return "Minor gaps";
-  if (band === "significant_gaps") return "Significant gaps";
-  if (band === "critical_risk")    return "Critical risk";
-  return "—";
-}
-
-function scoreBandFromScore(score: number): string {
-  if (score >= 85) return "compliant";
-  if (score >= 70) return "minor_gaps";
-  if (score >= 50) return "significant_gaps";
-  return "critical_risk";
-}
+// bandLabel and scoreBandFromScore replaced by imports from @/lib/scoreBand
 
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -241,7 +229,7 @@ function HoldpointLogoSvg() {
 function ItpCard({ insp }: { insp: DashboardInspection }) {
   const rd           = insp.review_data!;
   const displayScore = insp.override_score ?? insp.last_score ?? 0;
-  const band         = insp.last_score_band ?? scoreBandFromScore(displayScore);
+  const band         = insp.last_score_band ?? getScoreBand(displayScore);
   const bg           = pillBg(band);
   const pct          = Math.min(100, Math.max(0, displayScore));
 
@@ -259,7 +247,7 @@ function ItpCard({ insp }: { insp: DashboardInspection }) {
         {/* backgroundColor applied inline — dynamic per band colour */}
         <View style={[styles.scorePill, { backgroundColor: bg }]}>
           <Text style={styles.scorePillText}>
-            {displayScore} · {bandLabel(band)}
+            {displayScore} · {getBandLabel(band)}
           </Text>
         </View>
       </View>
@@ -310,7 +298,7 @@ export default function ActionReportPDF({
   // Summary stats
   const countBand = (b: string) => reviewed.filter(i => {
     const s    = i.override_score ?? i.last_score;
-    const band = i.last_score_band ?? (s !== null ? scoreBandFromScore(s) : null);
+    const band = i.last_score_band ?? (s !== null ? getScoreBand(s) : null);
     return band === b;
   }).length;
   const avgScore = reviewed.length > 0

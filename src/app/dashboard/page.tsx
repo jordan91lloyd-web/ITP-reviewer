@@ -18,6 +18,7 @@ import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
 import type { DashboardInspection } from "@/app/api/dashboard/inspections/route";
+import { getScoreBand, getBandLabel, getBandPillClasses, getScoreColor, getScoreDotColor, BANDS, BAND_THRESHOLDS } from "@/lib/scoreBand";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -66,31 +67,21 @@ interface CompanyProjectStat {
   last_closed_by: string | null;
 }
 
-// ── Score helpers ──────────────────────────────────────────────────────────────
+// ── Score helpers — imported from @/lib/scoreBand (single source of truth) ─────
+// scoreBand, scoreBandLabel, scorePillClasses are replaced by the module imports.
+// Use getScoreBand / getBandLabel / getBandPillClasses everywhere in this file.
 
 function scoreBand(score: number | null): string {
-  if (score === null) return "not_reviewed";
-  if (score >= 85) return "compliant";
-  if (score >= 70) return "minor_gaps";
-  if (score >= 50) return "significant_gaps";
-  return "critical_risk";
+  return getScoreBand(score) ?? "not_reviewed";
 }
 
 function scoreBandLabel(band: string): string {
-  if (band === "reset") return "Not reviewed";
-  return ({
-    compliant: "Compliant", minor_gaps: "Minor gaps",
-    significant_gaps: "Significant gaps", critical_risk: "Critical risk",
-  } as Record<string, string>)[band] ?? band;
+  if (band === "reset" || band === "not_reviewed") return "Not reviewed";
+  return getBandLabel(band);
 }
 
 function scorePillClasses(band: string): string {
-  return ({
-    compliant:         "bg-green-50 text-green-700 border border-green-200",
-    minor_gaps:        "bg-amber-50 text-amber-700 border border-amber-200",
-    significant_gaps:  "bg-orange-50 text-orange-700 border border-orange-200",
-    critical_risk:     "bg-red-50 text-red-700 border border-red-200",
-  } as Record<string, string>)[band] ?? "bg-gray-50 text-gray-500 border border-gray-200";
+  return getBandPillClasses(band);
 }
 
 // ── CSV export helpers ─────────────────────────────────────────────────────────
@@ -501,7 +492,7 @@ function buildCompanyReportHtml(
   </div>
   <div style="flex:1;padding:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;text-align:center">
     <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:4px">Average Score</div>
-    <div style="font-size:24px;font-weight:700;color:${overallAvg !== null ? (overallAvg >= 85 ? "#16a34a" : overallAvg >= 70 ? "#d97706" : overallAvg >= 50 ? "#ea580c" : "#dc2626") : "#9ca3af"}">${overallAvg ?? "—"}</div>
+    <div style="font-size:24px;font-weight:700;color:${overallAvg !== null ? (overallAvg >= BAND_THRESHOLDS.compliant ? "#16a34a" : overallAvg >= BAND_THRESHOLDS.minor_gaps ? "#d97706" : overallAvg >= BAND_THRESHOLDS.significant_gaps ? "#ea580c" : "#dc2626") : "#9ca3af"}">${overallAvg ?? "—"}</div>
   </div>
 </div>
 
@@ -1814,12 +1805,7 @@ export default function DashboardPage() {
                       <>
                         <span className="text-xs text-gray-400">{selectedProject.reviewed_count} reviewed</span>
                         {(selectedProject.avg_score ?? null) !== null && (
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            (selectedProject.avg_score ?? 0) >= 85 ? "bg-green-50 text-green-700 border border-green-200" :
-                            (selectedProject.avg_score ?? 0) >= 70 ? "bg-amber-50 text-amber-700 border border-amber-200" :
-                            (selectedProject.avg_score ?? 0) >= 50 ? "bg-orange-50 text-orange-600 border border-orange-200" :
-                                                                      "bg-red-50 text-red-600 border border-red-200"
-                          }`}>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${getBandPillClasses(getScoreBand(selectedProject.avg_score ?? null))}`}>
                             Avg {selectedProject.avg_score}
                           </span>
                         )}
@@ -1987,17 +1973,12 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Score legend */}
+                  {/* Score legend — thresholds from BANDS in @/lib/scoreBand */}
                   <div style={{ display: "flex", gap: 16, padding: "9px 14px", backgroundColor: "var(--hp-surface)", border: "1px solid var(--hp-border-light)", borderRadius: 8, marginBottom: 12, fontSize: 11, color: "var(--hp-text-secondary)", alignItems: "center", flexWrap: "wrap" }}>
-                    {([
-                      ["var(--hp-compliant)",  "Compliant (75+)"],
-                      ["var(--hp-minor)",       "Minor gaps (60–74)"],
-                      ["var(--hp-significant)", "Significant gaps (40–59)"],
-                      ["var(--hp-critical)",    "Critical risk (below 40)"],
-                    ] as [string, string][]).map(([color, label]) => (
-                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    {(["var(--hp-compliant)", "var(--hp-minor)", "var(--hp-significant)", "var(--hp-critical)"] as string[]).map((color, i) => (
+                      <div key={BANDS[i].band} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                         <div style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
-                        <span>{label}</span>
+                        <span>{BANDS[i].label} ({BANDS[i].range})</span>
                       </div>
                     ))}
                   </div>
@@ -2844,19 +2825,8 @@ function InspectionRow({
   const readyToClose = !isClosed && !isReset && (displayScore ?? 0) >= 75;
   const hasInfo = !!(insp.description || insp.location || insp.created_by);
 
-  const dotBg = displayScore === null || insp.review_status === "not_reviewed"
-    ? "#D4C4AE"
-    : displayScore >= 75 ? "var(--hp-compliant)"
-    : displayScore >= 60 ? "var(--hp-minor)"
-    : displayScore >= 40 ? "var(--hp-significant)"
-    : "var(--hp-critical)";
-
-  const scoreClr = displayScore === null
-    ? "var(--hp-text-muted)"
-    : displayScore >= 75 ? "var(--hp-compliant)"
-    : displayScore >= 60 ? "var(--hp-minor)"
-    : displayScore >= 40 ? "var(--hp-significant)"
-    : "var(--hp-critical)";
+  const dotBg  = getScoreDotColor(displayScore, insp.review_status !== "not_reviewed");
+  const scoreClr = getScoreColor(displayScore);
 
   const pillStyle: React.CSSProperties = !band
     ? { backgroundColor: "#F0E8DE", color: "var(--hp-text-muted)" }
@@ -3267,20 +3237,20 @@ function InspectionPanel({
         {/* Score + band */}
         {insp.review_status !== "not_reviewed" && (
           <div className={`rounded-xl border px-4 py-3 ${
-            (displayScore ?? 0) >= 85 ? "bg-green-50 border-green-200" :
-            (displayScore ?? 0) >= 70 ? "bg-yellow-50 border-yellow-200" :
-            (displayScore ?? 0) >= 50 ? "bg-orange-50 border-orange-200" :
-                                        "bg-red-50 border-red-200"
+            (displayScore ?? 0) >= BAND_THRESHOLDS.compliant        ? "bg-green-50 border-green-200" :
+            (displayScore ?? 0) >= BAND_THRESHOLDS.minor_gaps       ? "bg-yellow-50 border-yellow-200" :
+            (displayScore ?? 0) >= BAND_THRESHOLDS.significant_gaps ? "bg-orange-50 border-orange-200" :
+                                                                      "bg-red-50 border-red-200"
           }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Score</p>
                 <div className="flex items-center gap-2">
                   <span className={`text-3xl font-bold ${
-                    (displayScore ?? 0) >= 85 ? "text-green-600" :
-                    (displayScore ?? 0) >= 70 ? "text-amber-600" :
-                    (displayScore ?? 0) >= 50 ? "text-orange-500" :
-                                                "text-red-500"
+                    (displayScore ?? 0) >= BAND_THRESHOLDS.compliant        ? "text-green-600" :
+                    (displayScore ?? 0) >= BAND_THRESHOLDS.minor_gaps       ? "text-amber-600" :
+                    (displayScore ?? 0) >= BAND_THRESHOLDS.significant_gaps ? "text-orange-500" :
+                                                                              "text-red-500"
                   }`}>
                     {displayScore ?? "—"}
                   </span>
