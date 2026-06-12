@@ -41,9 +41,10 @@ const MAX_TOKENS = 16000;
 export async function runBundleReview(
   filesRaw: ProcessedFile[],
   company_id: string = "default",
-  itp_name?: string
+  itp_name?: string,
+  notRetrievedImages = 0,
 ): Promise<ReviewResult & { scoring_source: string; scoring_version_id: string | null; scoring_version_label: string }> {
-  console.log(`[claude] ── runBundleReview called ── files=${filesRaw.length} company_id="${company_id}"${itp_name ? ` itp_name="${itp_name}"` : ""}`);
+  console.log(`[claude] ── runBundleReview called ── files=${filesRaw.length} company_id="${company_id}"${itp_name ? ` itp_name="${itp_name}"` : ""}${notRetrievedImages > 0 ? ` notRetrievedImages=${notRetrievedImages}` : ""}`);
 
   // ── Pre-flight: strip any images that exceed Claude's 5 MB per-image limit.
   // base64.length * 0.75 ≈ raw bytes (base64 encodes 3 bytes as 4 chars).
@@ -84,7 +85,7 @@ export async function runBundleReview(
   // Opening context
   contentBlocks.push({
     type: "text",
-    text: buildPreamble(files.length),
+    text: buildPreamble(files.length, notRetrievedImages),
   });
 
   // One block (or block pair) per file

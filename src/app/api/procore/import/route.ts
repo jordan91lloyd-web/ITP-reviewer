@@ -551,15 +551,23 @@ async function runImport(
   }
 
   // ── 6. Run QA review ───────────────────────────────────────────────────────
+  // Count image attachments that were found but not included in the bundle
+  // (too large, over the 10-image cap, download failure, or budget exceeded).
+  // These are passed to Claude as NOT_RETRIEVED so it excludes them from the
+  // D5 denominator instead of scoring them as Missing evidence.
+  const imagesIncluded    = processedFiles.filter(f => f.kind === "image").length;
+  const notRetrievedImages = Math.max(0, imageRefs.length - imagesIncluded);
+
   console.log(
     `[procore/import] Files downloaded — total size: ${(totalBytes / 1024 / 1024).toFixed(1)} MB, ` +
-    `processedFiles: ${processedFiles.length}, skipped: ${skippedFiles.length}`
+    `processedFiles: ${processedFiles.length}, skipped: ${skippedFiles.length}, ` +
+    `notRetrievedImages: ${notRetrievedImages} (${imageRefs.length} found, ${imagesIncluded} included)`
   );
   console.log(`[procore/import] Step 6: calling runBundleReview`);
 
   let reviewResult;
   try {
-    reviewResult = await runBundleReview(processedFiles, String(company_id), inspection.name);
+    reviewResult = await runBundleReview(processedFiles, String(company_id), inspection.name, notRetrievedImages);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     // Claude can return a 400 if an individual file (usually an image) is
@@ -657,12 +665,13 @@ async function runImport(
     success: true,
     result: reviewResult,
     import_summary: {
-      inspection_title: inspection.name,
-      total_files: processedFiles.length,
-      imported_files: importedFiles,
-      skipped_files: skippedFiles,
-      items_included: allItems.length,
-      attachments_found: uniqueAttachmentRefs.length,
+      inspection_title:     inspection.name,
+      total_files:          processedFiles.length,
+      imported_files:       importedFiles,
+      skipped_files:        skippedFiles,
+      items_included:       allItems.length,
+      attachments_found:    uniqueAttachmentRefs.length,
+      not_retrieved_images: notRetrievedImages,
     },
     diagnostics: {
       procore_top_level_keys: topLevelKeys,

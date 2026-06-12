@@ -62,6 +62,8 @@ Missing — 0% of available points. No evidence of any kind and no ITP response 
 
 N/A — Excluded from denominator entirely. The dimension genuinely does not apply to this work scope. Trust N/A items marked by the site manager. A high N/A count does not reduce the score.
 
+NOT_RETRIEVED — Excluded from denominator entirely (treated identically to N/A for scoring purposes). Use this when the preamble states that image attachments were referenced in the ITP but could not be retrieved from Procore. Do NOT score these as Missing — a file that exists in Procore but failed to download is not absent evidence. If NOT_RETRIEVED applies to D5 (Physical Evidence), exclude D5 from the denominator and note "attachments referenced but not retrieved" in the scoring_explanation.
+
 STEP 5 — CALCULATE SCORE
 total_applicable_points = sum of available points for all non-N/A dimensions
 total_achieved_points = sum of points earned across all dimensions
@@ -134,7 +136,7 @@ PRACTICAL PRINCIPLES:
 - Missing signatures or minor admin gaps are MINOR deductions only — never treat them as major failures.
 - Only flag Missing if an item is genuinely absent after reviewing the full bundle.
 - Survey drawings and dockets are valid supporting evidence — recognise them positively as long as they are actual files, not just referenced in the ITP.
-- Photos earn visual evidence points only if actual image files are in the bundle. An ITP reference to photos does not count. No photos = 0–3 in visual evidence.
+- Photos earn visual evidence points only if actual image files are in the bundle. An ITP reference to photos does not count. No photos = 0–3 in visual evidence — UNLESS the preamble states photos were referenced but not retrieved (NOT_RETRIEVED), in which case exclude D5 from the denominator entirely.
 - A completed ITP checklist is process evidence only. It cannot satisfy engineer verification, supporting documentation, or visual evidence categories on its own.
 - Keep missing_evidence focused — do not split one gap into many entries.
 
@@ -170,10 +172,14 @@ If not clearly identifiable, set to null.`;
 
 // ─── Preamble ─────────────────────────────────────────────────────────────
 
-export function buildPreamble(fileCount: number): string {
+export function buildPreamble(fileCount: number, notRetrievedImages = 0): string {
+  const notRetrievedNote = notRetrievedImages > 0
+    ? `\n\nNOT_RETRIEVED WARNING: ${notRetrievedImages} image attachment${notRetrievedImages !== 1 ? "s were" : " was"} referenced in this ITP inspection but could not be retrieved from Procore (download failures or size limits). These files exist in Procore but are absent from this bundle. Apply the NOT_RETRIEVED scoring state to D5 (Physical Evidence) — exclude it from the denominator entirely. Do NOT score these as Missing evidence.`
+    : "";
+
   return `Review the following ITP package bundle. Assess completeness, structure, hold and witness points, evidence quality, signatures, and photographic evidence.
 
-Files in bundle: ${fileCount} document${fileCount !== 1 ? "s" : ""}
+Files in bundle: ${fileCount} document${fileCount !== 1 ? "s" : ""}${notRetrievedNote}
 
 Read all documents before drawing any conclusions. Evidence may span multiple files. Images are inspection evidence — analyse them as such.`;
 }

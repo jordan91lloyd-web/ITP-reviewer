@@ -43,10 +43,11 @@ interface InspectionWithStatus {
 }
 
 interface ImportSummary {
-  inspection_title: string;
-  total_files: number;
-  imported_files: string[];
-  skipped_files: SkippedFile[];
+  inspection_title:     string;
+  total_files:          number;
+  imported_files:       string[];
+  skipped_files:        SkippedFile[];
+  not_retrieved_images?: number;
 }
 
 interface ImportDiagnostics {
@@ -774,6 +775,7 @@ function ImportSummaryPanel({ summary: s }: { summary: ImportSummary }) {
           <p className="text-xs text-blue-400 mt-0.5">
             {s.total_files} file{s.total_files !== 1 ? "s" : ""} sent to Claude
             {s.skipped_files.length > 0 && ` · ${s.skipped_files.length} skipped`}
+            {(s.not_retrieved_images ?? 0) > 0 && ` · ${s.not_retrieved_images} image${s.not_retrieved_images !== 1 ? "s" : ""} not retrieved`}
           </p>
         </div>
         <span className="text-xs font-medium text-blue-400 shrink-0 select-none">
@@ -797,6 +799,18 @@ function ImportSummaryPanel({ summary: s }: { summary: ImportSummary }) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Not-retrieved images warning — shown when Procore had images the pipeline couldn't download */}
+          {(s.not_retrieved_images ?? 0) > 0 && (
+            <div className="rounded-lg border border-orange-300 bg-orange-50 px-3 py-2.5">
+              <p className="text-xs font-semibold text-orange-700 mb-1">
+                ⚠ {s.not_retrieved_images} image attachment{s.not_retrieved_images !== 1 ? "s" : ""} referenced but not retrieved
+              </p>
+              <p className="text-xs text-orange-700 leading-relaxed">
+                These files exist in Procore but could not be downloaded (size limit or download failure). Claude was told to exclude D5 (Physical Evidence) from the denominator rather than scoring it as Missing. The score excludes these attachments — it does not penalise for evidence that may exist.
+              </p>
             </div>
           )}
 
