@@ -205,7 +205,13 @@ Deduplication key: `description.toLowerCase() + "|" + stage.toLowerCase()`. Do N
 - Deduplicates to one revision per drawing number (latest revision wins).
 - Recommends drawings whose **title** contains a keyword from `KEYWORDS`.
 - **No "first N per discipline" fallback** — pure title-keyword classification only. This avoids pulling plan sheets (S-101, A-201, etc.) that contain geometry but rarely hold points.
+- **"detail" is intentionally excluded from KEYWORDS.** Detail/section sheets (S-401, A-501, etc.) are geometry sheets and rarely carry hold point language. Keywords target notes/general/criteria/specification/schedule sheets — the sheets where hold point language actually lives.
 - `DISCIPLINE_NAMES` and `getPrefix()` are still used to label the `discipline` field on output, but they do not influence which drawings are recommended.
+
+### Drawing selection UI (`HoldPointTab.tsx` step 1)
+- **Collapsible discipline groups**: each discipline header toggles its drawing list. Default: all disciplines containing auto-recommended drawings start expanded; others start collapsed (currently all shown disciplines are from recommendations so all start open).
+- **Per-discipline bulk select**: each discipline header has a "Select all / Clear" control scoped to that group only. The global "Select all / Clear all" at the top remains.
+- **Recommended badge**: drawings auto-selected by triage show a small "Recommended" pill. The badge is driven by `recommendedIds` (a Set populated from the API response on project load). Manually ticked drawings that were not in the original recommendation set show no badge.
 
 ### Supabase table
 `holdpoint_registers` — upserted on `(company_id, project_id)`. Columns: `company_id`, `project_id`, `project_name`, `hold_points` (JSONB array of `HoldPoint`), `generated_at`.

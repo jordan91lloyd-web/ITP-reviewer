@@ -23,8 +23,8 @@ const KEYWORDS = [
   "schedule", "checklist",
   // Cover and legend sheets
   "cover", "legend", "index",
-  // Design and typical details that prescribe hold points
-  "typical", "detail",
+  // Typical sheets (standard details that prescribe hold points)
+  "typical",
 ];
 
 const DISCIPLINE_NAMES: Record<string, string> = {

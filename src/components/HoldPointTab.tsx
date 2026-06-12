@@ -106,6 +106,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   const [recsLoading, setRecsLoading]           = useState(false);
   const [totalDrawings, setTotalDrawings]       = useState(0);
   const [selectedIds, setSelectedIds]           = useState<Set<number>>(new Set());
+  const [recommendedIds, setRecommendedIds]     = useState<Set<number>>(new Set());
   const [uploads, setUploads]                   = useState<UploadItem[]>([]);
   const [isDragging, setIsDragging]             = useState(false);
   const [collapsedDisc, setCollapsedDisc]       = useState<Set<string>>(new Set());
@@ -178,10 +179,10 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     setRecommendations(recs);
     setTotalDrawings(recsJson.total_drawings ?? 0);
     setSelectedIds(new Set(recs.map(r => r.id)));
+    setRecommendedIds(new Set(recs.map(r => r.id)));
 
-    // Collapse all discipline groups by default
-    const disciplines = [...new Set(recs.map(r => r.discipline))];
-    setCollapsedDisc(new Set(disciplines));
+    // Expand all discipline groups that have recommended drawings; collapse the rest
+    setCollapsedDisc(new Set());
 
     if (savedJson.register) {
       const reg = savedJson.register;
@@ -630,9 +631,30 @@ export default function HoldPointTab({ company_id, projects }: Props) {
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{discipline.toUpperCase()}</span>
                         <span style={{ fontSize: 11, color: "#94A3B8" }}>{items.length} drawing{items.length !== 1 ? "s" : ""}</span>
                       </div>
-                      <span style={{ fontSize: 12, color: selCount > 0 ? "#6366F1" : "#CBD5E1", fontWeight: 600 }}>
-                        {selCount} selected
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 12, color: selCount > 0 ? "#6366F1" : "#CBD5E1", fontWeight: 600 }}>
+                          {selCount} selected
+                        </span>
+                        {/* Per-discipline bulk select — stop propagation so it doesn't toggle collapse */}
+                        <span
+                          onClick={e => {
+                            e.stopPropagation();
+                            const allSelected = items.every(d => selectedIds.has(d.id));
+                            setSelectedIds(prev => {
+                              const n = new Set(prev);
+                              if (allSelected) {
+                                items.forEach(d => n.delete(d.id));
+                              } else {
+                                items.forEach(d => n.add(d.id));
+                              }
+                              return n;
+                            });
+                          }}
+                          style={{ fontSize: 11, color: "#6366F1", fontWeight: 600, cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", whiteSpace: "nowrap" }}
+                        >
+                          {items.every(d => selectedIds.has(d.id)) ? "Clear" : "Select all"}
+                        </span>
+                      </div>
                     </button>
 
                     {!collapsed && items.map(d => (
@@ -652,10 +674,15 @@ export default function HoldPointTab({ company_id, projects }: Props) {
                           }}
                           style={{ marginTop: 2, accentColor: "#6366F1", flexShrink: 0 }}
                         />
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
                             {d.number}
-                            {d.revision_number && <span style={{ fontSize: 11, color: "#94A3B8", marginLeft: 6 }}>Rev {d.revision_number}</span>}
+                            {d.revision_number && <span style={{ fontSize: 11, color: "#94A3B8" }}>Rev {d.revision_number}</span>}
+                            {recommendedIds.has(d.id) && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#6366F1", background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: 4, padding: "1px 5px", letterSpacing: "0.03em" }}>
+                                Recommended
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: 12, color: "#64748B", marginTop: 1 }}>{d.title}</div>
                         </div>
