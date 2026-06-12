@@ -11,20 +11,21 @@ const PROCORE_BASE = process.env.PROCORE_ENV === "production"
   ? "https://api.procore.com"
   : "https://sandbox.procore.com";
 
+// Requirement-signal terms only. Intentionally excludes: "general" (catches
+// general arrangement plans), "schedule", "cover", "typical", "section",
+// "detail", "standard", "index" — all pull in geometry/list sheets.
 const KEYWORDS = [
-  // Hold point / QA terms
-  "hold point", "witness point", "notification point", "hp-", "wp-", "np-",
-  "hold", "witness", "inspection", "quality", "qa", "qc",
-  // Notes and general sheets (highest yield for hold point language)
-  "note", "notes", "general note", "general notes", "general",
-  // Specification and criteria sheets
-  "specification", "spec", "criteria", "requirement", "requirements", "standard",
-  // Schedules (contain inspection tables)
-  "schedule", "checklist",
-  // Cover and legend sheets
-  "cover", "legend", "index",
-  // Typical sheets (standard details that prescribe hold points)
-  "typical",
+  "notes",           // GENERAL NOTES, LEGENDS + NOTES, NOTES LEGEND AND DRAWING LIST
+  "specification",
+  "spec",
+  "criteria",
+  "durability",
+  "waterproofing",
+  "hold point",
+  "witness",
+  "inspection",
+  "quality",
+  "qa",
 ];
 
 const DISCIPLINE_NAMES: Record<string, string> = {

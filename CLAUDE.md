@@ -205,7 +205,7 @@ Deduplication key: `description.toLowerCase() + "|" + stage.toLowerCase()`. Do N
 - Deduplicates to one revision per drawing number (latest revision wins).
 - Recommends drawings whose **title** contains a keyword from `KEYWORDS`.
 - **No "first N per discipline" fallback** — pure title-keyword classification only. This avoids pulling plan sheets (S-101, A-201, etc.) that contain geometry but rarely hold points.
-- **"detail" is intentionally excluded from KEYWORDS.** Detail/section sheets (S-401, A-501, etc.) are geometry sheets and rarely carry hold point language. Keywords target notes/general/criteria/specification/schedule sheets — the sheets where hold point language actually lives.
+- **Keywords target requirement/notes/spec sheets only.** Current list: `notes`, `specification`, `spec`, `criteria`, `durability`, `waterproofing`, `hold point`, `witness`, `inspection`, `quality`, `qa`. Intentionally excluded: `general` (catches general arrangement plans), `schedule`, `cover`, `typical`, `section`, `detail`, `standard`, `index` — all pull in geometry, list, or cover sheets that rarely contain hold point language.
 - `DISCIPLINE_NAMES` and `getPrefix()` are still used to label the `discipline` field on output, but they do not influence which drawings are recommended.
 
 ### Drawing selection UI (`HoldPointTab.tsx` step 1)
