@@ -1,6 +1,6 @@
 // GET /api/holdpoint/drawings?company_id=X&project_id=Y
 // Returns recommended drawing revisions from Procore.
-// Recommended = keyword match in title OR first 3 per discipline.
+// Recommended = keyword match in drawing title only (no per-discipline fallback).
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -12,9 +12,19 @@ const PROCORE_BASE = process.env.PROCORE_ENV === "production"
   : "https://sandbox.procore.com";
 
 const KEYWORDS = [
-  "note", "general", "legend", "criteria", "specification", "spec",
-  "design", "cover", "schedule", "standard", "typical", "requirement",
-  "inspection", "hold point", "quality",
+  // Hold point / QA terms
+  "hold point", "witness point", "notification point", "hp-", "wp-", "np-",
+  "hold", "witness", "inspection", "quality", "qa", "qc",
+  // Notes and general sheets (highest yield for hold point language)
+  "note", "notes", "general note", "general notes", "general",
+  // Specification and criteria sheets
+  "specification", "spec", "criteria", "requirement", "requirements", "standard",
+  // Schedules (contain inspection tables)
+  "schedule", "checklist",
+  // Cover and legend sheets
+  "cover", "legend", "index",
+  // Design and typical details that prescribe hold points
+  "typical", "detail",
 ];
 
 const DISCIPLINE_NAMES: Record<string, string> = {
@@ -93,21 +103,10 @@ export async function GET(request: NextRequest) {
   const totalDrawings = deduplicated.length;
   const recommendedIds = new Set<number>();
 
-  // 1. Keyword matches in title
+  // Title-keyword classification only — no per-discipline fallback
   for (const d of deduplicated) {
     const tl = (d.title ?? "").toLowerCase();
     if (KEYWORDS.some(kw => tl.includes(kw))) recommendedIds.add(d.id);
-  }
-
-  // 2. First 3 per discipline
-  const discCounts = new Map<string, number>();
-  for (const d of deduplicated) {
-    const prefix = getPrefix(d.number ?? "");
-    const count  = discCounts.get(prefix) ?? 0;
-    if (count < 3) {
-      recommendedIds.add(d.id);
-      discCounts.set(prefix, count + 1);
-    }
   }
 
   const recommended = deduplicated

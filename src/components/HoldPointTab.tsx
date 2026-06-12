@@ -21,6 +21,7 @@ interface HoldPoint {
   stage:             string;
   responsible_party: string;
   source:            string;
+  confidence?:       "explicit" | "assumed";
 }
 
 type RawHoldPoint = Omit<HoldPoint, "id">;

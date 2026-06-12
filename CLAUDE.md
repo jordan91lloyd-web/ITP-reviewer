@@ -160,6 +160,58 @@ SUPABASE_SERVICE_ROLE_KEY=...
 
 ---
 
+## Hold Point extractor
+
+The Hold Point Register tab lets users generate a project-wide register of mandatory inspection gates extracted from Procore drawings and uploaded documents.
+
+### Architecture
+Three API routes collaborate, all sharing constants from `src/lib/holdpoint-prompt.ts`:
+
+| Route | Purpose |
+|-------|---------|
+| `GET /api/holdpoint/drawings` | Returns recommended Procore drawing revisions (keyword-matched on title) |
+| `POST /api/holdpoint/generate` | Downloads drawing PDFs + Supabase uploads, extracts hold points via Claude, deduplicates, numbers, saves register |
+| `POST /api/holdpoint/analyse-doc` | Single-document extraction — browser uploads one PDF to Supabase Storage, this route downloads, extracts, deletes, returns raw hold points |
+| `POST /api/holdpoint/add-documents` | Extracts from new documents only, deduplicates against existing, numbers continuing from last ID, merges, saves |
+
+### `src/lib/holdpoint-prompt.ts` — single source of truth
+Exports:
+- `STAGE_ORDER` — the 10 construction stages (string array). All routes and `HoldPointTab.tsx` import from here.
+- `SYSTEM_PROMPT` — the extraction prompt. Do NOT copy-paste this into individual routes. Import and use.
+
+### Extraction prompt design
+The prompt recognises two categories:
+- **Explicit hold points** (`confidence: "explicit"`) — directly labelled in the document as HP, WP, NP, Witness Point, etc.
+- **Assumed hold points** (`confidence: "assumed"`) — no label but language implies a mandatory gate: "do not proceed without", "notify engineer before", "inspect and record", "engineer to inspect", etc.
+
+The `confidence` field is part of the `RawHoldPoint`/`HoldPoint` interface in all routes and in `HoldPointTab.tsx`. It is optional (`confidence?`) in the component interface for backwards compatibility with existing Supabase records that pre-date the field.
+
+### Hold point data model
+```ts
+interface HoldPoint {
+  id:                string;   // "HP-001", "HP-002", … zero-padded, sequential
+  description:       string;
+  stage:             string;   // one of STAGE_ORDER
+  responsible_party: string;
+  source:            string;   // drawing number + title, or document name
+  confidence?:       "explicit" | "assumed";
+}
+```
+
+Deduplication key: `description.toLowerCase() + "|" + stage.toLowerCase()`. Do NOT change this — it preserves dedup behaviour across add-document calls.
+
+### Drawing triage (`/api/holdpoint/drawings`)
+- Fetches all current drawing revisions from Procore (`drawing_revisions?current=true`).
+- Deduplicates to one revision per drawing number (latest revision wins).
+- Recommends drawings whose **title** contains a keyword from `KEYWORDS`.
+- **No "first N per discipline" fallback** — pure title-keyword classification only. This avoids pulling plan sheets (S-101, A-201, etc.) that contain geometry but rarely hold points.
+- `DISCIPLINE_NAMES` and `getPrefix()` are still used to label the `discipline` field on output, but they do not influence which drawings are recommended.
+
+### Supabase table
+`holdpoint_registers` — upserted on `(company_id, project_id)`. Columns: `company_id`, `project_id`, `project_name`, `hold_points` (JSONB array of `HoldPoint`), `generated_at`.
+
+---
+
 ## Key files and what they do
 
 ### `src/lib/types.ts`

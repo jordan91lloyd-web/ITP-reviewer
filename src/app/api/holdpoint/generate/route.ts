@@ -7,25 +7,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { SYSTEM_PROMPT, STAGE_ORDER } from "@/lib/holdpoint-prompt";
 
 export const maxDuration = 300;
 
 const PROCORE_BASE = process.env.PROCORE_ENV === "production"
   ? "https://api.procore.com"
   : "https://sandbox.procore.com";
-
-const STAGE_ORDER = [
-  "Demolition & Excavation",
-  "Piling & Retention",
-  "Concrete & Structure",
-  "Steel & Framing",
-  "Facade & Roofing",
-  "Waterproofing",
-  "Services Rough-In",
-  "Fitout & Finishes",
-  "External Works",
-  "Testing & Commissioning",
-];
 
 interface DrawingInput {
   id:      number;
@@ -44,6 +32,7 @@ interface RawHoldPoint {
   stage:             string;
   responsible_party: string;
   source:            string;
+  confidence:        "explicit" | "assumed";
 }
 
 interface HoldPoint extends RawHoldPoint {
@@ -75,33 +64,6 @@ async function downloadPdf(url: string, token: string): Promise<Buffer | null> {
     return null;
   }
 }
-
-const SYSTEM_PROMPT = `You are a construction quality assurance specialist reviewing Australian construction documents for a builder.
-
-Extract ONLY genuine hold points from this document. A hold point is a mandatory inspection, test, sign-off or approval that MUST occur before work can proceed.
-
-Examples of hold points:
-- Engineer sign-off before concrete pour
-- Flood test before tiling
-- PCA inspection before covering works
-- Fire engineer approval of fire-rated assemblies
-- Geotechnical engineer inspection of excavation
-- Structural engineer sign-off on steel connections
-- Council/certifier inspection before pouring footings
-
-Do NOT include:
-- General construction notes
-- Material specifications
-- Administrative requirements
-- Design notes
-- Things that are recommendations rather than mandatory gates
-
-For each hold point classify into ONE of these construction stages:
-Demolition & Excavation | Piling & Retention | Concrete & Structure | Steel & Framing | Facade & Roofing | Waterproofing | Services Rough-In | Fitout & Finishes | External Works | Testing & Commissioning
-
-Return ONLY a JSON array. No markdown.
-[{"description":"brief clear description of what must happen before work proceeds","stage":"one of the stages above","responsible_party":"who must sign off (extract from document)","source":"drawing number and title or document name"}]
-Return [] if no genuine hold points found.`;
 
 async function extractHoldPoints(
   client:    Anthropic,
