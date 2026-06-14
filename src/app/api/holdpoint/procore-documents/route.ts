@@ -1,6 +1,10 @@
 // GET /api/holdpoint/procore-documents?company_id=X&project_id=Y
 // Returns the project's Documents tool folder/file tree for the Hold Point picker.
 // company_id is sent as both a query param AND the Procore-Company-Id header on every call.
+//
+// The response is a flat array of DocFolder (each with parent_id), from which the
+// client builds the nested tree for display. ALL folders are returned, including
+// parent folders that have no direct files but contain subfolders.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -12,21 +16,15 @@ const PROCORE_BASE = process.env.PROCORE_ENV === "production"
   ? "https://api.procore.com"
   : "https://sandbox.procore.com";
 
-const SUPPORTED_CONTENT_TYPES = new Set([
-  "application/pdf",
-]);
-
-const SUPPORTED_EXTENSIONS = new Set([".pdf"]);
-
 function isSupportedFile(name: string, contentType?: string | null): boolean {
-  if (contentType && SUPPORTED_CONTENT_TYPES.has(contentType)) return true;
+  if (contentType === "application/pdf") return true;
   const ext = name.match(/\.[^.]+$/)?.[0]?.toLowerCase() ?? "";
-  return SUPPORTED_EXTENSIONS.has(ext);
+  return ext === ".pdf";
 }
 
 interface RawFolder {
-  id:        number;
-  name?:     string;
+  id:         number;
+  name?:      string;
   parent_id?: number | null;
 }
 
@@ -72,8 +70,8 @@ async function fetchFolderFiles(
   companyId: string,
   folderId:  number,
 ): Promise<DocFile[]> {
-  // Build the URL manually so that filter brackets are NOT percent-encoded.
-  // Procore's Rails backend requires unencoded brackets: filters[folder_id]=X
+  // Build URL manually — URLSearchParams percent-encodes brackets (filters[folder_id]
+  // → filters%5Bfolder_id%5D) and Procore's Rails backend requires literal brackets.
   const url =
     `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents` +
     `?company_id=${encodeURIComponent(companyId)}` +
@@ -82,12 +80,15 @@ async function fetchFolderFiles(
 
   const res = await fetch(url, {
     headers: {
-      Authorization:       `Bearer ${token}`,
+      Authorization:        `Bearer ${token}`,
       "Procore-Company-Id": companyId,
     },
   });
 
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.warn(`[procore-documents] folder ${folderId} files → HTTP ${res.status}`);
+    return [];
+  }
 
   const data: unknown = await res.json();
   if (!Array.isArray(data)) return [];
@@ -121,9 +122,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
   }
 
-  // Step 1 — list all folders.
-  // procoreGetAllPages handles pagination and sends company_id as a query param.
-  // The Procore-Company-Id header is passed via extraHeaders.
+  // Step 1 — list ALL folders (flat list; parent_id encodes the hierarchy)
   let rawFolders: RawFolder[] = [];
   try {
     rawFolders = await procoreGetAllPages<RawFolder>(
@@ -132,22 +131,25 @@ export async function GET(request: NextRequest) {
       { company_id: companyId, per_page: "100" },
       { "Procore-Company-Id": companyId },
     );
-  } catch {
-    // Documents tool not accessible or not enabled — return empty gracefully
-    console.warn("[procore-documents] Folders fetch failed — Documents tool may be unavailable");
-    return NextResponse.json({ folders: [] });
+  } catch (err) {
+    const msg    = err instanceof Error ? err.message : String(err);
+    const status = msg.includes("403") ? 403 : msg.includes("404") ? 404 : 500;
+    console.warn("[procore-documents] Folders fetch failed:", msg);
+    return NextResponse.json(
+      { error: "Procore Documents unavailable", detail: msg },
+      { status },
+    );
   }
 
   if (rawFolders.length === 0) {
     return NextResponse.json({ folders: [] });
   }
 
-  // Step 2 — fetch files for each folder in parallel.
-  // Cap at 20 folders to stay within the 300-second serverless wall-clock limit.
-  const foldersToProcess = rawFolders.slice(0, 20);
+  console.log(`[procore-documents] ${rawFolders.length} folders for project ${projectId}`);
 
+  // Step 2 — fetch files for every folder in parallel (no folder cap)
   const results: DocFolder[] = await Promise.all(
-    foldersToProcess.map(async (folder): Promise<DocFolder> => {
+    rawFolders.map(async (folder): Promise<DocFolder> => {
       const files = await fetchFolderFiles(token, projectId, companyId, folder.id).catch(() => []);
       return {
         id:        folder.id,
@@ -158,8 +160,7 @@ export async function GET(request: NextRequest) {
     }),
   );
 
-  // Omit folders with no files — they add noise to the picker
-  const nonEmpty = results.filter(f => f.files.length > 0);
-
-  return NextResponse.json({ folders: nonEmpty });
+  // Return ALL folders including those with no direct files (they may contain subfolders).
+  // The client builds the nested tree from parent_id relationships.
+  return NextResponse.json({ folders: results });
 }

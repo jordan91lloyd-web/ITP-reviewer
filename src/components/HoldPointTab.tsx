@@ -68,6 +68,11 @@ interface DocFolder {
   files:     DocFile[];
 }
 
+interface DocTreeNode {
+  folder:   DocFolder;
+  children: DocTreeNode[];
+}
+
 interface SkippedDoc {
   name:   string;
   reason: string;
@@ -113,6 +118,27 @@ function groupByStage(holdPoints: HoldPoint[]): Map<string, HoldPoint[]> {
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// Build a nested tree from the flat folder array the API returns (each item has parent_id).
+function buildDocTree(folders: DocFolder[]): DocTreeNode[] {
+  const nodeMap = new Map<number, DocTreeNode>();
+  for (const f of folders) nodeMap.set(f.id, { folder: f, children: [] });
+  const roots: DocTreeNode[] = [];
+  for (const f of folders) {
+    const node = nodeMap.get(f.id)!;
+    if (f.parent_id !== null && nodeMap.has(f.parent_id)) {
+      nodeMap.get(f.parent_id)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots;
+}
+
+// Recursively collect all files within a node (direct files + all descendant files).
+function allFilesInNode(node: DocTreeNode): DocFile[] {
+  return [...node.folder.files, ...node.children.flatMap(c => allFilesInNode(c))];
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -170,6 +196,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
 
   // Procore Documents picker
   const [procoreDocs, setProcoreDocs]               = useState<DocFolder[]>([]);
+  const [docsFetchError, setDocsFetchError]         = useState<string | null>(null);
   const [selectedDocIds, setSelectedDocIds]         = useState<Set<number>>(new Set());
   const [collapsedDocFolders, setCollapsedDocFolders] = useState<Set<number>>(new Set());
   const [skippedDocs, setSkippedDocs]               = useState<SkippedDoc[]>([]);
@@ -189,6 +216,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     holdPointsRef.current = [];
     setGeneratedAt(null);
     setProcoreDocs([]);
+    setDocsFetchError(null);
     setSelectedDocIds(new Set());
     setCollapsedDocFolders(new Set());
     setSkippedDocs([]);
@@ -217,12 +245,21 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     // Expand all discipline groups that have recommended drawings; collapse the rest
     setCollapsedDisc(new Set());
 
-    // Load Procore Documents folder tree — collapse all folders by default
+    // Load Procore Documents folder tree
     if (docsRes?.ok) {
       const docsJson = await docsRes.json() as { folders: DocFolder[] };
       const folders  = docsJson.folders ?? [];
       setProcoreDocs(folders);
+      // Collapse all folders by default; user expands what they need
       setCollapsedDocFolders(new Set(folders.map(f => f.id)));
+    } else if (docsRes) {
+      // Surface the real error — not a silent empty
+      try {
+        const errJson = await docsRes.json() as { error?: string; detail?: string };
+        setDocsFetchError(errJson.detail ?? errJson.error ?? `HTTP ${docsRes.status}`);
+      } catch {
+        setDocsFetchError(`HTTP ${docsRes.status}`);
+      }
     }
 
     if (savedJson.register) {
@@ -402,7 +439,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
 
   async function generate() {
     const selDrawings = recommendations.filter(r => selectedIds.has(r.id));
-    const selProcDocs = procoreDocs.flatMap(f => f.files).filter(f => selectedDocIds.has(f.id) && f.is_supported);
+    const selProcDocs = allProcoreFiles.filter(f => selectedDocIds.has(f.id) && f.is_supported);
     const totalDocs   = selDrawings.length + uploads.length + selProcDocs.length;
     if (totalDocs === 0) return;
 
@@ -573,9 +610,147 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     return acc;
   }, {});
 
+  // All files across all folders (flat array, used for counting selected docs)
+  const allProcoreFiles    = procoreDocs.flatMap(f => f.files);
   const selDrawingCount    = recommendations.filter(r => selectedIds.has(r.id)).length;
-  const selProcoreDocCount = procoreDocs.flatMap(f => f.files).filter(f => selectedDocIds.has(f.id) && f.is_supported).length;
+  const selProcoreDocCount = allProcoreFiles.filter(f => selectedDocIds.has(f.id) && f.is_supported).length;
   const totalDocCount      = selDrawingCount + uploads.length + selProcoreDocCount;
+
+  // ── Doc tree renderer ────────────────────────────────────────────────────────
+  // Renders a DocTreeNode recursively at the given nesting depth.
+  // Captures state from the outer closure so we don't thread state through props.
+
+  function renderDocNode(node: DocTreeNode, depth: number): React.ReactElement {
+    const collapsed      = collapsedDocFolders.has(node.folder.id);
+    const subtreeFiles   = allFilesInNode(node);
+    const supported      = subtreeFiles.filter(f => f.is_supported);
+    const selCount       = supported.filter(f => selectedDocIds.has(f.id)).length;
+    const allSelected    = supported.length > 0 && supported.every(f => selectedDocIds.has(f.id));
+    const directFiles    = node.folder.files;
+    const fileCount      = subtreeFiles.length;
+    const indent         = 14 + depth * 16;
+
+    return (
+      <div key={node.folder.id} style={{ borderTop: depth > 0 ? "1px solid #F1F5F9" : undefined }}>
+        {/* Folder / subfolder header */}
+        <button
+          onClick={() => setCollapsedDocFolders(prev => {
+            const n = new Set(prev);
+            if (n.has(node.folder.id)) n.delete(node.folder.id); else n.add(node.folder.id);
+            return n;
+          })}
+          style={{
+            width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: `10px 14px 10px ${indent}px`,
+            background: depth === 0 ? "#F8FAFC" : "#FAFAFA",
+            border: "none", cursor: "pointer", textAlign: "left",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {collapsed ? <ChevronRight size={14} color="#94A3B8" /> : <ChevronDown size={14} color="#94A3B8" />}
+            <span style={{ fontSize: 13, fontWeight: depth === 0 ? 700 : 600, color: "#0F172A" }}>
+              {node.folder.name}
+            </span>
+            <span style={{ fontSize: 11, color: "#94A3B8" }}>
+              {fileCount} file{fileCount !== 1 ? "s" : ""}
+              {node.children.length > 0 && ` · ${node.children.length} subfolder${node.children.length !== 1 ? "s" : ""}`}
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {selCount > 0 && (
+              <span style={{ fontSize: 12, color: "#6366F1", fontWeight: 600 }}>
+                {selCount} selected
+              </span>
+            )}
+            {supported.length > 0 && (
+              <span
+                onClick={e => {
+                  e.stopPropagation();
+                  setSelectedDocIds(prev => {
+                    const n = new Set(prev);
+                    if (allSelected) {
+                      supported.forEach(f => n.delete(f.id));
+                    } else {
+                      supported.forEach(f => n.add(f.id));
+                    }
+                    return n;
+                  });
+                }}
+                style={{ fontSize: 11, color: "#6366F1", fontWeight: 600, cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", whiteSpace: "nowrap" }}
+              >
+                {allSelected ? "Clear" : "Select all"}
+              </span>
+            )}
+          </div>
+        </button>
+
+        {!collapsed && (
+          <>
+            {/* Files directly in this folder */}
+            {directFiles.map(f => {
+              const isLarge = f.size !== null && f.size > 10 * 1024 * 1024;
+              return (
+                <label
+                  key={f.id}
+                  style={{
+                    display: "flex", alignItems: "flex-start", gap: 10,
+                    padding: `9px 14px 9px ${indent + 14}px`,
+                    borderTop: "1px solid #F8FAFC",
+                    cursor: f.is_supported ? "pointer" : "default",
+                    opacity: f.is_supported ? 1 : 0.45,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedDocIds.has(f.id)}
+                    disabled={!f.is_supported}
+                    onChange={() => {
+                      if (!f.is_supported) return;
+                      setSelectedDocIds(prev => {
+                        const n = new Set(prev);
+                        if (n.has(f.id)) n.delete(f.id); else n.add(f.id);
+                        return n;
+                      });
+                    }}
+                    style={{ marginTop: 3, accentColor: "#6366F1", flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: f.is_supported ? "#0F172A" : "#94A3B8" }}>
+                        {f.name}
+                      </span>
+                      {!f.is_supported && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 4, padding: "1px 5px" }}>
+                          Unsupported
+                        </span>
+                      )}
+                      {f.is_supported && isLarge && (
+                        <span style={{ fontSize: 10, color: "#92400E", background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 4, padding: "1px 5px" }}>
+                          Large file — may take longer
+                        </span>
+                      )}
+                    </div>
+                    {f.size !== null && (
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>
+                        {f.size < 1024 * 1024
+                          ? `${(f.size / 1024).toFixed(0)} KB`
+                          : `${(f.size / 1024 / 1024).toFixed(1)} MB`}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
+
+            {/* Subfolders — recursive */}
+            {node.children.map(child => renderDocNode(child, depth + 1))}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  const docTree = buildDocTree(procoreDocs);
   const estSeconds         = totalDocCount * 20;
   const uniqueParties   = [...new Set(holdPoints.map(hp => hp.responsible_party))].filter(Boolean).sort();
 
@@ -755,115 +930,19 @@ export default function HoldPointTab({ company_id, projects }: Props) {
             Browse the project's Documents tool to include specs, reports, and consultant documents
           </div>
 
-          {procoreDocs.length === 0 ? (
+          {docsFetchError ? (
+            <div style={{ padding: "12px 14px", border: "1px solid #FECACA", borderRadius: 8, background: "#FEF2F2", fontSize: 13, color: "#B91C1C" }}>
+              Could not load Procore Documents: {docsFetchError}
+            </div>
+          ) : docTree.length === 0 ? (
             <div style={{ padding: "12px 14px", border: "1px solid #E2E8F0", borderRadius: 8, color: "#94A3B8", fontSize: 13 }}>
-              No folders found in the project's Documents tool, or access is restricted.
+              {procoreDocs.length === 0
+                ? "No folders found in this project's Documents tool."
+                : "Loading…"}
             </div>
           ) : (
             <div style={{ border: "1px solid #E2E8F0", borderRadius: 8, overflow: "hidden" }}>
-              {procoreDocs.map(folder => {
-                const collapsed   = collapsedDocFolders.has(folder.id);
-                const supported   = folder.files.filter(f => f.is_supported);
-                const selCount    = supported.filter(f => selectedDocIds.has(f.id)).length;
-                const allSelected = supported.length > 0 && supported.every(f => selectedDocIds.has(f.id));
-                return (
-                  <div key={folder.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                    {/* Folder header */}
-                    <button
-                      onClick={() => setCollapsedDocFolders(prev => {
-                        const n = new Set(prev);
-                        if (n.has(folder.id)) n.delete(folder.id); else n.add(folder.id);
-                        return n;
-                      })}
-                      style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#F8FAFC", border: "none", cursor: "pointer", textAlign: "left" }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {collapsed ? <ChevronRight size={14} color="#94A3B8" /> : <ChevronDown size={14} color="#94A3B8" />}
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{folder.name}</span>
-                        <span style={{ fontSize: 11, color: "#94A3B8" }}>{folder.files.length} file{folder.files.length !== 1 ? "s" : ""}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 12, color: selCount > 0 ? "#6366F1" : "#CBD5E1", fontWeight: 600 }}>
-                          {selCount > 0 ? `${selCount} selected` : "none selected"}
-                        </span>
-                        {supported.length > 0 && (
-                          <span
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedDocIds(prev => {
-                                const n = new Set(prev);
-                                if (allSelected) {
-                                  supported.forEach(f => n.delete(f.id));
-                                } else {
-                                  supported.forEach(f => n.add(f.id));
-                                }
-                                return n;
-                              });
-                            }}
-                            style={{ fontSize: 11, color: "#6366F1", fontWeight: 600, cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", whiteSpace: "nowrap" }}
-                          >
-                            {allSelected ? "Clear" : "Select all"}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-
-                    {!collapsed && folder.files.map(f => {
-                      const isLarge = f.size !== null && f.size > 10 * 1024 * 1024;
-                      return (
-                        <label
-                          key={f.id}
-                          style={{
-                            display: "flex", alignItems: "flex-start", gap: 10,
-                            padding: "9px 14px 9px 28px", borderTop: "1px solid #F8FAFC",
-                            cursor: f.is_supported ? "pointer" : "default",
-                            opacity: f.is_supported ? 1 : 0.45,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedDocIds.has(f.id)}
-                            disabled={!f.is_supported}
-                            onChange={() => {
-                              if (!f.is_supported) return;
-                              setSelectedDocIds(prev => {
-                                const n = new Set(prev);
-                                if (n.has(f.id)) n.delete(f.id); else n.add(f.id);
-                                return n;
-                              });
-                            }}
-                            style={{ marginTop: 3, accentColor: "#6366F1", flexShrink: 0 }}
-                          />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: f.is_supported ? "#0F172A" : "#94A3B8" }}>
-                                {f.name}
-                              </span>
-                              {!f.is_supported && (
-                                <span style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 4, padding: "1px 5px" }}>
-                                  Unsupported
-                                </span>
-                              )}
-                              {f.is_supported && isLarge && (
-                                <span style={{ fontSize: 10, color: "#92400E", background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 4, padding: "1px 5px" }}>
-                                  Large file — may take longer
-                                </span>
-                              )}
-                            </div>
-                            {f.size !== null && (
-                              <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>
-                                {f.size < 1024 * 1024
-                                  ? `${(f.size / 1024).toFixed(0)} KB`
-                                  : `${(f.size / 1024 / 1024).toFixed(1)} MB`}
-                              </div>
-                            )}
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+              {docTree.map(node => renderDocNode(node, 0))}
             </div>
           )}
         </div>

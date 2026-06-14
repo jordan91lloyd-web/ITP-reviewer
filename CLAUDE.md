@@ -214,25 +214,36 @@ Deduplication key: `description.toLowerCase() + "|" + stage.toLowerCase()`. Do N
 - **Recommended badge**: drawings auto-selected by triage show a small "Recommended" pill. The badge is driven by `recommendedIds` (a Set populated from the API response on project load). Manually ticked drawings that were not in the original recommendation set show no badge.
 
 ### Procore Documents picker (`/api/holdpoint/procore-documents` + `HoldPointTab.tsx` step 1)
-New capability: lets users browse the project's Procore Documents tool and select files (PDFs) to feed into the same hold-point extraction pipeline as drawings.
+Lets users browse the project's Procore Documents tool and select files (PDFs) to feed into the same hold-point extraction pipeline as drawings.
+
+**Real Procore API behaviour:**
+- `GET /rest/v1.0/projects/{project_id}/folders` returns a **flat list** of ALL folders with `parent_id` encoding the hierarchy. It is NOT recursive — the client must build the tree.
+- `GET /rest/v1.0/projects/{project_id}/documents?filters[folder_id]={id}` returns files directly inside one folder. Subfolders require separate calls.
+- `filters[folder_id]` brackets must NOT be percent-encoded — use manual URL construction, never `URLSearchParams`.
 
 **API route** `GET /api/holdpoint/procore-documents?company_id=X&project_id=Y`:
-- Lists folders via `GET /rest/v1.0/projects/{project_id}/folders` using `procoreGetAllPages` (exported from `procore.ts`). `company_id` is sent as **both** a query param and `Procore-Company-Id` header on every call.
-- For each folder, fetches files via `GET /rest/v1.0/projects/{project_id}/documents?filters[folder_id]={id}` — URL built manually to avoid bracket percent-encoding.
-- Caps at 20 folders to stay within the 300 s wall-clock budget; processes in parallel.
-- Returns `{ folders: DocFolder[] }` where each folder has `{ id, name, parent_id, files: DocFile[] }`. Each `DocFile` includes `is_supported: boolean` (true for PDF only; `.docx` handled as unsupported at this stage). Empty folders are omitted. Returns `{ folders: [] }` gracefully if Documents tool is inaccessible.
+- Lists ALL folders via `procoreGetAllPages` on `/rest/v1.0/projects/{project_id}/folders`. No folder cap.
+- `company_id` sent as both query param and `Procore-Company-Id` header on every call (inviolable).
+- Fetches files for every folder in parallel (manual URL, unencoded brackets).
+- Returns ALL folders including parent folders with no direct files. `parent_id` preserved for tree-building.
+- Errors surfaced with real HTTP status codes (403/404/500) — NOT silently swallowed into `{ folders: [] }`.
 
-**generate/route.ts** new `procore_documents` body field `{ id, name, url, content_type?, size? }[]`:
-- Cap: 15 documents per run. Files beyond the cap are reported as `skipped_documents` with reason "run limit reached".
-- Only PDFs are extracted. Non-PDF types → `skipped_documents` with reason "unsupported file type (PDF files only)".
-- Per-file size cap: 15 MB. Size pre-checked from `doc.size` before download; post-checked after download in case size was unknown. Oversized files → `skipped_documents`.
-- Download via existing `downloadPdf()` (handles both Procore and S3 presigned URLs). Extraction via existing `extractHoldPoints()`. Results pooled into the same `allRaw[]` → dedup → sortAndNumber → save.
-- Response now includes `skipped_documents: { name, reason }[]` alongside `hold_points`.
-- **Page-filtering for very large PDFs is a future step** — documents under the 15 MB cap are sent whole.
+**Tree rendering in `HoldPointTab.tsx`:**
+- `buildDocTree(folders)` builds a nested `DocTreeNode[]` from the flat folder list using `parent_id`.
+- `allFilesInNode(node)` recursively collects all files from a node and all descendants.
+- `renderDocNode(node, depth)` closure renders collapsible folder header + direct files + recursive children. Indentation scales with depth.
+- "Select all / Clear" per folder acts recursively across the full subtree.
+- On fetch error: red error banner with the real error message (not silent "no folders found").
+
+**generate/route.ts** `procore_documents` body field `{ id, name, url, content_type?, size? }[]`:
+- Cap: 15 documents per run. Files beyond the cap → `skipped_documents` with reason "run limit reached".
+- Only PDFs extracted. Non-PDF → `skipped_documents`. Per-file size cap: 15 MB.
+- Download via `downloadPdf()`. Extraction via `extractHoldPoints()`. Pooled into `allRaw[]` → dedup → save.
+- Response includes `skipped_documents: { name, reason }[]`.
 
 **UI** (step 1, between drawings and upload zone):
-- Folders listed with collapsible groups (collapsed by default). Per-folder "Select all / Clear". Unsupported files shown greyed with "Unsupported" tag, not selectable. Files over 10 MB show "Large file — may take longer" warning. Selected doc IDs passed to generate as `procore_documents`.
-- After generation, any `skipped_documents` from the route are shown as a dismissible amber notice above the register (same position as the Add Documents merge toast).
+- Full nested folder tree: collapsible at every level. Per-folder "Select all" selects recursively. Unsupported files greyed with "Unsupported" tag. Files over 10 MB show "Large file — may take longer".
+- After generation, any `skipped_documents` shown as dismissible amber notice above the register.
 
 ### Supabase table
 `holdpoint_registers` — upserted on `(company_id, project_id)`. Columns: `company_id`, `project_id`, `project_name`, `hold_points` (JSONB array of `HoldPoint`), `generated_at`.
