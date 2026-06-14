@@ -363,7 +363,7 @@ async function procoreGet<T>(
  * as soon as a page returns fewer rows than the page size (i.e. the last
  * page). A hard safety cap prevents runaway loops if something goes wrong.
  */
-async function procoreGetAllPages<T>(
+export async function procoreGetAllPages<T>(
   accessToken: string,
   path: string,
   params?: Record<string, string>,

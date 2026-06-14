@@ -52,6 +52,27 @@ interface Props {
   projects:   DashboardProject[];
 }
 
+interface DocFile {
+  id:           number;
+  name:         string;
+  url:          string;
+  content_type: string;
+  size:         number | null;
+  is_supported: boolean;
+}
+
+interface DocFolder {
+  id:        number;
+  name:      string;
+  parent_id: number | null;
+  files:     DocFile[];
+}
+
+interface SkippedDoc {
+  name:   string;
+  reason: string;
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STAGE_ORDER = [
@@ -147,6 +168,12 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   const [mergeToast, setMergeToast]             = useState<{ count: number; docs: number; errors: string[] } | null>(null);
   const addDocsFileRef                          = useRef<HTMLInputElement | null>(null);
 
+  // Procore Documents picker
+  const [procoreDocs, setProcoreDocs]               = useState<DocFolder[]>([]);
+  const [selectedDocIds, setSelectedDocIds]         = useState<Set<number>>(new Set());
+  const [collapsedDocFolders, setCollapsedDocFolders] = useState<Set<number>>(new Set());
+  const [skippedDocs, setSkippedDocs]               = useState<SkippedDoc[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // ── Project selection ────────────────────────────────────────────────────────
@@ -161,12 +188,18 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     setHoldPoints([]);
     holdPointsRef.current = [];
     setGeneratedAt(null);
+    setProcoreDocs([]);
+    setSelectedDocIds(new Set());
+    setCollapsedDocFolders(new Set());
+    setSkippedDocs([]);
     if (!pid) return;
 
     setRecsLoading(true);
-    const [savedRes, recsRes] = await Promise.all([
+    const [savedRes, recsRes, docsRes] = await Promise.all([
       fetch(`/api/holdpoint/save?company_id=${company_id}&project_id=${pid}`),
       fetch(`/api/holdpoint/drawings?company_id=${company_id}&project_id=${pid}`),
+      fetch(`/api/holdpoint/procore-documents?company_id=${company_id}&project_id=${pid}`)
+        .catch(() => null),
     ]);
     setRecsLoading(false);
 
@@ -183,6 +216,14 @@ export default function HoldPointTab({ company_id, projects }: Props) {
 
     // Expand all discipline groups that have recommended drawings; collapse the rest
     setCollapsedDisc(new Set());
+
+    // Load Procore Documents folder tree — collapse all folders by default
+    if (docsRes?.ok) {
+      const docsJson = await docsRes.json() as { folders: DocFolder[] };
+      const folders  = docsJson.folders ?? [];
+      setProcoreDocs(folders);
+      setCollapsedDocFolders(new Set(folders.map(f => f.id)));
+    }
 
     if (savedJson.register) {
       const reg = savedJson.register;
@@ -361,12 +402,16 @@ export default function HoldPointTab({ company_id, projects }: Props) {
 
   async function generate() {
     const selDrawings = recommendations.filter(r => selectedIds.has(r.id));
-    const totalDocs   = selDrawings.length + uploads.length;
+    const selProcDocs = procoreDocs.flatMap(f => f.files).filter(f => selectedDocIds.has(f.id) && f.is_supported);
+    const totalDocs   = selDrawings.length + uploads.length + selProcDocs.length;
     if (totalDocs === 0) return;
+
+    setSkippedDocs([]);
 
     const docNames = [
       ...selDrawings.map(d => `${d.number} — ${d.title}`),
       ...uploads.map(u => u.title),
+      ...selProcDocs.map(f => f.name),
     ];
     setGenDocNames(docNames);
     setGenIndex(0);
@@ -399,13 +444,15 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
           company_id,
-          project_id:   projectId,
-          project_name: projectName,
-          drawings:     selDrawings.map(d => ({ id: d.id, number: d.number, title: d.title, pdf_url: d.pdf_url })),
-          uploads:      storageUploads,
+          project_id:        projectId,
+          project_name:      projectName,
+          drawings:          selDrawings.map(d => ({ id: d.id, number: d.number, title: d.title, pdf_url: d.pdf_url })),
+          uploads:           storageUploads,
+          procore_documents: selProcDocs.map(f => ({ id: f.id, name: f.name, url: f.url, content_type: f.content_type, size: f.size })),
         }),
       });
-      const json = await res.json() as { hold_points: HoldPoint[] };
+      const json = await res.json() as { hold_points: HoldPoint[]; skipped_documents?: SkippedDoc[] };
+      if (json.skipped_documents?.length) setSkippedDocs(json.skipped_documents);
       const hps  = json.hold_points ?? [];
       holdPointsRef.current = hps;
       setHoldPoints(hps);
@@ -526,9 +573,10 @@ export default function HoldPointTab({ company_id, projects }: Props) {
     return acc;
   }, {});
 
-  const selDrawingCount = recommendations.filter(r => selectedIds.has(r.id)).length;
-  const totalDocCount   = selDrawingCount + uploads.length;
-  const estSeconds      = totalDocCount * 20;
+  const selDrawingCount    = recommendations.filter(r => selectedIds.has(r.id)).length;
+  const selProcoreDocCount = procoreDocs.flatMap(f => f.files).filter(f => selectedDocIds.has(f.id) && f.is_supported).length;
+  const totalDocCount      = selDrawingCount + uploads.length + selProcoreDocCount;
+  const estSeconds         = totalDocCount * 20;
   const uniqueParties   = [...new Set(holdPoints.map(hp => hp.responsible_party))].filter(Boolean).sort();
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -695,7 +743,132 @@ export default function HoldPointTab({ company_id, projects }: Props) {
           )}
         </div>
 
-        {/* B — Upload additional documents */}
+        {/* B — Procore Documents picker */}
+        <div style={{ marginBottom: 24, paddingTop: 8, borderTop: "1px solid #E2E8F0" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#0F172A" }}>PROCORE DOCUMENTS</div>
+            {selProcoreDocCount > 0 && (
+              <span style={{ fontSize: 12, color: "#6366F1", fontWeight: 600 }}>{selProcoreDocCount} selected</span>
+            )}
+          </div>
+          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 12 }}>
+            Browse the project's Documents tool to include specs, reports, and consultant documents
+          </div>
+
+          {procoreDocs.length === 0 ? (
+            <div style={{ padding: "12px 14px", border: "1px solid #E2E8F0", borderRadius: 8, color: "#94A3B8", fontSize: 13 }}>
+              No folders found in the project's Documents tool, or access is restricted.
+            </div>
+          ) : (
+            <div style={{ border: "1px solid #E2E8F0", borderRadius: 8, overflow: "hidden" }}>
+              {procoreDocs.map(folder => {
+                const collapsed   = collapsedDocFolders.has(folder.id);
+                const supported   = folder.files.filter(f => f.is_supported);
+                const selCount    = supported.filter(f => selectedDocIds.has(f.id)).length;
+                const allSelected = supported.length > 0 && supported.every(f => selectedDocIds.has(f.id));
+                return (
+                  <div key={folder.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    {/* Folder header */}
+                    <button
+                      onClick={() => setCollapsedDocFolders(prev => {
+                        const n = new Set(prev);
+                        if (n.has(folder.id)) n.delete(folder.id); else n.add(folder.id);
+                        return n;
+                      })}
+                      style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#F8FAFC", border: "none", cursor: "pointer", textAlign: "left" }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {collapsed ? <ChevronRight size={14} color="#94A3B8" /> : <ChevronDown size={14} color="#94A3B8" />}
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{folder.name}</span>
+                        <span style={{ fontSize: 11, color: "#94A3B8" }}>{folder.files.length} file{folder.files.length !== 1 ? "s" : ""}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 12, color: selCount > 0 ? "#6366F1" : "#CBD5E1", fontWeight: 600 }}>
+                          {selCount > 0 ? `${selCount} selected` : "none selected"}
+                        </span>
+                        {supported.length > 0 && (
+                          <span
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedDocIds(prev => {
+                                const n = new Set(prev);
+                                if (allSelected) {
+                                  supported.forEach(f => n.delete(f.id));
+                                } else {
+                                  supported.forEach(f => n.add(f.id));
+                                }
+                                return n;
+                              });
+                            }}
+                            style={{ fontSize: 11, color: "#6366F1", fontWeight: 600, cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", whiteSpace: "nowrap" }}
+                          >
+                            {allSelected ? "Clear" : "Select all"}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+
+                    {!collapsed && folder.files.map(f => {
+                      const isLarge = f.size !== null && f.size > 10 * 1024 * 1024;
+                      return (
+                        <label
+                          key={f.id}
+                          style={{
+                            display: "flex", alignItems: "flex-start", gap: 10,
+                            padding: "9px 14px 9px 28px", borderTop: "1px solid #F8FAFC",
+                            cursor: f.is_supported ? "pointer" : "default",
+                            opacity: f.is_supported ? 1 : 0.45,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedDocIds.has(f.id)}
+                            disabled={!f.is_supported}
+                            onChange={() => {
+                              if (!f.is_supported) return;
+                              setSelectedDocIds(prev => {
+                                const n = new Set(prev);
+                                if (n.has(f.id)) n.delete(f.id); else n.add(f.id);
+                                return n;
+                              });
+                            }}
+                            style={{ marginTop: 3, accentColor: "#6366F1", flexShrink: 0 }}
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: f.is_supported ? "#0F172A" : "#94A3B8" }}>
+                                {f.name}
+                              </span>
+                              {!f.is_supported && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 4, padding: "1px 5px" }}>
+                                  Unsupported
+                                </span>
+                              )}
+                              {f.is_supported && isLarge && (
+                                <span style={{ fontSize: 10, color: "#92400E", background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 4, padding: "1px 5px" }}>
+                                  Large file — may take longer
+                                </span>
+                              )}
+                            </div>
+                            {f.size !== null && (
+                              <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>
+                                {f.size < 1024 * 1024
+                                  ? `${(f.size / 1024).toFixed(0)} KB`
+                                  : `${(f.size / 1024 / 1024).toFixed(1)} MB`}
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* C — Upload additional documents */}
         <div style={{ marginBottom: 28, paddingTop: 8, borderTop: "1px solid #E2E8F0" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#0F172A" }}>ADDITIONAL DOCUMENTS</div>
@@ -767,9 +940,14 @@ export default function HoldPointTab({ company_id, projects }: Props) {
             cursor: totalDocCount === 0 ? "default" : "pointer",
           }}
         >
-          {totalDocCount === 0
-            ? "Generate Hold Point Register"
-            : `Generate Hold Point Register — ${selDrawingCount > 0 ? `${selDrawingCount} drawing${selDrawingCount !== 1 ? "s" : ""}` : ""}${selDrawingCount > 0 && uploads.length > 0 ? " + " : ""}${uploads.length > 0 ? `${uploads.length} uploaded document${uploads.length !== 1 ? "s" : ""}` : ""}`}
+          {(() => {
+            if (totalDocCount === 0) return "Generate Hold Point Register";
+            const parts: string[] = [];
+            if (selDrawingCount    > 0) parts.push(`${selDrawingCount} drawing${selDrawingCount !== 1 ? "s" : ""}`);
+            if (uploads.length     > 0) parts.push(`${uploads.length} uploaded doc${uploads.length !== 1 ? "s" : ""}`);
+            if (selProcoreDocCount > 0) parts.push(`${selProcoreDocCount} Procore doc${selProcoreDocCount !== 1 ? "s" : ""}`);
+            return `Generate Hold Point Register — ${parts.join(" + ")}`;
+          })()}
         </button>
         {totalDocCount > 0 && (
           <div style={{ marginTop: 8, fontSize: 12, color: "#94A3B8" }}>Estimated time: ~{estSeconds} seconds</div>
@@ -861,7 +1039,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
         </div>
         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
           <button
-            onClick={() => { setUploads([]); setStep(1); }}
+            onClick={() => { setUploads([]); setSkippedDocs([]); setStep(1); }}
             style={GHOST_BTN}
           >
             <RefreshCw size={13} /> Re-generate
@@ -915,6 +1093,34 @@ export default function HoldPointTab({ company_id, projects }: Props) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Skipped Procore documents notice */}
+      {skippedDocs.length > 0 && (
+        <div style={{
+          padding: "10px 14px", background: "#FFFBEB", border: "1px solid #FDE68A",
+          borderRadius: 8, marginBottom: 12, fontSize: 13,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontWeight: 700, color: "#92400E" }}>⚠</span>
+            <span style={{ fontWeight: 600, color: "#92400E" }}>
+              {skippedDocs.length} Procore document{skippedDocs.length !== 1 ? "s" : ""} skipped
+            </span>
+            <button
+              onClick={() => setSkippedDocs([])}
+              style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: 0, display: "flex", alignItems: "center" }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {skippedDocs.map((d, i) => (
+              <div key={i} style={{ fontSize: 12, color: "#92400E" }}>
+                <span style={{ fontWeight: 600 }}>{d.name}</span> — {d.reason}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

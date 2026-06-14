@@ -39,6 +39,22 @@ interface HoldPoint extends RawHoldPoint {
   id: string;
 }
 
+interface ProcoreDocInput {
+  id:            number;
+  name:          string;
+  url:           string;
+  content_type?: string;
+  size?:         number | null;
+}
+
+interface SkippedDoc {
+  name:   string;
+  reason: string;
+}
+
+const PROCORE_DOC_LIMIT = 15;           // max Procore Documents processed per run
+const PDF_SIZE_LIMIT    = 15 * 1024 * 1024; // 15 MB per file
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -135,11 +151,12 @@ export async function POST(request: NextRequest) {
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   let body: {
-    company_id?:   string;
-    project_id?:   string;
-    project_name?: string;
-    drawings?:     DrawingInput[];
-    uploads?:      UploadInput[];
+    company_id?:        string;
+    project_id?:        string;
+    project_name?:      string;
+    drawings?:          DrawingInput[];
+    uploads?:           UploadInput[];
+    procore_documents?: ProcoreDocInput[];
   };
   try {
     body = await request.json() as typeof body;
@@ -147,12 +164,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { company_id, project_id, project_name, drawings = [], uploads = [] } = body;
+  const { company_id, project_id, project_name, drawings = [], uploads = [], procore_documents = [] } = body;
   if (!company_id || !project_id || !project_name) {
     return NextResponse.json({ error: "company_id, project_id, project_name required" }, { status: 400 });
   }
-  if (drawings.length === 0 && uploads.length === 0) {
-    return NextResponse.json({ error: "At least one drawing or upload required" }, { status: 400 });
+  if (drawings.length === 0 && uploads.length === 0 && procore_documents.length === 0) {
+    return NextResponse.json({ error: "At least one drawing, upload, or Procore document required" }, { status: 400 });
   }
 
   const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -190,6 +207,54 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // ── Procore Documents branch ─────────────────────────────────────────────
+  const skippedDocuments: SkippedDoc[] = [];
+
+  // Report anything beyond the per-run cap as skipped before processing
+  for (const doc of procore_documents.slice(PROCORE_DOC_LIMIT)) {
+    skippedDocuments.push({ name: doc.name, reason: "run limit reached — process fewer documents at once" });
+  }
+
+  for (const doc of procore_documents.slice(0, PROCORE_DOC_LIMIT)) {
+    // Only PDFs go to the Claude document extraction path
+    const ext   = doc.name.match(/\.[^.]+$/)?.[0]?.toLowerCase() ?? "";
+    const isPdf = doc.content_type === "application/pdf" || ext === ".pdf";
+
+    if (!isPdf) {
+      skippedDocuments.push({ name: doc.name, reason: "unsupported file type (PDF files only)" });
+      continue;
+    }
+
+    // Pre-check size if the API told us upfront (avoids a wasteful download)
+    if (doc.size !== null && doc.size !== undefined && doc.size > PDF_SIZE_LIMIT) {
+      skippedDocuments.push({
+        name:   doc.name,
+        reason: `file too large (${(doc.size / 1024 / 1024).toFixed(1)} MB — limit is 15 MB)`,
+      });
+      continue;
+    }
+
+    const buf = await downloadPdf(doc.url, token);
+    if (!buf) {
+      skippedDocuments.push({ name: doc.name, reason: "download failed" });
+      continue;
+    }
+
+    // Post-check size (catches cases where size was unknown before download)
+    if (buf.length > PDF_SIZE_LIMIT) {
+      skippedDocuments.push({
+        name:   doc.name,
+        reason: `file too large (${(buf.length / 1024 / 1024).toFixed(1)} MB — limit is 15 MB)`,
+      });
+      continue;
+    }
+
+    const points = await extractHoldPoints(client, doc.name, "", buf.toString("base64"));
+    sourcesUsed.push(doc.name);
+    allRaw.push(...points);
+  }
+  // ── End Procore Documents ─────────────────────────────────────────────────
+
   const holdPoints = sortAndNumber(deduplicateHoldPoints(allRaw));
 
   await supabase
@@ -199,5 +264,10 @@ export async function POST(request: NextRequest) {
       { onConflict: "company_id,project_id" },
     );
 
-  return NextResponse.json({ hold_points: holdPoints, total: holdPoints.length, sources_used: sourcesUsed });
+  return NextResponse.json({
+    hold_points:        holdPoints,
+    total:              holdPoints.length,
+    sources_used:       sourcesUsed,
+    skipped_documents:  skippedDocuments,
+  });
 }

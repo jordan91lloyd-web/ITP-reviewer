@@ -213,6 +213,27 @@ Deduplication key: `description.toLowerCase() + "|" + stage.toLowerCase()`. Do N
 - **Per-discipline bulk select**: each discipline header has a "Select all / Clear" control scoped to that group only. The global "Select all / Clear all" at the top remains.
 - **Recommended badge**: drawings auto-selected by triage show a small "Recommended" pill. The badge is driven by `recommendedIds` (a Set populated from the API response on project load). Manually ticked drawings that were not in the original recommendation set show no badge.
 
+### Procore Documents picker (`/api/holdpoint/procore-documents` + `HoldPointTab.tsx` step 1)
+New capability: lets users browse the project's Procore Documents tool and select files (PDFs) to feed into the same hold-point extraction pipeline as drawings.
+
+**API route** `GET /api/holdpoint/procore-documents?company_id=X&project_id=Y`:
+- Lists folders via `GET /rest/v1.0/projects/{project_id}/folders` using `procoreGetAllPages` (exported from `procore.ts`). `company_id` is sent as **both** a query param and `Procore-Company-Id` header on every call.
+- For each folder, fetches files via `GET /rest/v1.0/projects/{project_id}/documents?filters[folder_id]={id}` — URL built manually to avoid bracket percent-encoding.
+- Caps at 20 folders to stay within the 300 s wall-clock budget; processes in parallel.
+- Returns `{ folders: DocFolder[] }` where each folder has `{ id, name, parent_id, files: DocFile[] }`. Each `DocFile` includes `is_supported: boolean` (true for PDF only; `.docx` handled as unsupported at this stage). Empty folders are omitted. Returns `{ folders: [] }` gracefully if Documents tool is inaccessible.
+
+**generate/route.ts** new `procore_documents` body field `{ id, name, url, content_type?, size? }[]`:
+- Cap: 15 documents per run. Files beyond the cap are reported as `skipped_documents` with reason "run limit reached".
+- Only PDFs are extracted. Non-PDF types → `skipped_documents` with reason "unsupported file type (PDF files only)".
+- Per-file size cap: 15 MB. Size pre-checked from `doc.size` before download; post-checked after download in case size was unknown. Oversized files → `skipped_documents`.
+- Download via existing `downloadPdf()` (handles both Procore and S3 presigned URLs). Extraction via existing `extractHoldPoints()`. Results pooled into the same `allRaw[]` → dedup → sortAndNumber → save.
+- Response now includes `skipped_documents: { name, reason }[]` alongside `hold_points`.
+- **Page-filtering for very large PDFs is a future step** — documents under the 15 MB cap are sent whole.
+
+**UI** (step 1, between drawings and upload zone):
+- Folders listed with collapsible groups (collapsed by default). Per-folder "Select all / Clear". Unsupported files shown greyed with "Unsupported" tag, not selectable. Files over 10 MB show "Large file — may take longer" warning. Selected doc IDs passed to generate as `procore_documents`.
+- After generation, any `skipped_documents` from the route are shown as a dismissible amber notice above the register (same position as the Add Documents merge toast).
+
 ### Supabase table
 `holdpoint_registers` — upserted on `(company_id, project_id)`. Columns: `company_id`, `project_id`, `project_name`, `hold_points` (JSONB array of `HoldPoint`), `generated_at`.
 
