@@ -12,13 +12,28 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { procoreGetAllPages } from "@/lib/procore";
 
 export const dynamic = "force-dynamic";
 
 const PROCORE_BASE = process.env.PROCORE_ENV === "production"
   ? "https://api.procore.com"
   : "https://sandbox.procore.com";
+
+// ── Defensive array extraction ───────────────────────────────────────────────
+// Procore endpoints return either a bare array [] or a wrapped object.
+// This extracts the array regardless of wrapper shape.
+function toArray<T>(data: unknown): T[] {
+  if (!data) return [];
+  if (Array.isArray(data)) return data as T[];
+  if (typeof data === "object") {
+    // Try every plausible Procore envelope key
+    for (const key of ["data", "folders", "documents", "files", "results", "items", "records"]) {
+      const val = (data as Record<string, unknown>)[key];
+      if (Array.isArray(val)) return val as T[];
+    }
+  }
+  return [];
+}
 
 function isSupportedFile(name: string, contentType?: string | null): boolean {
   if (contentType === "application/pdf") return true;
@@ -40,10 +55,12 @@ interface RawFile {
   file_size?:    number | null;
   size?:         number | null;
   url?:          string | null;
+  // Some Procore endpoints nest under a "file" sub-object
   file?: {
     url?:          string | null;
     content_type?: string | null;
     file_size?:    number | null;
+    size?:         number | null;
   } | null;
 }
 
@@ -68,6 +85,64 @@ async function requireAuth(): Promise<string | null> {
   return cookieStore.get("procore_access_token")?.value ?? null;
 }
 
+// ── Paginated folder fetch ───────────────────────────────────────────────────
+// Does NOT use procoreGetAllPages — that function spreads the raw JSON response
+// which throws if Procore returns a non-array wrapper instead of a bare array.
+// This version logs the raw body for shape discovery and extracts arrays defensively.
+async function fetchAllFolders(
+  token:     string,
+  companyId: string,
+  projectId: string,
+): Promise<RawFolder[]> {
+  const all: RawFolder[] = [];
+  const perPage = 100;
+  const hardCap = 50; // max 5 000 folders
+
+  for (let page = 1; page <= hardCap; page++) {
+    const url =
+      `${PROCORE_BASE}/rest/v1.0/folders` +
+      `?company_id=${encodeURIComponent(companyId)}` +
+      `&project_id=${encodeURIComponent(projectId)}` +
+      `&per_page=${perPage}&page=${page}`;
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization:        `Bearer ${token}`,
+        "Procore-Company-Id": companyId,
+      },
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Procore API ${res.status} on /rest/v1.0/folders page ${page}: ${body.slice(0, 300)}`);
+    }
+
+    const raw = await res.text();
+
+    // Log the raw response on page 1 so we can see the actual shape in server logs
+    if (page === 1) {
+      console.log(`[procore-documents] /rest/v1.0/folders raw response (first 800 chars):`, raw.slice(0, 800));
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      console.warn("[procore-documents] /rest/v1.0/folders returned non-JSON:", raw.slice(0, 200));
+      break;
+    }
+
+    const rows = toArray<RawFolder>(parsed);
+    console.log(`[procore-documents] /rest/v1.0/folders page ${page}: ${rows.length} folders (cumulative ${all.length + rows.length})`);
+    all.push(...rows);
+
+    if (rows.length < perPage) break; // last page
+  }
+
+  return all;
+}
+
+// ── Per-folder file fetch ────────────────────────────────────────────────────
 async function fetchFolderFiles(
   token:     string,
   projectId: string,
@@ -97,15 +172,22 @@ async function fetchFolderFiles(
     return [];
   }
 
-  const data: unknown = await res.json();
-  if (!Array.isArray(data)) return [];
+  let parsed: unknown;
+  try {
+    parsed = await res.json();
+  } catch {
+    return [];
+  }
 
-  return (data as RawFile[])
+  // Defensive: log shape of first-ever folder response (folder 0 = first in iteration)
+  const rows = toArray<RawFile>(parsed);
+
+  return rows
     .map((f): DocFile | null => {
       const name         = f.name ?? f.filename ?? `Document ${f.id}`;
       const url          = f.file?.url ?? f.url ?? "";
       const content_type = f.file?.content_type ?? f.content_type ?? "";
-      const size         = f.file?.file_size ?? f.file_size ?? f.size ?? null;
+      const size         = f.file?.file_size ?? f.file?.size ?? f.file_size ?? f.size ?? null;
       if (!url) return null;
       return {
         id:           f.id,
@@ -129,17 +211,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
   }
 
-  // Step 1 — list ALL folders (flat resource; parent_id encodes the hierarchy).
-  // Correct path: /rest/v1.0/folders with project_id as a query param.
-  // NOT /rest/v1.0/projects/{id}/folders — that path returns 404 on Procore's production API.
+  // Step 1 — list ALL folders (flat resource; parent_id encodes the hierarchy)
   let rawFolders: RawFolder[] = [];
   try {
-    rawFolders = await procoreGetAllPages<RawFolder>(
-      token,
-      `/rest/v1.0/folders`,
-      { company_id: companyId, project_id: projectId, per_page: "100" },
-      { "Procore-Company-Id": companyId },
-    );
+    rawFolders = await fetchAllFolders(token, companyId, projectId);
   } catch (err) {
     const msg    = err instanceof Error ? err.message : String(err);
     const status = msg.includes("403") ? 403 : msg.includes("404") ? 404 : 500;
@@ -151,6 +226,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (rawFolders.length === 0) {
+    console.log(`[procore-documents] No folders returned for project ${projectId}`);
     return NextResponse.json({ folders: [] });
   }
 

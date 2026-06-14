@@ -219,9 +219,10 @@ Lets users browse the project's Procore Documents tool and select files (PDFs) t
 **Confirmed Procore Documents API endpoints (empirically verified):**
 - `GET /rest/v1.0/folders?company_id=X&project_id=Y` — **flat list** of ALL folders with `parent_id` encoding hierarchy. project_id is a query param, NOT in the path. The path `/rest/v1.0/projects/{id}/folders` returns 404 and does not exist.
 - `GET /rest/v1.0/documents?company_id=X&project_id=Y&filters[folder_id]=Z` — files in one folder. NOT `/rest/v1.0/projects/{id}/documents` — that path returns 404.
-- Both are flat resources, consistent with Procore's pattern (e.g. `/rest/v1.0/drawing_revisions` also lives under projects path but `/rest/v1.0/folders` does not).
-- `filters[folder_id]` brackets must NOT be percent-encoded — use manual URL construction, never `URLSearchParams`.
+- Both are flat resources. `filters[folder_id]` brackets must NOT be percent-encoded — use manual URL construction, never `URLSearchParams`.
 - Evidence: with client_credentials token, both flat endpoints return 403 "Unpermitted access for the app owner" (endpoint exists, blocked for service account). The `/projects/{id}/folders` path returns 404 (doesn't exist). Same 403 pattern as `drawing_revisions`, which is confirmed working with user OAuth tokens.
+- **Response shape**: `/rest/v1.0/folders` is expected to return a bare JSON array `[{id, name, parent_id, ...}]`. However, Procore sometimes wraps responses in `{ data: [...] }` or similar envelopes. The route uses `toArray()` which handles bare arrays, `{ data: [...] }`, `{ folders: [...] }`, and any other common wrapper key defensively. The raw response body is logged on first page fetch for shape confirmation.
+- **Do NOT use `procoreGetAllPages`** for the folders endpoint. `procoreGetAllPages` does `all.push(...rows)` which throws if the response is a wrapped object rather than a bare array. The route uses a custom `fetchAllFolders` function instead.
 
 **API route** `GET /api/holdpoint/procore-documents?company_id=X&project_id=Y`:
 - Lists ALL folders via `procoreGetAllPages` on `/rest/v1.0/folders` with `project_id` as a query param. No folder cap.

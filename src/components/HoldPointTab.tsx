@@ -137,8 +137,11 @@ function buildDocTree(folders: DocFolder[]): DocTreeNode[] {
 }
 
 // Recursively collect all files within a node (direct files + all descendant files).
+// Guards against non-array values from unexpected API response shapes.
 function allFilesInNode(node: DocTreeNode): DocFile[] {
-  return [...node.folder.files, ...node.children.flatMap(c => allFilesInNode(c))];
+  const direct   = Array.isArray(node.folder.files) ? node.folder.files : [];
+  const children = Array.isArray(node.children) ? node.children : [];
+  return [...direct, ...children.flatMap(c => allFilesInNode(c))];
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -247,8 +250,9 @@ export default function HoldPointTab({ company_id, projects }: Props) {
 
     // Load Procore Documents folder tree
     if (docsRes?.ok) {
-      const docsJson = await docsRes.json() as { folders: DocFolder[] };
-      const folders  = docsJson.folders ?? [];
+      const docsJson = await docsRes.json() as { folders?: unknown };
+      // Guard: docsJson.folders must be an actual array (Procore shape may vary)
+      const folders: DocFolder[] = Array.isArray(docsJson.folders) ? docsJson.folders as DocFolder[] : [];
       setProcoreDocs(folders);
       // Collapse all folders by default; user expands what they need
       setCollapsedDocFolders(new Set(folders.map(f => f.id)));
