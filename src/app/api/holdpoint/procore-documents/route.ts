@@ -3,8 +3,13 @@
 // company_id is sent as both a query param AND the Procore-Company-Id header on every call.
 //
 // Confirmed Procore Documents endpoints (flat resources, NOT nested under /projects/{id}/):
-//   Folders: GET /rest/v1.0/folders?company_id=X&project_id=Y
-//   Files:   GET /rest/v1.0/documents?company_id=X&project_id=Y&filters[folder_id]=Z
+//   Folders:   GET /rest/v1.0/folders?company_id=X&project_id=Y
+//   Documents: GET /rest/v1.0/documents?company_id=X&project_id=Y  (paginated, all at once)
+//
+// We fetch ALL documents for the project in one paginated call (no per-folder requests),
+// then group by the document's folder_id (or parent_id) field. This is more reliable than
+// per-folder filtering because it avoids bracket encoding issues and works regardless of
+// how Procore implements the filters[] param server-side.
 //
 // The response is a flat array of DocFolder (each with parent_id), from which the
 // client builds the nested tree for display. ALL folders are returned, including
@@ -55,6 +60,9 @@ interface RawFile {
   file_size?:    number | null;
   size?:         number | null;
   url?:          string | null;
+  // Folder reference — Procore may use folder_id or parent_id on document objects
+  folder_id?:    number | null;
+  parent_id?:    number | null;
   // Some Procore endpoints nest under a "file" sub-object
   file?: {
     url?:          string | null;
@@ -86,9 +94,6 @@ async function requireAuth(): Promise<string | null> {
 }
 
 // ── Paginated folder fetch ───────────────────────────────────────────────────
-// Does NOT use procoreGetAllPages — that function spreads the raw JSON response
-// which throws if Procore returns a non-array wrapper instead of a bare array.
-// This version logs the raw body for shape discovery and extracts arrays defensively.
 async function fetchAllFolders(
   token:     string,
   companyId: string,
@@ -119,9 +124,8 @@ async function fetchAllFolders(
 
     const raw = await res.text();
 
-    // Log the raw response on page 1 so we can see the actual shape in server logs
     if (page === 1) {
-      console.log(`[procore-documents] /rest/v1.0/folders raw response (first 800 chars):`, raw.slice(0, 800));
+      console.log(`[procore-documents] /rest/v1.0/folders raw response (first 600 chars):`, raw.slice(0, 600));
     }
 
     let parsed: unknown;
@@ -133,72 +137,95 @@ async function fetchAllFolders(
     }
 
     const rows = toArray<RawFolder>(parsed);
-    console.log(`[procore-documents] /rest/v1.0/folders page ${page}: ${rows.length} folders (cumulative ${all.length + rows.length})`);
+    console.log(`[procore-documents] /rest/v1.0/folders page ${page}: ${rows.length} folders`);
     all.push(...rows);
 
-    if (rows.length < perPage) break; // last page
+    if (rows.length < perPage) break;
   }
 
   return all;
 }
 
-// ── Per-folder file fetch ────────────────────────────────────────────────────
-async function fetchFolderFiles(
+// ── Fetch ALL documents for the project (no per-folder filtering) ────────────
+// Returns the complete flat list; caller groups by folder_id / parent_id.
+// One paginated call per page is far more reliable than N per-folder requests.
+async function fetchAllDocuments(
   token:     string,
-  projectId: string,
   companyId: string,
-  folderId:  number,
-): Promise<DocFile[]> {
-  // Correct Procore endpoint: /rest/v1.0/documents (flat resource, project_id as query param).
-  // NOT /rest/v1.0/projects/{id}/documents — that path returns 404.
-  // Build URL manually — URLSearchParams percent-encodes brackets (filters[folder_id]
-  // → filters%5Bfolder_id%5D) and Procore's Rails backend requires literal brackets.
-  const url =
-    `${PROCORE_BASE}/rest/v1.0/documents` +
-    `?company_id=${encodeURIComponent(companyId)}` +
-    `&project_id=${encodeURIComponent(projectId)}` +
-    `&filters[folder_id]=${folderId}` +
-    `&per_page=100`;
+  projectId: string,
+): Promise<RawFile[]> {
+  const all: RawFile[] = [];
+  const perPage = 100;
+  const hardCap = 100; // max 10 000 documents
 
-  const res = await fetch(url, {
-    headers: {
-      Authorization:        `Bearer ${token}`,
-      "Procore-Company-Id": companyId,
-    },
-  });
+  for (let page = 1; page <= hardCap; page++) {
+    const url =
+      `${PROCORE_BASE}/rest/v1.0/documents` +
+      `?company_id=${encodeURIComponent(companyId)}` +
+      `&project_id=${encodeURIComponent(projectId)}` +
+      `&per_page=${perPage}&page=${page}`;
 
-  if (!res.ok) {
-    console.warn(`[procore-documents] folder ${folderId} files → HTTP ${res.status}`);
-    return [];
+    const res = await fetch(url, {
+      headers: {
+        Authorization:        `Bearer ${token}`,
+        "Procore-Company-Id": companyId,
+      },
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      // 403 means the Documents tool is not accessible for this project/user
+      console.warn(`[procore-documents] /rest/v1.0/documents page ${page}: HTTP ${res.status} — ${body.slice(0, 200)}`);
+      // Don't throw — return whatever we've got so far (may be empty)
+      break;
+    }
+
+    const raw = await res.text();
+
+    if (page === 1) {
+      // Log the full first-page response so we can see the actual shape in server logs
+      console.log(`[procore-documents] /rest/v1.0/documents raw response page 1 (first 1200 chars):`, raw.slice(0, 1200));
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      console.warn("[procore-documents] /rest/v1.0/documents returned non-JSON:", raw.slice(0, 200));
+      break;
+    }
+
+    const rows = toArray<RawFile>(parsed);
+    console.log(`[procore-documents] /rest/v1.0/documents page ${page}: ${rows.length} documents (cumulative ${all.length + rows.length})`);
+
+    if (page === 1 && rows.length > 0) {
+      // Log shape of first doc so we know the actual field names
+      console.log(`[procore-documents] First document keys: ${Object.keys(rows[0] as object).join(", ")}`);
+      console.log(`[procore-documents] First document sample:`, JSON.stringify(rows[0], null, 2).slice(0, 600));
+    }
+
+    all.push(...rows);
+
+    if (rows.length < perPage) break;
   }
 
-  let parsed: unknown;
-  try {
-    parsed = await res.json();
-  } catch {
-    return [];
-  }
+  return all;
+}
 
-  // Defensive: log shape of first-ever folder response (folder 0 = first in iteration)
-  const rows = toArray<RawFile>(parsed);
-
-  return rows
-    .map((f): DocFile | null => {
-      const name         = f.name ?? f.filename ?? `Document ${f.id}`;
-      const url          = f.file?.url ?? f.url ?? "";
-      const content_type = f.file?.content_type ?? f.content_type ?? "";
-      const size         = f.file?.file_size ?? f.file?.size ?? f.file_size ?? f.size ?? null;
-      if (!url) return null;
-      return {
-        id:           f.id,
-        name,
-        url,
-        content_type,
-        size,
-        is_supported: isSupportedFile(name, content_type),
-      };
-    })
-    .filter((f): f is DocFile => f !== null);
+function rawFileToDocFile(f: RawFile): DocFile | null {
+  const name         = f.name ?? f.filename ?? `Document ${f.id}`;
+  const url          = f.file?.url ?? f.url ?? "";
+  const content_type = f.file?.content_type ?? f.content_type ?? "";
+  const size         = f.file?.file_size ?? f.file?.size ?? f.file_size ?? f.size ?? null;
+  if (!url) return null;
+  return {
+    id:           f.id,
+    name,
+    url,
+    content_type,
+    size,
+    is_supported: isSupportedFile(name, content_type),
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -232,20 +259,42 @@ export async function GET(request: NextRequest) {
 
   console.log(`[procore-documents] ${rawFolders.length} folders for project ${projectId}`);
 
-  // Step 2 — fetch files for every folder in parallel (no folder cap)
-  const results: DocFolder[] = await Promise.all(
-    rawFolders.map(async (folder): Promise<DocFolder> => {
-      const files = await fetchFolderFiles(token, projectId, companyId, folder.id).catch(() => []);
-      return {
-        id:        folder.id,
-        name:      folder.name ?? `Folder ${folder.id}`,
-        parent_id: folder.parent_id ?? null,
-        files,
-      };
-    }),
-  );
+  // Step 2 — fetch ALL documents for the project in one paginated call
+  const rawDocs = await fetchAllDocuments(token, companyId, projectId).catch(() => [] as RawFile[]);
+  console.log(`[procore-documents] ${rawDocs.length} total documents fetched`);
+
+  // Step 3 — group documents by their folder reference
+  // Procore documents have a folder_id or parent_id field pointing to their containing folder
+  const filesByFolder = new Map<number, DocFile[]>();
+  let docsWithNoFolder = 0;
+
+  for (const raw of rawDocs) {
+    // Try folder_id first, then parent_id
+    const folderId = raw.folder_id ?? raw.parent_id ?? null;
+    if (folderId === null) {
+      docsWithNoFolder++;
+      continue;
+    }
+    const docFile = rawFileToDocFile(raw);
+    if (!docFile) continue; // skip docs with no URL
+
+    if (!filesByFolder.has(folderId)) filesByFolder.set(folderId, []);
+    filesByFolder.get(folderId)!.push(docFile);
+  }
+
+  if (docsWithNoFolder > 0) {
+    console.log(`[procore-documents] ${docsWithNoFolder} documents had no folder_id or parent_id`);
+  }
+  console.log(`[procore-documents] Documents grouped into ${filesByFolder.size} folders`);
+
+  // Step 4 — assign file groups to folder records
+  const results: DocFolder[] = rawFolders.map((folder): DocFolder => ({
+    id:        folder.id,
+    name:      folder.name ?? `Folder ${folder.id}`,
+    parent_id: folder.parent_id ?? null,
+    files:     filesByFolder.get(folder.id) ?? [],
+  }));
 
   // Return ALL folders including those with no direct files (they may contain subfolders).
-  // The client builds the nested tree from parent_id relationships.
   return NextResponse.json({ folders: results });
 }

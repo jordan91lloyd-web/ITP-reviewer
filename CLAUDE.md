@@ -216,18 +216,17 @@ Deduplication key: `description.toLowerCase() + "|" + stage.toLowerCase()`. Do N
 ### Procore Documents picker (`/api/holdpoint/procore-documents` + `HoldPointTab.tsx` step 1)
 Lets users browse the project's Procore Documents tool and select files (PDFs) to feed into the same hold-point extraction pipeline as drawings.
 
-**Confirmed Procore Documents API endpoints (empirically verified):**
-- `GET /rest/v1.0/folders?company_id=X&project_id=Y` — **flat list** of ALL folders with `parent_id` encoding hierarchy. project_id is a query param, NOT in the path. The path `/rest/v1.0/projects/{id}/folders` returns 404 and does not exist.
-- `GET /rest/v1.0/documents?company_id=X&project_id=Y&filters[folder_id]=Z` — files in one folder. NOT `/rest/v1.0/projects/{id}/documents` — that path returns 404.
-- Both are flat resources. `filters[folder_id]` brackets must NOT be percent-encoded — use manual URL construction, never `URLSearchParams`.
-- Evidence: with client_credentials token, both flat endpoints return 403 "Unpermitted access for the app owner" (endpoint exists, blocked for service account). The `/projects/{id}/folders` path returns 404 (doesn't exist). Same 403 pattern as `drawing_revisions`, which is confirmed working with user OAuth tokens.
-- **Response shape**: `/rest/v1.0/folders` is expected to return a bare JSON array `[{id, name, parent_id, ...}]`. However, Procore sometimes wraps responses in `{ data: [...] }` or similar envelopes. The route uses `toArray()` which handles bare arrays, `{ data: [...] }`, `{ folders: [...] }`, and any other common wrapper key defensively. The raw response body is logged on first page fetch for shape confirmation.
-- **Do NOT use `procoreGetAllPages`** for the folders endpoint. `procoreGetAllPages` does `all.push(...rows)` which throws if the response is a wrapped object rather than a bare array. The route uses a custom `fetchAllFolders` function instead.
+**Confirmed Procore Documents API endpoints (empirically verified via 403 vs 404 probe):**
+- `GET /rest/v1.0/folders?company_id=X&project_id=Y` — **flat list** of ALL folders with `parent_id` encoding hierarchy. project_id is a query param, NOT in the path. `/rest/v1.0/projects/{id}/folders` → 404 (doesn't exist).
+- `GET /rest/v1.0/documents?company_id=X&project_id=Y` — **flat list of ALL documents** for the project. NO per-folder filtering needed — each document has a `folder_id` (or `parent_id`) field which the route uses to group by folder. This is more reliable than per-folder calls with `filters[folder_id]`.
+- Both flat endpoints return 403 for service account tokens (endpoint exists, blocked for service account); they work with user OAuth tokens. `/rest/v1.0/projects/{id}/folders` and `/rest/v1.0/folders/{id}/documents` return 404 (don't exist).
+- **Do NOT use `procoreGetAllPages`** for these endpoints. It does `all.push(...rows)` which throws if Procore returns a wrapped object. Use the custom `fetchAllFolders` / `fetchAllDocuments` functions instead, which use `toArray()` defensively.
+- **`toArray()`** handles bare arrays, `{ data: [...] }`, `{ folders: [...] }`, `{ documents: [...] }`, and any other common wrapper key. The raw response body is logged on first page fetch for shape confirmation.
 
 **API route** `GET /api/holdpoint/procore-documents?company_id=X&project_id=Y`:
-- Lists ALL folders via `procoreGetAllPages` on `/rest/v1.0/folders` with `project_id` as a query param. No folder cap.
-- `company_id` sent as both query param and `Procore-Company-Id` header on every call (inviolable).
-- Fetches files for every folder in parallel via `/rest/v1.0/documents?...&filters[folder_id]=Z` (manual URL, unencoded brackets).
+- Step 1: `fetchAllFolders` — paginated, returns ALL folders with `parent_id`. `company_id` as both query param and header.
+- Step 2: `fetchAllDocuments` — paginated, returns ALL documents for the project in one request sequence. First-page raw response logged for shape discovery.
+- Step 3: Documents grouped by `folder_id ?? parent_id` into a Map, then assigned to folders.
 - Returns ALL folders including parent folders with no direct files. `parent_id` preserved for tree-building.
 - Errors surfaced with real HTTP status codes (403/404/500) — NOT silently swallowed into `{ folders: [] }`.
 
