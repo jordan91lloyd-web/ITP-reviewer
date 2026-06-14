@@ -2,6 +2,10 @@
 // Returns the project's Documents tool folder/file tree for the Hold Point picker.
 // company_id is sent as both a query param AND the Procore-Company-Id header on every call.
 //
+// Confirmed Procore Documents endpoints (flat resources, NOT nested under /projects/{id}/):
+//   Folders: GET /rest/v1.0/folders?company_id=X&project_id=Y
+//   Files:   GET /rest/v1.0/documents?company_id=X&project_id=Y&filters[folder_id]=Z
+//
 // The response is a flat array of DocFolder (each with parent_id), from which the
 // client builds the nested tree for display. ALL folders are returned, including
 // parent folders that have no direct files but contain subfolders.
@@ -70,11 +74,14 @@ async function fetchFolderFiles(
   companyId: string,
   folderId:  number,
 ): Promise<DocFile[]> {
+  // Correct Procore endpoint: /rest/v1.0/documents (flat resource, project_id as query param).
+  // NOT /rest/v1.0/projects/{id}/documents — that path returns 404.
   // Build URL manually — URLSearchParams percent-encodes brackets (filters[folder_id]
   // → filters%5Bfolder_id%5D) and Procore's Rails backend requires literal brackets.
   const url =
-    `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents` +
+    `${PROCORE_BASE}/rest/v1.0/documents` +
     `?company_id=${encodeURIComponent(companyId)}` +
+    `&project_id=${encodeURIComponent(projectId)}` +
     `&filters[folder_id]=${folderId}` +
     `&per_page=100`;
 
@@ -122,13 +129,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
   }
 
-  // Step 1 — list ALL folders (flat list; parent_id encodes the hierarchy)
+  // Step 1 — list ALL folders (flat resource; parent_id encodes the hierarchy).
+  // Correct path: /rest/v1.0/folders with project_id as a query param.
+  // NOT /rest/v1.0/projects/{id}/folders — that path returns 404 on Procore's production API.
   let rawFolders: RawFolder[] = [];
   try {
     rawFolders = await procoreGetAllPages<RawFolder>(
       token,
-      `/rest/v1.0/projects/${projectId}/folders`,
-      { company_id: companyId, per_page: "100" },
+      `/rest/v1.0/folders`,
+      { company_id: companyId, project_id: projectId, per_page: "100" },
       { "Procore-Company-Id": companyId },
     );
   } catch (err) {

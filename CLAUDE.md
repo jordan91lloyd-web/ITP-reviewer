@@ -216,15 +216,17 @@ Deduplication key: `description.toLowerCase() + "|" + stage.toLowerCase()`. Do N
 ### Procore Documents picker (`/api/holdpoint/procore-documents` + `HoldPointTab.tsx` step 1)
 Lets users browse the project's Procore Documents tool and select files (PDFs) to feed into the same hold-point extraction pipeline as drawings.
 
-**Real Procore API behaviour:**
-- `GET /rest/v1.0/projects/{project_id}/folders` returns a **flat list** of ALL folders with `parent_id` encoding the hierarchy. It is NOT recursive — the client must build the tree.
-- `GET /rest/v1.0/projects/{project_id}/documents?filters[folder_id]={id}` returns files directly inside one folder. Subfolders require separate calls.
+**Confirmed Procore Documents API endpoints (empirically verified):**
+- `GET /rest/v1.0/folders?company_id=X&project_id=Y` — **flat list** of ALL folders with `parent_id` encoding hierarchy. project_id is a query param, NOT in the path. The path `/rest/v1.0/projects/{id}/folders` returns 404 and does not exist.
+- `GET /rest/v1.0/documents?company_id=X&project_id=Y&filters[folder_id]=Z` — files in one folder. NOT `/rest/v1.0/projects/{id}/documents` — that path returns 404.
+- Both are flat resources, consistent with Procore's pattern (e.g. `/rest/v1.0/drawing_revisions` also lives under projects path but `/rest/v1.0/folders` does not).
 - `filters[folder_id]` brackets must NOT be percent-encoded — use manual URL construction, never `URLSearchParams`.
+- Evidence: with client_credentials token, both flat endpoints return 403 "Unpermitted access for the app owner" (endpoint exists, blocked for service account). The `/projects/{id}/folders` path returns 404 (doesn't exist). Same 403 pattern as `drawing_revisions`, which is confirmed working with user OAuth tokens.
 
 **API route** `GET /api/holdpoint/procore-documents?company_id=X&project_id=Y`:
-- Lists ALL folders via `procoreGetAllPages` on `/rest/v1.0/projects/{project_id}/folders`. No folder cap.
+- Lists ALL folders via `procoreGetAllPages` on `/rest/v1.0/folders` with `project_id` as a query param. No folder cap.
 - `company_id` sent as both query param and `Procore-Company-Id` header on every call (inviolable).
-- Fetches files for every folder in parallel (manual URL, unencoded brackets).
+- Fetches files for every folder in parallel via `/rest/v1.0/documents?...&filters[folder_id]=Z` (manual URL, unencoded brackets).
 - Returns ALL folders including parent folders with no direct files. `parent_id` preserved for tree-building.
 - Errors surfaced with real HTTP status codes (403/404/500) — NOT silently swallowed into `{ folders: [] }`.
 
