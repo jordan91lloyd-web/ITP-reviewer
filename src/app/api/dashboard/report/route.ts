@@ -4,9 +4,14 @@
 // counts (live Procore, Sydney timezone), avg score + band distribution (Supabase),
 // and AI stage summary (project_financial_snapshots cache).
 //
-// Procore calls are parallelised with a concurrency cap of 5 to avoid rate limits.
-// If a project's Procore fetch fails, that project is returned with procore_error set
-// and counts nulled — it does NOT fail the whole report.
+// Rate-limit handling:
+//   • Projects are fetched in serial batches of 2 with 600 ms between batches.
+//   • Each project's getInspections() call retries up to 3 times on 429, with
+//     exponential back-off (1 s → 2 s → 4 s). Retry-After is not exposed by
+//     procoreGet, so fixed back-off is used instead.
+//   • Only after all retries are exhausted is a project marked "Data unavailable".
+//   • Future: add a short-lived cache (e.g. 5-minute Supabase snapshot) so
+//     repeated refreshes don't re-pull every project from Procore.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -47,25 +52,63 @@ function sydneyWindowStart(daysBack: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// ── Concurrency limiter ───────────────────────────────────────────────────────
+// ── Rate-limit-aware request helpers ─────────────────────────────────────────
 
-async function runWithConcurrency<T>(
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Runs tasks in serial batches. Each batch runs batchSize tasks concurrently;
+ * between batches there is a delayMs pause. This keeps Procore API load low
+ * while still parallelising within each small batch.
+ */
+async function runInBatches<T>(
   tasks: (() => Promise<T>)[],
-  limit: number,
+  batchSize: number,
+  delayMs: number,
 ): Promise<T[]> {
-  const results: T[] = new Array(tasks.length);
-  let idx = 0;
-
-  async function worker() {
-    while (idx < tasks.length) {
-      const i = idx++;
-      results[i] = await tasks[i]();
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(t => t()));
+    results.push(...batchResults);
+    if (i + batchSize < tasks.length) {
+      await sleep(delayMs);
     }
   }
-
-  const workers = Array.from({ length: Math.min(limit, tasks.length) }, worker);
-  await Promise.all(workers);
   return results;
+}
+
+/**
+ * Wraps getInspections with exponential back-off retry on 429.
+ * procoreGet throws "Procore API error 429 on ..." — we detect by message.
+ * Back-off: 1 s, 2 s, 4 s (3 retries max), then rethrows.
+ */
+async function getInspectionsWithRetry(
+  accessToken: string,
+  projectId:  number,
+  companyId:  number,
+): Promise<Awaited<ReturnType<typeof getInspections>>> {
+  const backoffs = [1000, 2000, 4000];
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= backoffs.length; attempt++) {
+    try {
+      return await getInspections(accessToken, projectId, companyId);
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      const is429 = msg.includes("429");
+      if (is429 && attempt < backoffs.length) {
+        const waitMs = backoffs[attempt];
+        console.warn(`[report] 429 on project ${projectId}, retry ${attempt + 1}/${backoffs.length} after ${waitMs}ms`);
+        await sleep(waitMs);
+        continue;
+      }
+      break; // non-429, or retries exhausted
+    }
+  }
+  throw lastErr;
 }
 
 // ── Response types ────────────────────────────────────────────────────────────
@@ -196,7 +239,7 @@ export async function GET(request: NextRequest) {
   const window7  = sydneyWindowStart(7);
   const window30 = sydneyWindowStart(30);
 
-  // ── 5. Fetch inspections per project (parallelised, cap 5) ───────────────
+  // ── 5. Fetch inspections per project (batches of 2, 600 ms between batches) ─
   const tasks = visibleProjects.map(project => async (): Promise<ProjectReportRow> => {
     const supaStats = statsMap.get(project.id);
     const snapshot  = snapshotMap.get(project.id);
@@ -233,9 +276,9 @@ export async function GET(request: NextRequest) {
       snapshot_generated_at: snapshot?.generated_at ?? null,
     };
 
-    // Live Procore fetch
+    // Live Procore fetch — retry on 429 before marking unavailable
     try {
-      const inspections = await getInspections(accessToken, project.id, companyId);
+      const inspections = await getInspectionsWithRetry(accessToken, project.id, companyId);
       // Only ITP-named inspections (same filter as the dashboard)
       const itps = inspections.filter(i => i.name?.trim().toLowerCase().startsWith("itp"));
 
@@ -291,7 +334,7 @@ export async function GET(request: NextRequest) {
     }
   });
 
-  const rows = await runWithConcurrency(tasks, 5);
+  const rows = await runInBatches(tasks, 2, 600);
 
   // Sort by project number ascending (matching the projects route sort)
   rows.sort((a, b) => {

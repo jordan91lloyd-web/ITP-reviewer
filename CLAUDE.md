@@ -101,9 +101,12 @@ Accessible via the **Report** tab in the dashboard nav. On-screen only (PDF expo
 ### Route: `GET /api/dashboard/report?company_id=X`
 - File: `src/app/api/dashboard/report/route.ts`
 - Fetches project list from Procore, excludes hidden projects, pulls review_records + snapshots from Supabase.
-- Per-project `getInspections()` calls run with concurrency cap of 5 to avoid rate limits.
+- Per-project `getInspections()` calls run in **serial batches of 2** with a **600 ms pause between batches** (`runInBatches`). Do NOT raise concurrency back to 5 — it trips Procore's rate limit (429) when there are many projects.
+- **429 retry**: each project's fetch is wrapped in `getInspectionsWithRetry()` which retries up to 3 times on a 429 response with exponential back-off (1 s → 2 s → 4 s). `procoreGet` throws `"Procore API error 429 on …"` — 429 is detected by checking for `"429"` in the error message (Retry-After header is not accessible from the thrown error).
+- Only after all retries are exhausted is a project marked "Data unavailable" (`procore_error` set, counts null).
 - If a project's Procore fetch fails, that project row is returned with `procore_error` set and counts null — the whole report still loads.
 - `maxDuration = 120` (Vercel serverless timeout).
+- **Caching**: not yet implemented. Repeated refreshes re-pull all projects live. Future: 5-minute Supabase snapshot cache per company similar to `project_financial_snapshots`.
 
 ### Window date logic
 - `sydneyWindowStart(daysBack)` returns the YYYY-MM-DD that is `daysBack-1` days before today in Sydney time (inclusive boundary).
