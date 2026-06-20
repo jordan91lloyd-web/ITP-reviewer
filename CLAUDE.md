@@ -82,6 +82,41 @@ Timestamp field names: `fillDate` (from `/integration/v2/report/form-report`, ty
 
 ---
 
+## ITP Status Report (cross-project)
+
+Accessible via the **Report** tab in the dashboard nav. On-screen only (PDF export is a future pass).
+
+### What it shows
+- **Summary table** — one row per non-hidden project: Closed count, Open/In-Progress count, Created-in-window, Closed-in-window, Avg score, band distribution.
+- **Per-project detail blocks** — collapsible; shows all table columns plus score/band breakdown grid, AI stage summary, missing ITP list, coming-up list.
+- **Window toggle** — 7 days / 30 days at the top; recomputes "created in window" and "closed in window" only. Open/closed totals and avg score are not window-dependent.
+
+### Data sources
+- **Open / Closed counts**: live `getInspections()` per project. `status.toLowerCase() === "closed"` → Closed; everything else → Open / In Progress. No in-review bucket.
+- **Created in window**: count ITPs whose `created_at` (Sydney timezone, `toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })`) ≥ window start date.
+- **Closed in window**: count ITPs whose `closed_at` ≥ window start date. `closed_at` may be null on some closed ITPs — those are excluded from the count (not crashed on). Label reads "Closed (Nd)†" with a footnote.
+- **Avg score + band counts**: from `review_records` Supabase table (latest record per inspection). Computed server-side in the route.
+- **AI stage/missing ITPs**: from `project_financial_snapshots` cache (same as Insights tab). Shows snapshot age.
+
+### Route: `GET /api/dashboard/report?company_id=X`
+- File: `src/app/api/dashboard/report/route.ts`
+- Fetches project list from Procore, excludes hidden projects, pulls review_records + snapshots from Supabase.
+- Per-project `getInspections()` calls run with concurrency cap of 5 to avoid rate limits.
+- If a project's Procore fetch fails, that project row is returned with `procore_error` set and counts null — the whole report still loads.
+- `maxDuration = 120` (Vercel serverless timeout).
+
+### Window date logic
+- `sydneyWindowStart(daysBack)` returns the YYYY-MM-DD that is `daysBack-1` days before today in Sydney time (inclusive boundary).
+- `toSydneyDate(isoStr)` converts any timestamp to its Sydney calendar date via `toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })`.
+- Comparison is string-based YYYY-MM-DD ≥ window start.
+
+### Component: `src/components/ReportTab.tsx`
+- Client component; receives `companyId` from the dashboard.
+- Fetches `/api/dashboard/report` on mount and on Refresh click.
+- Window toggle is purely client-side — no re-fetch needed; the API returns both 7d and 30d counts.
+
+---
+
 ## What this app does
 
 **Holdpoint** is a Next.js construction QA platform that reviews Inspection and Test Plan (ITP) packages using Claude AI. QA managers connect their Procore account, select a project and ITP inspection, and the app fetches the inspection data, downloads all attached evidence (PDFs, images, emails, Word docs), and returns a structured quality assessment: a numeric score (0–100), a score band, an audit readiness rating ("commercial confidence"), evidence gaps, key issues, and recommended next actions.
