@@ -314,7 +314,7 @@ export default function ReportTab({ companyId }: { companyId: number | null }) {
   }
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* ── Header row ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
