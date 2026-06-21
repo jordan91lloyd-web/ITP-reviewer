@@ -8,7 +8,7 @@
 // Window toggle (7d / 30d) recomputes created/closed-in-window figures.
 
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, AlertTriangle, ChevronDown, ChevronUp, Download } from "lucide-react";
 import type { ProjectReportRow, BandCounts, MissingItpItem } from "@/app/api/dashboard/report/route";
 import { getBandPillClasses, getBandLabel } from "@/lib/scoreBand";
 
@@ -317,12 +317,13 @@ function ProjectDetail({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export default function ReportTab({ companyId }: { companyId: number | null }) {
+export default function ReportTab({ companyId, companyName }: { companyId: number | null; companyName?: string }) {
   const [window, setWindow]   = useState<Window>(30);
   const [loading, setLoading] = useState(false);
   const [data, setData]       = useState<ReportResponse | null>(null);
   const [error, setError]     = useState<string | null>(null);
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<"summary" | "detailed" | null>(null);
 
   const load = useCallback(async () => {
     if (!companyId) return;
@@ -343,6 +344,36 @@ export default function ReportTab({ companyId }: { companyId: number | null }) {
 
   // Load on mount / company change
   useEffect(() => { void load(); }, [load]);
+
+  async function downloadPdf(mode: "summary" | "detailed") {
+    if (!data || data.projects.length === 0) return;
+    setPdfLoading(mode);
+    try {
+      const res = await fetch("/api/dashboard/report-pdf", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          company_name: companyName ?? "Report",
+          projects:     data.projects,
+          window:       window,
+          mode,
+        }),
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      const safeCo = (companyName ?? "report").replace(/[^a-z0-9]/gi, "-").toLowerCase();
+      a.download = mode === "summary"
+        ? `itp-report-summary-${safeCo}-${window}d.pdf`
+        : `itp-report-detailed-${safeCo}-${window}d.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setPdfLoading(null);
+    }
+  }
 
   const rows    = data?.projects ?? [];
   const w       = window;
@@ -445,6 +476,56 @@ export default function ReportTab({ companyId }: { companyId: number | null }) {
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             {loading ? "Loading…" : "Refresh"}
           </button>
+
+          {/* PDF exports */}
+          {data && data.projects.length > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => void downloadPdf("summary")}
+                disabled={!!pdfLoading}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 12px",
+                  borderRadius: 7,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  border: "1px solid var(--hp-border)",
+                  backgroundColor: "var(--hp-surface)",
+                  color: "var(--hp-text-secondary)",
+                  cursor: pdfLoading ? "not-allowed" : "pointer",
+                  opacity: pdfLoading ? 0.6 : 1,
+                }}
+              >
+                <Download className="h-3.5 w-3.5" />
+                {pdfLoading === "summary" ? "Generating…" : "Summary PDF"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void downloadPdf("detailed")}
+                disabled={!!pdfLoading}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 12px",
+                  borderRadius: 7,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  border: "none",
+                  backgroundColor: "var(--hp-warm-800)",
+                  color: "#fff",
+                  cursor: pdfLoading ? "not-allowed" : "pointer",
+                  opacity: pdfLoading ? 0.6 : 1,
+                }}
+              >
+                <Download className="h-3.5 w-3.5" />
+                {pdfLoading === "detailed" ? "Generating…" : "Detailed PDF"}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

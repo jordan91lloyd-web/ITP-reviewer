@@ -1690,7 +1690,7 @@ export default function DashboardPage() {
 
       {/* ── Report tab ── */}
       {dashboardView === "report" && (
-        <ReportTab companyId={selectedCompany?.id ?? null} />
+        <ReportTab companyId={selectedCompany?.id ?? null} companyName={selectedCompany?.name} />
       )}
 
       {/* ── Queue tab ── */}

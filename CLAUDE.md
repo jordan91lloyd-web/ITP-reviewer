@@ -131,6 +131,22 @@ Accessible via the **Report** tab in the dashboard nav. On-screen only (PDF expo
 - Window toggle is purely client-side — no re-fetch needed; the API returns both 7d and 30d counts.
 - Per-project detail blocks show: counts grid, score/band breakdown, Insights section (completion %, stage, ITP gaps as pill badges, missing ITPs with reasons, coming up). Snapshot freshness visible via `generated_at` age + "✓ refreshed" badge.
 
+### PDF exports
+Two PDF export buttons appear in the header when data is loaded:
+- **Summary PDF** — concise cross-project overview: one summary table (project, closed, open, created-in-window, closed-in-window, avg score, band summary). Roughly one page.
+- **Detailed PDF** — full report: summary table + per-project detail sections (counts, bands, completion %, stage, ITP gaps, missing ITPs, coming up). Multi-page.
+
+Both PDFs:
+- Use the **currently selected window** (7d or 30d) and include it in the header.
+- Include company name, report title, and generation date.
+- Pull from the **already-loaded report data** — no extra API or AI calls.
+- Use the same `@react-pdf/renderer` + `renderToBuffer()` mechanism as the Hold Point PDF (`/api/holdpoint/pdf`).
+
+**Route**: `POST /api/dashboard/report-pdf` (`src/app/api/dashboard/report-pdf/route.tsx`)
+- Body: `{ company_name, projects, window, mode }` where `mode` = `"summary"` | `"detailed"`.
+- Returns an A4 PDF buffer as `application/pdf` with a `Content-Disposition: attachment` filename.
+- Client-side: `downloadPdf(mode)` POSTs the loaded data, receives blob, triggers download — identical to HoldPointTab's `downloadPdf()`.
+
 ---
 
 ## What this app does
