@@ -88,7 +88,7 @@ Accessible via the **Report** tab in the dashboard nav. On-screen only (PDF expo
 
 ### What it shows
 - **Summary table** — one row per non-hidden project: Closed count, Open/In-Progress count, Created-in-window, Closed-in-window, Avg score, band distribution.
-- **Per-project detail blocks** — collapsible; shows all table columns plus score/band breakdown grid, AI stage summary, missing ITP list, coming-up list.
+- **Per-project detail blocks** — collapsible; shows all table columns plus score/band breakdown grid, Insights section (completion %, stage, ITP gaps, missing ITPs, coming up), snapshot freshness.
 - **Window toggle** — 7 days / 30 days at the top; recomputes "created in window" and "closed in window" only. Open/closed totals and avg score are not window-dependent.
 
 ### Data sources
@@ -96,7 +96,19 @@ Accessible via the **Report** tab in the dashboard nav. On-screen only (PDF expo
 - **Created in window**: count ITPs whose `created_at` (Sydney timezone, `toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })`) ≥ window start date.
 - **Closed in window**: count ITPs whose `closed_at` ≥ window start date. `closed_at` may be null on some closed ITPs — those are excluded from the count (not crashed on). Label reads "Closed (Nd)†" with a footnote.
 - **Avg score + band counts**: from `review_records` Supabase table (latest record per inspection). Computed server-side in the route.
-- **AI stage/missing ITPs**: from `project_financial_snapshots` cache (same as Insights tab). Shows snapshot age.
+- **Insights per project**: from `project_financial_snapshots` cache. Shows: `completion_pct`, `stage`, `itp_gaps` (pill badges), `missing_itps` (detailed with reasons), `coming_up`. `generated_at` shown for freshness. `snapshot_refreshed: true` shown when regenerated this request.
+
+### Insights refresh-if-stale logic
+- After fetching inspection counts, the route checks each project's snapshot `generated_at`.
+- **Fresh**: `generated_at` (as Sydney date) ≥ this Monday's date → use cached snapshot.
+- **Stale**: `generated_at` < this Monday, or snapshot missing → regenerate via the existing Insights pipeline.
+- **Current week Monday**: computed by `sydneyCurrentWeekMonday()` using the same UTC-parse pattern as Site Compliance (`toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })`, then `T00:00:00Z` parse, then UTC day-of-week arithmetic).
+- **Regeneration steps** (reuses existing routes, does not duplicate AI logic):
+  1. `GET /api/procore/project-financial-summary` — fetches `completion_pct`, `contract_sum`, `active_trades` from Procore.
+  2. `POST /api/ai/site-summary` — sends financial data + open/closed ITP lists, receives `stage`, `missing_itps`, `coming_up`, `itp_gaps`. This route saves the result to `project_financial_snapshots` automatically.
+  3. Internal fetch uses `request.nextUrl.origin` + forwarded `cookie` header for auth.
+- **Rate limiting**: regeneration runs **sequentially** (one project at a time) with a **1.5 s pause** between projects. If the financial or AI call fails, the project keeps its stale snapshot with `insights_error` set — does not fail the whole report.
+- **Response metadata**: `insights_refreshed` (count regenerated), `insights_stale` (count that needed refresh).
 
 ### Route: `GET /api/dashboard/report?company_id=X`
 - File: `src/app/api/dashboard/report/route.ts`
@@ -105,18 +117,19 @@ Accessible via the **Report** tab in the dashboard nav. On-screen only (PDF expo
 - **429 retry**: each project's fetch is wrapped in `getInspectionsWithRetry()` which retries up to 3 times on a 429 response with exponential back-off (1 s → 2 s → 4 s). `procoreGet` throws `"Procore API error 429 on …"` — 429 is detected by checking for `"429"` in the error message (Retry-After header is not accessible from the thrown error).
 - Only after all retries are exhausted is a project marked "Data unavailable" (`procore_error` set, counts null).
 - If a project's Procore fetch fails, that project row is returned with `procore_error` set and counts null — the whole report still loads.
-- `maxDuration = 120` (Vercel serverless timeout).
-- **Caching**: not yet implemented. Repeated refreshes re-pull all projects live. Future: 5-minute Supabase snapshot cache per company similar to `project_financial_snapshots`.
+- `maxDuration = 300` (Vercel serverless timeout — raised from 120 to accommodate sequential Insights regeneration).
 
 ### Window date logic
 - `sydneyWindowStart(daysBack)` returns the YYYY-MM-DD that is `daysBack-1` days before today in Sydney time (inclusive boundary).
 - `toSydneyDate(isoStr)` converts any timestamp to its Sydney calendar date via `toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })`.
+- `sydneyCurrentWeekMonday()` returns the Monday of the current Sydney week as YYYY-MM-DD (for Insights staleness check).
 - Comparison is string-based YYYY-MM-DD ≥ window start.
 
 ### Component: `src/components/ReportTab.tsx`
 - Client component; receives `companyId` from the dashboard.
 - Fetches `/api/dashboard/report` on mount and on Refresh click.
 - Window toggle is purely client-side — no re-fetch needed; the API returns both 7d and 30d counts.
+- Per-project detail blocks show: counts grid, score/band breakdown, Insights section (completion %, stage, ITP gaps as pill badges, missing ITPs with reasons, coming up). Snapshot freshness visible via `generated_at` age + "✓ refreshed" badge.
 
 ---
 

@@ -17,10 +17,12 @@ import { getBandPillClasses, getBandLabel } from "@/lib/scoreBand";
 type Window = 7 | 30;
 
 interface ReportResponse {
-  projects:        ProjectReportRow[];
-  window_7_start:  string;
-  window_30_start: string;
-  error?:          string;
+  projects:            ProjectReportRow[];
+  window_7_start:      string;
+  window_30_start:     string;
+  insights_refreshed?: number;
+  insights_stale?:     number;
+  error?:              string;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -200,56 +202,109 @@ function ProjectDetail({
             </div>
           </div>
 
-          {/* AI stage */}
-          {row.ai_stage && (
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--hp-text-muted)", marginBottom: 4 }}>
-                Stage{" "}
-                <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
-                  (snapshot {fmtAge(row.snapshot_generated_at)})
+          {/* ── Insights section ── */}
+          <div style={{ borderTop: "1px solid var(--hp-border)", paddingTop: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--hp-text-muted)" }}>
+                Insights
+              </div>
+              <span style={{ fontSize: 10, color: "var(--hp-text-muted)" }}>
+                {row.snapshot_generated_at ? fmtAge(row.snapshot_generated_at) : "no snapshot"}
+                {row.snapshot_refreshed && (
+                  <span style={{ color: "var(--hp-compliant)", fontWeight: 600, marginLeft: 4 }}>✓ refreshed</span>
+                )}
+              </span>
+              {row.insights_error && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-amber-600">
+                  <AlertTriangle className="h-3 w-3" /> {row.insights_error}
                 </span>
+              )}
+            </div>
+
+            {/* Completion % */}
+            {row.completion_pct !== null && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "var(--hp-text-secondary)" }}>Subcontract progress:</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--hp-text-primary)" }}>{row.completion_pct}%</span>
+                </div>
+                <div style={{ height: 4, backgroundColor: "var(--hp-border)", borderRadius: 2, marginTop: 4, maxWidth: 200, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(row.completion_pct, 100)}%`, backgroundColor: "var(--hp-minor)", borderRadius: 2 }} />
+                </div>
               </div>
-              <p style={{ fontSize: 13, color: "var(--hp-text-primary)", margin: 0, lineHeight: 1.5 }}>
-                {row.ai_stage}
+            )}
+
+            {/* AI stage */}
+            {row.ai_stage && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--hp-text-muted)", marginBottom: 4 }}>
+                  Stage
+                </div>
+                <p style={{ fontSize: 13, color: "var(--hp-text-primary)", margin: 0, lineHeight: 1.5 }}>
+                  {row.ai_stage}
+                </p>
+              </div>
+            )}
+
+            {/* ITP gaps (quick summary) */}
+            {row.itp_gaps.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#dc2626", marginBottom: 4 }}>
+                  ITP gaps ({row.itp_gaps.length})
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {row.itp_gaps.map(g => (
+                    <span key={g} style={{ fontSize: 11, fontWeight: 600, color: "#dc2626", backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 4, padding: "1px 6px" }}>
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Missing ITPs (detailed) */}
+            {row.ai_missing_itps.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#b45309", marginBottom: 6 }}>
+                  Missing ITPs ({row.ai_missing_itps.length})
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {row.ai_missing_itps.map((item: MissingItpItem) => (
+                    <div key={item.itp} style={{ display: "flex", gap: 8, fontSize: 12, color: "var(--hp-text-secondary)" }}>
+                      <span style={{ fontWeight: 600, color: "#b45309", minWidth: 56 }}>{item.itp}</span>
+                      <span style={{ fontWeight: 500, color: "var(--hp-text-primary)" }}>{item.name}</span>
+                      <span>— {item.reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Coming up */}
+            {row.ai_coming_up.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--hp-text-muted)", marginBottom: 6 }}>
+                  Coming up (next 2–4 weeks)
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {row.ai_coming_up.map((item: MissingItpItem) => (
+                    <div key={item.itp} style={{ display: "flex", gap: 8, fontSize: 12, color: "var(--hp-text-secondary)" }}>
+                      <span style={{ fontWeight: 600, minWidth: 56 }}>{item.itp}</span>
+                      <span style={{ fontWeight: 500, color: "var(--hp-text-primary)" }}>{item.name}</span>
+                      <span>— {item.reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No Insights available */}
+            {!row.ai_stage && row.ai_missing_itps.length === 0 && row.ai_coming_up.length === 0 && row.completion_pct === null && !row.insights_error && (
+              <p style={{ fontSize: 12, color: "var(--hp-text-muted)", margin: 0, fontStyle: "italic" }}>
+                No Insights snapshot available for this project.
               </p>
-            </div>
-          )}
-
-          {/* Missing ITPs */}
-          {row.ai_missing_itps.length > 0 && (
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#b45309", marginBottom: 6 }}>
-                Missing ITPs ({row.ai_missing_itps.length})
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {row.ai_missing_itps.map((item: MissingItpItem) => (
-                  <div key={item.itp} style={{ display: "flex", gap: 8, fontSize: 12, color: "var(--hp-text-secondary)" }}>
-                    <span style={{ fontWeight: 600, color: "#b45309", minWidth: 56 }}>{item.itp}</span>
-                    <span style={{ fontWeight: 500, color: "var(--hp-text-primary)" }}>{item.name}</span>
-                    <span>— {item.reason}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Coming up */}
-          {row.ai_coming_up.length > 0 && (
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--hp-text-muted)", marginBottom: 6 }}>
-                Coming up
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {row.ai_coming_up.map((item: MissingItpItem) => (
-                  <div key={item.itp} style={{ display: "flex", gap: 8, fontSize: 12, color: "var(--hp-text-secondary)" }}>
-                    <span style={{ fontWeight: 600, minWidth: 56 }}>{item.itp}</span>
-                    <span style={{ fontWeight: 500, color: "var(--hp-text-primary)" }}>{item.name}</span>
-                    <span>— {item.reason}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <p style={{ fontSize: 10, color: "var(--hp-text-muted)", margin: 0 }}>
             † Closed-in-window counts only inspections where Procore recorded a close date. Items closed without a close date are not included.
@@ -326,6 +381,11 @@ export default function ReportTab({ companyId }: { companyId: number | null }) {
           {fetchedAt && !loading && (
             <p style={{ fontSize: 11, color: "var(--hp-text-muted)", margin: "2px 0 0" }}>
               Live data fetched {fetchedAt.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
+              {(data?.insights_refreshed ?? 0) > 0 && (
+                <span style={{ marginLeft: 8, color: "var(--hp-compliant)" }}>
+                  • {data!.insights_refreshed} Insights refreshed
+                </span>
+              )}
             </p>
           )}
         </div>
@@ -403,7 +463,7 @@ export default function ReportTab({ companyId }: { companyId: number | null }) {
             <div key={i} style={{ height: 48, borderRadius: 8, backgroundColor: "var(--hp-border)", opacity: 0.5, animation: "pulse 1.5s ease-in-out infinite" }} />
           ))}
           <p style={{ fontSize: 12, color: "var(--hp-text-muted)", textAlign: "center", marginTop: 8 }}>
-            Fetching live Procore data for each project…
+            Fetching live Procore data and refreshing stale Insights…
           </p>
         </div>
       )}
