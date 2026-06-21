@@ -314,7 +314,8 @@ export default function ReportTab({ companyId }: { companyId: number | null }) {
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--hp-bg)" }}>
+    <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* ── Header row ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
@@ -543,6 +544,7 @@ export default function ReportTab({ companyId }: { companyId: number | null }) {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
