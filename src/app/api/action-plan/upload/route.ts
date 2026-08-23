@@ -77,7 +77,41 @@ interface AttachmentResult {
   succeeded: boolean;
   method: string | null;
   skipped_reason: string | null;
+  verified_assets_count: number;
   attempts: AttachAttempt[];
+}
+
+/**
+ * Verify attachment by checking the plan's assets array in Procore.
+ * Returns the count of assets, or 0 if the check fails.
+ */
+async function verifyPlanAssets(
+  accessToken: string,
+  projectId: number,
+  planId: number,
+  companyId: string,
+): Promise<number> {
+  try {
+    const url = new URL(
+      `${PROCORE_BASE_URL}/rest/v1.0/projects/${projectId}/action_plans/plans`
+    );
+    url.searchParams.set("company_id", companyId);
+    const res = await fetch(url.toString(), {
+      headers: jsonHeaders(accessToken, companyId),
+    });
+    if (!res.ok) return 0;
+    const allPlans = await res.json();
+    const list: Record<string, unknown>[] = Array.isArray(allPlans)
+      ? allPlans
+      : (allPlans?.data ?? []);
+    const target = list.find((p) => p.id === planId);
+    if (!target) return 0;
+    const assets = target.assets;
+    if (Array.isArray(assets)) return assets.length;
+    return 0;
+  } catch {
+    return 0;
+  }
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────
@@ -268,6 +302,7 @@ export async function POST(request: NextRequest) {
     succeeded: false,
     method: null,
     skipped_reason: null,
+    verified_assets_count: 0,
     attempts: [],
   };
 
@@ -281,9 +316,32 @@ export async function POST(request: NextRequest) {
     const fileName = reportFile.name;
     const fileMime = reportFile.type || "application/octet-stream";
 
+    // Helper: verify after a 2xx response, return true if assets are non-empty
+    async function verifyAndRecord(methodLabel: string): Promise<boolean> {
+      const count = await verifyPlanAssets(accessToken!, project_id, createdPlanId!, companyId);
+      attachment.verified_assets_count = count;
+      if (count > 0) {
+        attachment.succeeded = true;
+        attachment.method = methodLabel;
+        attachment.attempts.push({
+          method: "VERIFY",
+          path: "plans list → assets array",
+          status: 200,
+          response: `verified: ${count} asset(s) found`,
+        });
+        return true;
+      }
+      attachment.attempts.push({
+        method: "VERIFY",
+        path: "plans list → assets array",
+        status: 200,
+        response: `verified: 0 assets — attachment did not land`,
+      });
+      return false;
+    }
+
     // ── Candidate A: Two-step Procore upload flow ──────────────────────────
     try {
-      // A1: Request upload descriptor
       const uploadPath = `/rest/v1.1/companies/${company_id}/uploads`;
       const uploadRes = await fetch(urlWithCompany(uploadPath, companyId), {
         method: "POST",
@@ -340,10 +398,29 @@ export async function POST(request: NextRequest) {
             });
 
             if (patchRes1.ok) {
-              attachment.succeeded = true;
-              attachment.method = "two-step upload + PATCH upload_uuids";
+              if (await verifyAndRecord("two-step upload + PATCH upload_uuids")) {
+                // Verified — stop
+              } else {
+                // A3b: Retry with assets key
+                const patchRes2 = await fetch(urlWithCompany(patchPath, companyId), {
+                  method: "PATCH",
+                  headers: jsonHeaders(accessToken, companyId),
+                  body: JSON.stringify({ plan: { assets: [uuid] } }),
+                });
+                const patchText2 = await patchRes2.text();
+                attachment.attempts.push({
+                  method: "PATCH (assets)",
+                  path: patchPath,
+                  status: patchRes2.status,
+                  response: patchText2.slice(0, 1000),
+                });
+
+                if (patchRes2.ok) {
+                  await verifyAndRecord("two-step upload + PATCH assets");
+                }
+              }
             } else {
-              // A3b: Retry with assets key
+              // A3 failed — try A3b directly
               const patchRes2 = await fetch(urlWithCompany(patchPath, companyId), {
                 method: "PATCH",
                 headers: jsonHeaders(accessToken, companyId),
@@ -358,8 +435,7 @@ export async function POST(request: NextRequest) {
               });
 
               if (patchRes2.ok) {
-                attachment.succeeded = true;
-                attachment.method = "two-step upload + PATCH assets";
+                await verifyAndRecord("two-step upload + PATCH assets");
               }
             }
           }
@@ -395,8 +471,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (patchRes.ok) {
-          attachment.succeeded = true;
-          attachment.method = "PATCH multipart plan[attachments][]";
+          await verifyAndRecord("PATCH multipart plan[attachments][]");
         }
       } catch (err) {
         attachment.attempts.push({
@@ -429,8 +504,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (postRes.ok) {
-          attachment.succeeded = true;
-          attachment.method = "POST multipart attachments[]";
+          await verifyAndRecord("POST multipart attachments[]");
         }
       } catch (err) {
         attachment.attempts.push({

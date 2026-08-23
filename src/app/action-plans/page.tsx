@@ -533,10 +533,15 @@ export default function ActionPlansPage() {
                   The plan is in <strong>Draft</strong> status. Open it in Procore to review and publish.
                 </p>
                 {uploadResult.attachment && (
-                  <p className="mt-1 text-xs" style={{ color: "#15803d" }}>
+                  <p
+                    className="mt-1 text-xs font-medium"
+                    style={{
+                      color: uploadResult.attachment.succeeded ? "#15803d" : "#b45309",
+                    }}
+                  >
                     {uploadResult.attachment.succeeded
                       ? "Original report attached to the plan."
-                      : "Original report could not be attached automatically \u2014 attach it manually in Procore."}
+                      : "Original report was NOT attached \u2014 attach it manually in Procore."}
                   </p>
                 )}
                 {uploadResult.plan_url && (
