@@ -4,6 +4,7 @@
 //
 // Usage (browser, while logged in):
 //   /api/procore/debug-action-plans?project_id=123&company_id=456
+//   /api/procore/debug-action-plans?project_id=123&company_id=456&plan_id=789
 //
 // Read-only. No writes to Procore. No UI.
 
@@ -117,6 +118,118 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const planId = sp.get("plan_id");
+
+  // ── Single-plan inspection mode ─────────────────────────────────────────
+  if (planId) {
+    const planIdNum = Number(planId);
+
+    // Fetch plans list, find the target plan
+    const plansProbe = await probe(
+      accessToken,
+      `/rest/v1.0/projects/${projectId}/action_plans/plans`,
+      companyId
+    );
+    const targetPlan = plansProbe.ok && plansProbe.first_three_records
+      ? // probe only keeps first 3 — re-fetch all to find the plan
+        null
+      : null;
+
+    // Full plans fetch to find our plan
+    let fullPlan: unknown = null;
+    try {
+      const url = new URL(
+        `${PROCORE_BASE_URL}/rest/v1.0/projects/${projectId}/action_plans/plans`
+      );
+      url.searchParams.set("company_id", companyId);
+      const res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "Procore-Company-Id": companyId,
+        },
+      });
+      if (res.ok) {
+        const allPlans = await res.json();
+        const list = Array.isArray(allPlans) ? allPlans : (allPlans?.data ?? []);
+        fullPlan = list.find(
+          (p: Record<string, unknown>) => p.id === planIdNum
+        ) ?? null;
+      }
+    } catch { /* ignore */ }
+    void targetPlan;
+
+    // Fetch all sections, filter to this plan
+    let planSections: unknown[] = [];
+    try {
+      const url = new URL(
+        `${PROCORE_BASE_URL}/rest/v1.0/projects/${projectId}/action_plans/plan_sections`
+      );
+      url.searchParams.set("company_id", companyId);
+      const res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "Procore-Company-Id": companyId,
+        },
+      });
+      if (res.ok) {
+        const all = await res.json();
+        const list: Record<string, unknown>[] = Array.isArray(all)
+          ? all
+          : (all?.data ?? []);
+        planSections = list.filter(
+          (s) => s.plan_id === planIdNum || (s.plan as Record<string, unknown>)?.id === planIdNum
+        );
+      }
+    } catch { /* ignore */ }
+
+    // Fetch all items, filter to this plan
+    let planItems: unknown[] = [];
+    try {
+      const url = new URL(
+        `${PROCORE_BASE_URL}/rest/v1.0/projects/${projectId}/action_plans/plan_items`
+      );
+      url.searchParams.set("company_id", companyId);
+      const res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "Procore-Company-Id": companyId,
+        },
+      });
+      if (res.ok) {
+        const all = await res.json();
+        const list: Record<string, unknown>[] = Array.isArray(all)
+          ? all
+          : (all?.data ?? []);
+        planItems = list.filter(
+          (i) => i.plan_id === planIdNum || (i.plan as Record<string, unknown>)?.id === planIdNum
+        );
+      }
+    } catch { /* ignore */ }
+
+    const result = {
+      plan_id: planIdNum,
+      plan: fullPlan,
+      sections: planSections,
+      sections_count: planSections.length,
+      items: planItems,
+      items_count: planItems.length,
+    };
+
+    const body = JSON.stringify(result, null, 2);
+    const cap = 400_000;
+    if (body.length > cap) {
+      return new NextResponse(body.slice(0, cap), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return NextResponse.json(result);
+  }
+
+  // ── Default: probe all candidate paths ──────────────────────────────────
   const candidatePaths = [
     `/rest/v1.0/projects/${projectId}/action_plans/plans`,
     `/rest/v1.0/projects/${projectId}/action_plans`,
@@ -138,7 +251,6 @@ export async function GET(request: NextRequest) {
     const first = r.first_three_records[0] as Record<string, unknown> | null;
     if (!first?.id) continue;
 
-    // Build a detail path by appending /id to the list path
     const detailPath = `${r.path}/${first.id}`;
     try {
       const url = new URL(`${PROCORE_BASE_URL}${detailPath}`);
