@@ -236,7 +236,7 @@ export default function ActionPlansPage() {
           </div>
 
           {/* Activities by section */}
-          {Object.entries(sections).map(([sectionName, items]) => (
+          {Object.entries(sections).map(([sectionName, items], sectionIdx) => (
             <div key={sectionName} className="mb-6">
               <h3
                 className="text-sm font-semibold uppercase tracking-wide mb-3"
@@ -245,7 +245,7 @@ export default function ActionPlansPage() {
                 {sectionName}
               </h3>
               <div className="space-y-3">
-                {items.map((a) => (
+                {items.map((a, itemIdx) => (
                   <div
                     key={a.sequence}
                     className="rounded-lg p-4"
@@ -259,7 +259,7 @@ export default function ActionPlansPage() {
                         className="text-xs font-mono font-semibold"
                         style={{ color: "var(--hp-text-muted)" }}
                       >
-                        #{a.sequence}
+                        {sectionIdx + 1}.{itemIdx + 1}
                       </span>
                       {a.original_item_number && (
                         <span
