@@ -19,6 +19,14 @@ interface PlanType {
   active?: boolean;
 }
 
+interface AttachmentInfo {
+  attempted: boolean;
+  succeeded: boolean;
+  method: string | null;
+  skipped_reason: string | null;
+  attempts: unknown[];
+}
+
 interface UploadResult {
   success: boolean;
   plan_id?: number;
@@ -27,6 +35,7 @@ interface UploadResult {
   items_created?: number;
   error?: string;
   created_plan_id?: number | null;
+  attachment?: AttachmentInfo;
 }
 
 export default function ActionPlansPage() {
@@ -157,15 +166,23 @@ export default function ActionPlansPage() {
     setUploadResult(null);
 
     try {
-      const res = await fetch("/api/action-plan/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const fd = new FormData();
+      fd.append(
+        "payload",
+        JSON.stringify({
           plan,
           project_id: selectedProjectId,
           company_id: companyId,
           plan_type_id: selectedPlanTypeId,
-        }),
+        })
+      );
+      if (file) {
+        fd.append("file", file);
+      }
+
+      const res = await fetch("/api/action-plan/upload", {
+        method: "POST",
+        body: fd,
       });
       const data: UploadResult = await res.json();
       if (data.success) {
@@ -502,6 +519,13 @@ export default function ActionPlansPage() {
                 <p className="mt-1 text-xs" style={{ color: "#15803d" }}>
                   The plan is in <strong>Draft</strong> status. Open it in Procore to review and publish.
                 </p>
+                {uploadResult.attachment && (
+                  <p className="mt-1 text-xs" style={{ color: "#15803d" }}>
+                    {uploadResult.attachment.succeeded
+                      ? "Original report attached to the plan."
+                      : "Original report could not be attached automatically \u2014 attach it manually in Procore."}
+                  </p>
+                )}
                 {uploadResult.plan_url && (
                   <a
                     href={uploadResult.plan_url}
