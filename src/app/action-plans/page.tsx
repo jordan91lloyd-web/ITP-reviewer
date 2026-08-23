@@ -1,0 +1,334 @@
+"use client";
+
+import { useState, useRef, useCallback } from "react";
+import type { ConvertedActionPlan } from "@/lib/actionPlanTypes";
+
+const ALLOWED_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const MAX_SIZE = 20 * 1024 * 1024;
+
+export default function ActionPlansPage() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<ConvertedActionPlan | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = useCallback((f: File) => {
+    setError(null);
+    setPlan(null);
+    if (!ALLOWED_TYPES.has(f.type)) {
+      setError(`Unsupported file type. Use PDF, JPG, or PNG.`);
+      return;
+    }
+    if (f.size > MAX_SIZE) {
+      setError(`File is too large (${(f.size / 1024 / 1024).toFixed(1)} MB). Maximum is 20 MB.`);
+      return;
+    }
+    setFile(f);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const f = e.dataTransfer.files[0];
+      if (f) handleFile(f);
+    },
+    [handleFile]
+  );
+
+  const handleConvert = async () => {
+    if (!file) return;
+    setIsLoading(true);
+    setError(null);
+    setPlan(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/action-plan/convert", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error ?? "Conversion failed.");
+      } else {
+        setPlan(data.plan);
+      }
+    } catch {
+      setError("Could not reach the conversion service. Check the dev server.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setFile(null);
+    setPlan(null);
+    setError(null);
+  };
+
+  // Group activities by section
+  const sections: Record<string, ConvertedActionPlan["activities"]> = {};
+  if (plan) {
+    for (const a of plan.activities) {
+      (sections[a.section] ??= []).push(a);
+    }
+  }
+
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <header className="mb-8">
+        <h1
+          className="text-2xl font-bold"
+          style={{ color: "var(--hp-warm-900)" }}
+        >
+          Report to Action Plan
+        </h1>
+        <p
+          className="mt-1 text-sm"
+          style={{ color: "var(--hp-text-secondary)" }}
+        >
+          Upload a construction report and convert it into a structured Procore
+          Action Plan.
+        </p>
+      </header>
+
+      {/* ── Upload zone ─────────────────────────────────────────────────── */}
+      {!plan && (
+        <>
+          <div
+            onClick={() => inputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className="cursor-pointer rounded-lg border-2 border-dashed p-10 text-center transition-colors"
+            style={{
+              borderColor: isDragging
+                ? "var(--hp-accent)"
+                : "var(--hp-border)",
+              backgroundColor: isDragging
+                ? "var(--hp-warm-100)"
+                : "var(--hp-surface)",
+            }}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
+            {file ? (
+              <div>
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--hp-warm-800)" }}
+                >
+                  {file.name}
+                </p>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--hp-text-muted)" }}
+                >
+                  {(file.size / 1024 / 1024).toFixed(1)} MB &middot; Click or
+                  drag to replace
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--hp-warm-700)" }}
+                >
+                  Drop a report here, or click to select
+                </p>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--hp-text-muted)" }}
+                >
+                  PDF, JPG, or PNG &middot; Max 20 MB
+                </p>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div
+              className="mt-4 rounded-lg px-4 py-3 text-sm"
+              style={{
+                backgroundColor: "var(--hp-warm-100)",
+                border: "1px solid var(--hp-border)",
+                color: "var(--hp-warm-800)",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleConvert}
+            disabled={!file || isLoading}
+            className="mt-4 w-full rounded-lg px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+            style={{ backgroundColor: "var(--hp-accent)" }}
+          >
+            {isLoading ? "Converting..." : "Convert to Action Plan"}
+          </button>
+        </>
+      )}
+
+      {/* ── Preview ─────────────────────────────────────────────────────── */}
+      {plan && (
+        <div>
+          {/* Notice banner */}
+          <div
+            className="mb-6 rounded-lg px-4 py-3 text-sm"
+            style={{
+              backgroundColor: "var(--hp-warm-100)",
+              border: "1px solid var(--hp-border)",
+              color: "var(--hp-warm-800)",
+            }}
+          >
+            Preview only &mdash; nothing has been sent to Procore.
+          </div>
+
+          {/* Plan metadata */}
+          <div
+            className="rounded-lg p-5 mb-6"
+            style={{
+              backgroundColor: "var(--hp-surface)",
+              border: "1px solid var(--hp-border)",
+            }}
+          >
+            <h2
+              className="text-lg font-bold mb-3"
+              style={{ color: "var(--hp-warm-900)" }}
+            >
+              {plan.action_plan_name}
+            </h2>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <MetaRow label="Source document" value={plan.source_document} />
+              <MetaRow label="Report title" value={plan.report_title} />
+              <MetaRow label="Report date" value={plan.report_date} />
+              <MetaRow label="Author" value={plan.report_author} />
+              <MetaRow label="Company" value={plan.report_company} />
+            </div>
+            <p
+              className="mt-3 text-sm"
+              style={{ color: "var(--hp-text-secondary)" }}
+            >
+              {plan.description}
+            </p>
+          </div>
+
+          {/* Activities by section */}
+          {Object.entries(sections).map(([sectionName, items]) => (
+            <div key={sectionName} className="mb-6">
+              <h3
+                className="text-sm font-semibold uppercase tracking-wide mb-3"
+                style={{ color: "var(--hp-warm-700)" }}
+              >
+                {sectionName}
+              </h3>
+              <div className="space-y-3">
+                {items.map((a) => (
+                  <div
+                    key={a.sequence}
+                    className="rounded-lg p-4"
+                    style={{
+                      backgroundColor: "var(--hp-surface)",
+                      border: "1px solid var(--hp-border)",
+                    }}
+                  >
+                    <div className="flex items-baseline gap-3 mb-1">
+                      <span
+                        className="text-xs font-mono font-semibold"
+                        style={{ color: "var(--hp-text-muted)" }}
+                      >
+                        #{a.sequence}
+                      </span>
+                      {a.original_item_number && (
+                        <span
+                          className="text-xs"
+                          style={{ color: "var(--hp-text-muted)" }}
+                        >
+                          ({a.original_item_number})
+                        </span>
+                      )}
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: "var(--hp-warm-900)" }}
+                      >
+                        {a.activity_title}
+                      </span>
+                    </div>
+                    {a.acceptance_criteria && (
+                      <p
+                        className="text-sm mt-2"
+                        style={{ color: "var(--hp-text-secondary)" }}
+                      >
+                        <span
+                          className="font-medium"
+                          style={{ color: "var(--hp-warm-700)" }}
+                        >
+                          Acceptance criteria:
+                        </span>{" "}
+                        {a.acceptance_criteria}
+                      </p>
+                    )}
+                    {a.source_reference && (
+                      <p
+                        className="text-xs mt-1"
+                        style={{ color: "var(--hp-text-muted)" }}
+                      >
+                        {a.source_reference}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Summary + reset */}
+          <div className="flex items-center justify-between mt-6">
+            <p
+              className="text-xs"
+              style={{ color: "var(--hp-text-muted)" }}
+            >
+              {plan.activities.length} activit{plan.activities.length === 1 ? "y" : "ies"} across{" "}
+              {Object.keys(sections).length} section{Object.keys(sections).length === 1 ? "" : "s"}
+            </p>
+            <button
+              onClick={handleReset}
+              className="text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ color: "var(--hp-accent)" }}
+            >
+              Convert another
+            </button>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function MetaRow({ label, value }: { label: string; value: string | null }) {
+  return (
+    <>
+      <span className="text-xs font-medium" style={{ color: "var(--hp-text-muted)" }}>
+        {label}
+      </span>
+      <span className="text-sm" style={{ color: "var(--hp-warm-800)" }}>
+        {value ?? "—"}
+      </span>
+    </>
+  );
+}

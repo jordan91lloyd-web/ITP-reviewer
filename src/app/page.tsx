@@ -154,13 +154,22 @@ export default async function Home({
           className="flex-1 flex items-center justify-center"
           style={{ backgroundColor: "var(--hp-bg)" }}
         >
-          <Link
-            href="/how-it-works"
-            className="text-sm font-medium transition-colors"
-            style={{ color: "var(--hp-text-secondary)" }}
-          >
-            Learn how it works →
-          </Link>
+          <div className="flex flex-col items-center gap-3">
+            <Link
+              href="/how-it-works"
+              className="text-sm font-medium transition-colors"
+              style={{ color: "var(--hp-text-secondary)" }}
+            >
+              Learn how it works →
+            </Link>
+            <Link
+              href="/action-plans"
+              className="text-sm font-medium transition-colors"
+              style={{ color: "var(--hp-text-secondary)" }}
+            >
+              Report to Action Plan →
+            </Link>
+          </div>
         </div>
 
         {/* ── Footer ────────────────────────────────────────────────────────── */}
