@@ -81,8 +81,8 @@ export default function ActionPlansPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <header className="mb-8">
+    <main className="flex-1 overflow-y-auto mx-auto max-w-3xl px-4 py-10 w-full">
+      <header className="mb-8 ap-no-print">
         <h1
           className="text-2xl font-bold"
           style={{ color: "var(--hp-warm-900)" }}
@@ -100,7 +100,7 @@ export default function ActionPlansPage() {
 
       {/* ── Upload zone ─────────────────────────────────────────────────── */}
       {!plan && (
-        <>
+        <div className="ap-no-print">
           <div
             onClick={() => inputRef.current?.click()}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -182,22 +182,28 @@ export default function ActionPlansPage() {
               ? "Converting\u2026 this can take up to a minute"
               : "Convert to Action Plan"}
           </button>
-        </>
+        </div>
       )}
 
       {/* ── Preview ─────────────────────────────────────────────────────── */}
       {plan && (
         <div>
-          {/* Notice banner */}
+          {/* Notice banner + Export PDF */}
           <div
-            className="mb-6 rounded-lg px-4 py-3 text-sm"
+            className="mb-6 rounded-lg px-4 py-3 text-sm flex items-center justify-between ap-no-print"
             style={{
               backgroundColor: "var(--hp-warm-100)",
               border: "1px solid var(--hp-border)",
               color: "var(--hp-warm-800)",
             }}
           >
-            Preview only &mdash; nothing has been sent to Procore.
+            <span>Preview only &mdash; nothing has been sent to Procore.</span>
+            <button
+              onClick={() => window.print()}
+              className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 transition-colors shrink-0 ml-4"
+            >
+              Export PDF
+            </button>
           </div>
 
           {/* Plan metadata */}
@@ -299,7 +305,7 @@ export default function ActionPlansPage() {
           ))}
 
           {/* Summary + reset */}
-          <div className="flex items-center justify-between mt-6">
+          <div className="flex items-center justify-between mt-6 ap-no-print">
             <p
               className="text-xs"
               style={{ color: "var(--hp-text-muted)" }}
