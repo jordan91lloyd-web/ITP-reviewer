@@ -118,11 +118,45 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const planId = sp.get("plan_id");
+  const planIdParam = sp.get("plan_id");
+
+  // ── Resolve plan ID: explicit param, or default to newest ───────────────
+  let resolvedPlanId: number | null = planIdParam ? Number(planIdParam) : null;
+  let autoSelected = false;
+
+  if (!resolvedPlanId) {
+    // Fetch all plans and pick the one with the highest id
+    try {
+      const url = new URL(
+        `${PROCORE_BASE_URL}/rest/v1.0/projects/${projectId}/action_plans/plans`
+      );
+      url.searchParams.set("company_id", companyId);
+      const res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "Procore-Company-Id": companyId,
+        },
+      });
+      if (res.ok) {
+        const allPlans = await res.json();
+        const list: Record<string, unknown>[] = Array.isArray(allPlans)
+          ? allPlans
+          : (allPlans?.data ?? []);
+        if (list.length > 0) {
+          const newest = list.reduce((a, b) =>
+            ((a.id as number) > (b.id as number)) ? a : b
+          );
+          resolvedPlanId = newest.id as number;
+          autoSelected = true;
+        }
+      }
+    } catch { /* ignore */ }
+  }
 
   // ── Single-plan inspection mode ─────────────────────────────────────────
-  if (planId) {
-    const planIdNum = Number(planId);
+  if (resolvedPlanId) {
+    const planIdNum = resolvedPlanId;
 
     // Fetch plans list, find the target plan
     const plansProbe = await probe(
@@ -211,6 +245,7 @@ export async function GET(request: NextRequest) {
 
     const result = {
       plan_id: planIdNum,
+      auto_selected: autoSelected,
       plan: fullPlan,
       sections: planSections,
       sections_count: planSections.length,

@@ -10,17 +10,17 @@ const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 16000;
 
 /**
- * Converts a single document (PDF or image) into a structured Action Plan.
+ * Converts a single document into a structured Action Plan.
+ * Accepts PDF (native), images (vision), or pre-extracted text (docx/xlsx).
  */
 export async function runActionPlanConversion(
   fileBuffer: Buffer,
   filename: string,
-  mimeType: "application/pdf" | "image/jpeg" | "image/png"
+  mimeType: "application/pdf" | "image/jpeg" | "image/png" | "text/plain"
 ): Promise<ConvertedActionPlan> {
   console.log(`[action-plan] Converting "${filename}" (${mimeType})`);
 
   const client = new Anthropic();
-  const base64 = fileBuffer.toString("base64");
 
   const contentBlocks: Anthropic.ContentBlockParam[] = [];
 
@@ -30,13 +30,20 @@ export async function runActionPlanConversion(
     text: `Document: ${filename}`,
   });
 
-  // Document or image block
+  // Document, image, or text block
   if (mimeType === "application/pdf") {
+    const base64 = fileBuffer.toString("base64");
     contentBlocks.push({
       type: "document",
       source: { type: "base64", media_type: "application/pdf", data: base64 },
     });
+  } else if (mimeType === "text/plain") {
+    contentBlocks.push({
+      type: "text",
+      text: fileBuffer.toString("utf-8"),
+    });
   } else {
+    const base64 = fileBuffer.toString("base64");
     contentBlocks.push({
       type: "image",
       source: { type: "base64", media_type: mimeType, data: base64 },

@@ -3,7 +3,15 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { ConvertedActionPlan } from "@/lib/actionPlanTypes";
 
-const ALLOWED_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const ALLOWED_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+const ALLOWED_EXTENSIONS = new Set([".pdf", ".jpg", ".jpeg", ".png", ".docx", ".xlsx"]);
+const LEGACY_EXTENSIONS = new Set([".doc", ".xls"]);
 const MAX_SIZE = 20 * 1024 * 1024;
 
 interface SimpleProject {
@@ -110,8 +118,13 @@ export default function ActionPlansPage() {
     setPlan(null);
     setUploadResult(null);
     setUploadError(null);
-    if (!ALLOWED_TYPES.has(f.type)) {
-      setError("Unsupported file type. Use PDF, JPG, or PNG.");
+    const ext = f.name.toLowerCase().slice(f.name.lastIndexOf("."));
+    if (LEGACY_EXTENSIONS.has(ext)) {
+      setError(`Legacy ${ext} format not supported \u2014 re-save as ${ext === ".doc" ? ".docx" : ".xlsx"}.`);
+      return;
+    }
+    if (!ALLOWED_TYPES.has(f.type) && !ALLOWED_EXTENSIONS.has(ext)) {
+      setError("Unsupported file type. Use PDF, JPG, PNG, DOCX, or XLSX.");
       return;
     }
     if (f.size > MAX_SIZE) {
@@ -313,7 +326,7 @@ export default function ActionPlansPage() {
             <input
               ref={inputRef}
               type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
+              accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -335,7 +348,7 @@ export default function ActionPlansPage() {
                   Drop a report here, or click to select
                 </p>
                 <p className="text-xs mt-1" style={{ color: "var(--hp-text-muted)" }}>
-                  PDF, JPG, or PNG &middot; Max 20 MB
+                  PDF, JPG, PNG, DOCX, or XLSX &middot; Max 20 MB
                 </p>
               </div>
             )}
