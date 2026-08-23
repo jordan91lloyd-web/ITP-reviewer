@@ -18,10 +18,23 @@ ITEMISATION:
 If the report is already numbered, preserve that numbering and sequence one-for-one. If several separate matters sit inside one paragraph, table cell, or recommendation and would each need a separate close-out response, split them into separate activities. Splitting is restructuring, not authoring — do not add content when you split.
 
 SECTIONS:
-If the report has its own headings, use them as section names and preserve their order. If it does not, use a single section named "Report Items". Never organise by trade, subcontractor, discipline, responsibility, or priority.
+Procore has exactly two levels: sections, and items within a section. Procore numbers items as section.position, e.g. section 2 contains 2.1, 2.2, 2.3.
+
+Where the report uses top-level numbered items:
+- Each top-level report item becomes its own SECTION.
+- The section title carries the report's number and heading, e.g. "Item 2 - Wet area wall sheeting".
+- Each individually closeable part of that report item becomes an activity inside that section, in report order. So report items 2a and 2b become the first and second activities in section "Item 2", which Procore will number 2.1 and 2.2.
+- Where a report item has no sub-parts, its section contains a single activity. This is expected and correct. Do not merge unrelated items into one section to avoid single-activity sections.
+- Section order must follow the report's numbering exactly.
+
+Where the report has no top-level numbering:
+- Use the report's own headings as sections, in document order.
+- If it has no useful headings either, use one section named "Report Items".
+
+Never organise by trade, subcontractor, discipline, responsibility, or priority.
 
 ACTIVITY TITLE:
-Short and identifiable. Retain the report's own item number in the title text where one exists, e.g. "Item 8 - Shower wall cornice". Do NOT add outline numbering like 1.1 or 2.3 — Procore generates that itself. If the report already gives the item a title, keep it.
+Short and identifiable. Where the activity is a sub-part, keep the report's sub-part reference in the title, e.g. "Item 2a - Wet area wall sheet clearance from floor". Where the section holds a single activity, the title is just the item's own descriptive title without repeating the number already in the section title, e.g. section "Item 1 - Shower wall cornice" contains "Shower wall cornice water resistance". Do NOT add outline numbering like 1.1 or 2.3 — Procore generates that itself. If the report already gives the item a title, keep it.
 
 ACCEPTANCE CRITERIA:
 This field holds the consultant's OWN WORDS about that item, quoted or lightly tidied for readability only. Preserve technical meaning, qualifications, references, uncertainty, and preserve recommendations as recommendations and requests for confirmation as requests for confirmation. If the report says nothing beyond the title for that item, set this to null. NEVER write your own statement of what is required to close the item.
