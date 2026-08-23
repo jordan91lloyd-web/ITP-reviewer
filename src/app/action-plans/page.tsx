@@ -162,11 +162,11 @@ export default function ActionPlansPage() {
 
           {error && (
             <div
-              className="mt-4 rounded-lg px-4 py-3 text-sm"
+              className="mt-4 rounded-lg px-4 py-3 text-sm font-medium"
               style={{
-                backgroundColor: "var(--hp-warm-100)",
-                border: "1px solid var(--hp-border)",
-                color: "var(--hp-warm-800)",
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fecaca",
+                color: "#991b1b",
               }}
             >
               {error}
@@ -176,10 +176,11 @@ export default function ActionPlansPage() {
           <button
             onClick={handleConvert}
             disabled={!file || isLoading}
-            className="mt-4 w-full rounded-lg px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-            style={{ backgroundColor: "var(--hp-accent)" }}
+            className="mt-4 w-full rounded-lg bg-amber-600 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? "Converting..." : "Convert to Action Plan"}
+            {isLoading
+              ? "Converting\u2026 this can take up to a minute"
+              : "Convert to Action Plan"}
           </button>
         </>
       )}
