@@ -4,7 +4,9 @@
 //
 // Usage (browser, while logged in):
 //   /api/procore/debug-action-plan-create?project_id=X&company_id=Y&confirm=CREATE
+//   /api/procore/debug-action-plan-create?project_id=X&company_id=Y&plan_id=Z&confirm=CREATE
 //
+// If plan_id is supplied, step 3 (create plan) is skipped and steps 4/5 use that id.
 // The confirm=CREATE guard is mandatory — without it no Procore requests are made.
 // Leaves the test plan in place for manual inspection in the Procore UI.
 
@@ -164,11 +166,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const suppliedPlanId = sp.get("plan_id") ? Number(sp.get("plan_id")) : null;
+
   const steps: StepLog[] = [];
   let planTypeId: number | null = null;
-  let newPlanId: number | null = null;
+  let newPlanId: number | null = suppliedPlanId;
   let newSectionId: number | null = null;
   let newItemId: number | null = null;
+  let item2Created = false;
 
   // ── STEP 1: find a plan type ────────────────────────────────────────────────
   const typesPaths = [
@@ -211,36 +216,48 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── STEP 3: create a plan ──────────────────────────────────────────────────
-  const planPath = `/rest/v1.0/projects/${projectId}/action_plans/plans`;
-  const innerPlan = {
-    title: "ZZZ TEST - HOLDPOINT SPIKE - DELETE ME",
-    description: "Automated API write test. Safe to delete.",
-    ...(planTypeId ? { plan_type_id: planTypeId } : {}),
-  };
+  // ── STEP 3: create a plan (skipped if plan_id supplied) ─────────────────────
+  if (suppliedPlanId) {
+    steps.push({
+      step: "3 - create plan (SKIPPED — using supplied plan_id)",
+      method: "NONE",
+      path: "",
+      body_sent: null,
+      status: 0,
+      response: `Using supplied plan_id=${suppliedPlanId}`,
+      ok: true,
+    });
+  } else {
+    const planPath = `/rest/v1.0/projects/${projectId}/action_plans/plans`;
+    const innerPlan = {
+      title: "ZZZ TEST - HOLDPOINT SPIKE - DELETE ME",
+      description: "Automated API write test. Safe to delete.",
+      ...(planTypeId ? { plan_type_id: planTypeId } : {}),
+    };
 
-  const wrappers: { label: string; body: unknown }[] = [
-    { label: '{ "plan": {...} }', body: { plan: innerPlan } },
-    { label: '{ "action_plan": {...} }', body: { action_plan: innerPlan } },
-    { label: "unwrapped", body: innerPlan },
-  ];
+    const wrappers: { label: string; body: unknown }[] = [
+      { label: '{ "plan": {...} }', body: { plan: innerPlan } },
+      { label: '{ "action_plan": {...} }', body: { action_plan: innerPlan } },
+      { label: "unwrapped", body: innerPlan },
+    ];
 
-  for (const w of wrappers) {
-    const { log, json, ok } = await probePost(
-      accessToken, planPath, companyId, w.body,
-      `3 - create plan (${w.label})`
-    );
-    steps.push(log);
-    if (ok && json && typeof json === "object") {
-      newPlanId = (json as Record<string, unknown>).id as number ?? null;
-      break;
+    for (const w of wrappers) {
+      const { log, json, ok } = await probePost(
+        accessToken, planPath, companyId, w.body,
+        `3 - create plan (${w.label})`
+      );
+      steps.push(log);
+      if (ok && json && typeof json === "object") {
+        newPlanId = (json as Record<string, unknown>).id as number ?? null;
+        break;
+      }
     }
   }
 
-  // ── STEP 4: create a section (only if plan was created) ────────────────────
+  // ── STEP 4: create a section (flat path, plan_id in body) ───────────────────
   if (newPlanId) {
-    const sectionPath = `/rest/v1.0/projects/${projectId}/action_plans/plans/${newPlanId}/plan_sections`;
-    const innerSection = { title: "Report Items", position: 1 };
+    const sectionPath = `/rest/v1.0/projects/${projectId}/action_plans/plan_sections`;
+    const innerSection = { plan_id: newPlanId, title: "Report Items", position: 1 };
     const sectionWrappers: { label: string; body: unknown }[] = [
       { label: '{ "plan_section": {...} }', body: { plan_section: innerSection } },
       { label: "unwrapped", body: innerSection },
@@ -258,19 +275,17 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── STEP 5: create an item (only if plan was created) ──────────────────────
-  if (newPlanId) {
+  // ── STEP 5: create an item (only if section was created) ────────────────────
+  if (newPlanId && newSectionId) {
     const itemPath = `/rest/v1.0/projects/${projectId}/action_plans/plan_items`;
-    const innerItem: Record<string, unknown> = {
+    const innerItem = {
       plan_id: newPlanId,
+      plan_section_id: newSectionId,
       title: "Item 1 - Test item",
-      description: "TEST DESCRIPTION FIELD - checking which UI label this maps to.",
-      notes: "TEST NOTES FIELD - checking which UI label this maps to.",
+      description: "TEST DESCRIPTION FIELD - which UI label is this",
+      notes: "TEST NOTES FIELD - which UI label is this",
       position: 1,
     };
-    if (newSectionId) {
-      innerItem.plan_section_id = newSectionId;
-    }
     const itemWrappers: { label: string; body: unknown }[] = [
       { label: '{ "plan_item": {...} }', body: { plan_item: innerItem } },
       { label: "unwrapped", body: innerItem },
@@ -284,6 +299,31 @@ export async function GET(request: NextRequest) {
       if (ok && json && typeof json === "object") {
         newItemId = (json as Record<string, unknown>).id as number ?? null;
         break;
+      }
+    }
+
+    // ── STEP 5b: bare minimum item (title only) ──────────────────────────────
+    if (newItemId) {
+      const bareItem = {
+        plan_id: newPlanId,
+        plan_section_id: newSectionId,
+        title: "Item 2 - Title only",
+        position: 2,
+      };
+      const bareWrappers: { label: string; body: unknown }[] = [
+        { label: '{ "plan_item": {...} }', body: { plan_item: bareItem } },
+        { label: "unwrapped", body: bareItem },
+      ];
+      for (const w of bareWrappers) {
+        const { log, json, ok } = await probePost(
+          accessToken, itemPath, companyId, w.body,
+          `5b - create bare item (${w.label})`
+        );
+        steps.push(log);
+        if (ok && json && typeof json === "object") {
+          item2Created = true;
+          break;
+        }
       }
     }
   }
@@ -304,12 +344,14 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     summary: {
       plan_type_id_used: planTypeId,
-      plan_created: newPlanId !== null,
+      supplied_plan_id: suppliedPlanId,
+      plan_created: !suppliedPlanId && newPlanId !== null,
       new_plan_id: newPlanId,
       section_created: newSectionId !== null,
       new_section_id: newSectionId,
       item_created: newItemId !== null,
       new_item_id: newItemId,
+      item2_created: item2Created,
     },
     steps,
   });
