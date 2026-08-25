@@ -28,6 +28,9 @@ export const AUDIT_ACTIONS = {
   PROJECT_UNHIDDEN:            "project_unhidden",
   COMPLIANCE_REPORT_UPLOADED:  "compliance_report_uploaded",
   REVIEW_RESET:                "review_reset",
+  ACTION_PLAN_CREATED:         "action_plan_created",
+  ACTION_PLAN_FAILED:          "action_plan_failed",
+  LOGIN_REJECTED:              "login_rejected",
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTIONS[keyof typeof AUDIT_ACTIONS];

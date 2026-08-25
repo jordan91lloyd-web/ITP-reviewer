@@ -11,7 +11,8 @@ export default async function Home({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const isUnauthorized = params.error === "unauthorized";
+  const isUnauthorized = params.error === "unauthorized" || params.error === "email_not_allowed";
+  const isEmailBlocked = params.error === "email_not_allowed";
 
   const cookieStore = await cookies();
   const isAuthenticated = !!cookieStore.get("procore_access_token")?.value;
@@ -37,7 +38,9 @@ export default async function Home({
             >
               <p className="font-semibold" style={{ color: "rgba(255,180,180,1)" }}>Access restricted.</p>
               <p className="text-xs mt-0.5" style={{ color: "rgba(255,160,160,0.8)" }}>
-                Please contact your administrator.
+                {isEmailBlocked
+                  ? "Access is limited during testing. Contact Jordy to be added."
+                  : "Please contact your administrator."}
               </p>
             </div>
           )}

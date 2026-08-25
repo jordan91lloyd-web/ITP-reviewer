@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import type { ConvertedActionPlan } from "@/lib/actionPlanTypes";
+import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 export const maxDuration = 60;
 
@@ -157,11 +158,44 @@ export async function POST(request: NextRequest) {
   }
 
   const reportFile = formData.get("file") as File | null;
+  const sourceFilename = reportFile?.name ?? null;
+
+  // Resolve audit user (non-blocking — used at end)
+  const auditUserPromise = resolveAuditUser(accessToken);
 
   const companyId = String(company_id);
   let createdPlanId: number | null = null;
   let sectionsCreated = 0;
   let itemsCreated = 0;
+
+  // Helper: log a failure audit event and return the failure response
+  function logFailureAndRespond(error: string) {
+    void auditUserPromise.then(auditUser =>
+      logAuditEvent({
+        ...auditUser,
+        company_id: companyId,
+        action: AUDIT_ACTIONS.ACTION_PLAN_FAILED,
+        entity_type: "project",
+        entity_id: createdPlanId ? String(createdPlanId) : undefined,
+        entity_name: plan.action_plan_name,
+        project_id: String(project_id),
+        details: {
+          error,
+          created_plan_id: createdPlanId,
+          sections_created: sectionsCreated,
+          items_created: itemsCreated,
+          source_filename: sourceFilename,
+        },
+      })
+    );
+    return NextResponse.json({
+      success: false,
+      error,
+      created_plan_id: createdPlanId,
+      sections_created: sectionsCreated,
+      items_created: itemsCreated,
+    });
+  }
 
   // ── Step 1: Create the plan ────────────────────────────────────────────────
   const planRes = await procorePost(
@@ -178,24 +212,12 @@ export async function POST(request: NextRequest) {
   );
 
   if (!planRes.ok) {
-    return NextResponse.json({
-      success: false,
-      error: `Failed to create plan: ${planRes.error}`,
-      created_plan_id: null,
-      sections_created: 0,
-      items_created: 0,
-    });
+    return logFailureAndRespond(`Failed to create plan: ${planRes.error}`);
   }
 
   createdPlanId = (planRes.json as Record<string, unknown>)?.id as number;
   if (!createdPlanId) {
-    return NextResponse.json({
-      success: false,
-      error: "Plan was created but no id was returned.",
-      created_plan_id: null,
-      sections_created: 0,
-      items_created: 0,
-    });
+    return logFailureAndRespond("Plan was created but no id was returned.");
   }
 
   // ── Step 2: Collect distinct sections in order ─────────────────────────────
@@ -224,24 +246,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (!sectionRes.ok) {
-      return NextResponse.json({
-        success: false,
-        error: `Failed to create section "${sectionTitle}": ${sectionRes.error}`,
-        created_plan_id: createdPlanId,
-        sections_created: sectionsCreated,
-        items_created: itemsCreated,
-      });
+      return logFailureAndRespond(`Failed to create section "${sectionTitle}": ${sectionRes.error}`);
     }
 
     const sectionId = (sectionRes.json as Record<string, unknown>)?.id as number;
     if (!sectionId) {
-      return NextResponse.json({
-        success: false,
-        error: `Section "${sectionTitle}" was created but no id was returned.`,
-        created_plan_id: createdPlanId,
-        sections_created: sectionsCreated,
-        items_created: itemsCreated,
-      });
+      return logFailureAndRespond(`Section "${sectionTitle}" was created but no id was returned.`);
     }
 
     sectionIdMap[sectionTitle] = sectionId;
@@ -283,13 +293,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (!itemRes.ok) {
-        return NextResponse.json({
-          success: false,
-          error: `Failed to create item "${a.activity_title}": ${itemRes.error}`,
-          created_plan_id: createdPlanId,
-          sections_created: sectionsCreated,
-          items_created: itemsCreated,
-        });
+        return logFailureAndRespond(`Failed to create item "${a.activity_title}": ${itemRes.error}`);
       }
 
       itemsCreated++;
@@ -519,6 +523,26 @@ export async function POST(request: NextRequest) {
 
   // ── Success (plan + sections + items always succeeded to reach here) ────
   const planUrl = `${PROCORE_WEB_HOST}/webclients/host/companies/${company_id}/projects/${project_id}/tools/actionplans/plans/${createdPlanId}`;
+
+  // Audit log — fire and forget
+  void auditUserPromise.then(auditUser =>
+    logAuditEvent({
+      ...auditUser,
+      company_id: companyId,
+      action: AUDIT_ACTIONS.ACTION_PLAN_CREATED,
+      entity_type: "project",
+      entity_id: String(createdPlanId),
+      entity_name: plan.action_plan_name,
+      project_id: String(project_id),
+      details: {
+        plan_id: createdPlanId,
+        sections_created: sectionsCreated,
+        items_created: itemsCreated,
+        source_filename: sourceFilename,
+        attachment_succeeded: attachment.succeeded,
+      },
+    })
+  );
 
   return NextResponse.json({
     success: true,

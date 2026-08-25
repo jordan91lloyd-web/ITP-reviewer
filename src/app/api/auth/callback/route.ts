@@ -89,9 +89,43 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // ── Email allowlist check ─────────────────────────────────────────────────
+  const allowedEmailsRaw = process.env.ALLOWED_EMAILS ?? "";
+  if (allowedEmailsRaw.trim()) {
+    const allowedSet = new Set(
+      allowedEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(Boolean)
+    );
+
+    let userEmail = "";
+    try {
+      const user = await getProcoreUser(tokens.access_token);
+      userEmail = (user.login ?? "").toLowerCase().trim();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[auth/callback] Failed to fetch user for email check:", msg);
+      return NextResponse.redirect(
+        new URL(`/?auth_error=${encodeURIComponent("Could not verify user email")}`, request.url)
+      );
+    }
+
+    if (!allowedSet.has(userEmail)) {
+      console.warn(`[auth/callback] Email "${userEmail}" not in ALLOWED_EMAILS — access denied`);
+      void logAuditEvent({
+        company_id: process.env.FLEEK_COMPANY_ID ?? "unknown",
+        user_id: "unknown",
+        user_name: userEmail,
+        user_email: userEmail,
+        action: AUDIT_ACTIONS.LOGIN_REJECTED,
+        details: { reason: "email_not_in_allowlist", email: userEmail },
+      });
+      return NextResponse.redirect(
+        new URL("/?error=email_not_allowed", request.url)
+      );
+    }
+    console.log(`[auth/callback] Email allowlist check passed for ${userEmail}`);
+  }
+
   // ── Store tokens in cookies ───────────────────────────────────────────────
-  // For a local dev app, cookies are fine.
-  // In production you'd encrypt these or store them server-side.
   const expiresAt = Date.now() + tokens.expires_in * 1000;
 
   cookieStore.set("procore_access_token", tokens.access_token, {
