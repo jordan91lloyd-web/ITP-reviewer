@@ -89,13 +89,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── Email allowlist check ─────────────────────────────────────────────────
-  const allowedEmailsRaw = process.env.ALLOWED_EMAILS ?? "";
-  if (allowedEmailsRaw.trim()) {
-    const allowedSet = new Set(
-      allowedEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(Boolean)
-    );
+  // ── Email / domain access check ───────────────────────────────────────────
+  // Priority: ALLOWED_EMAILS (explicit list) > ALLOWED_EMAIL_DOMAINS (domain gate)
+  // If neither is set, anyone who passed the company check is allowed.
+  const allowedEmailsRaw = (process.env.ALLOWED_EMAILS ?? "").trim();
+  const allowedDomainsRaw = (process.env.ALLOWED_EMAIL_DOMAINS ?? "").trim();
 
+  if (allowedEmailsRaw || allowedDomainsRaw) {
     let userEmail = "";
     try {
       const user = await getProcoreUser(tokens.access_token);
@@ -108,21 +108,43 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!allowedSet.has(userEmail)) {
-      console.warn(`[auth/callback] Email "${userEmail}" not in ALLOWED_EMAILS — access denied`);
+    const auditCompanyId = process.env.FLEEK_COMPANY_ID ?? "unknown";
+    let allowed = false;
+    let ruleUsed = "";
+
+    if (allowedEmailsRaw) {
+      // Rule 1: explicit email list (overrides domain check)
+      const allowedSet = new Set(
+        allowedEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(Boolean)
+      );
+      allowed = allowedSet.has(userEmail);
+      ruleUsed = "email_allowlist";
+    } else {
+      // Rule 2: domain check
+      const allowedDomains = new Set(
+        allowedDomainsRaw.split(",").map(d => d.trim().toLowerCase()).filter(Boolean)
+      );
+      const atIdx = userEmail.lastIndexOf("@");
+      const userDomain = atIdx >= 0 ? userEmail.slice(atIdx + 1) : "";
+      allowed = allowedDomains.has(userDomain);
+      ruleUsed = "domain_allowlist";
+    }
+
+    if (!allowed) {
+      console.warn(`[auth/callback] Email "${userEmail}" rejected by ${ruleUsed} — access denied`);
       void logAuditEvent({
-        company_id: process.env.FLEEK_COMPANY_ID ?? "unknown",
+        company_id: auditCompanyId,
         user_id: "unknown",
         user_name: userEmail,
         user_email: userEmail,
         action: AUDIT_ACTIONS.LOGIN_REJECTED,
-        details: { reason: "email_not_in_allowlist", email: userEmail },
+        details: { reason: ruleUsed, email: userEmail },
       });
       return NextResponse.redirect(
         new URL("/?error=email_not_allowed", request.url)
       );
     }
-    console.log(`[auth/callback] Email allowlist check passed for ${userEmail}`);
+    console.log(`[auth/callback] Access check passed for ${userEmail} (${ruleUsed})`);
   }
 
   // ── Store tokens in cookies ───────────────────────────────────────────────
