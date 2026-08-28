@@ -396,9 +396,9 @@ Still to build: locations and checklist templates, which is what bulk ITP builds
 
 ## Next up (as at 28 Aug 2026)
 
-1. **Rotate `MCP_BEARER_TOKEN`.** It was exposed in a chat transcript. Generate a new value, update `.env.local` and Vercel, then re-run `claude mcp add` for the local server.
-2. **Rotate the Supabase service role key.**
-3. **Build the locations tool.** Read-only, same pattern as the existing three.
-4. **Build the checklist templates tool.** Read-only. Locations + templates together are what bulk ITP builds actually need.
+1. ~~Rotate `MCP_BEARER_TOKEN`~~ — done 28 Aug 2026. `.env.local` and Vercel both updated and redeployed.
+2. ~~Rotate the Supabase service role key~~ — reviewed 28 Aug 2026 and deliberately not done. No known exposure; the key lives only in gitignored `.env.local` and Vercel, and it is a new-style `sb_secret_` key, not a legacy service_role JWT. Revisit only if it is actually exposed.
+3. **Build the bulk ITP creation tab.** Both API halves confirmed — see `docs/PROCORE-BULK-ITP-API.md`. Create inspections from a template against locations, then link each to its Action Plan item via a test record request. Build it as a Holdpoint tab, not an MCP tool: same shape as the Action Plans converter, with a preview before it writes.
+4. **Optional: locations and checklist template MCP tools.** Read-only, same pattern as the existing three. Only worth it if you want to query these conversationally — the tab does not need them.
 
 Both MCP auth paths are verified working as at 28 Aug 2026: static bearer acting as the pinned `MCP_PROCORE_USER_ID`, and OAuth acting as the token owner.
