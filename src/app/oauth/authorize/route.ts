@@ -32,17 +32,12 @@ import {
 } from "@/lib/mcp-oauth";
 import { logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
 
-// ── Accepted redirect URIs ────────────────────────────────────────────────────
-// TEMPORARY: empty means accept any redirect_uri (first deploy only).
-// After reading Claude's actual redirect_uri from logs, add it here and
-// remove the permissive fallback.
-const ALLOWED_REDIRECT_URIS: string[] = [];
+// ── Accepted redirect URIs (exact string match) ──────────────────────────────
+const ALLOWED_REDIRECT_URIS: string[] = [
+  "https://claude.ai/api/mcp/auth_callback",
+];
 
 function isRedirectAllowed(uri: string): boolean {
-  if (ALLOWED_REDIRECT_URIS.length === 0) {
-    console.warn("[oauth/authorize] WARNING: accepting any redirect_uri (permissive mode)");
-    return true;
-  }
   return ALLOWED_REDIRECT_URIS.includes(uri);
 }
 
@@ -53,7 +48,7 @@ function errorRedirect(redirectUri: string, error: string, description: string, 
   url.searchParams.set("error", error);
   url.searchParams.set("error_description", description);
   if (state) url.searchParams.set("state", state);
-  return NextResponse.redirect(url.toString());
+  return NextResponse.redirect(url.toString(), 303);
 }
 
 // ── GET: validate params, check session + allowlist, render approve page ───────
@@ -260,7 +255,10 @@ export async function POST(request: NextRequest) {
   callbackUrl.searchParams.set("code", code);
   if (state) callbackUrl.searchParams.set("state", state);
 
-  return NextResponse.redirect(callbackUrl.toString());
+  // 303 See Other — forces the browser to follow with GET, not POST.
+  // OAuth 2.1 §4.1.2: the authorization server redirects the user-agent
+  // back to the client using the redirection URI.
+  return NextResponse.redirect(callbackUrl.toString(), 303);
 }
 
 // ── HTML rendering ────────────────────────────────────────────────────────────
