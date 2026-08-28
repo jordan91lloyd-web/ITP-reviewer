@@ -294,3 +294,72 @@ All scoring logic defined in `buildSystemPrompt()` in `src/lib/prompt.ts`.
 26. **Procore inspections for manual import UI** filter `status === "closed"` AND `name.startsWith("itp")`. Dashboard endpoint shows all statuses — different filter.
 27. **Images from Procore: max 10, smallest-first, under 4 MB each.** PDFs processed first.
 28. **`.msg`/`.docx` converted to plain text**, not sent as binary. `.doc` rejected.
+29. **Never modify `getValidToken` in `token-store.ts`.** The bulk queue depends on its exact behaviour.
+30. **Never commit secrets, never edit `.env.local`.** Tell the user what to add and they will add it.
+31. **Confirm Procore endpoints against developers.procore.com at build time.** Never recall endpoint shapes or field names from memory.
+32. **Windows environment.** No unix-only commands, no background processes, do not start or restart the dev server. The user runs it.
+
+---
+
+## MCP Server
+
+### What it is
+`/api/mcp` is a remote MCP (Model Context Protocol) server that exposes Procore tools to Claude. Built on `mcp-handler` v2 with `@modelcontextprotocol/server` helpers.
+
+### Auth paths (checked in order)
+1. **Static bearer token** — `MCP_BEARER_TOKEN` env var. Used by Claude Code and curl. Exact string match.
+2. **OAuth-issued bearer token** — looked up by SHA-256 hash in `mcp_oauth_tokens` table. Used by Claude.ai and Claude Desktop via the custom connector.
+3. **No valid token** → 401 with `WWW-Authenticate: Bearer error="invalid_token", error_description="...", resource_metadata="..."` pointing to the RFC 9728 Protected Resource Metadata.
+
+### OAuth endpoints
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/.well-known/oauth-protected-resource` | GET | RFC 9728 Protected Resource Metadata (root fallback) |
+| `/.well-known/oauth-protected-resource/api/mcp` | GET | RFC 9728 Protected Resource Metadata (path-aware, probed first by clients) |
+| `/.well-known/oauth-authorization-server` | GET | RFC 8414 Authorization Server Metadata |
+| `/oauth/authorize` | GET | Authorization endpoint — validates params, checks Procore session + email allowlist, renders approve page |
+| `/oauth/authorize` | POST | Approve submission — generates one-time auth code, stores in Supabase, redirects to Claude's callback with 303 |
+| `/oauth/token` | POST | Token endpoint — exchanges code + code_verifier for access/refresh tokens, or refreshes a token pair |
+
+### Shared helpers
+`src/lib/mcp-oauth.ts` — metadata builders, PKCE verification, token hashing, email allowlist check, Supabase client, request logging.
+
+### Supabase tables
+Both tables have RLS enabled. All access uses `SUPABASE_SERVICE_ROLE_KEY`.
+
+**`mcp_oauth_codes`** — one-time authorization codes. Columns: `code` (PK), `client_id`, `redirect_uri`, `code_challenge`, `procore_user_id`, `scope`, `expires_at` (10 min), `used`, `created_at`.
+
+**`mcp_oauth_tokens`** — issued token pairs. **Tokens stored as SHA-256 hashes, never plain text.** Columns: `access_token_hash` (PK), `refresh_token_hash` (UNIQUE), `client_id`, `procore_user_id`, `scope`, `expires_at` (1 hour), `refresh_expires_at` (30 days), `created_at`. Refresh tokens are single-use — on refresh the old pair is deleted and a new pair issued.
+
+### Client registration
+Claude.ai does **not** support Dynamic Client Registration (RFC 7591). It requires a pre-registered `client_id` pasted into the connector dialog's "OAuth Client ID" field. The `registration_endpoint` is omitted from the AS metadata.
+
+- **`MCP_OAUTH_CLIENT_ID`** — a single pre-registered UUID stored as an env var.
+- **Claude's redirect_uri** — `https://claude.ai/api/mcp/auth_callback`, locked to exact string match in `ALLOWED_REDIRECT_URIS` in `/oauth/authorize/route.ts`.
+- **OAuth Client Secret** — left empty in the connector dialog. Public client (`token_endpoint_auth_method: "none"`).
+
+### Procore session gating
+The `/oauth/authorize` page requires an existing Procore login session (cookies) AND the user's email must pass `ALLOWED_EMAILS` / `ALLOWED_EMAIL_DOMAINS`. If no session exists, the authorize route sets a `mcp_oauth_return_to` cookie (httpOnly, secure, sameSite=lax, 10-min TTL) containing the full authorize path+query, then redirects to `/api/auth/login`. After Procore login, `/api/auth/callback` checks for this cookie and redirects back to the authorize URL with all OAuth params intact.
+
+### Env vars (MCP-specific)
+```
+MCP_BEARER_TOKEN          — static token for Claude Code / curl
+MCP_SERVER_URL            — canonical resource URL, e.g. https://itp-reviewer.vercel.app/api/mcp
+MCP_OAUTH_CLIENT_ID       — pre-registered UUID for the Claude.ai connector
+```
+
+---
+
+## MCP OAuth gotchas (learned the hard way)
+
+1. **`scopes_supported: []` kills the flow.** RFC 8414 §2: "Claims with zero elements MUST be omitted from the response." An empty array declares the server supports no scopes. Claude reads this, gives up, and never calls `/oauth/register`. Omit the field entirely if you have no scopes.
+
+2. **Redirect after approve must be 303, not 307.** Next.js `NextResponse.redirect()` defaults to 307, which preserves the request method. The approve form POSTs, so the redirect sends a POST to Claude's callback, which rejects it with "Method Not Allowed." Use `NextResponse.redirect(url, 303)` — 303 See Other forces the browser to follow with GET. Per OAuth 2.1 §4.1.2.
+
+3. **OAuth params lost after Procore login.** The authorize URL contains `client_id`, `redirect_uri`, `code_challenge`, `state`, etc. If the user has no Procore session, they must log in first. The Procore callback always redirects to `/?auth=success` — the original authorize URL is gone. Fix: store the full authorize path+query in a `mcp_oauth_return_to` cookie before redirecting to login, and have the callback redirect back to it.
+
+4. **Vercel log exports cap at ~76 rows.** Filter by time range and function name before exporting, or the useful lines get cut off.
+
+5. **Protected Resource Metadata is path-aware (RFC 9728 §3).** For a resource at `/api/mcp`, the metadata must be served at `/.well-known/oauth-protected-resource/api/mcp`, not just at the root. Clients probe the path-aware location first.
+
+6. **WWW-Authenticate header must include `error` and `error_description`.** A bare `Bearer resource_metadata="..."` is not enough. The library emits `Bearer error="invalid_token", error_description="...", resource_metadata="..."`. Match this format exactly.
