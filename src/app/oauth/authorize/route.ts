@@ -127,21 +127,22 @@ export async function GET(request: NextRequest) {
   }
 
   if (!accessToken) {
-    // No Procore session — redirect to Procore login, then back here.
-    // Preserve all OAuth params in a return_to cookie so the callback
-    // can send the user back.
-    const returnTo = request.url;
-    console.log("[oauth/authorize] No Procore session. Redirecting to login. return_to:", returnTo);
+    // No Procore session — store the full authorize path+query in a cookie
+    // so /api/auth/callback can redirect back after Procore login.
+    const url = new URL(request.url);
+    const returnPath = url.pathname + url.search; // relative, starts with /oauth/authorize
+    console.log("[oauth/authorize] No Procore session. Setting return_to cookie:", returnPath);
 
-    // Store return_to in a short-lived cookie (the login route redirects to
-    // Procore which redirects to /api/auth/callback which redirects to /).
-    // We intercept by checking for this cookie in the callback.
-    // SIMPLER: just show a page telling the user to log in first.
     const loginUrl = `${issuerUrl()}/api/auth/login`;
-    return new Response(renderLoginRequired(loginUrl, request.url), {
-      status: 200,
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.set("mcp_oauth_return_to", returnPath, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 60 * 10, // 10 minutes
+      path: "/",
     });
+    return response;
   }
 
   // ── Check email allowlist ───────────────────────────────────────────────
@@ -315,35 +316,6 @@ function renderApprovePage(params: {
         <button type="submit" class="approve">Approve</button>
       </div>
     </form>
-  </div>
-</body>
-</html>`;
-}
-
-function renderLoginRequired(loginUrl: string, returnTo: string) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in — Holdpoint</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .card { background: white; border-radius: 12px; padding: 2rem; max-width: 420px; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
-    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
-    p { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
-    a.btn { display: inline-block; padding: 0.75rem 2rem; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; }
-    a.btn:hover { background: #1d4ed8; }
-    .note { margin-top: 1rem; font-size: 0.8rem; color: #999; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Sign in to Holdpoint</h1>
-    <p>You need to sign in with Procore before authorizing Claude.</p>
-    <a class="btn" href="${escapeAttr(loginUrl)}">Sign in with Procore</a>
-    <p class="note">After signing in, come back to this page and retry the connection in Claude.</p>
   </div>
 </body>
 </html>`;

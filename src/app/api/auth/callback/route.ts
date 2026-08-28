@@ -202,5 +202,28 @@ export async function GET(request: NextRequest) {
     })
   );
 
+  // ── MCP OAuth return-to redirect ──────────────────────────────────────────
+  // If the user arrived here via the MCP OAuth authorize flow (which set a
+  // return_to cookie), redirect back to the authorize URL so the OAuth flow
+  // continues. Otherwise, redirect to the homepage as usual.
+  const mcpReturnTo = cookieStore.get("mcp_oauth_return_to")?.value;
+  if (mcpReturnTo) {
+    // Validate: must be a relative path starting with /oauth/authorize.
+    // Reject anything absolute or pointing elsewhere (open redirect defence).
+    const safe =
+      mcpReturnTo.startsWith("/oauth/authorize") &&
+      !mcpReturnTo.startsWith("//") &&
+      !mcpReturnTo.includes("://");
+
+    // Delete the cookie regardless — single use
+    cookieStore.delete("mcp_oauth_return_to");
+
+    if (safe) {
+      console.log("[auth/callback] MCP OAuth return_to redirect:", mcpReturnTo);
+      return NextResponse.redirect(new URL(mcpReturnTo, request.url));
+    }
+    console.warn("[auth/callback] Rejected invalid mcp_oauth_return_to:", mcpReturnTo);
+  }
+
   return NextResponse.redirect(new URL("/?auth=success", request.url));
 }
