@@ -575,3 +575,226 @@ export async function downloadFile(
 
   return { buffer, filename, contentType };
 }
+
+// ─── Bulk ITP builder — read helpers ─────────────────────────────────────────
+// Everything below supports the bulk ITP builder. All read-only.
+// Design brief: docs/BULK-ITP-BUILDER-DESIGN.md
+// Endpoint research: docs/PROCORE-BULK-ITP-API.md
+//
+// Two rules carried through from that research:
+//   • Always page. Bondi has >100 locations and a single page silently truncates.
+//   • Never match on names. Callers select by id.
+
+/** A project-level checklist (inspection) template. NOT a company template. */
+export interface ProcoreChecklistTemplate {
+  id: number;
+  name: string;
+  description?: string | null;
+  inspection_type?: { id: number; name: string } | null;
+  trade?: { id: number; name: string } | null;
+  item_count?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+/**
+ * A node in a project's location tree.
+ *
+ * `name` is the full breadcrumb path joined with ">" and no spaces around the
+ * separator, e.g. "A Ground Floor>Wellington>G. 01>Bath".
+ * `node_name` is just the leaf, e.g. "Bath".
+ */
+export interface ProcoreLocation {
+  id: number;
+  name: string;
+  node_name: string;
+  parent_id: number | null;
+  code: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+/**
+ * An Action Plan ("tracker").
+ *
+ * NOTE: the display name is `title`, not `name`. Action Plans, their sections
+ * and their items all use `title` — confirmed against live data 28 Aug 2026.
+ * There is no `name` field on any of them.
+ */
+export interface ProcoreActionPlan {
+  id: number;
+  title: string;
+  number?: number | null;
+  status?: string | null;
+  plan_type?: { id: number; name: string } | null;
+  location?: { id: number; name: string } | null;
+  manager?: { id: number; name: string } | null;
+  total_item_count?: number | null;
+  closed_item_count?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ProcoreActionPlanSection {
+  id: number;
+  plan_id: number;
+  title: string | null;
+  position: number | null;
+}
+
+export interface ProcoreActionPlanItem {
+  id: number;
+  plan_id: number;
+  plan_section_id: number;
+  title: string;
+  description?: string | null;
+  position?: number | null;
+  status?: { id?: number; name?: string } | null;
+}
+
+/**
+ * "An inspection of this template is required on this plan item."
+ * Note the payload carries the TEMPLATE id, not a specific inspection.
+ */
+export interface ProcoreTestRecordRequest {
+  id: number;
+  plan_id: number;
+  plan_item_id: number;
+  type: string;                                    // "checklist" for inspections
+  payload: { checklist_template_id?: number } | null;
+  plan_test_records_count?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+/**
+ * "This specific inspection satisfies that request."
+ * `payload.checklist_id` is the individual inspection — this is the actual link.
+ */
+export interface ProcoreTestRecord {
+  id: number;
+  plan_id: number;
+  plan_item_id: number;
+  plan_test_record_request_id: number;
+  type: string;
+  payload: { checklist_id?: number; checklist_template_id?: number } | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+/**
+ * Returns the PROJECT-level checklist templates for a project.
+ *
+ * These are the copies carrying project-specific customisation (the wet areas
+ * added to ITP-011, the elevations added to ITP-014). Inspections must be
+ * created from these, never from the company template, or they come out
+ * without the project-specific items.
+ */
+export async function getProjectChecklistTemplates(
+  accessToken: string,
+  projectId: number,
+  companyId: number
+): Promise<ProcoreChecklistTemplate[]> {
+  console.log(`[procore] getProjectChecklistTemplates: project_id=${projectId} company_id=${companyId}`);
+  return procoreGetAllPages<ProcoreChecklistTemplate>(
+    accessToken,
+    `/rest/v1.1/projects/${projectId}/checklist/list_templates`,
+    { per_page: "100" },
+    { "Procore-Company-Id": String(companyId) }
+  );
+}
+
+/**
+ * Returns every location on a project, flat, with parent_id for tree building.
+ *
+ * Paged deliberately — Bondi has well over 100 locations and a single
+ * unpaginated call truncates part way through the first apartment.
+ */
+export async function getProjectLocations(
+  accessToken: string,
+  projectId: number,
+  companyId: number
+): Promise<ProcoreLocation[]> {
+  console.log(`[procore] getProjectLocations: project_id=${projectId} company_id=${companyId}`);
+  return procoreGetAllPages<ProcoreLocation>(
+    accessToken,
+    `/rest/v1.0/projects/${projectId}/locations`,
+    { per_page: "100" },
+    { "Procore-Company-Id": String(companyId) }
+  );
+}
+
+/** Returns all Action Plans ("trackers") on a project. */
+export async function getActionPlans(
+  accessToken: string,
+  projectId: number,
+  companyId: number
+): Promise<ProcoreActionPlan[]> {
+  console.log(`[procore] getActionPlans: project_id=${projectId} company_id=${companyId}`);
+  return procoreGetAllPages<ProcoreActionPlan>(
+    accessToken,
+    `/rest/v1.0/projects/${projectId}/action_plans/plans`,
+    { per_page: "100", company_id: String(companyId) },
+    { "Procore-Company-Id": String(companyId) }
+  );
+}
+
+/** Returns the sections of one Action Plan. */
+export async function getActionPlanSections(
+  accessToken: string,
+  projectId: number,
+  planId: number,
+  companyId: number
+): Promise<ProcoreActionPlanSection[]> {
+  return procoreGetAllPages<ProcoreActionPlanSection>(
+    accessToken,
+    `/rest/v1.0/projects/${projectId}/action_plans/plan_sections`,
+    { per_page: "100", "filters[plan_id]": String(planId) },
+    { "Procore-Company-Id": String(companyId) }
+  );
+}
+
+/** Returns the items (rows) of one Action Plan. */
+export async function getActionPlanItems(
+  accessToken: string,
+  projectId: number,
+  planId: number,
+  companyId: number
+): Promise<ProcoreActionPlanItem[]> {
+  return procoreGetAllPages<ProcoreActionPlanItem>(
+    accessToken,
+    `/rest/v1.0/projects/${projectId}/action_plans/plan_items`,
+    { per_page: "100", "filters[plan_id]": String(planId) },
+    { "Procore-Company-Id": String(companyId) }
+  );
+}
+
+/** Returns the test record requests on one Action Plan. */
+export async function getTestRecordRequests(
+  accessToken: string,
+  projectId: number,
+  planId: number,
+  companyId: number
+): Promise<ProcoreTestRecordRequest[]> {
+  return procoreGetAllPages<ProcoreTestRecordRequest>(
+    accessToken,
+    `/rest/v1.0/projects/${projectId}/action_plans/plan_test_record_requests`,
+    { per_page: "100", "filters[plan_id]": String(planId) },
+    { "Procore-Company-Id": String(companyId) }
+  );
+}
+
+/** Returns the test records (actual inspection links) on one Action Plan. */
+export async function getTestRecords(
+  accessToken: string,
+  projectId: number,
+  planId: number,
+  companyId: number
+): Promise<ProcoreTestRecord[]> {
+  return procoreGetAllPages<ProcoreTestRecord>(
+    accessToken,
+    `/rest/v1.0/projects/${projectId}/action_plans/plan_test_records`,
+    { per_page: "100", "filters[plan_id]": String(planId) },
+    { "Procore-Company-Id": String(companyId) }
+  );
+}

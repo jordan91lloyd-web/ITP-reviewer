@@ -263,3 +263,33 @@ Basements use the same tree with different leaves (car spots numbered 1-24, plan
 ### Design implication
 
 The UI should let the user pick a parent node (e.g. `A Ground Floor>Wellington`) and then tick the apartment-level children under it. That gives an explicit, visible selection rather than a guess, and it works for any project shape — apartments, elevations, car spots, zones.
+
+## 9. Field naming gotcha — Action Plans use `title`, never `name`
+
+Confirmed against live data 28 Aug 2026.
+
+An Action Plan, its sections and its items all carry their display text in **`title`**. There is no `name` field on any of them. Reading `name` returns undefined and the UI renders blank rows, which is how this was found.
+
+```
+plan.title          "CC - Bondi-Wellington"
+plan_section.title  "WILLIAM STREET Elevation ITP's- Multi Unit Inspections"
+plan_item.title     "ITP- 014 Windows and Glazing"
+```
+
+Contrast with the resources that *do* use `name`: projects, checklist templates, locations, trades, inspection types.
+
+The plans list endpoint also returns `number` (the tracker's display number), `total_item_count`, `closed_item_count`, `location`, `manager`, `plan_type` and `template_id`. `number` is the natural sort order for a picker.
+
+## 10. Verified against Bondi (28 Aug 2026)
+
+`GET /api/bulk-itp/locations` for the Bondi Rd / Wellington St project returned:
+
+```
+412 locations, 18 root nodes, max depth 3
+```
+
+412 confirms pagination is working — a single `per_page=100` call would have returned a quarter of the tree and silently lost apartments. Max depth 3 matches the level → building → apartment → room shape.
+
+`GET /api/bulk-itp/templates` returned 76 project templates against 84 at company level, confirming the route reads project copies rather than company masters.
+
+`GET /api/bulk-itp/action-plans` returned 12 plans. Note that Bondi has no ITP tracker yet — the existing plans are consultant matrices, DA items and inspection reports.
