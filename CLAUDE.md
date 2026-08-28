@@ -391,3 +391,14 @@ Still to build: locations and checklist templates, which is what bulk ITP builds
 5. **Protected Resource Metadata is path-aware (RFC 9728 §3).** For a resource at `/api/mcp`, the metadata must be served at `/.well-known/oauth-protected-resource/api/mcp`, not just at the root. Clients probe the path-aware location first.
 
 6. **WWW-Authenticate header must include `error` and `error_description`.** A bare `Bearer resource_metadata="..."` is not enough. The library emits `Bearer error="invalid_token", error_description="...", resource_metadata="..."`. Match this format exactly.
+
+---
+
+## Next up (as at 28 Aug 2026)
+
+1. **Rotate `MCP_BEARER_TOKEN`.** It was exposed in a chat transcript. Generate a new value, update `.env.local` and Vercel, then re-run `claude mcp add` for the local server.
+2. **Rotate the Supabase service role key.**
+3. **Build the locations tool.** Read-only, same pattern as the existing three.
+4. **Build the checklist templates tool.** Read-only. Locations + templates together are what bulk ITP builds actually need.
+
+Both MCP auth paths are verified working as at 28 Aug 2026: static bearer acting as the pinned `MCP_PROCORE_USER_ID`, and OAuth acting as the token owner.
