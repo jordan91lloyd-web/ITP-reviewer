@@ -10,7 +10,7 @@
 
 import { createMcpHandler } from "mcp-handler";
 import { NextRequest } from "next/server";
-import { logMcpRequest } from "@/lib/mcp-oauth";
+import { logMcpRequest, hashToken, supabaseMcpClient } from "@/lib/mcp-oauth";
 
 const handler = createMcpHandler(
   (server) => {
@@ -29,24 +29,36 @@ const handler = createMcpHandler(
   }
 );
 
-/** Build the 401 response with proper WWW-Authenticate header per RFC 6750 / MCP spec. */
+/**
+ * Build the 401 response with proper WWW-Authenticate header.
+ *
+ * Matches the format emitted by @modelcontextprotocol/server's
+ * bearerAuthChallengeResponse(): error, error_description, then
+ * resource_metadata pointing to the path-aware RFC 9728 location.
+ */
 function unauthorized(message: string, request: Request) {
-  // Build the resource_metadata URL from the request's origin so it works
-  // in both local dev and production without depending on MCP_SERVER_URL
-  // (which may not be set yet during early testing).
   const url = new URL(request.url);
-  const resourceMetadataUrl = `${url.protocol}//${url.host}/.well-known/oauth-protected-resource`;
+  // Path-aware: /.well-known/oauth-protected-resource/api/mcp  (RFC 9728 §3)
+  const resourceMetadataUrl = `${url.protocol}//${url.host}/.well-known/oauth-protected-resource/api/mcp`;
+
+  // Match the library's WWW-Authenticate format exactly:
+  //   Bearer error="invalid_token", error_description="...", resource_metadata="..."
+  const wwwAuth = [
+    `Bearer error="invalid_token"`,
+    `error_description="${message}"`,
+    `resource_metadata="${resourceMetadataUrl}"`,
+  ].join(", ");
 
   console.log(`[mcp] 401 Unauthorized: ${message}`);
-  console.log(`[mcp] WWW-Authenticate resource_metadata=${resourceMetadataUrl}`);
+  console.log(`[mcp] WWW-Authenticate: ${wwwAuth}`);
 
-  return new Response(JSON.stringify({ error: "invalid_token", error_description: message }), {
-    status: 401,
-    headers: {
-      "Content-Type": "application/json",
-      "WWW-Authenticate": `Bearer resource_metadata="${resourceMetadataUrl}"`,
-    },
-  });
+  return Response.json(
+    { error: "invalid_token", error_description: message },
+    {
+      status: 401,
+      headers: { "WWW-Authenticate": wwwAuth },
+    }
+  );
 }
 
 async function authedHandler(request: Request) {
@@ -67,11 +79,29 @@ async function authedHandler(request: Request) {
     return handler(request);
   }
 
-  // ── Path 2: OAuth-issued token (placeholder — enabled in a later step) ──
-  // Will look up SHA-256(token) in mcp_oauth_tokens table.
-  // For now, fall through to 401.
+  // ── Path 2: OAuth-issued token (lookup by SHA-256 hash) ──────────────────
+  try {
+    const tokenHash = hashToken(token);
+    const supabase = supabaseMcpClient();
+    const { data: tokenRow } = await supabase
+      .from("mcp_oauth_tokens")
+      .select("expires_at, procore_user_id")
+      .eq("access_token_hash", tokenHash)
+      .single();
 
-  console.log("[mcp] Bearer token did not match static token. OAuth lookup not yet implemented.");
+    if (tokenRow) {
+      if (new Date(tokenRow.expires_at) < new Date()) {
+        console.log("[mcp] OAuth token found but expired");
+        return unauthorized("Token has expired", request);
+      }
+      console.log("[mcp] Authenticated via OAuth token for user:", tokenRow.procore_user_id);
+      return handler(request);
+    }
+  } catch (err) {
+    console.error("[mcp] OAuth token lookup error:", err);
+  }
+
+  console.log("[mcp] Bearer token did not match any auth path");
   return unauthorized("Invalid bearer token", request);
 }
 

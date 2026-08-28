@@ -5,30 +5,27 @@
 import { NextRequest } from "next/server";
 import { authorizationServerMetadata, logMcpRequest } from "@/lib/mcp-oauth";
 
-function corsHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, MCP-Protocol-Version",
-    "Cache-Control": "public, max-age=3600",
-  };
-}
-
 export async function GET(request: NextRequest) {
   logMcpRequest("authorization-server-metadata", request);
   const metadata = authorizationServerMetadata();
   console.log("[mcp-oauth:authorization-server-metadata] Responding with:", JSON.stringify(metadata));
-  return new Response(JSON.stringify(metadata), {
-    status: 200,
-    headers: corsHeaders(),
+  return Response.json(metadata, {
+    headers: { "Access-Control-Allow-Origin": "*" },
   });
 }
 
 export async function OPTIONS(request: NextRequest) {
   logMcpRequest("authorization-server-metadata:OPTIONS", request);
+  const requestedHeaders = request.headers.get("access-control-request-headers");
   return new Response(null, {
     status: 204,
-    headers: corsHeaders(),
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+      ...(requestedHeaders ? {
+        "Access-Control-Allow-Headers": requestedHeaders,
+        "Vary": "Access-Control-Request-Headers",
+      } : {}),
+    },
   });
 }
