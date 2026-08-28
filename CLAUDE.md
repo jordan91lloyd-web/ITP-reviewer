@@ -283,7 +283,7 @@ All scoring logic defined in `buildSystemPrompt()` in `src/lib/prompt.ts`.
 
 ### MCP tools
 33. **MCP tools never throw.** Catch and return `{ isError: true }` with a readable message. A thrown error becomes a 500 the client cannot explain.
-34. **MCP tools are read-only until decided otherwise.** No POST, PATCH or DELETE against Procore from `/api/mcp`.
+34. **Only `create_inspections` writes.** Every other MCP tool is read-only. Adding another write tool is a deliberate decision, not a convenience — it needs a cap, a read-back verification, and a description that tells the caller to confirm with the user first.
 35. **Cap every list result.** Default 50, hard max 200. Inspection detail caps items at 300.
 36. **Never return attachment or photo URLs from MCP tools.** Counts only. URLs are presigned and short-lived.
 
@@ -371,10 +371,17 @@ Registered in `src/lib/mcp-tools.ts` via `registerHoldpointTools(server, ctx)`.
 | `list_projects` | `active_only?` (default true), `limit?` (default 50, max 200) | `id`, `name`, `display_name`, `project_number` |
 | `list_inspections` | `project_id`, `status?`, `name_starts_with?`, `limit?` | Inspection summaries — no items, no attachments |
 | `get_inspection_detail` | `project_id`, `inspection_id` | Sections, items, answers and comments. Attachment and photo **counts only**, no URLs |
+| `list_templates` | `project_id`, `contains?`, `limit?` | Project-level inspection templates. Never company templates |
+| `list_locations` | `project_id`, `path_contains?`, `depth?`, `limit?` | Location tree, flat, with full `path` and `depth`. Fully paged |
+| `create_inspections` | `project_id`, `list_template_id`, `location_ids[]`, `inspection_date?` | **WRITES.** One inspection per location, capped at 25, read back and confirmed |
 
-All three reuse the confirmed helpers in `src/lib/procore.ts`. No new Procore endpoint shapes are introduced.
+All reuse the confirmed helpers in `src/lib/procore.ts`.
 
-Still to build: locations and checklist templates, which is what bulk ITP builds actually need.
+`create_inspections` is the only write. It refuses duplicate location ids, validates every location against the project before writing anything, creates serially with a 600ms pause (Procore rate-limits this account hard), then re-reads the project and reports which inspections it could actually confirm. A 2xx alone is never reported as success.
+
+Decided 28 Aug 2026: the bulk ITP builder is driven from chat through these tools, not through a dashboard tab. A tab was built and removed the same day — a list in chat is as reviewable as a list on screen, and chat handles the exceptions ("skip G.02", "add ITP-018 to the ones with laundries") that a form cannot. `src/components/_to_delete/BulkItpTab.tsx` is the removed component, kept only until it is deleted from disk.
+
+Still to build: creating the tracker sections and rows, and linking each inspection to its row via a test record request and test record.
 
 ---
 

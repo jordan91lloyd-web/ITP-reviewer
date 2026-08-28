@@ -798,3 +798,92 @@ export async function getTestRecords(
     { "Procore-Company-Id": String(companyId) }
   );
 }
+
+// ─── Writes ───────────────────────────────────────────────────────────────────
+// Kept deliberately small. Everything here creates real records on a live
+// Procore project, so each function does one thing and returns what Procore
+// actually gave back, never a bare success flag.
+
+/**
+ * POSTs JSON to Procore and returns the parsed body.
+ * Throws with the response text on any non-2xx so callers cannot mistake a
+ * failure for a success.
+ */
+async function procorePost<T>(
+  accessToken: string,
+  path: string,
+  body: unknown,
+  extraHeaders?: Record<string, string>
+): Promise<T> {
+  const url = `${PROCORE_BASE_URL}${path}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Procore API error ${response.status} on POST ${path}: ${text.slice(0, 600)}`);
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Procore returned ${response.status} on POST ${path} but the body was not JSON: ${text.slice(0, 300)}`);
+  }
+}
+
+export interface CreateInspectionInput {
+  /** Project-level template id. Never a company template id. */
+  list_template_id: number;
+  /** Location the inspection is attached to. */
+  location_id?: number;
+  /** ISO date, e.g. "2026-08-28". */
+  inspection_date?: string;
+  inspection_type_id?: number;
+  trade_id?: number;
+  responsible_contractor_id?: number;
+  inspector_ids?: number[];
+  due_at?: string;
+}
+
+/**
+ * Creates one inspection from a project template.
+ *
+ * There is no name field — the inspection inherits the template's name, which
+ * is what keeps the register grouped under a single heading. See
+ * docs/PROCORE-BULK-ITP-API.md.
+ */
+export async function createInspectionFromTemplate(
+  accessToken: string,
+  projectId: number,
+  companyId: number,
+  input: CreateInspectionInput
+): Promise<ProcoreInspection> {
+  const { list_template_id, ...listFields } = input;
+
+  const body: Record<string, unknown> = {
+    list_template_id,
+    list: Object.fromEntries(
+      Object.entries(listFields).filter(([, v]) => v !== undefined && v !== null)
+    ),
+  };
+
+  console.log(
+    `[procore] createInspectionFromTemplate: project_id=${projectId} ` +
+    `template=${list_template_id} location=${input.location_id ?? "none"}`
+  );
+
+  return procorePost<ProcoreInspection>(
+    accessToken,
+    `/rest/v1.1/projects/${projectId}/checklist/lists`,
+    body,
+    { "Procore-Company-Id": String(companyId) }
+  );
+}
