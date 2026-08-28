@@ -2,32 +2,36 @@
 // Remote MCP server for Claude (chat / desktop / Claude Code) to call tools.
 //
 // Auth paths (checked in order):
-//   1. Static bearer token — MCP_BEARER_TOKEN env var (Claude Code, curl)
+//   1. Static bearer token — MCP_BEARER_TOKEN env var (Claude Code, curl).
+//      No user is attached to this path, so tools act as the pinned account in
+//      MCP_PROCORE_USER_ID.
 //   2. OAuth-issued bearer token — looked up by SHA-256 hash in mcp_oauth_tokens
-//      (Claude.ai, Claude Desktop — implemented in a later step)
+//      (Claude.ai, Claude Desktop). Tools act as the token owner.
 //   3. No valid token → 401 with WWW-Authenticate pointing to our OAuth server
 //      so the MCP client can discover the authorization flow (RFC 9728 / 6750).
 
 import { createMcpHandler } from "mcp-handler";
 import { NextRequest } from "next/server";
 import { logMcpRequest, hashToken, supabaseMcpClient } from "@/lib/mcp-oauth";
+import { registerHoldpointTools, type McpToolContext } from "@/lib/mcp-tools";
 
-const handler = createMcpHandler(
-  (server) => {
-    server.registerTool(
-      "ping",
-      {
-        description: "Health-check tool. Returns a fixed string to confirm the MCP server is reachable.",
-      },
-      async () => ({
-        content: [{ type: "text" as const, text: "pong — Holdpoint MCP server is alive" }],
-      })
-    );
-  },
-  {
-    serverInfo: { name: "holdpoint", version: "0.1.0" },
-  }
-);
+/**
+ * Builds a handler bound to one request's Procore identity.
+ *
+ * The handler is built per request rather than at module scope because the
+ * tools close over `ctx` — the Procore user this call acts as changes between
+ * the OAuth path and the static bearer path.
+ */
+function buildHandler(ctx: McpToolContext) {
+  return createMcpHandler(
+    (server) => {
+      registerHoldpointTools(server, ctx);
+    },
+    {
+      serverInfo: { name: "holdpoint", version: "0.2.0" },
+    }
+  );
+}
 
 /**
  * Build the 401 response with proper WWW-Authenticate header.
@@ -75,8 +79,11 @@ async function authedHandler(request: Request) {
   // ── Path 1: static MCP_BEARER_TOKEN (Claude Code, curl) ─────────────────
   const expected = process.env.MCP_BEARER_TOKEN;
   if (expected && token === expected) {
-    console.log("[mcp] Authenticated via static MCP_BEARER_TOKEN");
-    return handler(request);
+    const pinned = process.env.MCP_PROCORE_USER_ID ?? null;
+    console.log(
+      `[mcp] Authenticated via static MCP_BEARER_TOKEN, acting as pinned user: ${pinned ?? "none set"}`
+    );
+    return buildHandler({ authPath: "static-bearer", procoreUserId: pinned })(request);
   }
 
   // ── Path 2: OAuth-issued token (lookup by SHA-256 hash) ──────────────────
@@ -95,7 +102,10 @@ async function authedHandler(request: Request) {
         return unauthorized("Token has expired", request);
       }
       console.log("[mcp] Authenticated via OAuth token for user:", tokenRow.procore_user_id);
-      return handler(request);
+      return buildHandler({
+        authPath: "oauth",
+        procoreUserId: tokenRow.procore_user_id ? String(tokenRow.procore_user_id) : null,
+      })(request);
     }
   } catch (err) {
     console.error("[mcp] OAuth token lookup error:", err);

@@ -281,6 +281,12 @@ All scoring logic defined in `buildSystemPrompt()` in `src/lib/prompt.ts`.
 17. **`company_id` as both query param AND `Procore-Company-Id` header** on all project/inspection endpoints.
 18. **Never send `Authorization` header to S3 presigned URLs.** S3 returns 400.
 
+### MCP tools
+33. **MCP tools never throw.** Catch and return `{ isError: true }` with a readable message. A thrown error becomes a 500 the client cannot explain.
+34. **MCP tools are read-only until decided otherwise.** No POST, PATCH or DELETE against Procore from `/api/mcp`.
+35. **Cap every list result.** Default 50, hard max 200. Inspection detail caps items at 300.
+36. **Never return attachment or photo URLs from MCP tools.** Counts only. URLs are presigned and short-lived.
+
 ### Supabase
 19. **All server routes use `SUPABASE_SERVICE_ROLE_KEY`.** Anon key silently returns empty results.
 
@@ -346,7 +352,29 @@ The `/oauth/authorize` page requires an existing Procore login session (cookies)
 MCP_BEARER_TOKEN          — static token for Claude Code / curl
 MCP_SERVER_URL            — canonical resource URL, e.g. https://itp-reviewer.vercel.app/api/mcp
 MCP_OAUTH_CLIENT_ID       — pre-registered UUID for the Claude.ai connector
+MCP_PROCORE_USER_ID       — pinned Procore user id used by the static bearer path only
 ```
+
+### Procore identity for tool calls (decided 28 Aug 2026)
+A tool call acts as **the token owner** when authenticated by OAuth — `procore_user_id` from the `mcp_oauth_tokens` row. The static bearer path has no user attached to it, so it falls back to the pinned account in `MCP_PROCORE_USER_ID`.
+
+`src/app/api/mcp/route.ts` resolves this per request into an `McpToolContext` and builds the handler with it, which is why `createMcpHandler` is called inside `buildHandler()` rather than at module scope. Tools then call `getValidToken(FLEEK_COMPANY_ID, procoreUserId)` for a fresh access token.
+
+If the resolved user has never logged in to Holdpoint, `getValidToken` returns null and the tool returns an `isError` result telling the caller to log in. That is expected behaviour, not a bug.
+
+### Tools
+Registered in `src/lib/mcp-tools.ts` via `registerHoldpointTools(server, ctx)`.
+
+| Tool | Inputs | Returns |
+|------|--------|---------|
+| `ping` | none | Health check plus the auth path and Procore user id in play |
+| `list_projects` | `active_only?` (default true), `limit?` (default 50, max 200) | `id`, `name`, `display_name`, `project_number` |
+| `list_inspections` | `project_id`, `status?`, `name_starts_with?`, `limit?` | Inspection summaries — no items, no attachments |
+| `get_inspection_detail` | `project_id`, `inspection_id` | Sections, items, answers and comments. Attachment and photo **counts only**, no URLs |
+
+All three reuse the confirmed helpers in `src/lib/procore.ts`. No new Procore endpoint shapes are introduced.
+
+Still to build: locations and checklist templates, which is what bulk ITP builds actually need.
 
 ---
 
