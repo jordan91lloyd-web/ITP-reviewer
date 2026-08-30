@@ -844,6 +844,12 @@ export interface CreateInspectionInput {
   list_template_id: number;
   /** Location the inspection is attached to. */
   location_id?: number;
+  /**
+   * Free-text description. Usually the apartment code, e.g. "B201" — every
+   * inspection from one template shares its name, so the description and the
+   * location are what tell them apart in the register.
+   */
+  description?: string;
   /** ISO date, e.g. "2026-08-28". */
   inspection_date?: string;
   inspection_type_id?: number;
@@ -886,4 +892,40 @@ export async function createInspectionFromTemplate(
     body,
     { "Procore-Company-Id": String(companyId) }
   );
+}
+
+/**
+ * Updates an existing inspection. Only the fields supplied are changed.
+ *
+ * Used to set descriptions on inspections after creation — the apartment code,
+ * for example. Item lists cannot be changed this way; those are fixed at
+ * creation from the template.
+ */
+export async function updateInspection(
+  accessToken: string,
+  projectId: number,
+  companyId: number,
+  inspectionId: number,
+  fields: { description?: string; inspection_date?: string; due_at?: string }
+): Promise<ProcoreInspection> {
+  const url = `${PROCORE_BASE_URL}/rest/v1.1/projects/${projectId}/checklist/lists/${inspectionId}`;
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "Procore-Company-Id": String(companyId),
+    },
+    body: JSON.stringify({ list: fields }),
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Procore API error ${response.status} on PATCH checklist/lists/${inspectionId}: ${text.slice(0, 500)}`);
+  }
+  try {
+    return JSON.parse(text) as ProcoreInspection;
+  } catch {
+    throw new Error(`Procore returned ${response.status} but the body was not JSON: ${text.slice(0, 300)}`);
+  }
 }

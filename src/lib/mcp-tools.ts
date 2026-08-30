@@ -20,6 +20,7 @@ import {
   getProjectChecklistTemplates,
   getProjectLocations,
   createInspectionFromTemplate,
+  updateInspection,
   type ProcoreInspection,
   type ProcoreInspectionItem,
 } from "@/lib/procore";
@@ -459,9 +460,20 @@ export function registerHoldpointTools(
           .string()
           .optional()
           .describe("ISO date for all of them, e.g. '2026-08-28'. Omit to leave blank."),
+        description_from_location: z
+          .boolean()
+          .optional()
+          .describe(
+            "Set each inspection's description to its location's leaf name — the apartment code, e.g. 'B201'. " +
+            "This is how one inspection is told apart from another in the register, since they all share the template's name."
+          ),
+        description: z
+          .string()
+          .optional()
+          .describe("A fixed description for all of them. Ignored if description_from_location is true."),
       }),
     },
-    async ({ project_id, list_template_id, location_ids, inspection_date }) => {
+    async ({ project_id, list_template_id, location_ids, inspection_date, description_from_location, description }) => {
       try {
         const token = await accessTokenFor(ctx);
         const company = companyId();
@@ -503,10 +515,15 @@ export function registerHoldpointTools(
         for (const locationId of unique) {
           const loc = locById.get(locationId)!;
           try {
+            const thisDescription = description_from_location
+              ? (loc.node_name ?? "").trim() || undefined
+              : description;
+
             const insp = await createInspectionFromTemplate(token, project_id, company, {
               list_template_id,
               location_id: locationId,
               inspection_date,
+              description: thisDescription,
             });
             created.push({
               location_id: locationId,
@@ -560,6 +577,78 @@ export function registerHoldpointTools(
             ...c,
             confirmed: c.inspection_id !== null && confirmedIds.has(c.inspection_id),
           })),
+        });
+      } catch (err) {
+        return fail(err);
+      }
+    }
+  );
+
+  // ── set_inspection_descriptions ────────────────────────────────────────────
+  server.registerTool(
+    "set_inspection_descriptions",
+    {
+      title: "Set descriptions on existing inspections",
+      description:
+        "WRITES TO LIVE PROCORE. Sets the description on inspections that already exist — typically the apartment code, so they can be told apart in the register. " +
+        "Does not touch items, responses or anything else. Reads each one back afterwards to confirm the description actually changed.",
+      inputSchema: z.object({
+        project_id: z.number().int(),
+        updates: z
+          .array(
+            z.object({
+              inspection_id: z.number().int(),
+              description: z.string().min(1),
+            })
+          )
+          .min(1)
+          .max(MAX_CREATE_PER_CALL),
+      }),
+    },
+    async ({ project_id, updates }) => {
+      try {
+        const token = await accessTokenFor(ctx);
+        const company = companyId();
+
+        const results: Array<{
+          inspection_id: number;
+          description: string;
+          confirmed: boolean;
+          actual_description: string | null;
+          error: string | null;
+        }> = [];
+
+        for (const u of updates) {
+          try {
+            const updated = await updateInspection(token, project_id, company, u.inspection_id, {
+              description: u.description,
+            });
+            const actual = (updated?.description ?? "").trim();
+            results.push({
+              inspection_id: u.inspection_id,
+              description: u.description,
+              confirmed: actual === u.description.trim(),
+              actual_description: actual || null,
+              error: null,
+            });
+          } catch (err) {
+            results.push({
+              inspection_id: u.inspection_id,
+              description: u.description,
+              confirmed: false,
+              actual_description: null,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+          await new Promise((r) => setTimeout(r, 500));
+        }
+
+        return ok({
+          project_id,
+          requested: updates.length,
+          confirmed: results.filter((r) => r.confirmed).length,
+          failed: results.filter((r) => r.error !== null).length,
+          results,
         });
       } catch (err) {
         return fail(err);
