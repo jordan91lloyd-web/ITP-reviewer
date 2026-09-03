@@ -166,7 +166,7 @@ export default function ActionPlansPage() {
         setPlan(data.plan);
       }
     } catch {
-      setError("Could not reach the conversion service. Check the dev server.");
+      setError("Conversion timed out or failed to connect. Try again — larger reports may take longer.");
     } finally {
       setIsLoading(false);
     }

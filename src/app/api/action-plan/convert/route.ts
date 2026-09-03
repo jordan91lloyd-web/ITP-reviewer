@@ -8,7 +8,7 @@ import { runActionPlanConversion } from "@/lib/actionPlanClaude";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
