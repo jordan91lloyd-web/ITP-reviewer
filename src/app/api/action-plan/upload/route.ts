@@ -8,7 +8,7 @@ import { cookies } from "next/headers";
 import type { ConvertedActionPlan } from "@/lib/actionPlanTypes";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const PROCORE_ENV = process.env.PROCORE_ENV ?? "sandbox";
 const PROCORE_BASE_URL =
@@ -44,24 +44,42 @@ function urlWithCompany(path: string, companyId: string): string {
   return url.toString();
 }
 
+const PACE_MS = 600; // pause between Procore writes to stay under rate limit
+const MAX_RETRIES = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 async function procorePost(
   accessToken: string,
   path: string,
   companyId: string,
   body: unknown,
 ): Promise<{ ok: boolean; status: number; json: unknown; error: string | null }> {
-  const res = await fetch(urlWithCompany(path, companyId), {
-    method: "POST",
-    headers: jsonHeaders(accessToken, companyId),
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  let json: unknown = null;
-  try { json = JSON.parse(text); } catch { /* not JSON */ }
-  if (!res.ok) {
-    return { ok: false, status: res.status, json, error: text.slice(0, 1000) };
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res = await fetch(urlWithCompany(path, companyId), {
+      method: "POST",
+      headers: jsonHeaders(accessToken, companyId),
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    let json: unknown = null;
+    try { json = JSON.parse(text); } catch { /* not JSON */ }
+
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      const backoff = PACE_MS * Math.pow(2, attempt + 1);
+      console.warn(`[action-plan/upload] 429 on ${path}, retrying in ${backoff}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+      await sleep(backoff);
+      continue;
+    }
+
+    if (!res.ok) {
+      return { ok: false, status: res.status, json, error: text.slice(0, 1000) };
+    }
+    return { ok: true, status: res.status, json, error: null };
   }
-  return { ok: true, status: res.status, json, error: null };
+  return { ok: false, status: 429, json: null, error: "Rate limit exceeded after retries" };
 }
 
 // ── Attachment attempt record ─────────────────────────────────────────────
@@ -256,6 +274,7 @@ export async function POST(request: NextRequest) {
 
     sectionIdMap[sectionTitle] = sectionId;
     sectionsCreated++;
+    await sleep(PACE_MS);
   }
 
   // ── Step 3: Create items per section ───────────────────────────────────────
@@ -297,6 +316,7 @@ export async function POST(request: NextRequest) {
       }
 
       itemsCreated++;
+      await sleep(PACE_MS);
     }
   }
 
