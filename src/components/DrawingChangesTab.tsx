@@ -118,7 +118,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [collapsedDiscovery, setCollapsedDiscovery] = useState<Set<string>>(new Set());
 
   // Scanning
-  const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
+  const [scanProgress, setScanProgress] = useState({ current: 0, total: 0, batchNum: 0, totalBatches: 0 });
 
   // Results
   const [scan, setScan] = useState<ScanRecord | null>(null);
@@ -253,7 +253,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     setCollapsedDiscovery(allDisc);
   }, [drawingPairs]);
 
-  // ── Run scan ─────────────────────────────────────────────────────────────
+  // ── Run scan (batched) ────────────────────────────────────────────────────
+
+  const BATCH_SIZE = 5;
 
   const runScan = useCallback(async () => {
     const selected = drawingPairs.filter((d) => selectedIds.has(d.drawing_id));
@@ -261,40 +263,79 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
     setStep(1);
     setError(null);
-    setScanProgress({ current: 0, total: selected.length });
+    const totalBatches = Math.ceil(selected.length / BATCH_SIZE);
+    setScanProgress({ current: 0, total: selected.length, batchNum: 0, totalBatches });
+
+    // Split into batches
+    const batches: DrawingPair[][] = [];
+    for (let i = 0; i < selected.length; i += BATCH_SIZE) {
+      batches.push(selected.slice(i, i + BATCH_SIZE));
+    }
+
+    let scanId: string | null = null;
+    let totalCompleted = 0;
+    let totalFailed = 0;
 
     try {
-      const res = await fetch("/api/drawing-changes/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          company_id,
-          project_id: projectId,
-          project_name: projectName,
-          drawing_pairs: selected,
-        }),
-      });
+      for (let bi = 0; bi < batches.length; bi++) {
+        const batch = batches[bi];
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Scan failed");
+        const isLastBatch = bi === batches.length - 1;
+        const res: Response = await fetch("/api/drawing-changes/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            company_id,
+            project_id: projectId,
+            project_name: projectName,
+            drawing_pairs: batch,
+            scan_id: scanId,
+            total_drawings: selected.length,
+            is_last_batch: isLastBatch,
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error ?? `Batch ${bi + 1} failed`);
+        }
+
+        const data: { scan_id: string; total_completed: number; total_failed: number } = await res.json();
+        scanId = data.scan_id;
+        totalCompleted = data.total_completed;
+        totalFailed = data.total_failed;
+        setScanProgress({ current: totalCompleted + totalFailed, total: selected.length, batchNum: bi + 1, totalBatches });
       }
 
-      const data = await res.json();
-      setScanProgress({ current: data.completed_drawings, total: data.total_drawings });
-
-      const resultsRes = await fetch(`/api/drawing-changes/results?scan_id=${data.scan_id}`);
-      if (resultsRes.ok) {
-        const resultsData = await resultsRes.json();
-        setScan(resultsData.scan);
-        setChanges(resultsData.changes ?? []);
-        setByDiscipline(resultsData.by_discipline ?? {});
-        setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
+      // Finalize scan status
+      if (scanId) {
+        // Load full results
+        const resultsRes = await fetch(`/api/drawing-changes/results?scan_id=${scanId}`);
+        if (resultsRes.ok) {
+          const resultsData = await resultsRes.json();
+          setScan(resultsData.scan);
+          setChanges(resultsData.changes ?? []);
+          setByDiscipline(resultsData.by_discipline ?? {});
+          setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
+        }
       }
 
       setStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Scan failed");
+      // If partial results exist, show them
+      if (scanId) {
+        const resultsRes = await fetch(`/api/drawing-changes/results?scan_id=${scanId}`).catch(() => null);
+        if (resultsRes?.ok) {
+          const resultsData = await resultsRes.json();
+          setScan(resultsData.scan);
+          setChanges(resultsData.changes ?? []);
+          setByDiscipline(resultsData.by_discipline ?? {});
+          setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
+          setStep(2);
+          return;
+        }
+      }
       setStep(0);
     }
   }, [drawingPairs, selectedIds, company_id, projectId, projectName]);
@@ -668,8 +709,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             Scanning drawings for changes...
           </div>
           <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 4 }}>
-            Comparing {scanProgress.total} drawing{scanProgress.total !== 1 ? "s" : ""}
-            {" — "}this may take a few minutes
+            Batch {scanProgress.batchNum}/{scanProgress.totalBatches} · {scanProgress.current}/{scanProgress.total} drawings processed
           </div>
           <div
             style={{

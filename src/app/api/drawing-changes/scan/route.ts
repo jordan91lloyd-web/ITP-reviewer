@@ -1,6 +1,10 @@
 // POST /api/drawing-changes/scan
-// Accepts a list of drawing pairs, downloads both revision PDFs for each,
-// sends them to Claude vision for comparison, stores results in Supabase.
+// Accepts a list of drawing pairs (or a batch for an existing scan),
+// downloads both revision PDFs for each, sends them to Claude vision
+// for comparison, stores results in Supabase.
+//
+// Designed to be called in batches from the frontend — each call
+// processes a small number of drawings within the Vercel timeout.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -38,7 +42,6 @@ async function requireAuth(): Promise<string | null> {
 async function downloadPdf(url: string): Promise<Buffer | null> {
   if (!url) return null;
   try {
-    // Presigned S3 URLs — no Auth header
     const res = await fetch(url);
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
@@ -50,12 +53,10 @@ async function downloadPdf(url: string): Promise<Buffer | null> {
 }
 
 function parseChanges(raw: string): DetectedChange[] {
-  // Try direct parse
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    // Strip markdown fences
     const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (fenceMatch) {
       try {
@@ -64,7 +65,6 @@ function parseChanges(raw: string): DetectedChange[] {
         /* fall through */
       }
     }
-    // Find outermost [ ... ]
     if (!parsed) {
       const start = raw.indexOf("[");
       const end = raw.lastIndexOf("]");
@@ -174,6 +174,9 @@ export async function POST(request: NextRequest) {
     project_id: string;
     project_name: string;
     drawing_pairs: DrawingPair[];
+    scan_id?: string;        // Continue an existing scan
+    total_drawings?: number; // Total across all batches (set on first batch)
+    is_last_batch?: boolean; // Mark scan as completed
   };
 
   try {
@@ -182,7 +185,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { company_id, project_id, project_name, drawing_pairs } = body;
+  const { company_id, project_id, project_name, drawing_pairs, scan_id, total_drawings, is_last_batch } = body;
   if (!company_id || !project_id || !project_name || !Array.isArray(drawing_pairs) || drawing_pairs.length === 0) {
     return NextResponse.json(
       { error: "company_id, project_id, project_name, and drawing_pairs required" },
@@ -193,33 +196,38 @@ export async function POST(request: NextRequest) {
   const supabase = getSupabase();
   const claude = new Anthropic();
 
-  // Create scan record
-  const { data: scan, error: scanErr } = await supabase
-    .from("drawing_revision_scans")
-    .insert({
-      company_id,
-      project_id,
-      project_name,
-      status: "running",
-      total_drawings: drawing_pairs.length,
-      completed_drawings: 0,
-      failed_drawings: 0,
-    })
-    .select("id")
-    .single();
+  // Create or reuse scan record
+  let scanRecordId: string;
 
-  if (scanErr || !scan) {
-    console.error("[drawing-changes/scan] Failed to create scan:", scanErr);
-    return NextResponse.json(
-      { error: "Failed to create scan record" },
-      { status: 500 }
-    );
+  if (scan_id) {
+    // Continue existing scan
+    scanRecordId = scan_id;
+  } else {
+    // Create new scan record
+    const { data: scan, error: scanErr } = await supabase
+      .from("drawing_revision_scans")
+      .insert({
+        company_id,
+        project_id,
+        project_name,
+        status: "running",
+        total_drawings: total_drawings ?? drawing_pairs.length,
+        completed_drawings: 0,
+        failed_drawings: 0,
+      })
+      .select("id")
+      .single();
+
+    if (scanErr || !scan) {
+      console.error("[drawing-changes/scan] Failed to create scan:", scanErr);
+      return NextResponse.json({ error: "Failed to create scan record" }, { status: 500 });
+    }
+    scanRecordId = scan.id;
   }
 
-  const scanId = scan.id;
-  let completedDrawings = 0;
-  let failedDrawings = 0;
-  const allChanges: {
+  let batchCompleted = 0;
+  let batchFailed = 0;
+  const batchChanges: {
     discipline: string;
     drawing_number: string;
     drawing_title: string;
@@ -237,30 +245,25 @@ export async function POST(request: NextRequest) {
         `[drawing-changes/scan] Comparing ${pair.drawing_number} rev ${pair.old_revision.revision_number} → ${pair.new_revision.revision_number}`
       );
 
-      // Download both PDFs
       const [oldPdf, newPdf] = await Promise.all([
         downloadPdf(pair.old_revision.pdf_url),
         downloadPdf(pair.new_revision.pdf_url),
       ]);
 
       if (!oldPdf || !newPdf) {
-        console.warn(
-          `[drawing-changes/scan] Failed to download PDFs for ${pair.drawing_number}`
-        );
-        failedDrawings++;
+        console.warn(`[drawing-changes/scan] Failed to download PDFs for ${pair.drawing_number}`);
+        batchFailed++;
         continue;
       }
 
       const oldBase64 = oldPdf.toString("base64");
       const newBase64 = newPdf.toString("base64");
 
-      // Compare via Claude
       const changes = await compareDrawings(claude, pair, oldBase64, newBase64);
 
-      // Insert changes into Supabase
       if (changes.length > 0) {
         const rows = changes.map((c) => ({
-          scan_id: scanId,
+          scan_id: scanRecordId,
           company_id,
           project_id,
           discipline: pair.discipline,
@@ -279,56 +282,54 @@ export async function POST(request: NextRequest) {
           .insert(rows);
 
         if (insertErr) {
-          console.error(
-            `[drawing-changes/scan] Failed to insert changes for ${pair.drawing_number}:`,
-            insertErr
-          );
+          console.error(`[drawing-changes/scan] Insert error for ${pair.drawing_number}:`, insertErr);
         }
 
-        allChanges.push(...rows);
+        batchChanges.push(...rows);
       }
 
-      completedDrawings++;
-
-      // Update progress
-      await supabase
-        .from("drawing_revision_scans")
-        .update({ completed_drawings: completedDrawings, failed_drawings: failedDrawings })
-        .eq("id", scanId);
-
-      // Pace between drawings to avoid rate limits
+      batchCompleted++;
       await sleep(600);
     } catch (err) {
-      console.error(
-        `[drawing-changes/scan] Error comparing ${pair.drawing_number}:`,
-        err
-      );
-      failedDrawings++;
+      console.error(`[drawing-changes/scan] Error comparing ${pair.drawing_number}:`, err);
+      batchFailed++;
     }
   }
 
-  // Mark scan complete
+  // Update scan progress (increment completed/failed counts)
+  const { data: currentScan } = await supabase
+    .from("drawing_revision_scans")
+    .select("completed_drawings, failed_drawings")
+    .eq("id", scanRecordId)
+    .single();
+
+  const newCompleted = (currentScan?.completed_drawings ?? 0) + batchCompleted;
+  const newFailed = (currentScan?.failed_drawings ?? 0) + batchFailed;
+
+  const updatePayload: Record<string, unknown> = {
+    completed_drawings: newCompleted,
+    failed_drawings: newFailed,
+  };
+
+  if (is_last_batch) {
+    updatePayload.status = newFailed === (total_drawings ?? drawing_pairs.length) ? "failed" : "completed";
+    updatePayload.completed_at = new Date().toISOString();
+    if (newFailed > 0) {
+      updatePayload.error_message = `${newFailed} drawing(s) failed`;
+    }
+  }
+
   await supabase
     .from("drawing_revision_scans")
-    .update({
-      status: failedDrawings === drawing_pairs.length ? "failed" : "completed",
-      completed_drawings: completedDrawings,
-      failed_drawings: failedDrawings,
-      completed_at: new Date().toISOString(),
-      error_message:
-        failedDrawings > 0
-          ? `${failedDrawings} of ${drawing_pairs.length} drawings failed`
-          : null,
-    })
-    .eq("id", scanId);
+    .update(updatePayload)
+    .eq("id", scanRecordId);
 
   return NextResponse.json({
-    scan_id: scanId,
-    status: failedDrawings === drawing_pairs.length ? "failed" : "completed",
-    total_drawings: drawing_pairs.length,
-    completed_drawings: completedDrawings,
-    failed_drawings: failedDrawings,
-    total_changes: allChanges.length,
-    changes: allChanges,
+    scan_id: scanRecordId,
+    batch_completed: batchCompleted,
+    batch_failed: batchFailed,
+    batch_changes: batchChanges.length,
+    total_completed: newCompleted,
+    total_failed: newFailed,
   });
 }
