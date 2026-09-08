@@ -14,6 +14,7 @@ import {
   MoveRight,
   ChevronsDown,
   ChevronsUp,
+  Trash2,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -440,6 +441,34 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       });
     }
   }, [scan, company_id, projectId, projectName]);
+
+  // ── Clear all results for this project ────────────────────────────────────
+
+  const clearResults = useCallback(async () => {
+    if (!projectId) return;
+    if (!window.confirm("Delete all scan results for this project? This cannot be undone.")) return;
+    try {
+      const res = await fetch(
+        `/api/drawing-changes/clear?company_id=${company_id}&project_id=${projectId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to clear results");
+        return;
+      }
+      setScan(null);
+      setChanges([]);
+      setByDiscipline({});
+      setAllScans([]);
+      setExpandedResults(new Set());
+      setExpandedDrawings(new Set());
+      setStep(0);
+      fetchDrawings(projectId);
+    } catch {
+      setError("Failed to clear results");
+    }
+  }, [projectId, company_id, fetchDrawings]);
 
   // ── Load a specific scan by ID ───────────────────────────────────────────
 
@@ -952,6 +981,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 </a>
                 <button onClick={() => { setStep(0); fetchDrawings(projectId); }} style={{ ...BTN, border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)", color: "#fff", fontWeight: 600 }}>
                   <RefreshCw size={12} /> Scan New Drawings
+                </button>
+                <button onClick={clearResults} title="Delete all scan results for this project" style={{ ...BTN, color: "#991B1B", borderColor: "#FCA5A5" }}>
+                  <Trash2 size={12} /> Clear
                 </button>
               </div>
             </div>
