@@ -445,6 +445,30 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     }
   }, [scan, company_id, projectId, projectName]);
 
+  // ── Remove duplicates ────────────────────────────────────────────────────
+
+  const removeDuplicates = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const res = await fetch(
+        `/api/drawing-changes/dedup?company_id=${company_id}&project_id=${projectId}`,
+        { method: "POST" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Dedup failed");
+        return;
+      }
+      const data = await res.json();
+      if (data.removed > 0) {
+        // Reload results
+        loadPreviousResults(projectId);
+      }
+    } catch {
+      setError("Dedup failed");
+    }
+  }, [projectId, company_id, loadPreviousResults]);
+
   // ── Clear all results for this project ────────────────────────────────────
 
   const clearResults = useCallback(async () => {
@@ -1042,8 +1066,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 <button onClick={() => { setStep(0); fetchDrawings(projectId); }} style={{ ...BTN, border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)", color: "#fff", fontWeight: 600 }}>
                   <RefreshCw size={12} /> Scan New Drawings
                 </button>
+                <button onClick={removeDuplicates} title="Keep only the latest scan results for each drawing revision pair" style={BTN}>
+                  Remove Duplicates
+                </button>
                 <button onClick={clearResults} title="Delete all scan results for this project" style={{ ...BTN, color: "#991B1B", borderColor: "#FCA5A5" }}>
-                  <Trash2 size={12} /> Clear
+                  <Trash2 size={12} /> Clear All
                 </button>
               </div>
             </div>

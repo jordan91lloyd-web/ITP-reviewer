@@ -243,6 +243,24 @@ export async function POST(request: NextRequest) {
 
   for (const pair of drawing_pairs) {
     try {
+      // Skip if this revision pair already has results (unless deep scan)
+      if (!deep) {
+        const { count } = await supabase
+          .from("drawing_revision_changes")
+          .select("id", { count: "exact", head: true })
+          .eq("company_id", company_id)
+          .eq("project_id", project_id)
+          .eq("drawing_number", pair.drawing_number)
+          .eq("old_revision", pair.old_revision.revision_number)
+          .eq("new_revision", pair.new_revision.revision_number);
+
+        if (count && count > 0) {
+          console.log(`[drawing-changes/scan] Skipping ${pair.drawing_number} rev ${pair.old_revision.revision_number}→${pair.new_revision.revision_number} — already scanned`);
+          batchCompleted++;
+          continue;
+        }
+      }
+
       console.log(
         `[drawing-changes/scan] Comparing ${pair.drawing_number} rev ${pair.old_revision.revision_number} → ${pair.new_revision.revision_number}`
       );
