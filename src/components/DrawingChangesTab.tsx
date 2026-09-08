@@ -455,6 +455,58 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     }
   }, [scan, company_id, projectId, projectName]);
 
+  // ── Inline scan a specific revision pair from the register ───────────────
+
+  const [inlineScanning, setInlineScanning] = useState<string | null>(null);
+
+  const inlineScanPair = useCallback(async (
+    pair: DrawingPair,
+    fromRev: RevisionInfo,
+    toRev: RevisionInfo,
+    discipline: string,
+  ) => {
+    const key = `${pair.drawing_number}|${fromRev.revision_number}|${toRev.revision_number}`;
+    setInlineScanning(key);
+    try {
+      // Find or create a scan record — use the latest scan or create new
+      const latestScanId = allScans.length > 0 ? allScans[0].id : undefined;
+
+      const res: Response = await fetch("/api/drawing-changes/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id,
+          project_id: projectId,
+          project_name: projectName,
+          drawing_pairs: [{
+            drawing_id: pair.drawing_id,
+            drawing_number: pair.drawing_number,
+            drawing_title: pair.drawing_title,
+            discipline,
+            old_revision: fromRev,
+            new_revision: toRev,
+          }],
+          scan_id: latestScanId,
+          total_drawings: 1,
+          is_last_batch: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error ?? "Scan failed");
+        return;
+      }
+
+      // Reload all results to pick up the new data
+      await loadPreviousResults(projectId);
+    } catch {
+      setError("Inline scan failed");
+    } finally {
+      setInlineScanning(null);
+    }
+  }, [company_id, projectId, projectName, allScans, loadPreviousResults]);
+
   // ── Update review status ─────────────────────────────────────────────────
 
   const updateStatus = useCallback(async (changeIds: string[], status: ReviewStatus) => {
@@ -1325,6 +1377,63 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                               })()}
                             </div>
                           </div>
+
+                          {/* Available revisions panel */}
+                          {isDrawingExpanded && (() => {
+                            const pair = drawingPairs.find((p) => p.drawing_number === dg.number);
+                            if (!pair || !pair.revisions || pair.revisions.length < 2) return null;
+
+                            const scannedKeys = new Set(dg.revisions.map((r) => r.revKey));
+                            // Build all consecutive pairs
+                            const allPairs: { from: RevisionInfo; to: RevisionInfo; key: string; scanned: boolean }[] = [];
+                            for (let i = 0; i < pair.revisions.length - 1; i++) {
+                              const from = pair.revisions[i];
+                              const to = pair.revisions[i + 1];
+                              const key = `${from.revision_number}|${to.revision_number}`;
+                              allPairs.push({ from, to, key, scanned: scannedKeys.has(key) });
+                            }
+                            const unscannedCount = allPairs.filter((p) => !p.scanned).length;
+                            if (unscannedCount === 0) return null;
+
+                            return (
+                              <div style={{ padding: "8px 16px 8px 64px", borderTop: "1px solid var(--hp-border)", backgroundColor: "#FEFCE8" }}>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: "#854D0E", marginBottom: 6 }}>
+                                  {unscannedCount} unscanned revision{unscannedCount !== 1 ? "s" : ""} available
+                                </div>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                  {allPairs.map((ap) => {
+                                    const scanKey = `${dg.number}|${ap.key}`;
+                                    const isScanning = inlineScanning === scanKey;
+                                    return (
+                                      <button
+                                        key={ap.key}
+                                        onClick={() => {
+                                          if (!ap.scanned && !isScanning) {
+                                            inlineScanPair(pair, ap.from, ap.to, discipline);
+                                          }
+                                        }}
+                                        disabled={ap.scanned || isScanning}
+                                        style={{
+                                          fontSize: 11,
+                                          fontWeight: 500,
+                                          borderRadius: 6,
+                                          padding: "3px 10px",
+                                          cursor: ap.scanned || isScanning ? "default" : "pointer",
+                                          border: "1px solid " + (ap.scanned ? "#BBF7D0" : isScanning ? "#FDE68A" : "#FCA5A5"),
+                                          backgroundColor: ap.scanned ? "#DCFCE7" : isScanning ? "#FEF3C7" : "#fff",
+                                          color: ap.scanned ? "#166534" : isScanning ? "#92400E" : "#991B1B",
+                                        }}
+                                      >
+                                        Rev {ap.from.revision_number} → {ap.to.revision_number}
+                                        {ap.scanned && " ✓"}
+                                        {isScanning && " ..."}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* Revision groups within this drawing */}
                           {isDrawingExpanded && dg.revisions.map((rg) => {
