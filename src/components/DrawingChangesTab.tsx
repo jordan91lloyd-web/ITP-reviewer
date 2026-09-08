@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Download,
   RefreshCw,
@@ -15,6 +15,9 @@ import {
   ChevronsDown,
   ChevronsUp,
   Trash2,
+  FileUp,
+  FileCheck,
+  X,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -64,6 +67,32 @@ interface ChangeRow {
   review_status: ReviewStatus | null;
   change_event_id: string | null;
 }
+
+interface BaselineScopeItem {
+  category: "inclusion" | "exclusion" | "allowance" | "specification" | "condition";
+  item: string;
+  detail: string | null;
+  source_reference: string | null;
+}
+
+interface BaselineDoc {
+  id: string;
+  document_name: string;
+  source: "upload" | "procore";
+  status: "pending" | "processing" | "processed" | "failed";
+  scope_items: BaselineScopeItem[];
+  item_count: number;
+  error_message: string | null;
+  created_at: string;
+}
+
+const CATEGORY_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  inclusion: { label: "Inclusion", color: "#166534", bg: "#DCFCE7" },
+  exclusion: { label: "Exclusion", color: "#991B1B", bg: "#FEE2E2" },
+  allowance: { label: "Allowance", color: "#1E40AF", bg: "#DBEAFE" },
+  specification: { label: "Specification", color: "#6B21A8", bg: "#F3E8FF" },
+  condition: { label: "Condition", color: "#92400E", bg: "#FEF3C7" },
+};
 
 const STATUS_OPTIONS: { value: ReviewStatus; label: string; color: string; bg: string }[] = [
   { value: "needs_review", label: "Needs Review", color: "#92400E", bg: "#FEF3C7" },
@@ -153,7 +182,57 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedChangeIds, setSelectedChangeIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+
+  // Baseline
+  const [baselineDocs, setBaselineDocs] = useState<BaselineDoc[]>([]);
+  const [baselineExpanded, setBaselineExpanded] = useState(false);
+  const [baselineUploading, setBaselineUploading] = useState(false);
+  const [expandedBaselineDoc, setExpandedBaselineDoc] = useState<string | null>(null);
+  const baselineFileRef = useRef<HTMLInputElement>(null);
+
   const [error, setError] = useState<string | null>(null);
+
+  // ── Baseline functions ───────────────────────────────────────────────────
+
+  const fetchBaseline = useCallback(async (pid: string) => {
+    try {
+      const res = await fetch(`/api/drawing-changes/baseline?company_id=${company_id}&project_id=${pid}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setBaselineDocs(data.documents ?? []);
+    } catch { /* ignore */ }
+  }, [company_id]);
+
+  const uploadBaselineFile = useCallback(async (file: File) => {
+    if (!projectId) return;
+    setBaselineUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("company_id", company_id);
+      fd.append("project_id", projectId);
+
+      const res = await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Upload failed");
+        return;
+      }
+      await fetchBaseline(projectId);
+    } catch {
+      setError("Upload failed");
+    } finally {
+      setBaselineUploading(false);
+    }
+  }, [projectId, company_id, fetchBaseline]);
+
+  const deleteBaselineDoc = useCallback(async (docId: string) => {
+    if (!window.confirm("Remove this document from the baseline?")) return;
+    try {
+      await fetch(`/api/drawing-changes/baseline?document_id=${docId}`, { method: "DELETE" });
+      setBaselineDocs((prev) => prev.filter((d) => d.id !== docId));
+    } catch { /* ignore */ }
+  }, []);
 
   // ── Fetch drawings with revisions ────────────────────────────────────────
 
@@ -239,9 +318,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       if (pid) {
         fetchDrawings(pid);
         loadPreviousResults(pid);
+        fetchBaseline(pid);
       }
     },
-    [projects, fetchDrawings, loadPreviousResults]
+    [projects, fetchDrawings, loadPreviousResults, fetchBaseline]
   );
 
   // ── Drawing selection helpers ────────────────────────────────────────────
@@ -794,6 +874,129 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           }}
         >
           {error}
+        </div>
+      )}
+
+      {/* ═══ Baseline Scope ═══ */}
+      {projectId && (
+        <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", marginBottom: 16, overflow: "hidden" }}>
+          {/* Header — always visible */}
+          <div
+            onClick={() => setBaselineExpanded((v) => !v)}
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", backgroundColor: "var(--hp-surface-raised)", cursor: "pointer", userSelect: "none" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {baselineExpanded ? <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} /> : <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />}
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>Baseline Scope</span>
+              {baselineDocs.length > 0 ? (
+                <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
+                  {baselineDocs.length} document{baselineDocs.length !== 1 ? "s" : ""} · {baselineDocs.reduce((sum, d) => sum + d.item_count, 0)} scope items
+                </span>
+              ) : (
+                <span style={{ fontSize: 12, color: "#B45309" }}>Not set — upload tender/contract documents</span>
+              )}
+            </div>
+            {baselineDocs.length > 0 && (
+              <div style={{ display: "flex", gap: 6 }}>
+                {Object.entries(CATEGORY_LABELS).map(([cat, { label, bg, color }]) => {
+                  const count = baselineDocs.reduce((sum, d) => sum + (d.scope_items?.filter((i) => i.category === cat).length ?? 0), 0);
+                  if (count === 0) return null;
+                  return <span key={cat} style={{ fontSize: 10, fontWeight: 500, borderRadius: 999, padding: "1px 8px", backgroundColor: bg, color }}>{count} {label}s</span>;
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Expanded content */}
+          {baselineExpanded && (
+            <div style={{ padding: "12px 16px", borderTop: "1px solid var(--hp-border)" }}>
+              {/* Upload button */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <input
+                  ref={baselineFileRef}
+                  type="file"
+                  accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadBaselineFile(f);
+                    e.target.value = "";
+                  }}
+                />
+                <button
+                  onClick={() => baselineFileRef.current?.click()}
+                  disabled={baselineUploading}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6, borderRadius: 8,
+                    border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)",
+                    padding: "6px 14px", fontSize: 12, fontWeight: 600, color: "#fff", cursor: "pointer",
+                  }}
+                >
+                  <FileUp size={12} /> {baselineUploading ? "Processing..." : "Upload Document"}
+                </button>
+                <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>PDF, DOCX, XLSX, JPG, PNG</span>
+              </div>
+
+              {/* Document list */}
+              {baselineDocs.length === 0 ? (
+                <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", padding: "12px 0" }}>
+                  No baseline documents yet. Upload your tender specification, PBR, scope of works, allowances schedule, or any contract document that defines the original scope.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {baselineDocs.map((doc) => (
+                    <div key={doc.id} style={{ borderRadius: 6, border: "1px solid var(--hp-border)", overflow: "hidden" }}>
+                      {/* Doc header */}
+                      <div
+                        onClick={() => setExpandedBaselineDoc((prev) => prev === doc.id ? null : doc.id)}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", backgroundColor: "#FAFAF9", cursor: "pointer", userSelect: "none" }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {expandedBaselineDoc === doc.id ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />}
+                          <FileCheck size={14} style={{ color: doc.status === "processed" ? "#166534" : doc.status === "failed" ? "#991B1B" : "#92400E" }} />
+                          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--hp-warm-800)" }}>{doc.document_name}</span>
+                          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                            {doc.status === "processed" ? `${doc.item_count} items` : doc.status === "processing" ? "Processing..." : doc.status === "failed" ? "Failed" : "Pending"}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteBaselineDoc(doc.id); }}
+                          title="Remove from baseline"
+                          style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                        >
+                          <X size={14} style={{ color: "var(--hp-text-muted)" }} />
+                        </button>
+                      </div>
+
+                      {/* Doc items */}
+                      {expandedBaselineDoc === doc.id && doc.scope_items && doc.scope_items.length > 0 && (
+                        <div style={{ borderTop: "1px solid var(--hp-border)", maxHeight: 300, overflowY: "auto" }}>
+                          {doc.scope_items.map((item, i) => {
+                            const catStyle = CATEGORY_LABELS[item.category] ?? CATEGORY_LABELS.condition;
+                            return (
+                              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "6px 12px 6px 40px", borderTop: i > 0 ? "1px solid var(--hp-border)" : "none", fontSize: 12 }}>
+                                <span style={{ borderRadius: 999, padding: "1px 8px", fontSize: 10, fontWeight: 500, backgroundColor: catStyle.bg, color: catStyle.color, whiteSpace: "nowrap", flexShrink: 0 }}>{catStyle.label}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontWeight: 500, color: "var(--hp-warm-800)" }}>{item.item}</div>
+                                  {item.detail && <div style={{ color: "var(--hp-text-secondary)", marginTop: 2 }}>{item.detail}</div>}
+                                  {item.source_reference && <div style={{ color: "var(--hp-text-muted)", fontSize: 10, marginTop: 2 }}>{item.source_reference}</div>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {expandedBaselineDoc === doc.id && doc.error_message && (
+                        <div style={{ padding: "8px 12px", borderTop: "1px solid var(--hp-border)", fontSize: 12, color: "#991B1B" }}>
+                          Error: {doc.error_message}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
