@@ -140,6 +140,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [deepScanning, setDeepScanning] = useState<Set<string>>(new Set());
   const [expandedDrawings, setExpandedDrawings] = useState<Set<string>>(new Set());
   const [allScans, setAllScans] = useState<{ id: string; created_at: string; status: string; total_drawings: number; completed_drawings: number }[]>([]);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedChangeIds, setSelectedChangeIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch drawings with revisions ────────────────────────────────────────
@@ -469,6 +472,63 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setError("Failed to clear results");
     }
   }, [projectId, company_id, fetchDrawings]);
+
+  // ── Delete selected changes ──────────────────────────────────────────────
+
+  const deleteSelected = useCallback(async () => {
+    if (selectedChangeIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedChangeIds.size} selected change${selectedChangeIds.size !== 1 ? "s" : ""}?`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/drawing-changes/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ change_ids: [...selectedChangeIds] }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Delete failed");
+        return;
+      }
+      // Remove deleted changes from local state
+      const deleted = new Set(selectedChangeIds);
+      const remaining = changes.filter((c) => !deleted.has(c.id));
+      setChanges(remaining);
+      const newByDisc: Record<string, ChangeRow[]> = {};
+      for (const c of remaining) {
+        const disc = c.discipline || "Other";
+        if (!newByDisc[disc]) newByDisc[disc] = [];
+        newByDisc[disc].push(c);
+      }
+      setByDiscipline(newByDisc);
+      setSelectedChangeIds(new Set());
+      setSelectMode(false);
+    } catch {
+      setError("Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  }, [selectedChangeIds, changes]);
+
+  const toggleChangeSelection = useCallback((id: string) => {
+    setSelectedChangeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectDrawingChanges = useCallback((changeIds: string[], selected: boolean) => {
+    setSelectedChangeIds((prev) => {
+      const next = new Set(prev);
+      for (const id of changeIds) {
+        if (selected) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }, []);
 
   // ── Load a specific scan by ID ───────────────────────────────────────────
 
@@ -1050,8 +1110,20 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 {highSeverityOnly && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Showing {filteredChanges.length} of {changes.length}</span>}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <button onClick={() => { expandAllResults(); setExpandedDrawings(new Set(filteredChanges.map((c) => c.drawing_number))); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Expand All</button>
-                <button onClick={() => { collapseAllResults(); setExpandedDrawings(new Set()); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Collapse All</button>
+                {selectMode ? (
+                  <>
+                    <button onClick={deleteSelected} disabled={selectedChangeIds.size === 0 || deleting} style={{ ...BTN, padding: "4px 10px", fontSize: 11, color: selectedChangeIds.size > 0 ? "#991B1B" : "var(--hp-text-muted)", borderColor: selectedChangeIds.size > 0 ? "#FCA5A5" : "var(--hp-border)" }}>
+                      <Trash2 size={11} /> Delete {selectedChangeIds.size > 0 ? `(${selectedChangeIds.size})` : ""}
+                    </button>
+                    <button onClick={() => { setSelectMode(false); setSelectedChangeIds(new Set()); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => { expandAllResults(); setExpandedDrawings(new Set(filteredChanges.map((c) => c.drawing_number))); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Expand All</button>
+                    <button onClick={() => { collapseAllResults(); setExpandedDrawings(new Set()); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Collapse All</button>
+                    <button onClick={() => setSelectMode(true)} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Select</button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -1112,6 +1184,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 8px 40px", borderTop: "1px solid var(--hp-border)", backgroundColor: isDrawingExpanded ? "#F5F5F4" : "#FAFAF9", cursor: "pointer", userSelect: "none" }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              {selectMode && (() => {
+                                const allIds = dg.revisions.flatMap((r) => r.changes.map((c) => c.id));
+                                const allSelected = allIds.length > 0 && allIds.every((id) => selectedChangeIds.has(id));
+                                return <input type="checkbox" checked={allSelected} onClick={(e) => e.stopPropagation()} onChange={() => selectDrawingChanges(allIds, !allSelected)} style={{ accentColor: "#991B1B", cursor: "pointer" }} />;
+                              })()}
                               {isDrawingExpanded ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />}
                               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{dg.number}</span>
                               <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>{dg.title}</span>
@@ -1154,7 +1231,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                   const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
                                   const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
                                   return (
-                                    <div key={change.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 16px 10px 72px", borderTop: "1px solid var(--hp-border)", fontSize: 13 }}>
+                                    <div key={change.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 16px 10px 72px", borderTop: "1px solid var(--hp-border)", fontSize: 13, backgroundColor: selectMode && selectedChangeIds.has(change.id) ? "#FEF2F2" : undefined }}>
+                                      {selectMode && <input type="checkbox" checked={selectedChangeIds.has(change.id)} onChange={() => toggleChangeSelection(change.id)} style={{ accentColor: "#991B1B", cursor: "pointer", marginTop: 2, flexShrink: 0 }} />}
                                       <span style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, backgroundColor: typeColors.bg, color: typeColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>
                                         <Icon size={10} />{CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
                                       </span>
