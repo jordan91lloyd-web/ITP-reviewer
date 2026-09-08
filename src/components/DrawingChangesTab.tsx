@@ -125,6 +125,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [changes, setChanges] = useState<ChangeRow[]>([]);
   const [byDiscipline, setByDiscipline] = useState<Record<string, ChangeRow[]>>({});
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+  const [highSeverityOnly, setHighSeverityOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch drawings with revisions ────────────────────────────────────────
@@ -734,7 +735,31 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       )}
 
       {/* ═══ Step 2: Results ═══ */}
-      {step === 2 && scan && (
+      {step === 2 && scan && (() => {
+        // Apply severity filter
+        const filteredChanges = highSeverityOnly
+          ? changes.filter((c) => c.severity === "high")
+          : changes;
+
+        // Group by discipline → drawing
+        const filteredByDiscipline: Record<string, ChangeRow[]> = {};
+        for (const c of filteredChanges) {
+          const disc = c.discipline || "Other";
+          if (!filteredByDiscipline[disc]) filteredByDiscipline[disc] = [];
+          filteredByDiscipline[disc].push(c);
+        }
+
+        // Top drawings by change count (unfiltered)
+        const drawingCounts = new Map<string, number>();
+        for (const c of changes) {
+          const key = `${c.drawing_number}`;
+          drawingCounts.set(key, (drawingCounts.get(key) ?? 0) + 1);
+        }
+        const topDrawings = [...drawingCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+
+        return (
         <>
           {/* Scan summary bar */}
           <div
@@ -758,6 +783,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     <span style={{ color: "#DC2626" }}> · {scan.failed_drawings} failed</span>
                   )}
                 </div>
+                {/* Top drawings by change count */}
+                {topDrawings.length > 0 && (
+                  <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 4 }}>
+                    Most changes: {topDrawings.map(([num, count]) => `${num} (${count})`).join(", ")}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <a
@@ -776,7 +807,25 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     textDecoration: "none",
                   }}
                 >
-                  <Download size={12} /> Export CSV
+                  <Download size={12} /> CSV
+                </a>
+                <a
+                  href={`/api/drawing-changes/export?scan_id=${scan.id}&format=pdf`}
+                  download
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderRadius: 8,
+                    border: "1px solid var(--hp-border)",
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: "var(--hp-warm-700)",
+                    textDecoration: "none",
+                  }}
+                >
+                  <Download size={12} /> PDF
                 </a>
                 <button
                   onClick={() => setStep(0)}
@@ -800,9 +849,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             </div>
           </div>
 
-          {/* Summary pills */}
+          {/* Summary pills + severity filter */}
           {changes.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
               {(["addition", "deletion", "spec_change", "relocation"] as const).map((type) => {
                 const count = changes.filter((c) => c.change_type === type).length;
                 if (count === 0) return null;
@@ -827,28 +876,36 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 const highCount = changes.filter((c) => c.severity === "high").length;
                 if (highCount === 0) return null;
                 return (
-                  <span
+                  <button
+                    onClick={() => setHighSeverityOnly((v) => !v)}
                     style={{
                       borderRadius: 999,
                       padding: "4px 12px",
                       fontSize: 12,
                       fontWeight: 500,
-                      backgroundColor: SEVERITY_COLORS.high.bg,
-                      color: SEVERITY_COLORS.high.text,
+                      backgroundColor: highSeverityOnly ? SEVERITY_COLORS.high.text : SEVERITY_COLORS.high.bg,
+                      color: highSeverityOnly ? "#fff" : SEVERITY_COLORS.high.text,
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
+                      border: "none",
+                      cursor: "pointer",
                     }}
                   >
-                    <AlertTriangle size={11} /> {highCount} High Severity
-                  </span>
+                    <AlertTriangle size={11} /> {highCount} High Severity {highSeverityOnly ? "✕" : ""}
+                  </button>
                 );
               })()}
+              {highSeverityOnly && (
+                <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
+                  Showing {filteredChanges.length} of {changes.length} changes
+                </span>
+              )}
             </div>
           )}
 
           {/* Expand/Collapse controls */}
-          {changes.length > 0 && (
+          {filteredChanges.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <button onClick={expandAllResults} title="Expand all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                 <ChevronsDown size={16} style={{ color: "var(--hp-text-muted)" }} />
@@ -857,12 +914,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 <ChevronsUp size={16} style={{ color: "var(--hp-text-muted)" }} />
               </button>
               <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
-                {expandedResults.size}/{Object.keys(byDiscipline).length} disciplines expanded
+                {expandedResults.size}/{Object.keys(filteredByDiscipline).length} disciplines expanded
               </span>
             </div>
           )}
 
-          {changes.length === 0 ? (
+          {filteredChanges.length === 0 ? (
             <div
               style={{
                 borderRadius: 8,
@@ -873,15 +930,37 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 color: "var(--hp-text-secondary)",
               }}
             >
-              No scope or specification changes detected in the scanned drawings.
+              {highSeverityOnly
+                ? "No high severity changes detected."
+                : "No scope or specification changes detected in the scanned drawings."}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {Object.entries(byDiscipline)
+              {Object.entries(filteredByDiscipline)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([discipline, disciplineChanges]) => {
                   const isExpanded = expandedResults.has(discipline);
                   const highCount = disciplineChanges.filter((c) => c.severity === "high").length;
+
+                  // Group by drawing within this discipline
+                  const byDrawing: { key: string; number: string; title: string; rev: string; changes: ChangeRow[] }[] = [];
+                  const drawingMap = new Map<string, typeof byDrawing[0]>();
+                  for (const c of disciplineChanges) {
+                    const key = `${c.drawing_number}|${c.old_revision}|${c.new_revision}`;
+                    let group = drawingMap.get(key);
+                    if (!group) {
+                      group = {
+                        key,
+                        number: c.drawing_number,
+                        title: c.drawing_title,
+                        rev: `${c.old_revision} → ${c.new_revision}`,
+                        changes: [],
+                      };
+                      drawingMap.set(key, group);
+                      byDrawing.push(group);
+                    }
+                    group.changes.push(c);
+                  }
 
                   return (
                     <div
@@ -911,7 +990,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                             {discipline}
                           </span>
                           <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
-                            ({disciplineChanges.length} change{disciplineChanges.length !== 1 ? "s" : ""})
+                            ({disciplineChanges.length} change{disciplineChanges.length !== 1 ? "s" : ""} across {byDrawing.length} drawing{byDrawing.length !== 1 ? "s" : ""})
                           </span>
                         </div>
                         {highCount > 0 && (
@@ -933,57 +1012,75 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         )}
                       </div>
 
-                      {/* Changes table */}
+                      {/* Changes grouped by drawing */}
                       {isExpanded && (
-                        <div style={{ overflowX: "auto" }}>
-                          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-                            <thead>
-                              <tr style={{ borderTop: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)" }}>
-                                {["Drawing", "Rev", "Type", "Description", "Location", "Severity"].map((h) => (
-                                  <th
-                                    key={h}
-                                    style={{
-                                      padding: "8px 16px",
-                                      textAlign: "left",
-                                      fontWeight: 500,
-                                      fontSize: 12,
-                                      color: "var(--hp-text-secondary)",
-                                    }}
-                                  >
-                                    {h}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {disciplineChanges.map((change) => {
-                                const typeColors = CHANGE_TYPE_COLORS[change.change_type] ?? CHANGE_TYPE_COLORS.spec_change;
-                                const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
-                                const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
-
-                                return (
-                                  <tr key={change.id} style={{ borderTop: "1px solid var(--hp-border)" }}>
-                                    <td style={{ padding: "10px 16px", verticalAlign: "top" }}>
-                                      <div style={{ fontWeight: 500, color: "var(--hp-warm-900)" }}>
-                                        {change.drawing_number}
-                                      </div>
-                                      <div
+                        <div>
+                          {byDrawing.map((group) => {
+                            const groupHigh = group.changes.filter((c) => c.severity === "high").length;
+                            return (
+                              <div key={group.key}>
+                                {/* Drawing sub-header */}
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    padding: "8px 16px 8px 44px",
+                                    borderTop: "1px solid var(--hp-border)",
+                                    backgroundColor: "#FAFAF9",
+                                  }}
+                                >
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>
+                                      {group.number}
+                                    </span>
+                                    <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>
+                                      {group.title}
+                                    </span>
+                                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                                      Rev {group.rev}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                                      {group.changes.length} change{group.changes.length !== 1 ? "s" : ""}
+                                    </span>
+                                    {groupHigh > 0 && (
+                                      <span
                                         style={{
-                                          fontSize: 11,
-                                          color: "var(--hp-text-muted)",
-                                          maxWidth: 180,
-                                          whiteSpace: "nowrap",
-                                          overflow: "hidden",
-                                          textOverflow: "ellipsis",
+                                          borderRadius: 999,
+                                          padding: "1px 6px",
+                                          fontSize: 10,
+                                          fontWeight: 500,
+                                          backgroundColor: SEVERITY_COLORS.high.bg,
+                                          color: SEVERITY_COLORS.high.text,
                                         }}
                                       >
-                                        {change.drawing_title}
-                                      </div>
-                                    </td>
-                                    <td style={{ padding: "10px 16px", fontSize: 12, color: "var(--hp-text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
-                                      {change.old_revision} → {change.new_revision}
-                                    </td>
-                                    <td style={{ padding: "10px 16px", verticalAlign: "top" }}>
+                                        {groupHigh} high
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Change rows */}
+                                {group.changes.map((change) => {
+                                  const typeColors = CHANGE_TYPE_COLORS[change.change_type] ?? CHANGE_TYPE_COLORS.spec_change;
+                                  const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
+                                  const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
+
+                                  return (
+                                    <div
+                                      key={change.id}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: 12,
+                                        padding: "10px 16px 10px 44px",
+                                        borderTop: "1px solid var(--hp-border)",
+                                        fontSize: 13,
+                                      }}
+                                    >
+                                      {/* Type pill */}
                                       <span
                                         style={{
                                           display: "inline-flex",
@@ -995,19 +1092,23 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                           fontWeight: 500,
                                           backgroundColor: typeColors.bg,
                                           color: typeColors.text,
+                                          whiteSpace: "nowrap",
+                                          flexShrink: 0,
                                         }}
                                       >
                                         <Icon size={10} />
                                         {CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
                                       </span>
-                                    </td>
-                                    <td style={{ padding: "10px 16px", maxWidth: 320, color: "var(--hp-warm-800)", verticalAlign: "top" }}>
-                                      {change.description}
-                                    </td>
-                                    <td style={{ padding: "10px 16px", fontSize: 12, color: "var(--hp-text-muted)", verticalAlign: "top" }}>
-                                      {change.location_on_drawing ?? "—"}
-                                    </td>
-                                    <td style={{ padding: "10px 16px", verticalAlign: "top" }}>
+                                      {/* Description */}
+                                      <div style={{ flex: 1, minWidth: 0, color: "var(--hp-warm-800)" }}>
+                                        {change.description}
+                                        {change.location_on_drawing && (
+                                          <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 3 }}>
+                                            📍 {change.location_on_drawing}
+                                          </div>
+                                        )}
+                                      </div>
+                                      {/* Severity */}
                                       <span
                                         style={{
                                           borderRadius: 999,
@@ -1017,16 +1118,18 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                           textTransform: "capitalize",
                                           backgroundColor: sevColors.bg,
                                           color: sevColors.text,
+                                          whiteSpace: "nowrap",
+                                          flexShrink: 0,
                                         }}
                                       >
                                         {change.severity}
                                       </span>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1035,7 +1138,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             </div>
           )}
         </>
-      )}
+        );
+      })()}
     </div>
   );
 }
