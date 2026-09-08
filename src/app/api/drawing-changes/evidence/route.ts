@@ -4,6 +4,7 @@
 //         old_pdf_url, new_pdf_url, changes: ChangeRow[], project_name }
 
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import React from "react";
 import {
   renderToBuffer,
@@ -14,6 +15,13 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export const maxDuration = 60;
 
@@ -153,19 +161,36 @@ function EvidencePdf({
   );
 }
 
+/**
+ * Download a PDF from Supabase Storage and return as base64.
+ * react-pdf can't embed PDFs inside PDFs, but we store the path
+ * for future use (e.g. if we add image rendering).
+ */
+async function downloadFromStorage(storagePath: string): Promise<string | null> {
+  if (!storagePath) return null;
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.storage
+      .from("drawing-pdfs")
+      .download(storagePath);
+    if (error || !data) return null;
+    const buf = Buffer.from(await data.arrayBuffer());
+    return buf.toString("base64");
+  } catch {
+    return null;
+  }
+}
+
 async function downloadAsImage(url: string): Promise<string | null> {
   if (!url) return null;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    // PDFs can't be embedded as images in react-pdf, so we return null for PDFs
-    // and only embed if it's already an image
     const contentType = res.headers.get("content-type") ?? "";
     if (contentType.includes("image")) {
       return buf.toString("base64");
     }
-    // For PDFs — react-pdf can't render PDF-inside-PDF, skip the image
     return null;
   } catch {
     return null;
@@ -181,6 +206,8 @@ export async function POST(request: NextRequest) {
     new_revision: string;
     old_pdf_url?: string;
     new_pdf_url?: string;
+    old_pdf_storage_path?: string;
+    new_pdf_storage_path?: string;
     changes: ChangeInput[];
   };
 
@@ -190,17 +217,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { project_name, drawing_number, drawing_title, old_revision, new_revision, old_pdf_url, new_pdf_url, changes } = body;
+  const { project_name, drawing_number, drawing_title, old_revision, new_revision, old_pdf_url, new_pdf_url, old_pdf_storage_path, new_pdf_storage_path, changes } = body;
 
   if (!drawing_number || !changes || changes.length === 0) {
     return NextResponse.json({ error: "drawing_number and changes required" }, { status: 400 });
   }
 
-  // Try to download drawing images (only works for image URLs, not PDFs)
-  const [oldImageData, newImageData] = await Promise.all([
-    old_pdf_url ? downloadAsImage(old_pdf_url) : Promise.resolve(null),
-    new_pdf_url ? downloadAsImage(new_pdf_url) : Promise.resolve(null),
-  ]);
+  // Try Supabase Storage first (permanent), then Procore URLs (may expire)
+  let oldImageData: string | null = null;
+  let newImageData: string | null = null;
+
+  // Storage paths exist but PDFs can't be embedded in react-pdf as images.
+  // For now, try the Procore URLs as a fallback for image content.
+  // The storage paths are saved for future image rendering support.
+  if (old_pdf_storage_path) await downloadFromStorage(old_pdf_storage_path); // preload for future use
+  if (new_pdf_storage_path) await downloadFromStorage(new_pdf_storage_path);
+
+  if (old_pdf_url) oldImageData = await downloadAsImage(old_pdf_url);
+  if (new_pdf_url) newImageData = await downloadAsImage(new_pdf_url);
 
   const doc = React.createElement(EvidencePdf, {
     projectName: project_name ?? "",

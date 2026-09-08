@@ -279,6 +279,22 @@ export async function POST(request: NextRequest) {
       const oldBase64 = oldPdf.toString("base64");
       const newBase64 = newPdf.toString("base64");
 
+      // Store PDFs in Supabase Storage for permanent access
+      const storagePath = `drawing-revisions/${project_id}/${pair.drawing_number}`;
+      const oldPath = `${storagePath}/rev-${pair.old_revision.revision_number}.pdf`;
+      const newPath = `${storagePath}/rev-${pair.new_revision.revision_number}.pdf`;
+
+      await Promise.all([
+        supabase.storage.from("drawing-pdfs").upload(oldPath, oldPdf, {
+          contentType: "application/pdf",
+          upsert: true,
+        }),
+        supabase.storage.from("drawing-pdfs").upload(newPath, newPdf, {
+          contentType: "application/pdf",
+          upsert: true,
+        }),
+      ]);
+
       const changes = await compareDrawings(claude, pair, oldBase64, newBase64, deep);
 
       // Deep scan replaces existing results for this drawing
@@ -306,6 +322,8 @@ export async function POST(request: NextRequest) {
           description: c.description,
           location_on_drawing: c.location_on_drawing,
           severity: c.severity,
+          old_pdf_storage_path: oldPath,
+          new_pdf_storage_path: newPath,
         }));
 
         const { error: insertErr } = await supabase

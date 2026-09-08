@@ -66,6 +66,8 @@ interface ChangeRow {
   severity: string;
   review_status: ReviewStatus | null;
   change_event_id: string | null;
+  old_pdf_storage_path: string | null;
+  new_pdf_storage_path: string | null;
 }
 
 interface BaselineScopeItem {
@@ -561,6 +563,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           new_revision: newRev,
           old_pdf_url: oldPdfUrl,
           new_pdf_url: newPdfUrl,
+          old_pdf_storage_path: drawingChanges[0]?.old_pdf_storage_path,
+          new_pdf_storage_path: drawingChanges[0]?.new_pdf_storage_path,
           changes: drawingChanges.map((c) => ({
             change_type: c.change_type,
             description: c.description,
