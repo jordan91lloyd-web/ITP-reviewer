@@ -401,11 +401,195 @@ Still to build: creating the tracker sections and rows, and linking each inspect
 
 ---
 
-## Next up (as at 28 Aug 2026)
+## Bondi tiling ITP run — COMPLETE as at 30 Aug 2026
+
+Project 598134326053879. Template `ITP- 018 Tiling` = 598134329344256 (project level).
+
+17 apartments group into **5 sets** by wet-area content. Balconies excluded (external, AS 4654). Room names standardised — `Powder/ Laundry`, `Laundry/ Pantry` and `Pantry/ Laundry` all become `Laundry`; `Ensuit` and `BAth` corrected.
+
+| Set | Wet areas | Apartments | Status |
+|-----|-----------|-----------|--------|
+| 1 | Bath, Ensuite, Laundry | G.01, G.02, W102, W201, W301, B102, B103, B201, B202, B203, B204 | Done |
+| 2 | Bath, Ensuite, Laundry, WC | B301, B302 | Done |
+| 3 | Bath, Laundry | B101, B104 | Done |
+| 4 | Bath, WC, Laundry | W101 | Done |
+| 5 | Ensuite | W202 | Done |
+
+**All 17 created and read-back verified. All 17 descriptions set to the apartment code** (`W102`, `B301`, `G. 01` etc). The template has been stripped back to its original 17 items — sections 2, 3 and 4 end at x.4 again.
+
+Sub-location items go in **PRE-INSTALL CHECKS, INSTALLATION and POST-INSTALLATION** only. Not Documents, not Compliance. Numbering picks up at 2.5, 3.5 and 4.5.
+
+Still outstanding for this run: linking the inspections to an Action Plan tracker (no tool yet), and the Bondi location tree needs a tidy — see the review notes: five parallel hierarchies for the same building, plus typos (`bath 1`, `BAth`, `Ensuit`, `Recyling`, `Exausts`).
+
+### Joinery / external waterproofing / pre-sheet — done 30 Aug 2026
+
+Modelled on the William Street Alexandria `4 - Internal Inspection Tracker` Jordy supplied. Its per-unit (T1) section is the canonical Fleek order; Bondi Rd now matches it. Three more straight runs, 17 each:
+
+- `ITP- 017 Joinery ` = 598134329344264 (note the trailing space in the name)
+- `ITP- 010 External Waterproofing` = 598134330945839
+- `ITP- 022 internal Pre Sheet Inspection` = 598134329344252 — William Street uses this single ITP at unit level and reserves ITP-023/024/025 for basement service rough-in, so Bondi Rd does the same
+
+**Correction — ITP-011 was already done.** An earlier note in this file claimed only a G.01 trial record of `ITP- 011 Internal Waterproofing` existed, with id 598134331798637. That was wrong. All 17 apartment records exist (numbers 12-28, created 26 Aug 2026, template 598134329484536), with per-wet-area line items and item counts varying 29/32/35/38 by wet-area set. The quoted id matches no ITP-011 record. Ten older ITP-011s also sit at building and level locations (numbers 1-11, 26 items) covering basement and common area membrane.
+
+Lesson: check live data before telling Jordy something is missing. He caught this one.
+
+**Real gap: assignee, responsible contractor and due date are blank on every record created on 30 Aug.** The 26 Aug ITP-011 run set all three (inspector Amjad Siddiqui, contractor Capital Choice Waterproofing, due 6 Oct 2026). `create_inspections` does not set them and nothing since has. They are settable in bulk via the same `PATCH /rest/v1.1/projects/{pid}/checklist/lists/{id}` used for descriptions — `updateInspection` in `src/lib/procore.ts` already takes `due_at`.
+
+Descriptions: 51 PATCH calls in one `javascript_tool` call **times out** (CDP limit is 45s). Split into batches of ~17. PATCH is idempotent so a retry after a timeout is safe.
+
+### Flooring and glazing ITPs — done 30 Aug 2026, no template edits needed
+
+Three more ITPs raised against all 17 apartments, straight runs with no template passes because none needs per-room sub-areas:
+
+- `ITP- 016 Timber/ Engineered Floor Finishes` = 598134329344257 — 17 created
+- `ITP- 019 Pedestal Floor Covering` = 598134329344251 — 17 created
+- `ITP- 014 Windows and Glazing` = 598134329484550 — 17 created
+
+All 51 read-back verified, all descriptions set to the apartment code. Full id table in the project doc `claude/bondi-apartment-itp-runs.md`.
+
+Glazing is per apartment, not per elevation: ITP-014's checks are operable panels, gaskets, storm moulds, door hardware and the site hose test — inside-the-unit work whose defects have to point at a unit. The facade side (flashings over openings) is already in ITP-015. Common areas and retail were deliberately excluded on Jordy's call.
+
+Note for later: G.01 and G.02 have a `Garden` child, not a `Balcony`. Jordy chose to raise ITP-019 against them anyway. If those courtyards turn out not to be pedestal-paved, delete 598134331809291 and 598134331809292.
+
+### Facade cladding ITPs — done 30 Aug 2026
+
+8 created off `ITP- 015 Facade Cladding` = 598134329484524, one per elevation per building, each carrying LVL 1/2/3 as line items. Full detail in the project doc `claude/bondi-facade-cladding-itps.md`.
+
+Two firsts on this run:
+
+**Locations can be created through the UI.** The Locations tool (`/tools/locations`) has a tiered picker: click a tier-1 node to select it, then focus the `+ Nth tier` input and type + press Return to create a child. The tier list is virtualised — set `scrollTop` AND dispatch a `scroll` event or the next rows never render. The React setter trick does NOT commit here; the value must be typed with real key events (`computer` `type` then `key: Return`) after focusing the input via JS. 10 locations added this way: `Bondi Rd Building > Facades > North/South/East/West Elevation` and the same under `Wellington St Manning Building`.
+
+**Quick add can be driven the same way.** Focus the Quick add textarea (the one with no placeholder, lowest on the page), type the item names separated by Return, then read the Preview pane numbering before clicking `Add N items`. Pick the right section's Quick add button by y-coordinate between that section's header and the next section's header — never by DOM index, which shifts with virtualisation. Items land as Pass/fail.
+
+The template was left with the LVL rows in place, unlike tiling, because all 8 inspections use the same configuration.
+
+### Responsible contractors set from commitments (30 Aug 2026)
+
+Read the project's commitments, proposed a contractor per ITP, Jordy confirmed. 86 inspections now carry one. Detail and the still-blank ones in the project doc `claude/bondi-itp-contractors.md`.
+
+Set: Capital Choice Waterproofing on ITP-010 and ITP-011, Aluxus on ITP-014, B&C Glass and Aluminium on ITP-015, Addison Joinery on ITP-017.
+
+**Do not infer the facade contractor from the partitions package.** Aluxus holds partitions, metal works AND terracotta cladding, and signs the facade rows at William Street, so every signal pointed at them. Jordy's answer was B&C — "B&C are doing the cladding, Aluxus are doing glazing." Proposing and asking was right; guessing would have been wrong on 8 records.
+
+Blank and genuinely unknowable from Procore: ITP-018 Tiling, ITP-019 Pedestal and ITP-016 Timber have no install commitment at all, only supply POs. ITP-022 Pre Sheet spans five trades and one field.
+
+`responsible_contractor_id` is the PATCH field; `vendor_id` returns 200 and does nothing. Written up in `docs/PROCORE-BULK-ITP-API.md`.
+
+### Attachment and photo requests added to every row (31 Aug 2026)
+
+A row will not accept a file or photo until a request of that type exists on it. Added to all 163 rows: 163 `attachment` + 163 `photo`, on top of the 146 `checklist` links. 472 requests, no duplicates. Same endpoint as the ITP link with `type: "attachment"` / `"photo"` and no payload. Written up in `docs/PROCORE-BULK-ITP-API.md`.
+
+Note this needed no draft round trip — **only sections are locked on a published plan.**
+
+### Sections lock on publish — and the way back (30 Aug 2026)
+
+Adding a BASEMENT section to the live tracker hit `409 Unable to modify sections while plan's status is in_progress`. Sections are frozen once a plan is published; items are not.
+
+The way out: `PATCH {plan:{status_id:1}}` reverts to draft, add the section and items, then press Publish in the UI again. **Use `status_id`, not `status`** — `{plan:{status:"draft"}}` worked once then silently stopped working, 200 with no change. Items also cannot be moved between sections by any PATCH shape; delete and recreate. **The round trip is non-destructive** — 19 sections / 161 items / 144 requests / 144 records / 118 assignees all survived unchanged. Snapshot counts before and after regardless.
+
+Basement was then split on Jordy's call into three sections at positions 20-22: **BASEMENT 1** (598134327094062, empty for now), **BASEMENT 2** (598134327094115) and **BASEMENTS COMBINED** (598134327094116). Procore ignores a requested `position` on create and always appends, which conveniently left every existing section number stable — B101 is still section 3.
+
+**The rule for COMBINED**, agreed with Jordy so it does not become a dumping ground: a row goes there only when the inspection is a single record signed off once across both levels. If the work happens twice, once per level, it belongs in the level section even when it is the same trade. Car stacker qualifies (one machine, commissioned once). Services rough in does not (B2 then B1, months apart).
+
+Rationale for splitting by level, not by building: both levels contain Lift B and Lift W, so it is one shared basement under both buildings. B1 holds the plant (fire pump room, main switchboard, comm board, cold water plant, grease arrestor, waste, retail store); B2 holds parking, the pump out pit, sewer pump and turntable. Different scopes, and B2 gets tanked and backfilled before B1 exists, so B2 records cannot be reopened later.
+
+Tracker now: 22 sections, 163 items, 146 requests, 147 records, 118 assignees, nothing blocking, no orphans.
+
+### Tracker assignees set (30 Aug 2026)
+
+118 assignees across the Internal Inspection Tracker, verified, no duplicates. The mapping repeats identically in every apartment section, so it is row-title driven, not per-section. Detail in `claude/bondi-itp-contractors.md`.
+
+`plan_item_assignees` takes a **`party_id`, not a user id** — parties come from `/action_plans/parties` and carry the vendor, which is how people map to subcontractors. Written up in `docs/PROCORE-BULK-ITP-API.md`.
+
+Also added two roof ITPs: ITP-032 METAL ROOFING at `A Roof>Wellington>W Roof` (598134331810795, contractor pending) and ITP-010 External Waterproofing at `A Roof>Bondi>B Roof` (598134331810798, Capital Choice). Neither is in the tracker — it covers apartments and elevations only.
+
+**Watch the browser tab.** The Chrome tab was closed mid-session and every `window.*` variable went with it, including the batch cursor. Rebuild state from the API after any navigation or tab loss, and keep batches at ~50 writes per `javascript_tool` call — 55 timed out at the 45s CDP limit partway through, though the writes that landed were fine and the cursor let it resume.
+
+### Internal Inspection Tracker built — Action Plan linking is done (30 Aug 2026)
+
+Action Plan #14 `Internal Inspection Tracker` on Bondi Rd, plan id 598134325853211. 19 sections, 161 items, **144 inspections linked and verified**. Modelled on William Street Alexandria's Action Plan #4. Full structure in the project doc `claude/bondi-internal-inspection-tracker.md`.
+
+This closes the last open question from the original goal: bulk-create inspections AND link them to a tracker. Both halves now work. The confirmed POST body wrappers are written up in `docs/PROCORE-BULK-ITP-API.md` — the previous "still not confirmed" note there is resolved.
+
+Two gotchas worth keeping:
+
+- **A draft plan silently rejects test records** with a 409. `PATCH {plan:{status:"in_progress"}}` returns 200 and does nothing; the plan must be published from the UI. See the doc.
+- **Batch size.** One `javascript_tool` call is capped at 45s by CDP. ~50 links (100 POSTs) per call is safe; 144 in one call times out. Keep the cursor on `window` so batches resume rather than restart — and note a page navigation wipes `window` state, so rebuild from the API rather than from memory.
+
+### Driving the Procore template editor — use JavaScript, not clicks
+
+Coordinate clicks and accessibility-tree refs both cost hours on this run. Two things fixed it. Do these first next time.
+
+**1. Never trust screenshot coordinates on this page.** Check the real geometry before clicking anything:
+
+```js
+JSON.stringify({dpr:devicePixelRatio, vw:innerWidth, vh:innerHeight})
+```
+
+On the run of 30 Aug this returned `dpr 0.75, vw 2560` while the screenshot came back 1568px wide with the page drawn into the top-left ~783px of it. Screenshot coords were off by a factor of ~3.3, so every coordinate click missed. The a11y tree is no better — it does not expose textarea values at all, so `find` cannot locate a row by its title.
+
+**2. Drive the editor from the DOM.** Item titles are `<textarea>` elements. The row is `textarea.parentElement.parentElement.parentElement` and carries a `button[aria-label="Delete"]`. React responds to `.click()` normally.
+
+```js
+// collapse every section first — collapsed sections are removed from the DOM,
+// so only the expanded one's rows exist and matching by title is unambiguous
+const secBtns = () => [...document.querySelectorAll('button')]
+  .filter(b => /section/i.test(b.getAttribute('aria-label') || ''));
+for (let i = 0; i < 12; i++) {
+  const b = secBtns().find(x => x.getAttribute('aria-label') === 'Collapse section');
+  if (!b) break; b.click(); await new Promise(r => setTimeout(r, 700));
+}
+
+// pick a section by its leading number, never by name — "INSTALLATION" also
+// matches "POST-INSTALLATION"
+const secBtn = n => secBtns().find(b => {
+  const r = b.closest('tr') || b.parentElement.parentElement.parentElement;
+  return (r.innerText || '').trim().split(/\s+/)[0] === String(n);
+});
+
+// delete a row by title
+const ta = [...document.querySelectorAll('textarea')].find(t => t.value === 'Ensuite');
+const row = ta.parentElement.parentElement.parentElement;
+[...row.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === 'Delete').click();
+```
+
+Renaming a row is cheaper than delete-plus-Quick-add. Use the native setter so React sees it:
+
+```js
+const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+set.call(ta, 'Ensuite');
+ta.dispatchEvent(new Event('input', {bubbles: true}));
+ta.dispatchEvent(new Event('change', {bubbles: true}));
+```
+
+Verify with `[...document.querySelectorAll('textarea')].map(t => t.value)` before pressing Update, then confirm the URL drops `/edit`. Cancel is a full undo until Update.
+
+The old warning still stands if you ever fall back to clicking: the a11y tree misattributes which section a `Quick add` button belongs to — it put three items in PRE-INSTALL CHECKS while reporting INSTALLATION. Read the preview numbering (2.5 / 3.5 / 4.5) before committing.
+
+### The Procore REST API accepts the browser session cookie
+
+From a page on `us02.procore.com`, a same-origin `fetch` to `/rest/v1.1/...` with `credentials:'include'` and the `Procore-Company-Id` header works. No bearer token, no CSRF token needed (PATCH returned 200 with no `X-CSRF-Token`). This is how the 6 outstanding descriptions were set:
+
+```js
+await fetch(`/rest/v1.1/projects/${pid}/checklist/lists/${id}`, {
+  method: 'PATCH', credentials: 'include',
+  headers: {'Procore-Company-Id': cid, 'Content-Type': 'application/json'},
+  body: JSON.stringify({list: {description: 'W101'}})
+});
+```
+
+Useful escape hatch when the chat's MCP connector snapshot is stale and a tool you built is not in the session's tool list.
+
+---
+
+## Next up (as at 30 Aug 2026)
 
 1. ~~Rotate `MCP_BEARER_TOKEN`~~ — done 28 Aug 2026. `.env.local` and Vercel both updated and redeployed.
 2. ~~Rotate the Supabase service role key~~ — reviewed 28 Aug 2026 and deliberately not done. No known exposure; the key lives only in gitignored `.env.local` and Vercel, and it is a new-style `sb_secret_` key, not a legacy service_role JWT. Revisit only if it is actually exposed.
-3. **Build the bulk ITP creation tab.** Design brief in `docs/BULK-ITP-BUILDER-DESIGN.md`, API facts in `docs/PROCORE-BULK-ITP-API.md`. Read both before starting. Create inspections from a template against locations, then link each to its Action Plan item via a test record request. Build it as a Holdpoint tab, not an MCP tool: same shape as the Action Plans converter, with a preview before it writes.
-4. **Optional: locations and checklist template MCP tools.** Read-only, same pattern as the existing three. Only worth it if you want to query these conversationally — the tab does not need them.
+3. ~~Build the bulk ITP creation tab~~ — **binned 28 Aug 2026.** Jordy's call: chat-driven MCP tools plus browser automation beat a UI, because a UI is still work he has to do. `BulkItpTab.tsx` was removed. The `/api/bulk-itp/*` read routes stay as a reference. `docs/BULK-ITP-BUILDER-DESIGN.md` still holds the six principles; ignore its tab framing.
+4. ~~Locations and checklist template MCP tools~~ — done. `list_locations` and `list_templates` are live.
+5. **Action Plan tracker linking.** Endpoints are confirmed in `docs/PROCORE-BULK-ITP-API.md` (the two-record chain: test-record-requests then test-records). No tool built yet. This is the last piece of the original goal.
+6. **Tidy the Bondi location tree.** Five parallel hierarchies for the same building, plus typos (`bath 1`, `BAth`, `Ensuit`, `Recyling`, `Exausts`). Worth doing before the next bulk run.
+7. **Connector tool-list staleness.** claude.ai chats and Claude Code sessions both snapshot the connector's tool list at session start. After adding a tool, reconnect and then start a NEW session. On 30 Aug the chat was still on 7 tools and could not see `set_inspection_descriptions` — the session-cookie fetch above was the workaround.
 
 Both MCP auth paths are verified working as at 28 Aug 2026: static bearer acting as the pinned `MCP_PROCORE_USER_ID`, and OAuth acting as the token owner.

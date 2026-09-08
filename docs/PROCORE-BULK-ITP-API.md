@@ -147,7 +147,128 @@ For each apartment, given a project, a customised template, a location and a tar
 
 Then read it all back and verify. Never trust the 2xx.
 
-**Still not confirmed:** the exact request body wrappers for steps 2 and 3. The response shapes above are certain; whether the POST body wants a `plan_test_record_request` / `plan_test_record` wrapper object (as `plan_reference` and `plan_item` do elsewhere) needs reading off the docs page before coding. Assume it does, verify first.
+**CONFIRMED 30 Aug 2026** by building Action Plan #14 "Internal Inspection Tracker" on Bondi Rd (plan 598134325853211) — 19 sections, 161 items, 144 links, all read back and verified. Both POSTs take a wrapper object:
+
+```
+POST /rest/v1.0/projects/{pid}/action_plans/plan_test_record_requests
+     { plan_test_record_request: { plan_id, plan_item_id, type: "checklist",
+                                   payload: { checklist_template_id } } }
+
+POST /rest/v1.0/projects/{pid}/action_plans/plan_test_records
+     { plan_test_record: { plan_id, plan_item_id, plan_test_record_request_id,
+                           type: "checklist",
+                           payload: { checklist_id, checklist_template_id } } }
+```
+
+`type` is required on both — omitting it returns `400 param is missing or the value is empty or invalid: type`.
+
+### The plan must not be in draft
+
+A newly created plan starts as `draft`. Sections and items can be added to a draft, but test records cannot:
+
+```
+409 {"errors":"Unable to modify Action Plan Test Record while its Action Plan's status is draft"}
+```
+
+`PATCH /rest/v1.0/projects/{pid}/action_plans/plans/{id}` with `{plan:{status:"in_progress"}}` returns **200 and silently does nothing** — status stays draft. The plan has to be published through the UI. Open `https://us02.procore.com/{pid}/project/action_plans/plans/{planId}` (it redirects to the webclients edit view) and press **Publish**. The page then keeps rendering "Draft" in the status field, but the API reports `in_progress` and the record POSTs start working — trust the API, not that label.
+
+Create everything else first, publish once, then do the links.
+
+### ...but a published plan refuses new SECTIONS
+
+The lock works both ways, and the two locks are opposites:
+
+| Plan status | Sections and items | Test records |
+|---|---|---|
+| `draft` | allowed | **409** Unable to modify Action Plan Test Record while its Action Plan's status is draft |
+| `in_progress` | **409** Unable to modify sections while plan's status is in_progress | allowed |
+
+Items can be added in either state; only *sections* are locked once published.
+
+**Use `status_id`, not `status`.**
+
+```
+PATCH /rest/v1.0/projects/{pid}/action_plans/plans/{id}   { plan: { status_id: 1 } }   -> reverts to draft, reliably
+```
+
+`{plan:{status:"draft"}}` is unreliable: it worked once and then silently stopped, returning 200 with the plan still `in_progress`. `plan_status`, `plan_status_id` and `status_id: 2` (to publish) all no-op too. Only `status_id: 1` (draft) is dependable, and publishing must still be done from the UI button. Always read the plan back and check `status` before assuming.
+
+**Items cannot be moved between sections.** `PATCH plan_items/{id}` with `plan_section_id`, `section_id`, a flat body, or the v2.0 endpoint all return 200 and change nothing. To move a row, `DELETE` it and recreate it under the new section, then rebuild its request and records. Deleting the item takes its request and records with it, so there are no orphans left behind (verified: 0 orphaned requests, 0 orphaned records).
+
+So to add a section to a live plan: PATCH it back to `draft`, add the section and its items, then re-publish **from the UI** (`https://us02.procore.com/{pid}/project/action_plans/plans/{planId}` → Publish). There is no unpublish/revert endpoint (`/unpublish` and `/revert_to_draft` both 404) and the UI kebab offers only Export PDF and Delete, so the PATCH is the only way down.
+
+**Reverting to draft is non-destructive.** Verified 30 Aug 2026 on a plan carrying 19 sections, 161 items, 144 requests, 144 records and 118 assignees: counts were identical before and after the round trip. Snapshot the counts anyway and compare — never assume.
+
+A plan item can hold **more than one record** against a single request: one request names the template, then one record per inspection. Used on the BASEMENT Internal Waterproofing row to hang both buildings' basement ITP-011s off one row.
+
+
+
+## 3b. Setting the responsible contractor on an inspection
+
+Confirmed 30 Aug 2026 on Bondi Rd.
+
+```
+PATCH /rest/v1.1/projects/{pid}/checklist/lists/{id}?company_id={cid}
+      { list: { responsible_contractor_id: <vendor id> } }
+```
+
+`vendor_id` is NOT the field. It returns **200 and silently changes nothing** — the same class of trap as `{plan:{status:"in_progress"}}` on an Action Plan. Read back `responsible_contractor` and confirm before believing it.
+
+Vendor ids come from `GET /rest/v1.0/projects/{pid}/vendors` (paged, 200+ on this project) or from the `vendor` object on a commitment — they are the same ids.
+
+Commitments, for deriving who belongs on which ITP:
+
+```
+GET /rest/v1.0/work_order_contracts?project_id={pid}&company_id={cid}      (subcontracts)
+GET /rest/v1.0/purchase_order_contracts?project_id={pid}&company_id={cid}  (POs)
+```
+
+There is no `/projects/{pid}/commitments` endpoint — it 404s. The vendor's name is at `vendor.company`, not `vendor.name`.
+
+## 3d. Attachment and photo requests on a row
+
+A person cannot attach a file or a photo to an Action Plan row until a *request* of that type exists on it. Same endpoint as the ITP link, different `type`, and **no payload**:
+
+```
+POST /rest/v1.0/projects/{pid}/action_plans/plan_test_record_requests?company_id={cid}
+     { plan_test_record_request: { plan_id, plan_item_id, type: "attachment" } }
+     { plan_test_record_request: { plan_id, plan_item_id, type: "photo" } }
+```
+
+The three request types on this company:
+
+| type | type_id | payload |
+|---|---|---|
+| checklist | 1 | `{ checklist_template_id }` |
+| attachment | 2 | none |
+| photo | 3 | none |
+
+They render in the Records column as `Attachments requested` and `Photos requested`, matching the William Street tracker.
+
+Requests do **not** need the plan in draft. Only sections are locked once a plan is published — items, requests, records and assignees all work on a live plan.
+
+Run at ~55 per `javascript_tool` call; 324 in one call exceeds the 45s CDP limit.
+
+## 3c. Assignees on an Action Plan row
+
+Confirmed 30 Aug 2026.
+
+```
+POST /rest/v1.0/projects/{pid}/action_plans/plan_item_assignees?company_id={cid}
+     { plan_item_assignee: { plan_item_id, party_id, verification_method_id } }
+```
+
+One call per person per row. `verification_method_id` is required — omitting it returns 400.
+
+**`party_id` is NOT a user id.** This is the trap. A plan item assignee references a *party*:
+
+```
+GET /rest/v1.0/projects/{pid}/action_plans/parties?company_id={cid}   (paged; 301 on Bondi Rd)
+```
+
+Each party has its own `id` plus a separate `user_id`, and carries a `vendor` object — that is how a person is matched to a subcontractor. Passing the `id` from `/projects/{pid}/users` (which is the user id) returns a **bare 400 with an empty body**. Passing `user_id` as the key instead returns the useful `param is missing or the value is empty or invalid: party_id or role`, which is how the right shape was found.
+
+`/action_plans/verification_methods` does not exist (404). Read a `verification_method.id` off an existing assignee on any other plan on the project — "Written Confirmation" was 598134325523360 on this company.
 
 ## 4. Endpoints already in use by Holdpoint
 

@@ -22,6 +22,45 @@ export async function GET(request: NextRequest) {
     return procoreFailure("locations", err);
   }
 
+  // Optional narrowing so callers can pull one building or level rather than
+  // the whole project. Filtering happens AFTER the full paged fetch, so the
+  // tree is always built from complete data.
+  const pathContains = request.nextUrl.searchParams.get("path_contains")?.trim().toLowerCase();
+  const depthParam = request.nextUrl.searchParams.get("depth");
+  const wantDepth = depthParam !== null && !isNaN(Number(depthParam)) ? Number(depthParam) : null;
+
+  if (pathContains || wantDepth !== null) {
+    const flat = locations
+      .map((l) => ({
+        id: l.id,
+        path: l.name ?? "",
+        node_name: l.node_name ?? "",
+        depth: Math.max(0, (l.name ?? "").split(">").length - 1),
+        parent_id: l.parent_id,
+      }))
+      .filter((l) => {
+        if (pathContains && !l.path.toLowerCase().includes(pathContains)) return false;
+        if (wantDepth !== null && l.depth !== wantDepth) return false;
+        return true;
+      });
+
+    const collator = new Intl.Collator("en-AU", { numeric: true, sensitivity: "base" });
+    flat.sort((a, b) => collator.compare(a.path, b.path));
+
+    console.log(
+      `[bulk-itp/locations] project=${projectId}: ${locations.length} locations, ` +
+      `${flat.length} matching path_contains=${pathContains ?? "-"} depth=${wantDepth ?? "-"}`
+    );
+
+    return NextResponse.json({
+      project_id: projectId,
+      count: locations.length,
+      matching: flat.length,
+      filters: { path_contains: pathContains ?? null, depth: wantDepth },
+      locations: flat,
+    });
+  }
+
   const tree: LocationNode[] = buildLocationTree(locations);
 
   const maxDepth = locations.reduce((max, l) => {
