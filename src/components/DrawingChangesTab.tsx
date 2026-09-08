@@ -509,6 +509,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       style={{
         padding: "24px 32px",
         maxWidth: 1200,
+        minWidth: 800,
         margin: "0 auto",
         height: "calc(100vh - 100px)",
         overflowY: "auto",
@@ -526,7 +527,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         </p>
       </div>
 
-      {/* Project selector + actions row */}
+      {/* Project selector */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
         <select
           value={projectId}
@@ -548,27 +549,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             </option>
           ))}
         </select>
-
-        {projectId && scan && step !== 1 && (
-          <button
-            onClick={() => { setStep(0); fetchDrawings(projectId); }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              borderRadius: 8,
-              border: "1px solid var(--hp-border)",
-              padding: "8px 14px",
-              fontSize: 13,
-              fontWeight: 500,
-              color: "var(--hp-warm-700)",
-              background: "none",
-              cursor: "pointer",
-            }}
-          >
-            <RefreshCw size={14} /> New Scan
-          </button>
-        )}
       </div>
 
       {error && (
@@ -956,8 +936,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           {/* ── Header bar ── */}
           <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface-raised)", padding: "16px 20px", marginBottom: 16 }}>
             {/* Row 1: Title + actions */}
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-              <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-warm-900)" }}>Change Register</div>
                 <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
                   {uniqueDrawings.size} drawings · {changes.length} changes · {highTotal} high severity
@@ -965,39 +945,54 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                 <a href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=csv`} download style={BTN}>
-                  <Download size={12} /> CSV
+                  <Download size={12} /> Export CSV
                 </a>
                 <a href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=pdf`} download style={BTN}>
-                  <Download size={12} /> PDF
+                  <Download size={12} /> Export PDF
                 </a>
-                <button onClick={() => setStep(0)} style={{ ...BTN, border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)", color: "#fff", fontWeight: 600 }}>
-                  <RefreshCw size={12} /> Scan New
+                <button onClick={() => { setStep(0); fetchDrawings(projectId); }} style={{ ...BTN, border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)", color: "#fff", fontWeight: 600 }}>
+                  <RefreshCw size={12} /> Scan New Drawings
                 </button>
               </div>
             </div>
 
-            {/* Row 2: Scan history tabs */}
-            {allScans.length > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, borderTop: "1px solid var(--hp-border)", paddingTop: 10 }}>
-                <span style={{ fontSize: 11, color: "var(--hp-text-muted)", marginRight: 4 }}>View:</span>
-                <button onClick={() => loadPreviousResults(projectId)} style={{
-                  fontSize: 11, fontWeight: 500, borderRadius: 6, padding: "4px 10px", cursor: "pointer", border: "none",
-                  backgroundColor: !scan?.id || scan?.id === "all" ? "var(--hp-accent)" : "var(--hp-surface)",
-                  color: !scan?.id || scan?.id === "all" ? "#fff" : "var(--hp-warm-700)",
-                }}>
-                  All
-                </button>
-                {allScans.map((s) => (
-                  <button key={s.id} onClick={() => loadScan(s.id)} style={{
-                    fontSize: 11, fontWeight: 500, borderRadius: 6, padding: "4px 10px", cursor: "pointer", border: "none",
-                    backgroundColor: scan?.id === s.id ? "var(--hp-accent)" : "var(--hp-surface)",
-                    color: scan?.id === s.id ? "#fff" : "var(--hp-warm-700)",
+            {/* Row 2: Scan history — dedup by date */}
+            {allScans.length > 1 && (() => {
+              // Group scans by date to avoid showing "08 Sept" three times
+              const byDate = new Map<string, typeof allScans>();
+              for (const s of allScans) {
+                const date = fmtDate(s.created_at);
+                if (!byDate.has(date)) byDate.set(date, []);
+                byDate.get(date)!.push(s);
+              }
+              const dateEntries = [...byDate.entries()];
+
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, borderTop: "1px solid var(--hp-border)", paddingTop: 10 }}>
+                  <span style={{ fontSize: 12, color: "var(--hp-text-muted)", marginRight: 4 }}>View:</span>
+                  <button onClick={() => loadPreviousResults(projectId)} style={{
+                    fontSize: 12, fontWeight: 600, borderRadius: 6, padding: "5px 12px", cursor: "pointer", border: "none",
+                    backgroundColor: !scan?.id || scan?.id === "all" ? "var(--hp-accent)" : "var(--hp-surface)",
+                    color: !scan?.id || scan?.id === "all" ? "#fff" : "var(--hp-warm-700)",
                   }}>
-                    {fmtDate(s.created_at)}
+                    All Changes
                   </button>
-                ))}
-              </div>
-            )}
+                  {dateEntries.map(([date, scans]) => {
+                    const isActive = scans.some((s) => s.id === scan?.id);
+                    const totalDrawings = scans.reduce((sum, s) => sum + s.completed_drawings, 0);
+                    return (
+                      <button key={date} onClick={() => loadScan(scans[0].id)} style={{
+                        fontSize: 12, fontWeight: isActive ? 600 : 400, borderRadius: 6, padding: "5px 12px", cursor: "pointer", border: "none",
+                        backgroundColor: isActive ? "var(--hp-accent)" : "var(--hp-surface)",
+                        color: isActive ? "#fff" : "var(--hp-warm-700)",
+                      }}>
+                        {date} ({totalDrawings})
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* ── Filter bar ── */}
