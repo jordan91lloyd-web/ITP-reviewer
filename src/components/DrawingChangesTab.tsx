@@ -48,6 +48,8 @@ interface DrawingPair {
   status: "scanned" | "new_revision" | "not_scanned";
 }
 
+type ReviewStatus = "needs_review" | "not_a_variation" | "variation_raised";
+
 interface ChangeRow {
   id: string;
   discipline: string;
@@ -59,7 +61,15 @@ interface ChangeRow {
   description: string;
   location_on_drawing: string | null;
   severity: string;
+  review_status: ReviewStatus | null;
+  change_event_id: string | null;
 }
+
+const STATUS_OPTIONS: { value: ReviewStatus; label: string; color: string; bg: string }[] = [
+  { value: "needs_review", label: "Needs Review", color: "#92400E", bg: "#FEF3C7" },
+  { value: "not_a_variation", label: "Not a Variation", color: "#166534", bg: "#DCFCE7" },
+  { value: "variation_raised", label: "Variation Raised", color: "#991B1B", bg: "#FEE2E2" },
+];
 
 interface ScanRecord {
   id: string;
@@ -444,6 +454,61 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       });
     }
   }, [scan, company_id, projectId, projectName]);
+
+  // ── Update review status ─────────────────────────────────────────────────
+
+  const updateStatus = useCallback(async (changeIds: string[], status: ReviewStatus) => {
+    try {
+      const res = await fetch("/api/drawing-changes/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ change_ids: changeIds, status }),
+      });
+      if (!res.ok) return;
+      // Update local state
+      setChanges((prev) => prev.map((c) =>
+        changeIds.includes(c.id) ? { ...c, review_status: status } : c
+      ));
+    } catch { /* ignore */ }
+  }, []);
+
+  // ── Raise Change Event ──────────────────────────────────────────────────
+
+  const raiseChangeEvent = useCallback(async (changeIds: string[], discipline: string, title: string) => {
+    if (!projectId) return;
+    try {
+      const desc = changes
+        .filter((c) => changeIds.includes(c.id))
+        .map((c) => `• [${c.drawing_number} Rev ${c.old_revision}→${c.new_revision}] ${c.description}`)
+        .join("\n");
+
+      const res = await fetch("/api/drawing-changes/change-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id,
+          project_id: projectId,
+          project_name: projectName,
+          title,
+          description: desc,
+          discipline,
+          change_ids: changeIds,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to create change event");
+        return;
+      }
+      const data = await res.json();
+      // Update local state — mark changes as variation_raised with event ID
+      setChanges((prev) => prev.map((c) =>
+        changeIds.includes(c.id) ? { ...c, review_status: "variation_raised", change_event_id: data.event_id } : c
+      ));
+    } catch {
+      setError("Failed to create change event");
+    }
+  }, [projectId, company_id, projectName, changes]);
 
   // ── Remove duplicates ────────────────────────────────────────────────────
 
@@ -1054,6 +1119,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-warm-900)" }}>Change Register</div>
                 <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
                   {uniqueDrawings.size} drawings · {changes.length} changes · {highTotal} high severity
+                  {(() => {
+                    const variationCount = changes.filter((c) => c.review_status === "variation_raised").length;
+                    const reviewedCount = changes.filter((c) => c.review_status && c.review_status !== "needs_review").length;
+                    if (reviewedCount === 0) return null;
+                    return ` · ${reviewedCount} reviewed` + (variationCount > 0 ? ` · ${variationCount} variations` : "");
+                  })()}
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -1226,6 +1297,25 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                               <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{dg.totalChanges}</span>
                               {dg.totalHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}>{dg.totalHigh} high</span>}
                               {(() => {
+                                const allChangeIds = dg.revisions.flatMap((r) => r.changes.map((c) => c.id));
+                                const hasEvent = dg.revisions.some((r) => r.changes.some((c) => c.change_event_id));
+                                const unreviewedCount = dg.revisions.flatMap((r) => r.changes).filter((c) => !c.review_status || c.review_status === "needs_review").length;
+                                return (
+                                  <>
+                                    {!hasEvent && unreviewedCount < dg.totalChanges && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); raiseChangeEvent(allChangeIds, discipline, `${dg.number} ${dg.title} — Drawing revision changes`); }}
+                                        title="Create a draft Change Event for all changes on this drawing"
+                                        style={{ fontSize: 10, fontWeight: 500, color: "#991B1B", background: "none", border: "1px solid #FCA5A5", borderRadius: 6, padding: "2px 8px", cursor: "pointer", whiteSpace: "nowrap" }}
+                                      >
+                                        Raise Event
+                                      </button>
+                                    )}
+                                    {hasEvent && <span style={{ fontSize: 10, fontWeight: 500, color: "#991B1B", borderRadius: 999, padding: "1px 6px", backgroundColor: "#FEE2E2" }}>Event Raised</span>}
+                                  </>
+                                );
+                              })()}
+                              {(() => {
                                 const pair = drawingPairs.find((p) => p.drawing_number === dg.number);
                                 if (!pair) return null;
                                 const latestRev = dg.revisions[dg.revisions.length - 1];
@@ -1268,6 +1358,27 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                         {change.location_on_drawing && <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 3 }}>Location: {change.location_on_drawing}</div>}
                                       </div>
                                       <span style={{ borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, textTransform: "capitalize", backgroundColor: sevColors.bg, color: sevColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>{change.severity}</span>
+                                      {/* Status dropdown */}
+                                      {!selectMode && (
+                                        <select
+                                          value={change.review_status ?? "needs_review"}
+                                          onChange={(e) => updateStatus([change.id], e.target.value as ReviewStatus)}
+                                          style={{
+                                            fontSize: 10,
+                                            border: "1px solid var(--hp-border)",
+                                            borderRadius: 4,
+                                            padding: "2px 4px",
+                                            backgroundColor: STATUS_OPTIONS.find((s) => s.value === (change.review_status ?? "needs_review"))?.bg ?? "#FEF3C7",
+                                            color: STATUS_OPTIONS.find((s) => s.value === (change.review_status ?? "needs_review"))?.color ?? "#92400E",
+                                            cursor: "pointer",
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          {STATUS_OPTIONS.map((s) => (
+                                            <option key={s.value} value={s.value}>{s.label}</option>
+                                          ))}
+                                        </select>
+                                      )}
                                     </div>
                                   );
                                 })}
