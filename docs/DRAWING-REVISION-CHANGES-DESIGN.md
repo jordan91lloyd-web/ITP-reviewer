@@ -56,5 +56,32 @@ One row per detected change. Links to scan. Stores discipline, drawing info, cha
 5. **600ms pacing** between Procore API calls. Retry on 429 with exponential backoff.
 6. **No Auth header on S3 URLs.** Presigned URLs return 400 with Authorization.
 7. **Partial results on failure.** If one drawing fails, continue and report the failure count.
-8. **Compare consecutive revisions.** Rev B vs Rev C, not A vs C.
+8. **Compare consecutive revisions.** Rev B vs Rev C, not A vs C. Revision picker allows ad-hoc comparisons.
 9. **maxDuration = 300** on the scan route.
+10. **Scan dedup.** Skip drawings that already have results for a revision pair (unless deep scan).
+
+## Procore Change Events API (confirmed from OAS)
+
+Create: `POST /rest/v1.1/change_events?project_id={project_id}`
+
+```json
+{
+  "change_event": {
+    "title": "string",
+    "description": "string",
+    "scope": "tbd" | "in_scope" | "out_of_scope",  // REQUIRED
+    "status": { "id": 123 }                          // REQUIRED — company-specific
+  }
+}
+```
+
+Headers: `Authorization: Bearer {token}`, `Content-Type: application/json`, `Procore-Company-Id: {company_id}`
+
+Supporting endpoints:
+- `GET /rest/v2.0/companies/{company_id}/change_events/statuses` — valid status IDs
+- `GET /rest/v2.0/companies/{company_id}/change_event/types` — valid type IDs
+- `GET /rest/v1.1/change_events?project_id={project_id}` — list existing
+- `PATCH /rest/v1.1/change_events/{id}?project_id={project_id}` — update
+- `DELETE /rest/v1.1/change_events/{id}?project_id={project_id}` — delete
+
+Required fields: `status.id` and `scope`. Title and description are optional per the schema but should always be set.

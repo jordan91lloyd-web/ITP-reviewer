@@ -1,21 +1,105 @@
 // POST /api/drawing-changes/change-event
-// Creates a draft Change Event from one or more drawing changes.
-// Stores in Supabase. Procore integration is a future addition.
+// Creates a draft Change Event from drawing changes.
+// Stores in Supabase AND creates in Procore if authenticated.
 //
 // Body: {
 //   company_id, project_id, project_name,
 //   title, description, discipline,
-//   change_ids: string[]  — the changes this event covers
+//   change_ids: string[]
 // }
 
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+
+const PROCORE_BASE =
+  process.env.PROCORE_ENV === "production"
+    ? "https://api.procore.com"
+    : "https://sandbox.procore.com";
 
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+/**
+ * Fetch the first "open" or default status ID for change events on this company.
+ */
+async function getDefaultStatusId(
+  token: string,
+  companyId: string
+): Promise<number | null> {
+  try {
+    const url = `${PROCORE_BASE}/rest/v2.0/companies/${companyId}/change_events/statuses?per_page=100`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Procore-Company-Id": companyId,
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const statuses: { id: number; name: string; default_status?: boolean }[] =
+      Array.isArray(data) ? data : data?.data ?? [];
+
+    // Prefer default status, then "Open", then first
+    const defaultStatus = statuses.find((s) => s.default_status);
+    if (defaultStatus) return defaultStatus.id;
+    const openStatus = statuses.find((s) =>
+      s.name.toLowerCase().includes("open")
+    );
+    if (openStatus) return openStatus.id;
+    return statuses[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Create a Change Event in Procore.
+ * POST /rest/v1.1/change_events?project_id={project_id}
+ */
+async function createProcoreChangeEvent(
+  token: string,
+  companyId: string,
+  projectId: string,
+  title: string,
+  description: string,
+  statusId: number
+): Promise<{ id: number; number: string } | null> {
+  try {
+    const url = `${PROCORE_BASE}/rest/v1.1/change_events?project_id=${projectId}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Procore-Company-Id": companyId,
+      },
+      body: JSON.stringify({
+        change_event: {
+          title,
+          description,
+          scope: "tbd",
+          status: { id: statusId },
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`[change-event] Procore create failed: ${res.status} ${text.slice(0, 500)}`);
+      return null;
+    }
+
+    const data = await res.json();
+    return { id: data.id, number: data.number ?? String(data.id) };
+  } catch (err) {
+    console.error("[change-event] Procore create error:", err);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -42,7 +126,34 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabase();
 
-  // Create the change event draft
+  // Try to create in Procore first (if user is authenticated)
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("procore_access_token")?.value;
+
+  let procoreEventId: string | null = null;
+  let procoreEventNumber: string | null = null;
+  let procoreSynced = false;
+
+  if (accessToken) {
+    const statusId = await getDefaultStatusId(accessToken, company_id);
+    if (statusId) {
+      const result = await createProcoreChangeEvent(
+        accessToken,
+        company_id,
+        project_id,
+        title,
+        description,
+        statusId
+      );
+      if (result) {
+        procoreEventId = String(result.id);
+        procoreEventNumber = result.number;
+        procoreSynced = true;
+      }
+    }
+  }
+
+  // Store in Supabase
   const { data: event, error: eventErr } = await supabase
     .from("drawing_change_events")
     .insert({
@@ -53,8 +164,8 @@ export async function POST(request: NextRequest) {
       description,
       discipline,
       change_ids,
-      status: "draft",
-      procore_change_event_id: null,
+      status: procoreSynced ? "synced" : "draft",
+      procore_change_event_id: procoreEventId,
     })
     .select("id")
     .single();
@@ -64,7 +175,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: eventErr?.message ?? "Failed to create change event" }, { status: 500 });
   }
 
-  // Mark the linked changes as "variation_raised" and store the event ID
+  // Mark linked changes as "variation_raised" with event ID
   await supabase
     .from("drawing_revision_changes")
     .update({
@@ -73,17 +184,12 @@ export async function POST(request: NextRequest) {
     })
     .in("id", change_ids);
 
-  // TODO: Procore integration
-  // Once the Change Events API endpoint is confirmed, this is where we'd:
-  // 1. POST /rest/v1.0/projects/{project_id}/change_events
-  //    { change_event: { title, description, status: "open" } }
-  // 2. Store the returned Procore ID in procore_change_event_id
-  // 3. The event links back to Procore for tracking
-
   return NextResponse.json({
     success: true,
     event_id: event.id,
-    procore_synced: false,  // Will be true once Procore integration is live
+    procore_synced: procoreSynced,
+    procore_event_id: procoreEventId,
+    procore_event_number: procoreEventNumber,
   });
 }
 
