@@ -535,6 +535,55 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     }
   }, [scan, company_id, projectId, projectName]);
 
+  // ── Download evidence sheet for a drawing ─────────────────────────────────
+
+  const [downloadingEvidence, setDownloadingEvidence] = useState<string | null>(null);
+
+  const downloadEvidence = useCallback(async (
+    drawingNumber: string,
+    drawingTitle: string,
+    oldRev: string,
+    newRev: string,
+    drawingChanges: ChangeRow[],
+    oldPdfUrl?: string,
+    newPdfUrl?: string,
+  ) => {
+    setDownloadingEvidence(drawingNumber);
+    try {
+      const res = await fetch("/api/drawing-changes/evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_name: projectName,
+          drawing_number: drawingNumber,
+          drawing_title: drawingTitle,
+          old_revision: oldRev,
+          new_revision: newRev,
+          old_pdf_url: oldPdfUrl,
+          new_pdf_url: newPdfUrl,
+          changes: drawingChanges.map((c) => ({
+            change_type: c.change_type,
+            description: c.description,
+            location_on_drawing: c.location_on_drawing,
+            severity: c.severity,
+          })),
+        }),
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `evidence-${drawingNumber}-rev${oldRev}-to-${newRev}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Failed to generate evidence sheet");
+    } finally {
+      setDownloadingEvidence(null);
+    }
+  }, [projectName]);
+
   // ── Inline scan a specific revision pair from the register ───────────────
 
   const [inlineScanning, setInlineScanning] = useState<string | null>(null);
@@ -1576,7 +1625,21 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                 const latestRev = dg.revisions[dg.revisions.length - 1];
                                 const deepKey = `${dg.number}|${latestRev?.revKey}`;
                                 const isDS = deepScanning.has(deepKey);
-                                return <button onClick={(e) => { e.stopPropagation(); deepScanDrawing(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision); }} disabled={isDS} title="Re-scan with Opus (slower, more thorough, higher cost)" style={{ fontSize: 10, fontWeight: 500, color: isDS ? "var(--hp-text-muted)" : "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDS ? "default" : "pointer", whiteSpace: "nowrap" }}>{isDS ? "Scanning..." : "Deep Scan"}</button>;
+                                const isDL = downloadingEvidence === dg.number;
+                                const allChanges = dg.revisions.flatMap((r) => r.changes);
+                                return (
+                                  <>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); downloadEvidence(dg.number, dg.title, allChanges[0]?.old_revision ?? "", allChanges[0]?.new_revision ?? "", allChanges, pair.old_revision.pdf_url, pair.new_revision.pdf_url); }}
+                                      disabled={isDL}
+                                      title="Download a Change Evidence Sheet PDF for this drawing"
+                                      style={{ fontSize: 10, fontWeight: 500, color: isDL ? "var(--hp-text-muted)" : "var(--hp-warm-700)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDL ? "default" : "pointer", whiteSpace: "nowrap" }}
+                                    >
+                                      <Download size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />{isDL ? "Generating..." : "Evidence"}
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); deepScanDrawing(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision); }} disabled={isDS} title="Re-scan with Opus (slower, more thorough, higher cost)" style={{ fontSize: 10, fontWeight: 500, color: isDS ? "var(--hp-text-muted)" : "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDS ? "default" : "pointer", whiteSpace: "nowrap" }}>{isDS ? "Scanning..." : "Deep Scan"}</button>
+                                  </>
+                                );
                               })()}
                             </div>
                           </div>
