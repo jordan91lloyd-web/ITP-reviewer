@@ -12,6 +12,8 @@ import {
   Minus,
   ArrowRightLeft,
   MoveRight,
+  ChevronsDown,
+  ChevronsUp,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -103,9 +105,6 @@ function fmtDate(iso: string) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function DrawingChangesTab({ company_id, projects }: Props) {
-  // Step 0: Project selection + drawing discovery
-  // Step 1: Scanning
-  // Step 2: Results
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [projectId, setProjectId] = useState("");
   const [projectName, setProjectName] = useState("");
@@ -116,6 +115,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [totalDrawings, setTotalDrawings] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [filterText, setFilterText] = useState("");
+  const [collapsedDiscovery, setCollapsedDiscovery] = useState<Set<string>>(new Set());
 
   // Scanning
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
@@ -123,12 +123,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   // Results
   const [scan, setScan] = useState<ScanRecord | null>(null);
   const [changes, setChanges] = useState<ChangeRow[]>([]);
-  const [byDiscipline, setByDiscipline] = useState<Record<string, ChangeRow[]>>(
-    {}
-  );
-  const [expandedDisciplines, setExpandedDisciplines] = useState<Set<string>>(
-    new Set()
-  );
+  const [byDiscipline, setByDiscipline] = useState<Record<string, ChangeRow[]>>({});
+  const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch drawings with revisions ────────────────────────────────────────
@@ -139,6 +135,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setError(null);
       setDrawingPairs([]);
       setSelectedIds(new Set());
+      setCollapsedDiscovery(new Set());
       try {
         const res = await fetch(
           `/api/drawing-changes/drawings?company_id=${company_id}&project_id=${pid}`
@@ -147,17 +144,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         const data = await res.json();
         setDrawingPairs(data.drawings_with_revisions ?? []);
         setTotalDrawings(data.total_drawings ?? 0);
-        // Select all by default
         const ids = new Set<number>(
-          (data.drawings_with_revisions ?? []).map(
-            (d: DrawingPair) => d.drawing_id
-          )
+          (data.drawings_with_revisions ?? []).map((d: DrawingPair) => d.drawing_id)
         );
         setSelectedIds(ids);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch drawings"
-        );
+        setError(err instanceof Error ? err.message : "Failed to fetch drawings");
       } finally {
         setLoading(false);
       }
@@ -179,12 +171,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setScan(data.scan);
           setChanges(data.changes ?? []);
           setByDiscipline(data.by_discipline ?? {});
-          setExpandedDisciplines(
-            new Set(Object.keys(data.by_discipline ?? {}))
-          );
+          setExpandedResults(new Set(Object.keys(data.by_discipline ?? {})));
         }
       } catch {
-        // Ignore — no previous results
+        // No previous results
       }
     },
     [company_id]
@@ -209,7 +199,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     [projects, fetchDrawings, loadPreviousResults]
   );
 
-  // ── Toggle drawing selection ─────────────────────────────────────────────
+  // ── Drawing selection helpers ────────────────────────────────────────────
 
   const toggleDrawing = useCallback((drawingId: number) => {
     setSelectedIds((prev) => {
@@ -220,6 +210,21 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     });
   }, []);
 
+  const toggleDisciplineSelection = useCallback(
+    (discipline: string, pairs: DrawingPair[]) => {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        const allSelected = pairs.every((p) => next.has(p.drawing_id));
+        for (const p of pairs) {
+          if (allSelected) next.delete(p.drawing_id);
+          else next.add(p.drawing_id);
+        }
+        return next;
+      });
+    },
+    []
+  );
+
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(drawingPairs.map((d) => d.drawing_id)));
   }, [drawingPairs]);
@@ -227,6 +232,26 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const selectNone = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
+
+  // ── Discovery accordion ──────────────────────────────────────────────────
+
+  const toggleDiscoverySection = useCallback((discipline: string) => {
+    setCollapsedDiscovery((prev) => {
+      const next = new Set(prev);
+      if (next.has(discipline)) next.delete(discipline);
+      else next.add(discipline);
+      return next;
+    });
+  }, []);
+
+  const expandAllDiscovery = useCallback(() => {
+    setCollapsedDiscovery(new Set());
+  }, []);
+
+  const collapseAllDiscovery = useCallback(() => {
+    const allDisc = new Set(drawingPairs.map((d) => d.discipline));
+    setCollapsedDiscovery(allDisc);
+  }, [drawingPairs]);
 
   // ── Run scan ─────────────────────────────────────────────────────────────
 
@@ -256,23 +281,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       }
 
       const data = await res.json();
-      setScanProgress({
-        current: data.completed_drawings,
-        total: data.total_drawings,
-      });
+      setScanProgress({ current: data.completed_drawings, total: data.total_drawings });
 
-      // Load full results
-      const resultsRes = await fetch(
-        `/api/drawing-changes/results?scan_id=${data.scan_id}`
-      );
+      const resultsRes = await fetch(`/api/drawing-changes/results?scan_id=${data.scan_id}`);
       if (resultsRes.ok) {
         const resultsData = await resultsRes.json();
         setScan(resultsData.scan);
         setChanges(resultsData.changes ?? []);
         setByDiscipline(resultsData.by_discipline ?? {});
-        setExpandedDisciplines(
-          new Set(Object.keys(resultsData.by_discipline ?? {}))
-        );
+        setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
       }
 
       setStep(2);
@@ -282,10 +299,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     }
   }, [drawingPairs, selectedIds, company_id, projectId, projectName]);
 
-  // ── Toggle discipline accordion ──────────────────────────────────────────
+  // ── Results accordion ────────────────────────────────────────────────────
 
-  const toggleDiscipline = useCallback((discipline: string) => {
-    setExpandedDisciplines((prev) => {
+  const toggleResultSection = useCallback((discipline: string) => {
+    setExpandedResults((prev) => {
       const next = new Set(prev);
       if (next.has(discipline)) next.delete(discipline);
       else next.add(discipline);
@@ -293,7 +310,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     });
   }, []);
 
-  // ── Filter drawings ──────────────────────────────────────────────────────
+  const expandAllResults = useCallback(() => {
+    setExpandedResults(new Set(Object.keys(byDiscipline)));
+  }, [byDiscipline]);
+
+  const collapseAllResults = useCallback(() => {
+    setExpandedResults(new Set());
+  }, []);
+
+  // ── Derived data ─────────────────────────────────────────────────────────
 
   const filteredPairs = drawingPairs.filter((d) => {
     if (!filterText) return true;
@@ -305,42 +330,53 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     );
   });
 
-  // Group filtered pairs by discipline for display
   const pairsByDiscipline: Record<string, DrawingPair[]> = {};
   for (const pair of filteredPairs) {
-    if (!pairsByDiscipline[pair.discipline])
-      pairsByDiscipline[pair.discipline] = [];
+    if (!pairsByDiscipline[pair.discipline]) pairsByDiscipline[pair.discipline] = [];
     pairsByDiscipline[pair.discipline].push(pair);
   }
+
+  const disciplineEntries = Object.entries(pairsByDiscipline).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
 
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div
+      style={{
+        padding: "24px 32px",
+        maxWidth: 1200,
+        margin: "0 auto",
+        height: "calc(100vh - 100px)",
+        overflowY: "auto",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       {/* Header */}
-      <div>
-        <h2
-          className="text-xl font-bold"
-          style={{ color: "var(--hp-warm-900)" }}
-        >
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--hp-warm-900)", margin: 0 }}>
           Drawing Revision Changes
         </h2>
-        <p className="text-sm mt-1" style={{ color: "var(--hp-text-secondary)" }}>
-          Compare drawing revisions to detect scope and specification changes
-          that may require variation pricing.
+        <p style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginTop: 4 }}>
+          Compare drawing revisions to detect scope and specification changes that may require
+          variation pricing.
         </p>
       </div>
 
-      {/* Project selector */}
-      <div className="flex items-center gap-4">
+      {/* Project selector + actions row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
         <select
           value={projectId}
           onChange={(e) => handleProjectChange(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm"
           style={{
-            borderColor: "var(--hp-border)",
+            borderRadius: 8,
+            border: "1px solid var(--hp-border)",
+            padding: "8px 12px",
+            fontSize: 13,
             backgroundColor: "var(--hp-surface)",
             color: "var(--hp-warm-900)",
+            minWidth: 280,
           }}
         >
           <option value="">Select a project</option>
@@ -353,14 +389,19 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
         {projectId && scan && step !== 1 && (
           <button
-            onClick={() => {
-              setStep(0);
-              fetchDrawings(projectId);
-            }}
-            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium"
+            onClick={() => { setStep(0); fetchDrawings(projectId); }}
             style={{
-              borderColor: "var(--hp-border)",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              borderRadius: 8,
+              border: "1px solid var(--hp-border)",
+              padding: "8px 14px",
+              fontSize: 13,
+              fontWeight: 500,
               color: "var(--hp-warm-700)",
+              background: "none",
+              cursor: "pointer",
             }}
           >
             <RefreshCw size={14} /> New Scan
@@ -370,280 +411,347 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
       {error && (
         <div
-          className="rounded-lg border p-3 text-sm"
           style={{
-            borderColor: "#FCA5A5",
+            borderRadius: 8,
+            border: "1px solid #FCA5A5",
             backgroundColor: "#FEF2F2",
             color: "#991B1B",
+            padding: 12,
+            fontSize: 13,
+            marginBottom: 16,
           }}
         >
           {error}
         </div>
       )}
 
-      {/* Step 0: Drawing selection */}
+      {/* ═══ Step 0: Drawing selection ═══ */}
       {step === 0 && projectId && (
         <>
           {loading ? (
-            <div
-              className="flex items-center gap-2 text-sm"
-              style={{ color: "var(--hp-text-secondary)" }}
-            >
-              <RefreshCw size={14} className="animate-spin" /> Loading drawings
-              register...
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--hp-text-secondary)" }}>
+              <RefreshCw size={14} className="animate-spin" /> Loading drawings register...
             </div>
           ) : drawingPairs.length === 0 ? (
             <div
-              className="rounded-lg border p-6 text-center text-sm"
               style={{
-                borderColor: "var(--hp-border)",
+                borderRadius: 8,
+                border: "1px solid var(--hp-border)",
+                padding: 32,
+                textAlign: "center",
+                fontSize: 13,
                 color: "var(--hp-text-secondary)",
               }}
             >
               No drawings with multiple revisions found.
-              {totalDrawings > 0 && (
-                <span>
-                  {" "}
-                  ({totalDrawings} drawing{totalDrawings !== 1 ? "s" : ""} total,
-                  all on their first revision)
-                </span>
-              )}
+              {totalDrawings > 0 && ` (${totalDrawings} drawing${totalDrawings !== 1 ? "s" : ""} total, all on their first revision)`}
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Summary + filter */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div
-                  className="text-sm"
-                  style={{ color: "var(--hp-text-secondary)" }}
-                >
-                  {drawingPairs.length} drawing
-                  {drawingPairs.length !== 1 ? "s" : ""} with revisions (
-                  {totalDrawings} total) &middot; {selectedIds.size} selected
+            <>
+              {/* Toolbar */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ fontSize: 13, color: "var(--hp-text-secondary)" }}>
+                  <strong style={{ color: "var(--hp-warm-900)" }}>{drawingPairs.length}</strong> drawing
+                  {drawingPairs.length !== 1 ? "s" : ""} with revisions ({totalDrawings} total)
+                  {" · "}
+                  <strong style={{ color: "var(--hp-warm-900)" }}>{selectedIds.size}</strong> selected
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ position: "relative" }}>
                     <Search
                       size={14}
-                      className="absolute left-2.5 top-2.5"
-                      style={{ color: "var(--hp-text-muted)" }}
+                      style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }}
                     />
                     <input
                       type="text"
                       placeholder="Filter drawings..."
                       value={filterText}
                       onChange={(e) => setFilterText(e.target.value)}
-                      className="rounded-lg border py-2 pl-8 pr-3 text-sm"
                       style={{
-                        borderColor: "var(--hp-border)",
+                        borderRadius: 8,
+                        border: "1px solid var(--hp-border)",
+                        padding: "7px 12px 7px 30px",
+                        fontSize: 13,
                         backgroundColor: "var(--hp-surface)",
                         color: "var(--hp-warm-900)",
+                        width: 200,
                       }}
                     />
                   </div>
+                  <button onClick={expandAllDiscovery} title="Expand all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                    <ChevronsDown size={16} style={{ color: "var(--hp-text-muted)" }} />
+                  </button>
+                  <button onClick={collapseAllDiscovery} title="Collapse all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                    <ChevronsUp size={16} style={{ color: "var(--hp-text-muted)" }} />
+                  </button>
+                  <span style={{ color: "var(--hp-border)", fontSize: 16 }}>|</span>
                   <button
                     onClick={selectAll}
-                    className="text-xs font-medium underline"
-                    style={{ color: "var(--hp-accent)" }}
+                    style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                   >
                     Select all
                   </button>
                   <button
                     onClick={selectNone}
-                    className="text-xs font-medium underline"
-                    style={{ color: "var(--hp-text-muted)" }}
+                    style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                   >
                     Clear
                   </button>
                 </div>
               </div>
 
-              {/* Drawings grouped by discipline */}
-              <div
-                className="rounded-lg border"
-                style={{ borderColor: "var(--hp-border)" }}
-              >
-                {Object.entries(pairsByDiscipline)
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([discipline, pairs]) => (
+              {/* Discipline accordion */}
+              <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden", marginBottom: 16 }}>
+                {disciplineEntries.map(([discipline, pairs], di) => {
+                  const isCollapsed = collapsedDiscovery.has(discipline);
+                  const selCount = pairs.filter((p) => selectedIds.has(p.drawing_id)).length;
+                  const allSelected = selCount === pairs.length;
+
+                  return (
                     <div key={discipline}>
+                      {/* Discipline header — clickable to expand/collapse */}
                       <div
-                        className="flex items-center justify-between px-4 py-2.5 text-sm font-semibold border-b"
                         style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "10px 16px",
                           backgroundColor: "var(--hp-surface-raised)",
-                          borderColor: "var(--hp-border)",
-                          color: "var(--hp-warm-800)",
+                          borderTop: di > 0 ? "1px solid var(--hp-border)" : "none",
+                          cursor: "pointer",
+                          userSelect: "none",
                         }}
+                        onClick={() => toggleDiscoverySection(discipline)}
                       >
-                        <span>
-                          {discipline} ({pairs.length})
-                        </span>
-                        <span
-                          className="text-xs font-normal"
-                          style={{ color: "var(--hp-text-muted)" }}
-                        >
-                          {pairs.filter((p) => selectedIds.has(p.drawing_id))
-                            .length}{" "}
-                          selected
-                        </span>
-                      </div>
-                      {pairs.map((pair) => (
-                        <label
-                          key={pair.drawing_id}
-                          className="flex items-center gap-3 px-4 py-2 border-b cursor-pointer hover:bg-gray-50"
-                          style={{ borderColor: "var(--hp-border)" }}
-                        >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {isCollapsed ? (
+                            <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />
+                          ) : (
+                            <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} />
+                          )}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>
+                            {discipline}
+                          </span>
+                          <span style={{ fontSize: 12, color: "var(--hp-text-muted)", fontWeight: 400 }}>
+                            ({pairs.length} drawing{pairs.length !== 1 ? "s" : ""})
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                            {selCount}/{pairs.length} selected
+                          </span>
                           <input
                             type="checkbox"
-                            checked={selectedIds.has(pair.drawing_id)}
-                            onChange={() => toggleDrawing(pair.drawing_id)}
-                            className="rounded"
+                            checked={allSelected}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleDisciplineSelection(discipline, pairs);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ accentColor: "var(--hp-accent)" }}
                           />
-                          <div className="flex-1 min-w-0">
-                            <div
-                              className="text-sm font-medium truncate"
-                              style={{ color: "var(--hp-warm-900)" }}
-                            >
-                              {pair.drawing_number} — {pair.drawing_title}
+                        </div>
+                      </div>
+
+                      {/* Drawing rows */}
+                      {!isCollapsed &&
+                        pairs.map((pair) => (
+                          <label
+                            key={pair.drawing_id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              padding: "8px 16px 8px 44px",
+                              borderTop: "1px solid var(--hp-border)",
+                              cursor: "pointer",
+                              fontSize: 13,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(pair.drawing_id)}
+                              onChange={() => toggleDrawing(pair.drawing_id)}
+                              style={{ accentColor: "var(--hp-accent)" }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontWeight: 500,
+                                  color: "var(--hp-warm-900)",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {pair.drawing_number} — {pair.drawing_title}
+                              </div>
+                              <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 1 }}>
+                                Rev {pair.old_revision.revision_number} → Rev {pair.new_revision.revision_number}
+                                {" · "}
+                                {pair.revision_count} revision{pair.revision_count !== 1 ? "s" : ""}
+                              </div>
                             </div>
-                            <div
-                              className="text-xs"
-                              style={{ color: "var(--hp-text-muted)" }}
-                            >
-                              Rev {pair.old_revision.revision_number} &rarr; Rev{" "}
-                              {pair.new_revision.revision_number} &middot;{" "}
-                              {pair.revision_count} revision
-                              {pair.revision_count !== 1 ? "s" : ""}
-                            </div>
-                          </div>
-                        </label>
-                      ))}
+                          </label>
+                        ))}
                     </div>
-                  ))}
+                  );
+                })}
               </div>
 
-              {/* Scan button */}
-              <button
-                onClick={runScan}
-                disabled={selectedIds.size === 0}
-                className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-                style={{ backgroundColor: "var(--hp-accent)" }}
-              >
-                Scan {selectedIds.size} Drawing
-                {selectedIds.size !== 1 ? "s" : ""} for Changes
-              </button>
-
-              {/* Previous results hint */}
-              {scan && (
+              {/* Scan button + previous results */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <button
-                  onClick={() => setStep(2)}
-                  className="text-sm underline"
-                  style={{ color: "var(--hp-accent)" }}
+                  onClick={runScan}
+                  disabled={selectedIds.size === 0}
+                  style={{
+                    borderRadius: 8,
+                    padding: "10px 20px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#fff",
+                    backgroundColor: selectedIds.size === 0 ? "#CBD5E1" : "var(--hp-accent)",
+                    border: "none",
+                    cursor: selectedIds.size === 0 ? "default" : "pointer",
+                  }}
                 >
-                  View previous scan from {fmtDate(scan.created_at)} (
-                  {changes.length} change{changes.length !== 1 ? "s" : ""})
+                  Scan {selectedIds.size} Drawing{selectedIds.size !== 1 ? "s" : ""} for Changes
                 </button>
-              )}
-            </div>
+
+                {scan && (
+                  <button
+                    onClick={() => setStep(2)}
+                    style={{
+                      fontSize: 13,
+                      color: "var(--hp-accent)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    View previous scan from {fmtDate(scan.created_at)} ({changes.length} change
+                    {changes.length !== 1 ? "s" : ""})
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </>
       )}
 
-      {/* Step 1: Scanning progress */}
+      {/* ═══ Step 1: Scanning progress ═══ */}
       {step === 1 && (
         <div
-          className="rounded-lg border p-8 text-center"
-          style={{ borderColor: "var(--hp-border)" }}
+          style={{
+            borderRadius: 8,
+            border: "1px solid var(--hp-border)",
+            padding: 48,
+            textAlign: "center",
+          }}
         >
           <RefreshCw
             size={24}
-            className="animate-spin mx-auto mb-3"
-            style={{ color: "var(--hp-accent)" }}
+            className="animate-spin"
+            style={{ color: "var(--hp-accent)", margin: "0 auto 12px" }}
           />
-          <div
-            className="text-sm font-medium"
-            style={{ color: "var(--hp-warm-900)" }}
-          >
+          <div style={{ fontSize: 14, fontWeight: 500, color: "var(--hp-warm-900)" }}>
             Scanning drawings for changes...
           </div>
-          <div
-            className="text-xs mt-1"
-            style={{ color: "var(--hp-text-secondary)" }}
-          >
-            Comparing {scanProgress.total} drawing
-            {scanProgress.total !== 1 ? "s" : ""} — this may take a few minutes
+          <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 4 }}>
+            Comparing {scanProgress.total} drawing{scanProgress.total !== 1 ? "s" : ""}
+            {" — "}this may take a few minutes
           </div>
           <div
-            className="w-48 h-1.5 rounded-full mx-auto mt-4"
-            style={{ backgroundColor: "var(--hp-border)" }}
+            style={{
+              width: 200,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: "var(--hp-border)",
+              margin: "16px auto 0",
+            }}
           >
             <div
-              className="h-full rounded-full transition-all"
               style={{
+                height: "100%",
+                borderRadius: 3,
                 backgroundColor: "var(--hp-accent)",
-                width:
-                  scanProgress.total > 0
-                    ? `${(scanProgress.current / scanProgress.total) * 100}%`
-                    : "0%",
+                transition: "width 0.3s",
+                width: scanProgress.total > 0 ? `${(scanProgress.current / scanProgress.total) * 100}%` : "0%",
               }}
             />
           </div>
         </div>
       )}
 
-      {/* Step 2: Results */}
+      {/* ═══ Step 2: Results ═══ */}
       {step === 2 && scan && (
-        <div className="space-y-4">
-          {/* Scan summary */}
+        <>
+          {/* Scan summary bar */}
           <div
-            className="rounded-lg border p-4"
             style={{
-              borderColor: "var(--hp-border)",
+              borderRadius: 8,
+              border: "1px solid var(--hp-border)",
               backgroundColor: "var(--hp-surface-raised)",
+              padding: 16,
+              marginBottom: 16,
             }}
           >
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
               <div>
-                <div
-                  className="text-sm font-semibold"
-                  style={{ color: "var(--hp-warm-900)" }}
-                >
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>
                   {projectName} — Scan {fmtDate(scan.created_at)}
                 </div>
-                <div
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--hp-text-secondary)" }}
-                >
-                  {scan.completed_drawings} drawing
-                  {scan.completed_drawings !== 1 ? "s" : ""} compared &middot;{" "}
-                  {changes.length} change{changes.length !== 1 ? "s" : ""}{" "}
-                  detected
+                <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
+                  {scan.completed_drawings} drawing{scan.completed_drawings !== 1 ? "s" : ""} compared ·{" "}
+                  {changes.length} change{changes.length !== 1 ? "s" : ""} detected
                   {scan.failed_drawings > 0 && (
-                    <span style={{ color: "#DC2626" }}>
-                      {" "}
-                      &middot; {scan.failed_drawings} failed
-                    </span>
+                    <span style={{ color: "#DC2626" }}> · {scan.failed_drawings} failed</span>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <a
                   href={`/api/drawing-changes/export?scan_id=${scan.id}&format=csv`}
                   download
-                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
                   style={{
-                    borderColor: "var(--hp-border)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderRadius: 8,
+                    border: "1px solid var(--hp-border)",
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 500,
                     color: "var(--hp-warm-700)",
+                    textDecoration: "none",
                   }}
                 >
                   <Download size={12} /> Export CSV
                 </a>
                 <button
                   onClick={() => setStep(0)}
-                  className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
                   style={{
-                    borderColor: "var(--hp-border)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderRadius: 8,
+                    border: "1px solid var(--hp-border)",
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 500,
                     color: "var(--hp-warm-700)",
+                    background: "none",
+                    cursor: "pointer",
                   }}
                 >
                   <RefreshCw size={12} /> New Scan
@@ -652,39 +760,44 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             </div>
           </div>
 
-          {/* Change summary pills */}
+          {/* Summary pills */}
           {changes.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {(
-                ["addition", "deletion", "spec_change", "relocation"] as const
-              ).map((type) => {
-                const count = changes.filter(
-                  (c) => c.change_type === type
-                ).length;
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+              {(["addition", "deletion", "spec_change", "relocation"] as const).map((type) => {
+                const count = changes.filter((c) => c.change_type === type).length;
                 if (count === 0) return null;
                 const colors = CHANGE_TYPE_COLORS[type];
                 return (
                   <span
                     key={type}
-                    className="rounded-full px-3 py-1 text-xs font-medium"
-                    style={{ backgroundColor: colors.bg, color: colors.text }}
+                    style={{
+                      borderRadius: 999,
+                      padding: "4px 12px",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      backgroundColor: colors.bg,
+                      color: colors.text,
+                    }}
                   >
-                    {count} {CHANGE_TYPE_LABELS[type]}
-                    {count !== 1 ? "s" : ""}
+                    {count} {CHANGE_TYPE_LABELS[type]}{count !== 1 ? "s" : ""}
                   </span>
                 );
               })}
               {(() => {
-                const highCount = changes.filter(
-                  (c) => c.severity === "high"
-                ).length;
+                const highCount = changes.filter((c) => c.severity === "high").length;
                 if (highCount === 0) return null;
                 return (
                   <span
-                    className="rounded-full px-3 py-1 text-xs font-medium flex items-center gap-1"
                     style={{
+                      borderRadius: 999,
+                      padding: "4px 12px",
+                      fontSize: 12,
+                      fontWeight: 500,
                       backgroundColor: SEVERITY_COLORS.high.bg,
                       color: SEVERITY_COLORS.high.text,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
                     }}
                   >
                     <AlertTriangle size={11} /> {highCount} High Severity
@@ -694,70 +807,83 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             </div>
           )}
 
+          {/* Expand/Collapse controls */}
+          {changes.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <button onClick={expandAllResults} title="Expand all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <ChevronsDown size={16} style={{ color: "var(--hp-text-muted)" }} />
+              </button>
+              <button onClick={collapseAllResults} title="Collapse all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <ChevronsUp size={16} style={{ color: "var(--hp-text-muted)" }} />
+              </button>
+              <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
+                {expandedResults.size}/{Object.keys(byDiscipline).length} disciplines expanded
+              </span>
+            </div>
+          )}
+
           {changes.length === 0 ? (
             <div
-              className="rounded-lg border p-6 text-center text-sm"
               style={{
-                borderColor: "var(--hp-border)",
+                borderRadius: 8,
+                border: "1px solid var(--hp-border)",
+                padding: 32,
+                textAlign: "center",
+                fontSize: 13,
                 color: "var(--hp-text-secondary)",
               }}
             >
-              No scope or specification changes detected in the scanned
-              drawings.
+              No scope or specification changes detected in the scanned drawings.
             </div>
           ) : (
-            /* Changes grouped by discipline */
-            <div className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {Object.entries(byDiscipline)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([discipline, disciplineChanges]) => {
-                  const isExpanded = expandedDisciplines.has(discipline);
-                  const highCount = disciplineChanges.filter(
-                    (c) => c.severity === "high"
-                  ).length;
+                  const isExpanded = expandedResults.has(discipline);
+                  const highCount = disciplineChanges.filter((c) => c.severity === "high").length;
 
                   return (
                     <div
                       key={discipline}
-                      className="rounded-lg border"
-                      style={{ borderColor: "var(--hp-border)" }}
+                      style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden" }}
                     >
                       {/* Discipline header */}
-                      <button
-                        onClick={() => toggleDiscipline(discipline)}
-                        className="w-full flex items-center justify-between px-4 py-3 text-left"
-                        style={{ backgroundColor: "var(--hp-surface-raised)" }}
+                      <div
+                        onClick={() => toggleResultSection(discipline)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "12px 16px",
+                          backgroundColor: "var(--hp-surface-raised)",
+                          cursor: "pointer",
+                          userSelect: "none",
+                        }}
                       >
-                        <div className="flex items-center gap-2">
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {isExpanded ? (
-                            <ChevronDown
-                              size={16}
-                              style={{ color: "var(--hp-warm-600)" }}
-                            />
+                            <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} />
                           ) : (
-                            <ChevronRight
-                              size={16}
-                              style={{ color: "var(--hp-warm-600)" }}
-                            />
+                            <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />
                           )}
-                          <span
-                            className="text-sm font-semibold"
-                            style={{ color: "var(--hp-warm-900)" }}
-                          >
+                          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>
                             {discipline}
                           </span>
-                          <span
-                            className="text-xs"
-                            style={{ color: "var(--hp-text-muted)" }}
-                          >
-                            ({disciplineChanges.length} change
-                            {disciplineChanges.length !== 1 ? "s" : ""})
+                          <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
+                            ({disciplineChanges.length} change{disciplineChanges.length !== 1 ? "s" : ""})
                           </span>
                         </div>
                         {highCount > 0 && (
                           <span
-                            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
                             style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              borderRadius: 999,
+                              padding: "2px 8px",
+                              fontSize: 11,
+                              fontWeight: 500,
                               backgroundColor: SEVERITY_COLORS.high.bg,
                               color: SEVERITY_COLORS.high.text,
                             }}
@@ -765,136 +891,90 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                             <AlertTriangle size={10} /> {highCount}
                           </span>
                         )}
-                      </button>
+                      </div>
 
                       {/* Changes table */}
                       {isExpanded && (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
                             <thead>
-                              <tr
-                                className="border-t"
-                                style={{
-                                  borderColor: "var(--hp-border)",
-                                  backgroundColor: "var(--hp-surface)",
-                                }}
-                              >
-                                <th
-                                  className="px-4 py-2 text-left font-medium"
-                                  style={{ color: "var(--hp-text-secondary)" }}
-                                >
-                                  Drawing
-                                </th>
-                                <th
-                                  className="px-4 py-2 text-left font-medium"
-                                  style={{ color: "var(--hp-text-secondary)" }}
-                                >
-                                  Rev
-                                </th>
-                                <th
-                                  className="px-4 py-2 text-left font-medium"
-                                  style={{ color: "var(--hp-text-secondary)" }}
-                                >
-                                  Type
-                                </th>
-                                <th
-                                  className="px-4 py-2 text-left font-medium"
-                                  style={{ color: "var(--hp-text-secondary)" }}
-                                >
-                                  Description
-                                </th>
-                                <th
-                                  className="px-4 py-2 text-left font-medium"
-                                  style={{ color: "var(--hp-text-secondary)" }}
-                                >
-                                  Location
-                                </th>
-                                <th
-                                  className="px-4 py-2 text-left font-medium"
-                                  style={{ color: "var(--hp-text-secondary)" }}
-                                >
-                                  Severity
-                                </th>
+                              <tr style={{ borderTop: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)" }}>
+                                {["Drawing", "Rev", "Type", "Description", "Location", "Severity"].map((h) => (
+                                  <th
+                                    key={h}
+                                    style={{
+                                      padding: "8px 16px",
+                                      textAlign: "left",
+                                      fontWeight: 500,
+                                      fontSize: 12,
+                                      color: "var(--hp-text-secondary)",
+                                    }}
+                                  >
+                                    {h}
+                                  </th>
+                                ))}
                               </tr>
                             </thead>
                             <tbody>
                               {disciplineChanges.map((change) => {
-                                const typeColors =
-                                  CHANGE_TYPE_COLORS[change.change_type] ??
-                                  CHANGE_TYPE_COLORS.spec_change;
-                                const sevColors =
-                                  SEVERITY_COLORS[change.severity] ??
-                                  SEVERITY_COLORS.medium;
-                                const Icon =
-                                  CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
+                                const typeColors = CHANGE_TYPE_COLORS[change.change_type] ?? CHANGE_TYPE_COLORS.spec_change;
+                                const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
+                                const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
 
                                 return (
-                                  <tr
-                                    key={change.id}
-                                    className="border-t"
-                                    style={{ borderColor: "var(--hp-border)" }}
-                                  >
-                                    <td className="px-4 py-2.5">
-                                      <div
-                                        className="font-medium"
-                                        style={{
-                                          color: "var(--hp-warm-900)",
-                                        }}
-                                      >
+                                  <tr key={change.id} style={{ borderTop: "1px solid var(--hp-border)" }}>
+                                    <td style={{ padding: "10px 16px", verticalAlign: "top" }}>
+                                      <div style={{ fontWeight: 500, color: "var(--hp-warm-900)" }}>
                                         {change.drawing_number}
                                       </div>
                                       <div
-                                        className="text-xs truncate max-w-[200px]"
                                         style={{
+                                          fontSize: 11,
                                           color: "var(--hp-text-muted)",
+                                          maxWidth: 180,
+                                          whiteSpace: "nowrap",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
                                         }}
                                       >
                                         {change.drawing_title}
                                       </div>
                                     </td>
-                                    <td
-                                      className="px-4 py-2.5 text-xs whitespace-nowrap"
-                                      style={{
-                                        color: "var(--hp-text-secondary)",
-                                      }}
-                                    >
-                                      {change.old_revision} &rarr;{" "}
-                                      {change.new_revision}
+                                    <td style={{ padding: "10px 16px", fontSize: 12, color: "var(--hp-text-secondary)", whiteSpace: "nowrap", verticalAlign: "top" }}>
+                                      {change.old_revision} → {change.new_revision}
                                     </td>
-                                    <td className="px-4 py-2.5">
+                                    <td style={{ padding: "10px 16px", verticalAlign: "top" }}>
                                       <span
-                                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
                                         style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: 4,
+                                          borderRadius: 999,
+                                          padding: "2px 10px",
+                                          fontSize: 11,
+                                          fontWeight: 500,
                                           backgroundColor: typeColors.bg,
                                           color: typeColors.text,
                                         }}
                                       >
                                         <Icon size={10} />
-                                        {CHANGE_TYPE_LABELS[
-                                          change.change_type
-                                        ] ?? change.change_type}
+                                        {CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
                                       </span>
                                     </td>
-                                    <td
-                                      className="px-4 py-2.5 max-w-[350px]"
-                                      style={{
-                                        color: "var(--hp-warm-800)",
-                                      }}
-                                    >
+                                    <td style={{ padding: "10px 16px", maxWidth: 320, color: "var(--hp-warm-800)", verticalAlign: "top" }}>
                                       {change.description}
                                     </td>
-                                    <td
-                                      className="px-4 py-2.5 text-xs"
-                                      style={{
-                                        color: "var(--hp-text-muted)",
-                                      }}
-                                    >
+                                    <td style={{ padding: "10px 16px", fontSize: 12, color: "var(--hp-text-muted)", verticalAlign: "top" }}>
                                       {change.location_on_drawing ?? "—"}
                                     </td>
-                                    <td className="px-4 py-2.5">
+                                    <td style={{ padding: "10px 16px", verticalAlign: "top" }}>
                                       <span
-                                        className="rounded-full px-2 py-0.5 text-xs font-medium capitalize"
                                         style={{
+                                          borderRadius: 999,
+                                          padding: "2px 10px",
+                                          fontSize: 11,
+                                          fontWeight: 500,
+                                          textTransform: "capitalize",
                                           backgroundColor: sevColors.bg,
                                           color: sevColors.text,
                                         }}
@@ -914,7 +994,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 })}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
