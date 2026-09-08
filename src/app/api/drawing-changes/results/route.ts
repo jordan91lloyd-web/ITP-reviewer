@@ -1,5 +1,7 @@
 // GET /api/drawing-changes/results?company_id=X&project_id=Y
 // or  /api/drawing-changes/results?scan_id=X
+// or  /api/drawing-changes/results?company_id=X&project_id=Y&all=true
+//     (returns all changes across all scans for the project)
 // Returns scan metadata + changes grouped by discipline.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -18,10 +20,61 @@ export async function GET(request: NextRequest) {
   const scanId = request.nextUrl.searchParams.get("scan_id");
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");
+  const all = request.nextUrl.searchParams.get("all") === "true";
 
   const supabase = getSupabase();
 
-  // Fetch scan
+  // ── All changes for a project (across all scans) ────────────────────────
+  if (all && companyId && projectId) {
+    const { data: allChanges, error: changesErr } = await supabase
+      .from("drawing_revision_changes")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("project_id", projectId)
+      .order("discipline", { ascending: true })
+      .order("drawing_number", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (changesErr) {
+      return NextResponse.json({ error: changesErr.message }, { status: 500 });
+    }
+
+    const changes = allChanges ?? [];
+
+    // Group by discipline
+    const byDiscipline: Record<string, typeof changes> = {};
+    for (const change of changes) {
+      const disc = change.discipline || "Other";
+      if (!byDiscipline[disc]) byDiscipline[disc] = [];
+      byDiscipline[disc].push(change);
+    }
+
+    // All scans
+    const { data: scanList } = await supabase
+      .from("drawing_revision_scans")
+      .select("id, created_at, status, total_drawings, completed_drawings, failed_drawings")
+      .eq("company_id", companyId)
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    // Unique drawings scanned
+    const uniqueDrawings = new Set(changes.map((c) => c.drawing_number));
+
+    return NextResponse.json({
+      scan: null,
+      changes,
+      by_discipline: byDiscipline,
+      all_scans: scanList ?? [],
+      summary: {
+        total_changes: changes.length,
+        total_drawings_scanned: uniqueDrawings.size,
+        total_scans: scanList?.length ?? 0,
+      },
+    });
+  }
+
+  // ── Single scan ─────────────────────────────────────────────────────────
   let scanQuery = supabase
     .from("drawing_revision_scans")
     .select("*")
@@ -54,12 +107,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: scanErr.message }, { status: 500 });
   }
   if (!scans || scans.length === 0) {
-    return NextResponse.json({ scan: null, changes: [], by_discipline: {} });
+    return NextResponse.json({ scan: null, changes: [], by_discipline: {}, all_scans: [] });
   }
 
   const scan = scans[0];
 
-  // Fetch changes for this scan
   const { data: changes, error: changesErr } = await supabase
     .from("drawing_revision_changes")
     .select("*")
@@ -72,7 +124,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: changesErr.message }, { status: 500 });
   }
 
-  // Group by discipline
   const byDiscipline: Record<string, typeof changes> = {};
   for (const change of changes ?? []) {
     const disc = change.discipline || "Other";
@@ -80,7 +131,6 @@ export async function GET(request: NextRequest) {
     byDiscipline[disc].push(change);
   }
 
-  // Fetch all scans for this project (for history dropdown)
   let allScans: { id: string; created_at: string; status: string; total_drawings: number; completed_drawings: number }[] = [];
   if (scan.company_id && scan.project_id) {
     const { data: scanList } = await supabase

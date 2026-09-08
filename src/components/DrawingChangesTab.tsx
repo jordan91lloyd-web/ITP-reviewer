@@ -180,16 +180,27 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const loadPreviousResults = useCallback(
     async (pid: string) => {
       try {
+        // Load ALL changes across all scans for this project
         const res = await fetch(
-          `/api/drawing-changes/results?company_id=${company_id}&project_id=${pid}`
+          `/api/drawing-changes/results?company_id=${company_id}&project_id=${pid}&all=true`
         );
         if (!res.ok) return;
         const data = await res.json();
-        if (data.scan) {
-          setScan(data.scan);
-          setChanges(data.changes ?? []);
+        if (data.changes && data.changes.length > 0) {
+          setScan(data.scan ?? {
+            id: "all",
+            project_name: "",
+            status: "completed",
+            total_drawings: data.summary?.total_drawings_scanned ?? 0,
+            completed_drawings: data.summary?.total_drawings_scanned ?? 0,
+            failed_drawings: 0,
+            created_at: new Date().toISOString(),
+            completed_at: null,
+          });
+          setChanges(data.changes);
           setByDiscipline(data.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(data.by_discipline ?? {})));
+          setStep(2); // Go straight to Change Register
         }
         if (data.all_scans) setAllScans(data.all_scans);
       } catch {
@@ -947,7 +958,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
         return (
         <>
-          {/* Scan summary bar */}
+          {/* Change Register header */}
           <div
             style={{
               borderRadius: 8,
@@ -959,15 +970,16 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>
-                  {projectName} — Scan {fmtDate(scan.created_at)}
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-warm-900)" }}>
+                  Change Register — {projectName}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
-                  {scan.completed_drawings} drawing{scan.completed_drawings !== 1 ? "s" : ""} compared ·{" "}
+                  {(() => {
+                    const uniqueDrawings = new Set(changes.map((c) => c.drawing_number));
+                    return `${uniqueDrawings.size} drawing${uniqueDrawings.size !== 1 ? "s" : ""} reviewed`;
+                  })()} ·{" "}
                   {changes.length} change{changes.length !== 1 ? "s" : ""} detected
-                  {scan.failed_drawings > 0 && (
-                    <span style={{ color: "#DC2626" }}> · {scan.failed_drawings} failed</span>
-                  )}
+                  {allScans.length > 0 && ` · ${allScans.length} scan${allScans.length !== 1 ? "s" : ""}`}
                 </div>
                 {/* Top drawings by change count */}
                 {topDrawings.length > 0 && (
@@ -976,67 +988,84 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   </div>
                 )}
                 {/* Scan history */}
-                {allScans.length > 1 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>History:</span>
-                    <select
-                      value={scan.id}
-                      onChange={(e) => loadScan(e.target.value)}
+                {allScans.length > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>View:</span>
+                    <button
+                      onClick={() => loadPreviousResults(projectId)}
                       style={{
                         fontSize: 11,
+                        fontWeight: scan?.id === "all" ? 600 : 400,
+                        color: scan?.id === "all" ? "var(--hp-accent)" : "var(--hp-warm-700)",
+                        background: "none",
                         border: "1px solid var(--hp-border)",
                         borderRadius: 4,
-                        padding: "2px 6px",
-                        color: "var(--hp-warm-700)",
-                        backgroundColor: "var(--hp-surface)",
+                        padding: "2px 8px",
+                        cursor: "pointer",
                       }}
                     >
-                      {allScans.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {fmtDate(s.created_at)} — {s.completed_drawings} drawings
-                        </option>
-                      ))}
-                    </select>
+                      All changes
+                    </button>
+                    {allScans.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => loadScan(s.id)}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: scan?.id === s.id ? 600 : 400,
+                          color: scan?.id === s.id ? "var(--hp-accent)" : "var(--hp-warm-700)",
+                          background: "none",
+                          border: "1px solid var(--hp-border)",
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {fmtDate(s.created_at)}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <a
-                  href={`/api/drawing-changes/export?scan_id=${scan.id}&format=csv`}
-                  download
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    borderRadius: 8,
-                    border: "1px solid var(--hp-border)",
-                    padding: "6px 12px",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: "var(--hp-warm-700)",
-                    textDecoration: "none",
-                  }}
-                >
-                  <Download size={12} /> CSV
-                </a>
-                <a
-                  href={`/api/drawing-changes/export?scan_id=${scan.id}&format=pdf`}
-                  download
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    borderRadius: 8,
-                    border: "1px solid var(--hp-border)",
-                    padding: "6px 12px",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: "var(--hp-warm-700)",
-                    textDecoration: "none",
-                  }}
-                >
-                  <Download size={12} /> PDF
-                </a>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <a
+                    href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=csv`}
+                    download
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      borderRadius: 8,
+                      border: "1px solid var(--hp-border)",
+                      padding: "6px 12px",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "var(--hp-warm-700)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <Download size={12} /> CSV
+                  </a>
+                  <a
+                    href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=pdf`}
+                    download
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      borderRadius: 8,
+                      border: "1px solid var(--hp-border)",
+                      padding: "6px 12px",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "var(--hp-warm-700)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <Download size={12} /> PDF
+                  </a>
+                </div>
                 <button
                   onClick={() => setStep(0)}
                   style={{
@@ -1044,16 +1073,16 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     alignItems: "center",
                     gap: 6,
                     borderRadius: 8,
-                    border: "1px solid var(--hp-border)",
-                    padding: "6px 12px",
+                    border: "1px solid var(--hp-accent)",
+                    backgroundColor: "var(--hp-accent)",
+                    padding: "6px 14px",
                     fontSize: 12,
-                    fontWeight: 500,
-                    color: "var(--hp-warm-700)",
-                    background: "none",
+                    fontWeight: 600,
+                    color: "#fff",
                     cursor: "pointer",
                   }}
                 >
-                  <RefreshCw size={12} /> New Scan
+                  <RefreshCw size={12} /> Scan New Drawings
                 </button>
               </div>
             </div>

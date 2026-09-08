@@ -354,38 +354,82 @@ function DrawingChangesPdf({
 
 export async function GET(request: NextRequest) {
   const scanId = request.nextUrl.searchParams.get("scan_id");
+  const companyId = request.nextUrl.searchParams.get("company_id");
+  const projectId = request.nextUrl.searchParams.get("project_id");
+  const all = request.nextUrl.searchParams.get("all") === "true";
   const format = request.nextUrl.searchParams.get("format") ?? "csv";
-
-  if (!scanId) {
-    return NextResponse.json({ error: "scan_id required" }, { status: 400 });
-  }
 
   const supabase = getSupabase();
 
-  const { data: scan } = await supabase
-    .from("drawing_revision_scans")
-    .select("*")
-    .eq("id", scanId)
-    .single();
+  let scan: ScanRow;
+  let rows: ChangeRow[];
+  let baseName: string;
 
-  if (!scan) {
-    return NextResponse.json({ error: "Scan not found" }, { status: 404 });
+  if (all && companyId && projectId) {
+    // Full project export — all changes across all scans
+    const { data: changes, error } = await supabase
+      .from("drawing_revision_changes")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("project_id", projectId)
+      .order("discipline", { ascending: true })
+      .order("drawing_number", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Get project name from latest scan
+    const { data: latestScan } = await supabase
+      .from("drawing_revision_scans")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    const uniqueDrawings = new Set((changes ?? []).map((c) => c.drawing_number));
+    scan = {
+      id: "all",
+      project_name: latestScan?.project_name ?? projectId,
+      project_id: projectId,
+      completed_drawings: uniqueDrawings.size,
+      failed_drawings: 0,
+      created_at: new Date().toISOString(),
+    };
+    rows = changes ?? [];
+    baseName = `drawing-changes-ALL-${scan.project_name}-${new Date().toISOString().slice(0, 10)}`;
+  } else if (scanId) {
+    // Single scan export
+    const { data: scanData } = await supabase
+      .from("drawing_revision_scans")
+      .select("*")
+      .eq("id", scanId)
+      .single();
+
+    if (!scanData) {
+      return NextResponse.json({ error: "Scan not found" }, { status: 404 });
+    }
+    scan = scanData;
+
+    const { data: changes, error } = await supabase
+      .from("drawing_revision_changes")
+      .select("*")
+      .eq("scan_id", scanId)
+      .order("discipline", { ascending: true })
+      .order("drawing_number", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    rows = changes ?? [];
+    baseName = `drawing-changes-${scan.project_name || scan.project_id}-${new Date(scan.created_at).toISOString().slice(0, 10)}`;
+  } else {
+    return NextResponse.json({ error: "scan_id or (company_id + project_id + all=true) required" }, { status: 400 });
   }
-
-  const { data: changes, error } = await supabase
-    .from("drawing_revision_changes")
-    .select("*")
-    .eq("scan_id", scanId)
-    .order("discipline", { ascending: true })
-    .order("drawing_number", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const rows: ChangeRow[] = changes ?? [];
-  const baseName = `drawing-changes-${scan.project_name || scan.project_id}-${new Date(scan.created_at).toISOString().slice(0, 10)}`;
 
   // ── PDF ─────────────────────────────────────────────────────────────────
   if (format === "pdf") {
