@@ -1023,7 +1023,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 {highSeverityOnly && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Showing {filteredChanges.length} of {changes.length}</span>}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <button onClick={() => { expandAllResults(); setExpandedDrawings(new Set(filteredChanges.map((c) => `${c.drawing_number}|${c.old_revision}|${c.new_revision}`))); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Expand All</button>
+                <button onClick={() => { expandAllResults(); setExpandedDrawings(new Set(filteredChanges.map((c) => c.drawing_number))); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Expand All</button>
                 <button onClick={() => { collapseAllResults(); setExpandedDrawings(new Set()); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Collapse All</button>
               </div>
             </div>
@@ -1040,15 +1040,24 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 const isExpanded = expandedResults.has(discipline);
                 const discHigh = disciplineChanges.filter((c) => c.severity === "high").length;
 
-                // Group by drawing
-                const byDrawing: { key: string; number: string; title: string; rev: string; changes: ChangeRow[] }[] = [];
-                const drawingMap = new Map<string, typeof byDrawing[0]>();
+                // Group by drawing number, then by revision pair within each drawing
+                type RevGroup = { revKey: string; rev: string; changes: ChangeRow[] };
+                type DrawingGroup = { number: string; title: string; totalChanges: number; totalHigh: number; revisions: RevGroup[] };
+                const drawingOrder: DrawingGroup[] = [];
+                const drawingLookup = new Map<string, DrawingGroup>();
+
                 for (const c of disciplineChanges) {
-                  const key = `${c.drawing_number}|${c.old_revision}|${c.new_revision}`;
-                  let group = drawingMap.get(key);
-                  if (!group) { group = { key, number: c.drawing_number, title: c.drawing_title, rev: `${c.old_revision} → ${c.new_revision}`, changes: [] }; drawingMap.set(key, group); byDrawing.push(group); }
-                  group.changes.push(c);
+                  let dg = drawingLookup.get(c.drawing_number);
+                  if (!dg) { dg = { number: c.drawing_number, title: c.drawing_title, totalChanges: 0, totalHigh: 0, revisions: [] }; drawingLookup.set(c.drawing_number, dg); drawingOrder.push(dg); }
+                  dg.totalChanges++;
+                  if (c.severity === "high") dg.totalHigh++;
+
+                  const revKey = `${c.old_revision}|${c.new_revision}`;
+                  let rg = dg.revisions.find((r) => r.revKey === revKey);
+                  if (!rg) { rg = { revKey, rev: `${c.old_revision} → ${c.new_revision}`, changes: [] }; dg.revisions.push(rg); }
+                  rg.changes.push(c);
                 }
+                const uniqueDrawingCount = drawingOrder.length;
 
                 return (
                   <div key={discipline} style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden" }}>
@@ -1057,57 +1066,79 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {isExpanded ? <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} /> : <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />}
                         <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>{discipline}</span>
-                        <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>({disciplineChanges.length} changes · {byDrawing.length} drawings)</span>
+                        <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>({disciplineChanges.length} changes · {uniqueDrawingCount} drawings)</span>
                       </div>
                       {discHigh > 0 && <span style={{ display: "flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}><AlertTriangle size={10} /> {discHigh}</span>}
                     </div>
 
                     {/* Drawings (each collapsible) */}
-                    {isExpanded && byDrawing.map((group) => {
-                      const isDrawingExpanded = expandedDrawings.has(group.key);
-                      const groupHigh = group.changes.filter((c) => c.severity === "high").length;
+                    {isExpanded && drawingOrder.map((dg) => {
+                      const drawingKey = dg.number;
+                      const isDrawingExpanded = expandedDrawings.has(drawingKey);
+                      const hasMultipleRevs = dg.revisions.length > 1;
 
                       return (
-                        <div key={group.key}>
+                        <div key={drawingKey}>
                           {/* Drawing header — clickable */}
                           <div
-                            onClick={() => setExpandedDrawings((prev) => { const next = new Set(prev); if (next.has(group.key)) next.delete(group.key); else next.add(group.key); return next; })}
+                            onClick={() => setExpandedDrawings((prev) => { const next = new Set(prev); if (next.has(drawingKey)) next.delete(drawingKey); else next.add(drawingKey); return next; })}
                             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 8px 40px", borderTop: "1px solid var(--hp-border)", backgroundColor: isDrawingExpanded ? "#F5F5F4" : "#FAFAF9", cursor: "pointer", userSelect: "none" }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               {isDrawingExpanded ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />}
-                              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{group.number}</span>
-                              <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>{group.title}</span>
-                              <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Rev {group.rev}</span>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{dg.number}</span>
+                              <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>{dg.title}</span>
+                              {!hasMultipleRevs && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Rev {dg.revisions[0]?.rev}</span>}
+                              {hasMultipleRevs && <span style={{ fontSize: 11, color: "var(--hp-accent)", fontWeight: 500 }}>{dg.revisions.length} revisions</span>}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{group.changes.length}</span>
-                              {groupHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}>{groupHigh} high</span>}
+                              <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{dg.totalChanges}</span>
+                              {dg.totalHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}>{dg.totalHigh} high</span>}
                               {(() => {
-                                const pair = drawingPairs.find((p) => p.drawing_number === group.number);
+                                const pair = drawingPairs.find((p) => p.drawing_number === dg.number);
                                 if (!pair) return null;
-                                const deepKey = group.key;
+                                const latestRev = dg.revisions[dg.revisions.length - 1];
+                                const deepKey = `${dg.number}|${latestRev?.revKey}`;
                                 const isDS = deepScanning.has(deepKey);
                                 return <button onClick={(e) => { e.stopPropagation(); deepScanDrawing(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision); }} disabled={isDS} title="Re-scan with Opus (slower, more thorough, higher cost)" style={{ fontSize: 10, fontWeight: 500, color: isDS ? "var(--hp-text-muted)" : "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDS ? "default" : "pointer", whiteSpace: "nowrap" }}>{isDS ? "Scanning..." : "Deep Scan"}</button>;
                               })()}
                             </div>
                           </div>
 
-                          {/* Change rows (only when drawing is expanded) */}
-                          {isDrawingExpanded && group.changes.map((change) => {
-                            const typeColors = CHANGE_TYPE_COLORS[change.change_type] ?? CHANGE_TYPE_COLORS.spec_change;
-                            const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
-                            const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
+                          {/* Revision groups within this drawing */}
+                          {isDrawingExpanded && dg.revisions.map((rg) => {
+                            const rgHigh = rg.changes.filter((c) => c.severity === "high").length;
                             return (
-                              <div key={change.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 16px 10px 72px", borderTop: "1px solid var(--hp-border)", fontSize: 13 }}>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, backgroundColor: typeColors.bg, color: typeColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>
-                                  <Icon size={10} />{CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
-                                </span>
-                                <div style={{ flex: 1, minWidth: 0, color: "var(--hp-warm-800)" }}>
-                                  {change.description}
-                                  {change.location_on_drawing && <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 3 }}>Location: {change.location_on_drawing}</div>}
-                                </div>
-                                <span style={{ borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, textTransform: "capitalize", backgroundColor: sevColors.bg, color: sevColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>{change.severity}</span>
+                              <div key={rg.revKey}>
+                                {/* Revision sub-header (only shown if multiple revisions) */}
+                                {hasMultipleRevs && (
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 16px 6px 64px", borderTop: "1px solid var(--hp-border)", backgroundColor: "#F5F5F4" }}>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-warm-700)" }}>Rev {rg.rev}</span>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{rg.changes.length} changes</span>
+                                      {rgHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}>{rgHigh} high</span>}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Change rows */}
+                                {rg.changes.map((change) => {
+                                  const typeColors = CHANGE_TYPE_COLORS[change.change_type] ?? CHANGE_TYPE_COLORS.spec_change;
+                                  const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
+                                  const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
+                                  return (
+                                    <div key={change.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 16px 10px 72px", borderTop: "1px solid var(--hp-border)", fontSize: 13 }}>
+                                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, backgroundColor: typeColors.bg, color: typeColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>
+                                        <Icon size={10} />{CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
+                                      </span>
+                                      <div style={{ flex: 1, minWidth: 0, color: "var(--hp-warm-800)" }}>
+                                        {change.description}
+                                        {change.location_on_drawing && <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 3 }}>Location: {change.location_on_drawing}</div>}
+                                      </div>
+                                      <span style={{ borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, textTransform: "capitalize", backgroundColor: sevColors.bg, color: sevColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>{change.severity}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             );
                           })}
