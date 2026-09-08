@@ -29,14 +29,22 @@ interface Props {
   projects: DashboardProject[];
 }
 
+interface RevisionInfo {
+  revision_number: string;
+  pdf_url: string;
+}
+
 interface DrawingPair {
   drawing_id: number;
   drawing_number: string;
   drawing_title: string;
   discipline: string;
   revision_count: number;
-  old_revision: { revision_number: string; pdf_url: string };
-  new_revision: { revision_number: string; pdf_url: string };
+  revisions: RevisionInfo[];
+  old_revision: RevisionInfo;
+  new_revision: RevisionInfo;
+  scanned_pairs: string[];
+  status: "scanned" | "new_revision" | "not_scanned";
 }
 
 interface ChangeRow {
@@ -116,6 +124,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [filterText, setFilterText] = useState("");
   const [collapsedDiscovery, setCollapsedDiscovery] = useState<Set<string>>(new Set());
+  // Custom revision overrides: drawing_id → { from_rev, to_rev }
+  const [revisionOverrides, setRevisionOverrides] = useState<Map<number, { old: RevisionInfo; new: RevisionInfo }>>(new Map());
 
   // Scanning
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0, batchNum: 0, totalBatches: 0 });
@@ -127,6 +137,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [highSeverityOnly, setHighSeverityOnly] = useState(false);
   const [deepScanning, setDeepScanning] = useState<Set<string>>(new Set());
+  const [allScans, setAllScans] = useState<{ id: string; created_at: string; status: string; total_drawings: number; completed_drawings: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch drawings with revisions ────────────────────────────────────────
@@ -138,16 +149,21 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setDrawingPairs([]);
       setSelectedIds(new Set());
       setCollapsedDiscovery(new Set());
+      setRevisionOverrides(new Map());
       try {
         const res = await fetch(
           `/api/drawing-changes/drawings?company_id=${company_id}&project_id=${pid}`
         );
         if (!res.ok) throw new Error("Failed to fetch drawings");
         const data = await res.json();
-        setDrawingPairs(data.drawings_with_revisions ?? []);
+        const pairs: DrawingPair[] = data.drawings_with_revisions ?? [];
+        setDrawingPairs(pairs);
         setTotalDrawings(data.total_drawings ?? 0);
+        // Default: select only unscanned drawings (new_revision + not_scanned)
         const ids = new Set<number>(
-          (data.drawings_with_revisions ?? []).map((d: DrawingPair) => d.drawing_id)
+          pairs
+            .filter((d) => d.status !== "scanned")
+            .map((d) => d.drawing_id)
         );
         setSelectedIds(ids);
       } catch (err) {
@@ -175,6 +191,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setByDiscipline(data.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(data.by_discipline ?? {})));
         }
+        if (data.all_scans) setAllScans(data.all_scans);
       } catch {
         // No previous results
       }
@@ -260,7 +277,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const BATCH_SIZE = 5;
 
   const runScan = useCallback(async () => {
-    const selected = drawingPairs.filter((d) => selectedIds.has(d.drawing_id));
+    const selected = drawingPairs
+      .filter((d) => selectedIds.has(d.drawing_id))
+      .map((d) => {
+        const override = revisionOverrides.get(d.drawing_id);
+        if (override) {
+          return { ...d, old_revision: override.old, new_revision: override.new };
+        }
+        return d;
+      });
     if (selected.length === 0) return;
 
     setStep(1);
@@ -319,6 +344,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setChanges(resultsData.changes ?? []);
           setByDiscipline(resultsData.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
+          if (resultsData.all_scans) setAllScans(resultsData.all_scans);
         }
       }
 
@@ -334,6 +360,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setChanges(resultsData.changes ?? []);
           setByDiscipline(resultsData.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
+          if (resultsData.all_scans) setAllScans(resultsData.all_scans);
           setStep(2);
           return;
         }
@@ -401,6 +428,26 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       });
     }
   }, [scan, company_id, projectId, projectName]);
+
+  // ── Load a specific scan by ID ───────────────────────────────────────────
+
+  const loadScan = useCallback(async (scanId: string) => {
+    try {
+      const res = await fetch(`/api/drawing-changes/results?scan_id=${scanId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.scan) {
+        setScan(data.scan);
+        setChanges(data.changes ?? []);
+        setByDiscipline(data.by_discipline ?? {});
+        setExpandedResults(new Set(Object.keys(data.by_discipline ?? {})));
+        if (data.all_scans) setAllScans(data.all_scans);
+        setStep(2);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // ── Results accordion ────────────────────────────────────────────────────
 
@@ -567,6 +614,14 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   {drawingPairs.length !== 1 ? "s" : ""} with revisions ({totalDrawings} total)
                   {" · "}
                   <strong style={{ color: "var(--hp-warm-900)" }}>{selectedIds.size}</strong> selected
+                  {(() => {
+                    const newCount = drawingPairs.filter((d) => d.status === "new_revision").length;
+                    const scannedCount = drawingPairs.filter((d) => d.status === "scanned").length;
+                    const parts: string[] = [];
+                    if (scannedCount > 0) parts.push(`${scannedCount} scanned`);
+                    if (newCount > 0) parts.push(`${newCount} new`);
+                    return parts.length > 0 ? ` · ${parts.join(", ")}` : "";
+                  })()}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ position: "relative" }}>
@@ -667,8 +722,22 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
                       {/* Drawing rows */}
                       {!isCollapsed &&
-                        pairs.map((pair) => (
-                          <label
+                        pairs.map((pair) => {
+                          const override = revisionOverrides.get(pair.drawing_id);
+                          const activeOld = override?.old ?? pair.old_revision;
+                          const activeNew = override?.new ?? pair.new_revision;
+                          const statusColor =
+                            pair.status === "scanned" ? "#166534" :
+                            pair.status === "new_revision" ? "#B45309" : "#78716C";
+                          const statusBg =
+                            pair.status === "scanned" ? "#DCFCE7" :
+                            pair.status === "new_revision" ? "#FEF3C7" : "#F5F5F4";
+                          const statusLabel =
+                            pair.status === "scanned" ? "Scanned" :
+                            pair.status === "new_revision" ? "New Rev" : "Not scanned";
+
+                          return (
+                          <div
                             key={pair.drawing_id}
                             style={{
                               display: "flex",
@@ -676,7 +745,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                               gap: 12,
                               padding: "8px 16px 8px 44px",
                               borderTop: "1px solid var(--hp-border)",
-                              cursor: "pointer",
                               fontSize: 13,
                             }}
                           >
@@ -684,28 +752,85 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                               type="checkbox"
                               checked={selectedIds.has(pair.drawing_id)}
                               onChange={() => toggleDrawing(pair.drawing_id)}
-                              style={{ accentColor: "var(--hp-accent)" }}
+                              style={{ accentColor: "var(--hp-accent)", cursor: "pointer" }}
                             />
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div
-                                style={{
-                                  fontWeight: 500,
-                                  color: "var(--hp-warm-900)",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }}
-                              >
-                                {pair.drawing_number} — {pair.drawing_title}
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span
+                                  style={{
+                                    fontWeight: 500,
+                                    color: "var(--hp-warm-900)",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                >
+                                  {pair.drawing_number} — {pair.drawing_title}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: 500,
+                                    borderRadius: 999,
+                                    padding: "1px 6px",
+                                    backgroundColor: statusBg,
+                                    color: statusColor,
+                                    whiteSpace: "nowrap",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {statusLabel}
+                                </span>
                               </div>
-                              <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 1 }}>
-                                Rev {pair.old_revision.revision_number} → Rev {pair.new_revision.revision_number}
-                                {" · "}
-                                {pair.revision_count} revision{pair.revision_count !== 1 ? "s" : ""}
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                                {/* Revision picker — from */}
+                                {pair.revisions.length > 2 ? (
+                                  <select
+                                    value={activeOld.revision_number}
+                                    onChange={(e) => {
+                                      const rev = pair.revisions.find((r) => r.revision_number === e.target.value);
+                                      if (!rev) return;
+                                      setRevisionOverrides((prev) => {
+                                        const next = new Map(prev);
+                                        next.set(pair.drawing_id, { old: rev, new: activeNew });
+                                        return next;
+                                      });
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                      fontSize: 11,
+                                      border: "1px solid var(--hp-border)",
+                                      borderRadius: 4,
+                                      padding: "1px 4px",
+                                      color: "var(--hp-warm-700)",
+                                      backgroundColor: "var(--hp-surface)",
+                                    }}
+                                  >
+                                    {pair.revisions.slice(0, -1).map((r) => (
+                                      <option key={r.revision_number} value={r.revision_number}>
+                                        Rev {r.revision_number}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                                    Rev {activeOld.revision_number}
+                                  </span>
+                                )}
+                                <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>→</span>
+                                <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                                  Rev {activeNew.revision_number}
+                                </span>
+                                {pair.scanned_pairs.length > 0 && (
+                                  <span style={{ fontSize: 10, color: "var(--hp-text-muted)", marginLeft: 4 }}>
+                                    (scanned: {pair.scanned_pairs.join(", ")})
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          </label>
-                        ))}
+                          </div>
+                          );
+                        })}
                     </div>
                   );
                 })}
@@ -848,6 +973,30 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 {topDrawings.length > 0 && (
                   <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 4 }}>
                     Most changes: {topDrawings.map(([num, count]) => `${num} (${count})`).join(", ")}
+                  </div>
+                )}
+                {/* Scan history */}
+                {allScans.length > 1 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>History:</span>
+                    <select
+                      value={scan.id}
+                      onChange={(e) => loadScan(e.target.value)}
+                      style={{
+                        fontSize: 11,
+                        border: "1px solid var(--hp-border)",
+                        borderRadius: 4,
+                        padding: "2px 6px",
+                        color: "var(--hp-warm-700)",
+                        backgroundColor: "var(--hp-surface)",
+                      }}
+                    >
+                      {allScans.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {fmtDate(s.created_at)} — {s.completed_drawings} drawings
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </div>

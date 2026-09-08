@@ -80,9 +80,23 @@ export async function GET(request: NextRequest) {
     byDiscipline[disc].push(change);
   }
 
+  // Fetch all scans for this project (for history dropdown)
+  let allScans: { id: string; created_at: string; status: string; total_drawings: number; completed_drawings: number }[] = [];
+  if (scan.company_id && scan.project_id) {
+    const { data: scanList } = await supabase
+      .from("drawing_revision_scans")
+      .select("id, created_at, status, total_drawings, completed_drawings")
+      .eq("company_id", scan.company_id)
+      .eq("project_id", scan.project_id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    allScans = scanList ?? [];
+  }
+
   return NextResponse.json({
     scan,
     changes: changes ?? [],
     by_discipline: byDiscipline,
+    all_scans: allScans,
   });
 }

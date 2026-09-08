@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -194,28 +195,76 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Filter to drawings with >1 revision and build comparison pairs
+  // Sort revisions within each drawing
+  for (const entry of byDrawing.values()) {
+    entry.revisions.sort(
+      (a, b) =>
+        revisionSortKey(a.revision_number) - revisionSortKey(b.revision_number)
+    );
+  }
+
+  // Query Supabase for already-scanned revision pairs on this project
+  const scannedPairs = new Set<string>();
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: existingChanges } = await supabase
+      .from("drawing_revision_changes")
+      .select("drawing_number, old_revision, new_revision")
+      .eq("project_id", projectId)
+      .eq("company_id", companyId);
+
+    if (existingChanges) {
+      for (const c of existingChanges) {
+        scannedPairs.add(`${c.drawing_number}|${c.old_revision}|${c.new_revision}`);
+      }
+    }
+  } catch {
+    // Non-critical — just won't show scanned status
+  }
+
+  // Build output with all revisions and scan status
   const drawingsWithRevisions: {
     drawing_id: number;
     drawing_number: string;
     drawing_title: string;
     discipline: string;
     revision_count: number;
+    revisions: { revision_number: string; pdf_url: string }[];
     old_revision: { revision_number: string; pdf_url: string };
     new_revision: { revision_number: string; pdf_url: string };
+    scanned_pairs: string[];  // e.g. ["A→B", "B→C"]
+    status: "scanned" | "new_revision" | "not_scanned";
   }[] = [];
 
   for (const entry of byDrawing.values()) {
     if (entry.revisions.length < 2) continue;
 
-    // Sort by revision number
-    entry.revisions.sort(
-      (a, b) =>
-        revisionSortKey(a.revision_number) - revisionSortKey(b.revision_number)
-    );
-
     const prev = entry.revisions[entry.revisions.length - 2];
     const curr = entry.revisions[entry.revisions.length - 1];
+
+    // Find which pairs have been scanned
+    const scanned: string[] = [];
+    for (let i = 0; i < entry.revisions.length - 1; i++) {
+      const from = entry.revisions[i].revision_number;
+      const to = entry.revisions[i + 1].revision_number;
+      if (scannedPairs.has(`${entry.number}|${from}|${to}`)) {
+        scanned.push(`${from}→${to}`);
+      }
+    }
+
+    // Status: latest pair scanned? new revision available? or never scanned?
+    const latestPairKey = `${entry.number}|${prev.revision_number}|${curr.revision_number}`;
+    let status: "scanned" | "new_revision" | "not_scanned";
+    if (scannedPairs.has(latestPairKey)) {
+      status = "scanned";
+    } else if (scanned.length > 0) {
+      status = "new_revision";
+    } else {
+      status = "not_scanned";
+    }
 
     drawingsWithRevisions.push({
       drawing_id: entry.drawing_id,
@@ -223,6 +272,10 @@ export async function GET(request: NextRequest) {
       drawing_title: entry.title,
       discipline: entry.discipline,
       revision_count: entry.revisions.length,
+      revisions: entry.revisions.map((r) => ({
+        revision_number: r.revision_number,
+        pdf_url: r.pdf_url,
+      })),
       old_revision: {
         revision_number: prev.revision_number,
         pdf_url: prev.pdf_url,
@@ -231,6 +284,8 @@ export async function GET(request: NextRequest) {
         revision_number: curr.revision_number,
         pdf_url: curr.pdf_url,
       },
+      scanned_pairs: scanned,
+      status,
     });
   }
 
