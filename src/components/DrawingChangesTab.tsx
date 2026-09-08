@@ -1629,18 +1629,19 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                 const latestRev = dg.revisions[dg.revisions.length - 1];
                                 const deepKey = `${dg.number}|${latestRev?.revKey}`;
                                 const isDS = deepScanning.has(deepKey);
-                                const isDL = downloadingEvidence === dg.number;
-                                const allChanges = dg.revisions.flatMap((r) => r.changes);
+                                const procoreDrawingUrl = `https://us02.procore.com/webclients/host/companies/${company_id}/projects/${projectId}/tools/drawings?drawing_id=${pair.drawing_id}`;
                                 return (
                                   <>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); downloadEvidence(dg.number, dg.title, allChanges[0]?.old_revision ?? "", allChanges[0]?.new_revision ?? "", allChanges, pair.old_revision.pdf_url, pair.new_revision.pdf_url); }}
-                                      disabled={isDL}
-                                      title="Download a Change Evidence Sheet PDF for this drawing"
-                                      style={{ fontSize: 10, fontWeight: 500, color: isDL ? "var(--hp-text-muted)" : "var(--hp-warm-700)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDL ? "default" : "pointer", whiteSpace: "nowrap" }}
+                                    <a
+                                      href={procoreDrawingUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      title="Open this drawing in Procore to view and compare revisions"
+                                      style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-warm-700)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", textDecoration: "none", whiteSpace: "nowrap" }}
                                     >
-                                      <Download size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />{isDL ? "Generating..." : "Evidence"}
-                                    </button>
+                                      View in Procore
+                                    </a>
                                     <button onClick={(e) => { e.stopPropagation(); deepScanDrawing(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision); }} disabled={isDS} title="Re-scan with Opus (slower, more thorough, higher cost)" style={{ fontSize: 10, fontWeight: 500, color: isDS ? "var(--hp-text-muted)" : "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDS ? "default" : "pointer", whiteSpace: "nowrap" }}>{isDS ? "Scanning..." : "Deep Scan"}</button>
                                   </>
                                 );
