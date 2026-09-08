@@ -112,10 +112,11 @@ async function compareDrawings(
   client: Anthropic,
   pair: DrawingPair,
   oldPdfBase64: string,
-  newPdfBase64: string
+  newPdfBase64: string,
+  deep?: boolean
 ): Promise<DetectedChange[]> {
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: deep ? "claude-opus-4-6" : "claude-sonnet-4-6",
     max_tokens: 8000,
     system: SYSTEM_PROMPT,
     messages: [
@@ -177,6 +178,7 @@ export async function POST(request: NextRequest) {
     scan_id?: string;        // Continue an existing scan
     total_drawings?: number; // Total across all batches (set on first batch)
     is_last_batch?: boolean; // Mark scan as completed
+    deep?: boolean;          // Use Opus for deeper analysis
   };
 
   try {
@@ -185,7 +187,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { company_id, project_id, project_name, drawing_pairs, scan_id, total_drawings, is_last_batch } = body;
+  const { company_id, project_id, project_name, drawing_pairs, scan_id, total_drawings, is_last_batch, deep } = body;
   if (!company_id || !project_id || !project_name || !Array.isArray(drawing_pairs) || drawing_pairs.length === 0) {
     return NextResponse.json(
       { error: "company_id, project_id, project_name, and drawing_pairs required" },
@@ -259,7 +261,18 @@ export async function POST(request: NextRequest) {
       const oldBase64 = oldPdf.toString("base64");
       const newBase64 = newPdf.toString("base64");
 
-      const changes = await compareDrawings(claude, pair, oldBase64, newBase64);
+      const changes = await compareDrawings(claude, pair, oldBase64, newBase64, deep);
+
+      // Deep scan replaces existing results for this drawing
+      if (deep && scan_id) {
+        await supabase
+          .from("drawing_revision_changes")
+          .delete()
+          .eq("scan_id", scanRecordId)
+          .eq("drawing_number", pair.drawing_number)
+          .eq("old_revision", pair.old_revision.revision_number)
+          .eq("new_revision", pair.new_revision.revision_number);
+      }
 
       if (changes.length > 0) {
         const rows = changes.map((c) => ({

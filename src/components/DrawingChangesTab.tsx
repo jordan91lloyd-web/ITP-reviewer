@@ -126,6 +126,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [byDiscipline, setByDiscipline] = useState<Record<string, ChangeRow[]>>({});
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [highSeverityOnly, setHighSeverityOnly] = useState(false);
+  const [deepScanning, setDeepScanning] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch drawings with revisions ────────────────────────────────────────
@@ -340,6 +341,66 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setStep(0);
     }
   }, [drawingPairs, selectedIds, company_id, projectId, projectName]);
+
+  // ── Deep scan a single drawing ───────────────────────────────────────────
+
+  const deepScanDrawing = useCallback(async (
+    drawingNumber: string,
+    drawingTitle: string,
+    discipline: string,
+    oldRevision: { revision_number: string; pdf_url: string },
+    newRevision: { revision_number: string; pdf_url: string },
+  ) => {
+    if (!scan) return;
+    const key = `${drawingNumber}|${oldRevision.revision_number}|${newRevision.revision_number}`;
+    setDeepScanning((prev) => new Set(prev).add(key));
+
+    try {
+      const res: Response = await fetch("/api/drawing-changes/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id,
+          project_id: projectId,
+          project_name: projectName,
+          drawing_pairs: [{
+            drawing_id: 0,
+            drawing_number: drawingNumber,
+            drawing_title: drawingTitle,
+            discipline,
+            old_revision: oldRevision,
+            new_revision: newRevision,
+          }],
+          scan_id: scan.id,
+          total_drawings: scan.total_drawings,
+          is_last_batch: false,
+          deep: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error ?? "Deep scan failed");
+      }
+
+      // Reload results to pick up the new Opus-quality changes
+      const resultsRes = await fetch(`/api/drawing-changes/results?scan_id=${scan.id}`);
+      if (resultsRes.ok) {
+        const resultsData = await resultsRes.json();
+        setScan(resultsData.scan);
+        setChanges(resultsData.changes ?? []);
+        setByDiscipline(resultsData.by_discipline ?? {});
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Deep scan failed");
+    } finally {
+      setDeepScanning((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  }, [scan, company_id, projectId, projectName]);
 
   // ── Results accordion ────────────────────────────────────────────────────
 
@@ -1059,6 +1120,42 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                         {groupHigh} high
                                       </span>
                                     )}
+                                    {(() => {
+                                      const pair = drawingPairs.find(
+                                        (p) => p.drawing_number === group.number
+                                      );
+                                      if (!pair) return null;
+                                      const deepKey = `${group.number}|${group.changes[0]?.old_revision}|${group.changes[0]?.new_revision}`;
+                                      const isDeepScanning = deepScanning.has(deepKey);
+                                      return (
+                                        <button
+                                          onClick={() =>
+                                            deepScanDrawing(
+                                              pair.drawing_number,
+                                              pair.drawing_title,
+                                              pair.discipline,
+                                              pair.old_revision,
+                                              pair.new_revision
+                                            )
+                                          }
+                                          disabled={isDeepScanning}
+                                          title="Re-scan this drawing with Opus (slower, more thorough, higher cost)"
+                                          style={{
+                                            fontSize: 10,
+                                            fontWeight: 500,
+                                            color: isDeepScanning ? "var(--hp-text-muted)" : "var(--hp-accent)",
+                                            background: "none",
+                                            border: "1px solid var(--hp-border)",
+                                            borderRadius: 6,
+                                            padding: "2px 8px",
+                                            cursor: isDeepScanning ? "default" : "pointer",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          {isDeepScanning ? "Scanning..." : "Deep Scan"}
+                                        </button>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
 
