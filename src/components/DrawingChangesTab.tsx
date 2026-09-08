@@ -137,6 +137,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [highSeverityOnly, setHighSeverityOnly] = useState(false);
   const [deepScanning, setDeepScanning] = useState<Set<string>>(new Set());
+  const [expandedDrawings, setExpandedDrawings] = useState<Set<string>>(new Set());
   const [allScans, setAllScans] = useState<{ id: string; created_at: string; status: string; total_drawings: number; completed_drawings: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -931,485 +932,191 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         </div>
       )}
 
-      {/* ═══ Step 2: Results ═══ */}
+      {/* ═══ Step 2: Change Register ═══ */}
       {step === 2 && scan && (() => {
-        // Apply severity filter
-        const filteredChanges = highSeverityOnly
-          ? changes.filter((c) => c.severity === "high")
-          : changes;
-
-        // Group by discipline → drawing
+        const filteredChanges = highSeverityOnly ? changes.filter((c) => c.severity === "high") : changes;
         const filteredByDiscipline: Record<string, ChangeRow[]> = {};
         for (const c of filteredChanges) {
           const disc = c.discipline || "Other";
           if (!filteredByDiscipline[disc]) filteredByDiscipline[disc] = [];
           filteredByDiscipline[disc].push(c);
         }
+        const uniqueDrawings = new Set(changes.map((c) => c.drawing_number));
+        const highTotal = changes.filter((c) => c.severity === "high").length;
 
-        // Top drawings by change count (unfiltered)
-        const drawingCounts = new Map<string, number>();
-        for (const c of changes) {
-          const key = `${c.drawing_number}`;
-          drawingCounts.set(key, (drawingCounts.get(key) ?? 0) + 1);
-        }
-        const topDrawings = [...drawingCounts.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5);
+        const BTN = {
+          display: "flex" as const, alignItems: "center" as const, gap: 6,
+          borderRadius: 8, border: "1px solid var(--hp-border)", padding: "6px 12px",
+          fontSize: 12, fontWeight: 500, color: "var(--hp-warm-700)",
+          textDecoration: "none", background: "none", cursor: "pointer",
+        };
 
         return (
         <>
-          {/* Change Register header */}
-          <div
-            style={{
-              borderRadius: 8,
-              border: "1px solid var(--hp-border)",
-              backgroundColor: "var(--hp-surface-raised)",
-              padding: 16,
-              marginBottom: 16,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          {/* ── Header bar ── */}
+          <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface-raised)", padding: "16px 20px", marginBottom: 16 }}>
+            {/* Row 1: Title + actions */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-warm-900)" }}>
-                  Change Register — {projectName}
-                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-warm-900)" }}>Change Register</div>
                 <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
-                  {(() => {
-                    const uniqueDrawings = new Set(changes.map((c) => c.drawing_number));
-                    return `${uniqueDrawings.size} drawing${uniqueDrawings.size !== 1 ? "s" : ""} reviewed`;
-                  })()} ·{" "}
-                  {changes.length} change{changes.length !== 1 ? "s" : ""} detected
-                  {allScans.length > 0 && ` · ${allScans.length} scan${allScans.length !== 1 ? "s" : ""}`}
+                  {uniqueDrawings.size} drawings · {changes.length} changes · {highTotal} high severity
                 </div>
-                {/* Top drawings by change count */}
-                {topDrawings.length > 0 && (
-                  <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 4 }}>
-                    Most changes: {topDrawings.map(([num, count]) => `${num} (${count})`).join(", ")}
-                  </div>
-                )}
-                {/* Scan history */}
-                {allScans.length > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>View:</span>
-                    <button
-                      onClick={() => loadPreviousResults(projectId)}
-                      style={{
-                        fontSize: 11,
-                        fontWeight: scan?.id === "all" ? 600 : 400,
-                        color: scan?.id === "all" ? "var(--hp-accent)" : "var(--hp-warm-700)",
-                        background: "none",
-                        border: "1px solid var(--hp-border)",
-                        borderRadius: 4,
-                        padding: "2px 8px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      All changes
-                    </button>
-                    {allScans.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => loadScan(s.id)}
-                        style={{
-                          fontSize: 11,
-                          fontWeight: scan?.id === s.id ? 600 : 400,
-                          color: scan?.id === s.id ? "var(--hp-accent)" : "var(--hp-warm-700)",
-                          background: "none",
-                          border: "1px solid var(--hp-border)",
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {fmtDate(s.created_at)}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <a
-                    href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=csv`}
-                    download
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      borderRadius: 8,
-                      border: "1px solid var(--hp-border)",
-                      padding: "6px 12px",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "var(--hp-warm-700)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    <Download size={12} /> CSV
-                  </a>
-                  <a
-                    href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=pdf`}
-                    download
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      borderRadius: 8,
-                      border: "1px solid var(--hp-border)",
-                      padding: "6px 12px",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "var(--hp-warm-700)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    <Download size={12} /> PDF
-                  </a>
-                </div>
-                <button
-                  onClick={() => setStep(0)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    borderRadius: 8,
-                    border: "1px solid var(--hp-accent)",
-                    backgroundColor: "var(--hp-accent)",
-                    padding: "6px 14px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "#fff",
-                    cursor: "pointer",
-                  }}
-                >
-                  <RefreshCw size={12} /> Scan New Drawings
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <a href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=csv`} download style={BTN}>
+                  <Download size={12} /> CSV
+                </a>
+                <a href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=pdf`} download style={BTN}>
+                  <Download size={12} /> PDF
+                </a>
+                <button onClick={() => setStep(0)} style={{ ...BTN, border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)", color: "#fff", fontWeight: 600 }}>
+                  <RefreshCw size={12} /> Scan New
                 </button>
               </div>
             </div>
+
+            {/* Row 2: Scan history tabs */}
+            {allScans.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, borderTop: "1px solid var(--hp-border)", paddingTop: 10 }}>
+                <span style={{ fontSize: 11, color: "var(--hp-text-muted)", marginRight: 4 }}>View:</span>
+                <button onClick={() => loadPreviousResults(projectId)} style={{
+                  fontSize: 11, fontWeight: 500, borderRadius: 6, padding: "4px 10px", cursor: "pointer", border: "none",
+                  backgroundColor: !scan?.id || scan?.id === "all" ? "var(--hp-accent)" : "var(--hp-surface)",
+                  color: !scan?.id || scan?.id === "all" ? "#fff" : "var(--hp-warm-700)",
+                }}>
+                  All
+                </button>
+                {allScans.map((s) => (
+                  <button key={s.id} onClick={() => loadScan(s.id)} style={{
+                    fontSize: 11, fontWeight: 500, borderRadius: 6, padding: "4px 10px", cursor: "pointer", border: "none",
+                    backgroundColor: scan?.id === s.id ? "var(--hp-accent)" : "var(--hp-surface)",
+                    color: scan?.id === s.id ? "#fff" : "var(--hp-warm-700)",
+                  }}>
+                    {fmtDate(s.created_at)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Summary pills + severity filter */}
+          {/* ── Filter bar ── */}
           {changes.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              {(["addition", "deletion", "spec_change", "relocation"] as const).map((type) => {
-                const count = changes.filter((c) => c.change_type === type).length;
-                if (count === 0) return null;
-                const colors = CHANGE_TYPE_COLORS[type];
-                return (
-                  <span
-                    key={type}
-                    style={{
-                      borderRadius: 999,
-                      padding: "4px 12px",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      backgroundColor: colors.bg,
-                      color: colors.text,
-                    }}
-                  >
-                    {count} {CHANGE_TYPE_LABELS[type]}{count !== 1 ? "s" : ""}
-                  </span>
-                );
-              })}
-              {(() => {
-                const highCount = changes.filter((c) => c.severity === "high").length;
-                if (highCount === 0) return null;
-                return (
-                  <button
-                    onClick={() => setHighSeverityOnly((v) => !v)}
-                    style={{
-                      borderRadius: 999,
-                      padding: "4px 12px",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      backgroundColor: highSeverityOnly ? SEVERITY_COLORS.high.text : SEVERITY_COLORS.high.bg,
-                      color: highSeverityOnly ? "#fff" : SEVERITY_COLORS.high.text,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <AlertTriangle size={11} /> {highCount} High Severity {highSeverityOnly ? "✕" : ""}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(["addition", "deletion", "spec_change", "relocation"] as const).map((type) => {
+                  const count = changes.filter((c) => c.change_type === type).length;
+                  if (count === 0) return null;
+                  const colors = CHANGE_TYPE_COLORS[type];
+                  return <span key={type} style={{ borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500, backgroundColor: colors.bg, color: colors.text }}>{count} {CHANGE_TYPE_LABELS[type]}{count !== 1 ? "s" : ""}</span>;
+                })}
+                {highTotal > 0 && (
+                  <button onClick={() => setHighSeverityOnly((v) => !v)} style={{
+                    borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500, border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 4,
+                    backgroundColor: highSeverityOnly ? "#991B1B" : "#FEE2E2",
+                    color: highSeverityOnly ? "#fff" : "#991B1B",
+                  }}>
+                    <AlertTriangle size={10} /> {highTotal} High {highSeverityOnly ? " ✕" : ""}
                   </button>
-                );
-              })()}
-              {highSeverityOnly && (
-                <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
-                  Showing {filteredChanges.length} of {changes.length} changes
-                </span>
-              )}
+                )}
+                {highSeverityOnly && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Showing {filteredChanges.length} of {changes.length}</span>}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button onClick={() => { expandAllResults(); setExpandedDrawings(new Set(filteredChanges.map((c) => `${c.drawing_number}|${c.old_revision}|${c.new_revision}`))); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Expand All</button>
+                <button onClick={() => { collapseAllResults(); setExpandedDrawings(new Set()); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Collapse All</button>
+              </div>
             </div>
           )}
 
-          {/* Expand/Collapse controls */}
-          {filteredChanges.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <button onClick={expandAllResults} title="Expand all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-                <ChevronsDown size={16} style={{ color: "var(--hp-text-muted)" }} />
-              </button>
-              <button onClick={collapseAllResults} title="Collapse all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-                <ChevronsUp size={16} style={{ color: "var(--hp-text-muted)" }} />
-              </button>
-              <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
-                {expandedResults.size}/{Object.keys(filteredByDiscipline).length} disciplines expanded
-              </span>
-            </div>
-          )}
-
+          {/* ── Change list ── */}
           {filteredChanges.length === 0 ? (
-            <div
-              style={{
-                borderRadius: 8,
-                border: "1px solid var(--hp-border)",
-                padding: 32,
-                textAlign: "center",
-                fontSize: 13,
-                color: "var(--hp-text-secondary)",
-              }}
-            >
-              {highSeverityOnly
-                ? "No high severity changes detected."
-                : "No scope or specification changes detected in the scanned drawings."}
+            <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", padding: 32, textAlign: "center", fontSize: 13, color: "var(--hp-text-secondary)" }}>
+              {highSeverityOnly ? "No high severity changes." : "No changes detected."}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {Object.entries(filteredByDiscipline)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([discipline, disciplineChanges]) => {
-                  const isExpanded = expandedResults.has(discipline);
-                  const highCount = disciplineChanges.filter((c) => c.severity === "high").length;
+              {Object.entries(filteredByDiscipline).sort(([a], [b]) => a.localeCompare(b)).map(([discipline, disciplineChanges]) => {
+                const isExpanded = expandedResults.has(discipline);
+                const discHigh = disciplineChanges.filter((c) => c.severity === "high").length;
 
-                  // Group by drawing within this discipline
-                  const byDrawing: { key: string; number: string; title: string; rev: string; changes: ChangeRow[] }[] = [];
-                  const drawingMap = new Map<string, typeof byDrawing[0]>();
-                  for (const c of disciplineChanges) {
-                    const key = `${c.drawing_number}|${c.old_revision}|${c.new_revision}`;
-                    let group = drawingMap.get(key);
-                    if (!group) {
-                      group = {
-                        key,
-                        number: c.drawing_number,
-                        title: c.drawing_title,
-                        rev: `${c.old_revision} → ${c.new_revision}`,
-                        changes: [],
-                      };
-                      drawingMap.set(key, group);
-                      byDrawing.push(group);
-                    }
-                    group.changes.push(c);
-                  }
+                // Group by drawing
+                const byDrawing: { key: string; number: string; title: string; rev: string; changes: ChangeRow[] }[] = [];
+                const drawingMap = new Map<string, typeof byDrawing[0]>();
+                for (const c of disciplineChanges) {
+                  const key = `${c.drawing_number}|${c.old_revision}|${c.new_revision}`;
+                  let group = drawingMap.get(key);
+                  if (!group) { group = { key, number: c.drawing_number, title: c.drawing_title, rev: `${c.old_revision} → ${c.new_revision}`, changes: [] }; drawingMap.set(key, group); byDrawing.push(group); }
+                  group.changes.push(c);
+                }
 
-                  return (
-                    <div
-                      key={discipline}
-                      style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden" }}
-                    >
-                      {/* Discipline header */}
-                      <div
-                        onClick={() => toggleResultSection(discipline)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "12px 16px",
-                          backgroundColor: "var(--hp-surface-raised)",
-                          cursor: "pointer",
-                          userSelect: "none",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {isExpanded ? (
-                            <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} />
-                          ) : (
-                            <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />
-                          )}
-                          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>
-                            {discipline}
-                          </span>
-                          <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
-                            ({disciplineChanges.length} change{disciplineChanges.length !== 1 ? "s" : ""} across {byDrawing.length} drawing{byDrawing.length !== 1 ? "s" : ""})
-                          </span>
-                        </div>
-                        {highCount > 0 && (
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4,
-                              borderRadius: 999,
-                              padding: "2px 8px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              backgroundColor: SEVERITY_COLORS.high.bg,
-                              color: SEVERITY_COLORS.high.text,
-                            }}
-                          >
-                            <AlertTriangle size={10} /> {highCount}
-                          </span>
-                        )}
+                return (
+                  <div key={discipline} style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden" }}>
+                    {/* Discipline header */}
+                    <div onClick={() => toggleResultSection(discipline)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", backgroundColor: "var(--hp-surface-raised)", cursor: "pointer", userSelect: "none" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {isExpanded ? <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} /> : <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />}
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>{discipline}</span>
+                        <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>({disciplineChanges.length} changes · {byDrawing.length} drawings)</span>
                       </div>
+                      {discHigh > 0 && <span style={{ display: "flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}><AlertTriangle size={10} /> {discHigh}</span>}
+                    </div>
 
-                      {/* Changes grouped by drawing */}
-                      {isExpanded && (
-                        <div>
-                          {byDrawing.map((group) => {
-                            const groupHigh = group.changes.filter((c) => c.severity === "high").length;
+                    {/* Drawings (each collapsible) */}
+                    {isExpanded && byDrawing.map((group) => {
+                      const isDrawingExpanded = expandedDrawings.has(group.key);
+                      const groupHigh = group.changes.filter((c) => c.severity === "high").length;
+
+                      return (
+                        <div key={group.key}>
+                          {/* Drawing header — clickable */}
+                          <div
+                            onClick={() => setExpandedDrawings((prev) => { const next = new Set(prev); if (next.has(group.key)) next.delete(group.key); else next.add(group.key); return next; })}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 8px 40px", borderTop: "1px solid var(--hp-border)", backgroundColor: isDrawingExpanded ? "#F5F5F4" : "#FAFAF9", cursor: "pointer", userSelect: "none" }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              {isDrawingExpanded ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />}
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{group.number}</span>
+                              <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>{group.title}</span>
+                              <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Rev {group.rev}</span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{group.changes.length}</span>
+                              {groupHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}>{groupHigh} high</span>}
+                              {(() => {
+                                const pair = drawingPairs.find((p) => p.drawing_number === group.number);
+                                if (!pair) return null;
+                                const deepKey = group.key;
+                                const isDS = deepScanning.has(deepKey);
+                                return <button onClick={(e) => { e.stopPropagation(); deepScanDrawing(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision); }} disabled={isDS} title="Re-scan with Opus (slower, more thorough, higher cost)" style={{ fontSize: 10, fontWeight: 500, color: isDS ? "var(--hp-text-muted)" : "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDS ? "default" : "pointer", whiteSpace: "nowrap" }}>{isDS ? "Scanning..." : "Deep Scan"}</button>;
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Change rows (only when drawing is expanded) */}
+                          {isDrawingExpanded && group.changes.map((change) => {
+                            const typeColors = CHANGE_TYPE_COLORS[change.change_type] ?? CHANGE_TYPE_COLORS.spec_change;
+                            const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
+                            const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
                             return (
-                              <div key={group.key}>
-                                {/* Drawing sub-header */}
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    padding: "8px 16px 8px 44px",
-                                    borderTop: "1px solid var(--hp-border)",
-                                    backgroundColor: "#FAFAF9",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>
-                                      {group.number}
-                                    </span>
-                                    <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>
-                                      {group.title}
-                                    </span>
-                                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                                      Rev {group.rev}
-                                    </span>
-                                  </div>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                                      {group.changes.length} change{group.changes.length !== 1 ? "s" : ""}
-                                    </span>
-                                    {groupHigh > 0 && (
-                                      <span
-                                        style={{
-                                          borderRadius: 999,
-                                          padding: "1px 6px",
-                                          fontSize: 10,
-                                          fontWeight: 500,
-                                          backgroundColor: SEVERITY_COLORS.high.bg,
-                                          color: SEVERITY_COLORS.high.text,
-                                        }}
-                                      >
-                                        {groupHigh} high
-                                      </span>
-                                    )}
-                                    {(() => {
-                                      const pair = drawingPairs.find(
-                                        (p) => p.drawing_number === group.number
-                                      );
-                                      if (!pair) return null;
-                                      const deepKey = `${group.number}|${group.changes[0]?.old_revision}|${group.changes[0]?.new_revision}`;
-                                      const isDeepScanning = deepScanning.has(deepKey);
-                                      return (
-                                        <button
-                                          onClick={() =>
-                                            deepScanDrawing(
-                                              pair.drawing_number,
-                                              pair.drawing_title,
-                                              pair.discipline,
-                                              pair.old_revision,
-                                              pair.new_revision
-                                            )
-                                          }
-                                          disabled={isDeepScanning}
-                                          title="Re-scan this drawing with Opus (slower, more thorough, higher cost)"
-                                          style={{
-                                            fontSize: 10,
-                                            fontWeight: 500,
-                                            color: isDeepScanning ? "var(--hp-text-muted)" : "var(--hp-accent)",
-                                            background: "none",
-                                            border: "1px solid var(--hp-border)",
-                                            borderRadius: 6,
-                                            padding: "2px 8px",
-                                            cursor: isDeepScanning ? "default" : "pointer",
-                                            whiteSpace: "nowrap",
-                                          }}
-                                        >
-                                          {isDeepScanning ? "Scanning..." : "Deep Scan"}
-                                        </button>
-                                      );
-                                    })()}
-                                  </div>
+                              <div key={change.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 16px 10px 72px", borderTop: "1px solid var(--hp-border)", fontSize: 13 }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, backgroundColor: typeColors.bg, color: typeColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>
+                                  <Icon size={10} />{CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
+                                </span>
+                                <div style={{ flex: 1, minWidth: 0, color: "var(--hp-warm-800)" }}>
+                                  {change.description}
+                                  {change.location_on_drawing && <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 3 }}>Location: {change.location_on_drawing}</div>}
                                 </div>
-
-                                {/* Change rows */}
-                                {group.changes.map((change) => {
-                                  const typeColors = CHANGE_TYPE_COLORS[change.change_type] ?? CHANGE_TYPE_COLORS.spec_change;
-                                  const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
-                                  const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
-
-                                  return (
-                                    <div
-                                      key={change.id}
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        gap: 12,
-                                        padding: "10px 16px 10px 44px",
-                                        borderTop: "1px solid var(--hp-border)",
-                                        fontSize: 13,
-                                      }}
-                                    >
-                                      {/* Type pill */}
-                                      <span
-                                        style={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          gap: 4,
-                                          borderRadius: 999,
-                                          padding: "2px 10px",
-                                          fontSize: 11,
-                                          fontWeight: 500,
-                                          backgroundColor: typeColors.bg,
-                                          color: typeColors.text,
-                                          whiteSpace: "nowrap",
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        <Icon size={10} />
-                                        {CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
-                                      </span>
-                                      {/* Description */}
-                                      <div style={{ flex: 1, minWidth: 0, color: "var(--hp-warm-800)" }}>
-                                        {change.description}
-                                        {change.location_on_drawing && (
-                                          <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 3 }}>
-                                            📍 {change.location_on_drawing}
-                                          </div>
-                                        )}
-                                      </div>
-                                      {/* Severity */}
-                                      <span
-                                        style={{
-                                          borderRadius: 999,
-                                          padding: "2px 10px",
-                                          fontSize: 11,
-                                          fontWeight: 500,
-                                          textTransform: "capitalize",
-                                          backgroundColor: sevColors.bg,
-                                          color: sevColors.text,
-                                          whiteSpace: "nowrap",
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        {change.severity}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
+                                <span style={{ borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, textTransform: "capitalize", backgroundColor: sevColors.bg, color: sevColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>{change.severity}</span>
                               </div>
                             );
                           })}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
