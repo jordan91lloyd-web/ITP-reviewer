@@ -81,9 +81,10 @@ interface BaselineDoc {
   id: string;
   document_name: string;
   source: "upload" | "procore";
-  status: "pending" | "processing" | "processed" | "failed";
+  status: "pending" | "processing" | "processed" | "failed" | "skipped";
   scope_items: BaselineScopeItem[];
   item_count: number;
+  file_size: number | null;
   error_message: string | null;
   created_at: string;
 }
@@ -1157,35 +1158,54 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 );
               })()}
 
-              {/* Document list */}
+              {/* Document register */}
               {baselineDocs.length === 0 ? (
                 <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", padding: "12px 0" }}>
                   No baseline documents yet. Upload your tender specification, PBR, scope of works, allowances schedule, or any contract document that defines the original scope.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  {baselineDocs.map((doc) => (
+                <>
+                  {/* Summary */}
+                  <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginBottom: 8 }}>
+                    {baselineDocs.filter((d) => d.status === "processed").length} processed
+                    {baselineDocs.some((d) => d.status === "failed") && ` · ${baselineDocs.filter((d) => d.status === "failed").length} failed`}
+                    {baselineDocs.some((d) => d.status === "skipped") && ` · ${baselineDocs.filter((d) => d.status === "skipped").length} skipped`}
+                    {baselineDocs.some((d) => d.status === "processing") && ` · ${baselineDocs.filter((d) => d.status === "processing").length} processing`}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {baselineDocs.map((doc) => {
+                    const statusColor = doc.status === "processed" ? "#166534" : doc.status === "failed" ? "#991B1B" : doc.status === "skipped" ? "#78716C" : "#92400E";
+                    const statusBg = doc.status === "processed" ? "#DCFCE7" : doc.status === "failed" ? "#FEE2E2" : doc.status === "skipped" ? "#F5F5F4" : "#FEF3C7";
+                    const statusLabel = doc.status === "processed" ? `${doc.item_count} items extracted`
+                      : doc.status === "failed" ? "Failed"
+                      : doc.status === "skipped" ? "Skipped"
+                      : doc.status === "processing" ? "Processing..."
+                      : "Pending";
+
+                    return (
                     <div key={doc.id} style={{ borderRadius: 6, border: "1px solid var(--hp-border)", overflow: "hidden" }}>
                       {/* Doc header */}
                       <div
-                        onClick={() => setExpandedBaselineDoc((prev) => prev === doc.id ? null : doc.id)}
-                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", backgroundColor: "#FAFAF9", cursor: "pointer", userSelect: "none" }}
+                        onClick={() => doc.status === "processed" ? setExpandedBaselineDoc((prev) => prev === doc.id ? null : doc.id) : undefined}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", backgroundColor: "#FAFAF9", cursor: doc.status === "processed" ? "pointer" : "default", userSelect: "none" }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {expandedBaselineDoc === doc.id ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />}
-                          <FileCheck size={14} style={{ color: doc.status === "processed" ? "#166534" : doc.status === "failed" ? "#991B1B" : "#92400E" }} />
-                          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--hp-warm-800)" }}>{doc.document_name}</span>
-                          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                            {doc.status === "processed" ? `${doc.item_count} items` : doc.status === "processing" ? "Processing..." : doc.status === "failed" ? "Failed" : "Pending"}
-                          </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                          {doc.status === "processed" && (expandedBaselineDoc === doc.id ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />)}
+                          {doc.status !== "processed" && <span style={{ width: 14 }} />}
+                          <span style={{ fontSize: 13, fontWeight: 500, color: doc.status === "skipped" ? "var(--hp-text-muted)" : "var(--hp-warm-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.document_name}</span>
+                          {doc.file_size ? <span style={{ fontSize: 10, color: "var(--hp-text-muted)", flexShrink: 0 }}>{(doc.file_size / 1024 / 1024).toFixed(1)} MB</span> : null}
+                          <span style={{ fontSize: 10, fontWeight: 500, borderRadius: 999, padding: "1px 8px", backgroundColor: statusBg, color: statusColor, flexShrink: 0 }}>{statusLabel}</span>
                         </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteBaselineDoc(doc.id); }}
-                          title="Remove from baseline"
-                          style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
-                        >
-                          <X size={14} style={{ color: "var(--hp-text-muted)" }} />
-                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          {doc.error_message && <span style={{ fontSize: 10, color: "#991B1B", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.error_message}>{doc.error_message}</span>}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteBaselineDoc(doc.id); }}
+                            title="Remove from baseline"
+                            style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                          >
+                            <X size={14} style={{ color: "var(--hp-text-muted)" }} />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Doc items */}
@@ -1212,8 +1232,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
+                    );
+                  })}
+                  </div>
+                </>
               )}
             </div>
           )}

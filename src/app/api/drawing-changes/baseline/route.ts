@@ -121,6 +121,22 @@ async function extractWithClaude(
 
 // ── POST: Upload and process a baseline document ──────────────────────────
 
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png"];
+const UNSUPPORTED_EXTENSIONS = [".doc", ".xls", ".dwg", ".rvt", ".ifc", ".zip", ".rar", ".mp4", ".mov"];
+
+function isSupportedFile(name: string): { supported: boolean; reason?: string } {
+  const lower = name.toLowerCase();
+  if (UNSUPPORTED_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
+    const ext = UNSUPPORTED_EXTENSIONS.find((e) => lower.endsWith(e))!;
+    return { supported: false, reason: `Unsupported format (${ext})` };
+  }
+  if (!SUPPORTED_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
+    return { supported: false, reason: `Unsupported format` };
+  }
+  return { supported: true };
+}
+
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const companyId = formData.get("company_id") as string;
@@ -132,9 +148,7 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabase();
 
-  // Option 1: Direct file upload
   const file = formData.get("file") as File | null;
-  // Option 2: Procore document URL
   const procoreDocUrl = formData.get("procore_doc_url") as string | null;
   const procoreDocName = formData.get("procore_doc_name") as string | null;
   const procoreDocId = formData.get("procore_doc_id") as string | null;
@@ -143,30 +157,79 @@ export async function POST(request: NextRequest) {
   let filename: string;
   let mimeType: string;
   let source: "upload" | "procore";
+  let fileSize = 0;
 
   if (file && file.size > 0) {
-    // Direct upload
-    const rawBuffer = Buffer.from(await file.arrayBuffer());
     filename = file.name;
-    mimeType = file.type;
     source = "upload";
+    fileSize = file.size;
 
-    // Convert docx/xlsx to text
+    // Check format
+    const check = isSupportedFile(filename);
+    if (!check.supported) {
+      // Log as skipped
+      await supabase.from("baseline_documents").insert({
+        company_id: companyId, project_id: projectId, document_name: filename,
+        document_type: file.type, source: "upload", status: "skipped",
+        scope_items: [], item_count: 0, error_message: check.reason,
+      });
+      return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: check.reason });
+    }
+
+    // Check size
+    if (file.size > MAX_FILE_SIZE) {
+      await supabase.from("baseline_documents").insert({
+        company_id: companyId, project_id: projectId, document_name: filename,
+        document_type: file.type, source: "upload", status: "skipped",
+        scope_items: [], item_count: 0, error_message: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB, max 20 MB)`,
+      });
+      return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: "File too large" });
+    }
+
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    mimeType = file.type;
+
     if (filename.toLowerCase().endsWith(".docx")) {
       const { value: text } = await mammoth.extractRawText({ buffer: rawBuffer });
+      if (!text.trim()) {
+        await supabase.from("baseline_documents").insert({
+          company_id: companyId, project_id: projectId, document_name: filename,
+          document_type: "text/plain", source: "upload", status: "skipped",
+          scope_items: [], item_count: 0, error_message: "Document is empty",
+        });
+        return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: "Empty document" });
+      }
       buffer = Buffer.from(text, "utf-8");
       mimeType = "text/plain";
     } else if (filename.toLowerCase().endsWith(".xlsx")) {
       const text = xlsxToText(rawBuffer);
+      if (!text.trim()) {
+        await supabase.from("baseline_documents").insert({
+          company_id: companyId, project_id: projectId, document_name: filename,
+          document_type: "text/plain", source: "upload", status: "skipped",
+          scope_items: [], item_count: 0, error_message: "Spreadsheet is empty",
+        });
+        return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: "Empty spreadsheet" });
+      }
       buffer = Buffer.from(text, "utf-8");
       mimeType = "text/plain";
     } else {
       buffer = rawBuffer;
     }
   } else if (procoreDocUrl) {
-    // Download from Procore
     source = "procore";
     filename = procoreDocName ?? "procore-document";
+
+    // Check format
+    const check = isSupportedFile(filename);
+    if (!check.supported) {
+      await supabase.from("baseline_documents").insert({
+        company_id: companyId, project_id: projectId, document_name: filename,
+        document_type: "", source: "procore", procore_document_id: procoreDocId ? parseInt(procoreDocId) : null,
+        status: "skipped", scope_items: [], item_count: 0, error_message: check.reason,
+      });
+      return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: check.reason });
+    }
 
     const cookieStore = await cookies();
     const token = cookieStore.get("procore_access_token")?.value;
@@ -177,18 +240,33 @@ export async function POST(request: NextRequest) {
 
     const res = await fetch(procoreDocUrl, { headers });
     if (!res.ok) {
-      return NextResponse.json({ error: "Failed to download document from Procore" }, { status: 502 });
+      await supabase.from("baseline_documents").insert({
+        company_id: companyId, project_id: projectId, document_name: filename,
+        document_type: "", source: "procore", procore_document_id: procoreDocId ? parseInt(procoreDocId) : null,
+        status: "failed", scope_items: [], item_count: 0, error_message: `Download failed (HTTP ${res.status})`,
+      });
+      return NextResponse.json({ success: false, skipped: false, document_name: filename, reason: `Download failed (HTTP ${res.status})` });
     }
     const rawBuffer = Buffer.from(await res.arrayBuffer());
+    fileSize = rawBuffer.length;
 
-    // Determine type from filename
+    if (fileSize > MAX_FILE_SIZE) {
+      await supabase.from("baseline_documents").insert({
+        company_id: companyId, project_id: projectId, document_name: filename,
+        document_type: "", source: "procore", procore_document_id: procoreDocId ? parseInt(procoreDocId) : null,
+        status: "skipped", scope_items: [], item_count: 0,
+        error_message: `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB, max 20 MB)`,
+      });
+      return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: "File too large" });
+    }
+
     if (filename.toLowerCase().endsWith(".docx")) {
       const { value: text } = await mammoth.extractRawText({ buffer: rawBuffer });
-      buffer = Buffer.from(text, "utf-8");
+      buffer = Buffer.from(text.trim() ? text : " ", "utf-8");
       mimeType = "text/plain";
     } else if (filename.toLowerCase().endsWith(".xlsx")) {
       const text = xlsxToText(rawBuffer);
-      buffer = Buffer.from(text, "utf-8");
+      buffer = Buffer.from(text.trim() ? text : " ", "utf-8");
       mimeType = "text/plain";
     } else if (filename.toLowerCase().endsWith(".pdf")) {
       buffer = rawBuffer;
@@ -201,7 +279,7 @@ export async function POST(request: NextRequest) {
       mimeType = "image/png";
     } else {
       buffer = rawBuffer;
-      mimeType = "application/pdf"; // default assumption
+      mimeType = "application/pdf";
     }
   } else {
     return NextResponse.json({ error: "No file or Procore document URL provided" }, { status: 400 });
@@ -220,6 +298,7 @@ export async function POST(request: NextRequest) {
       status: "processing",
       scope_items: [],
       item_count: 0,
+      file_size: fileSize,
     })
     .select("id")
     .single();
