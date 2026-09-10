@@ -1504,9 +1504,39 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                   </span>
                                 )}
                                 <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>→</span>
-                                <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                                  Rev {activeNew.revision_number}
-                                </span>
+                                {pair.revisions.length > 2 ? (
+                                  <select
+                                    value={activeNew.revision_number}
+                                    onChange={(e) => {
+                                      const rev = pair.revisions.find((r) => r.revision_number === e.target.value);
+                                      if (!rev) return;
+                                      setRevisionOverrides((prev) => {
+                                        const next = new Map(prev);
+                                        next.set(pair.drawing_id, { old: activeOld, new: rev });
+                                        return next;
+                                      });
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                      fontSize: 11,
+                                      border: "1px solid var(--hp-border)",
+                                      borderRadius: 4,
+                                      padding: "1px 4px",
+                                      color: "var(--hp-warm-700)",
+                                      backgroundColor: "var(--hp-surface)",
+                                    }}
+                                  >
+                                    {pair.revisions.slice(1).map((r) => (
+                                      <option key={r.revision_number} value={r.revision_number}>
+                                        Rev {r.revision_number}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                                    Rev {activeNew.revision_number}
+                                  </span>
+                                )}
                                 {pair.scanned_pairs.length > 0 && (
                                   <span style={{ fontSize: 10, color: "var(--hp-text-muted)", marginLeft: 4 }}>
                                     (scanned: {pair.scanned_pairs.join(", ")})
@@ -1603,6 +1633,20 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               }}
             />
           </div>
+          <button
+            onClick={() => setStep(changes.length > 0 ? 2 : 0)}
+            style={{
+              marginTop: 16,
+              fontSize: 12,
+              color: "var(--hp-text-muted)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              textDecoration: "underline",
+            }}
+          >
+            {changes.length > 0 ? "Back to Register (scan continues in background)" : "Cancel"}
+          </button>
         </div>
       )}
 
@@ -1704,7 +1748,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             </div>
 
             {/* Row 2: Scan history — dedup by date */}
-            {allScans.length > 1 && (() => {
+            {allScans.length > 0 && (() => {
               // Group scans by date to avoid showing "08 Sept" three times
               const byDate = new Map<string, typeof allScans>();
               for (const s of allScans) {
@@ -1904,24 +1948,41 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                             if (!pair || !pair.revisions || pair.revisions.length < 2) return null;
 
                             const scannedKeys = new Set(dg.revisions.map((r) => r.revKey));
-                            // Build all consecutive pairs
-                            const allPairs: { from: RevisionInfo; to: RevisionInfo; key: string; scanned: boolean }[] = [];
-                            for (let i = 0; i < pair.revisions.length - 1; i++) {
-                              const from = pair.revisions[i];
-                              const to = pair.revisions[i + 1];
+                            const revs = pair.revisions;
+                            const firstRev = revs[0];
+                            const currentRev = revs[revs.length - 1];
+
+                            // Consecutive pairs
+                            const consecutivePairs: { from: RevisionInfo; to: RevisionInfo; key: string; scanned: boolean; label: string }[] = [];
+                            for (let i = 0; i < revs.length - 1; i++) {
+                              const from = revs[i];
+                              const to = revs[i + 1];
                               const key = `${from.revision_number}|${to.revision_number}`;
-                              allPairs.push({ from, to, key, scanned: scannedKeys.has(key) });
+                              consecutivePairs.push({ from, to, key, scanned: scannedKeys.has(key), label: `${from.revision_number} → ${to.revision_number}` });
                             }
-                            const unscannedCount = allPairs.filter((p) => !p.scanned).length;
-                            if (unscannedCount === 0) return null;
+
+                            // Full range: first → current (only if more than 2 revisions)
+                            const fullRangeKey = `${firstRev.revision_number}|${currentRev.revision_number}`;
+                            const hasFullRange = revs.length > 2 && !consecutivePairs.some((p) => p.key === fullRangeKey);
+                            const fullRangeScanned = scannedKeys.has(fullRangeKey);
+
+                            const allButtons = [...consecutivePairs];
+                            if (hasFullRange) {
+                              allButtons.push({ from: firstRev, to: currentRev, key: fullRangeKey, scanned: fullRangeScanned, label: `${firstRev.revision_number} → ${currentRev.revision_number} (full)` });
+                            }
+
+                            const unscannedCount = allButtons.filter((p) => !p.scanned).length;
 
                             return (
                               <div style={{ padding: "8px 16px 8px 64px", borderTop: "1px solid var(--hp-border)", backgroundColor: "#FEFCE8" }}>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: "#854D0E", marginBottom: 6 }}>
-                                  {unscannedCount} unscanned revision{unscannedCount !== 1 ? "s" : ""} available
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                                  <span style={{ fontSize: 11, fontWeight: 600, color: "#854D0E" }}>
+                                    Revisions: {revs.map((r) => r.revision_number).join(", ")}
+                                    {unscannedCount > 0 && ` · ${unscannedCount} unscanned`}
+                                  </span>
                                 </div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                                  {allPairs.map((ap) => {
+                                  {allButtons.map((ap) => {
                                     const scanKey = `${dg.number}|${ap.key}`;
                                     const isScanning = inlineScanning === scanKey;
                                     return (
@@ -1935,16 +1996,16 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                         disabled={ap.scanned || isScanning}
                                         style={{
                                           fontSize: 11,
-                                          fontWeight: 500,
+                                          fontWeight: ap.label.includes("full") ? 600 : 500,
                                           borderRadius: 6,
                                           padding: "3px 10px",
                                           cursor: ap.scanned || isScanning ? "default" : "pointer",
-                                          border: "1px solid " + (ap.scanned ? "#BBF7D0" : isScanning ? "#FDE68A" : "#FCA5A5"),
-                                          backgroundColor: ap.scanned ? "#DCFCE7" : isScanning ? "#FEF3C7" : "#fff",
-                                          color: ap.scanned ? "#166534" : isScanning ? "#92400E" : "#991B1B",
+                                          border: "1px solid " + (ap.scanned ? "#BBF7D0" : isScanning ? "#FDE68A" : ap.label.includes("full") ? "#7C3AED" : "#FCA5A5"),
+                                          backgroundColor: ap.scanned ? "#DCFCE7" : isScanning ? "#FEF3C7" : ap.label.includes("full") ? "#F5F3FF" : "#fff",
+                                          color: ap.scanned ? "#166534" : isScanning ? "#92400E" : ap.label.includes("full") ? "#6D28D9" : "#991B1B",
                                         }}
                                       >
-                                        Rev {ap.from.revision_number} → {ap.to.revision_number}
+                                        {ap.label}
                                         {ap.scanned && " ✓"}
                                         {isScanning && " ..."}
                                       </button>
