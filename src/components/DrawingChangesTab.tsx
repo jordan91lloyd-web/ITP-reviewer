@@ -90,17 +90,17 @@ interface BaselineDoc {
 }
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  inclusion: { label: "Inclusion", color: "#166534", bg: "#DCFCE7" },
-  exclusion: { label: "Exclusion", color: "#991B1B", bg: "#FEE2E2" },
-  allowance: { label: "Allowance", color: "#1E40AF", bg: "#DBEAFE" },
-  specification: { label: "Specification", color: "#6B21A8", bg: "#F3E8FF" },
-  condition: { label: "Condition", color: "#92400E", bg: "#FEF3C7" },
+  inclusion: { label: "Inclusion", color: "var(--hp-compliant)", bg: "var(--hp-compliant-bg)" },
+  exclusion: { label: "Exclusion", color: "var(--hp-critical)", bg: "var(--hp-critical-bg)" },
+  allowance: { label: "Allowance", color: "var(--hp-minor)", bg: "var(--hp-minor-bg)" },
+  specification: { label: "Specification", color: "var(--hp-minor)", bg: "var(--hp-minor-bg)" },
+  condition: { label: "Condition", color: "var(--hp-significant)", bg: "var(--hp-significant-bg)" },
 };
 
 const STATUS_OPTIONS: { value: ReviewStatus; label: string; color: string; bg: string }[] = [
-  { value: "needs_review", label: "Needs Review", color: "#92400E", bg: "#FEF3C7" },
-  { value: "not_a_variation", label: "Not a Variation", color: "#166534", bg: "#DCFCE7" },
-  { value: "variation_raised", label: "Variation Raised", color: "#991B1B", bg: "#FEE2E2" },
+  { value: "needs_review", label: "Needs Review", color: "var(--hp-significant)", bg: "var(--hp-significant-bg)" },
+  { value: "not_a_variation", label: "Not a Variation", color: "var(--hp-compliant)", bg: "var(--hp-compliant-bg)" },
+  { value: "variation_raised", label: "Variation Raised", color: "var(--hp-critical)", bg: "var(--hp-critical-bg)" },
 ];
 
 interface ScanRecord {
@@ -124,16 +124,16 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
 };
 
 const CHANGE_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  addition: { bg: "#DCFCE7", text: "#166534" },
-  deletion: { bg: "#FEE2E2", text: "#991B1B" },
-  spec_change: { bg: "#FEF3C7", text: "#92400E" },
-  relocation: { bg: "#DBEAFE", text: "#1E40AF" },
+  addition: { bg: "var(--hp-compliant-bg)", text: "var(--hp-compliant)" },
+  deletion: { bg: "var(--hp-critical-bg)", text: "var(--hp-critical)" },
+  spec_change: { bg: "var(--hp-significant-bg)", text: "var(--hp-significant)" },
+  relocation: { bg: "var(--hp-minor-bg)", text: "var(--hp-minor)" },
 };
 
 const SEVERITY_COLORS: Record<string, { bg: string; text: string }> = {
-  high: { bg: "#FEE2E2", text: "#991B1B" },
-  medium: { bg: "#FEF3C7", text: "#92400E" },
-  low: { bg: "#F0FDF4", text: "#166534" },
+  high: { bg: "var(--hp-critical-bg)", text: "var(--hp-critical)" },
+  medium: { bg: "var(--hp-significant-bg)", text: "var(--hp-significant)" },
+  low: { bg: "var(--hp-compliant-bg)", text: "var(--hp-compliant)" },
 };
 
 const CHANGE_TYPE_ICONS: Record<string, typeof Plus> = {
@@ -912,20 +912,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div
-      style={{
-        padding: "24px 32px",
-        maxWidth: 1600,
-        minWidth: 800,
-        margin: "0 auto",
-        height: "calc(100vh - 100px)",
-        overflowY: "auto",
-        fontFamily: "system-ui, sans-serif",
-      }}
-    >
+    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--hp-bg)" }}>
+    <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--hp-warm-900)", margin: 0 }}>
+      <div>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--hp-text-primary)", margin: 0 }}>
           Drawing Revision Changes
         </h2>
         <p style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginTop: 4 }}>
@@ -945,7 +936,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             padding: "8px 12px",
             fontSize: 13,
             backgroundColor: "var(--hp-surface)",
-            color: "var(--hp-warm-900)",
+            color: "var(--hp-text-primary)",
             minWidth: 280,
           }}
         >
@@ -962,9 +953,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         <div
           style={{
             borderRadius: 8,
-            border: "1px solid #FCA5A5",
-            backgroundColor: "#FEF2F2",
-            color: "#991B1B",
+            border: "1px solid var(--hp-critical-bg)",
+            backgroundColor: "var(--hp-critical-bg)",
+            color: "var(--hp-critical)",
             padding: 12,
             fontSize: 13,
             marginBottom: 16,
@@ -980,11 +971,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           {/* Header — always visible */}
           <div
             onClick={() => setBaselineExpanded((v) => !v)}
-            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", backgroundColor: "var(--hp-surface-raised)", cursor: "pointer", userSelect: "none" }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", backgroundColor: "var(--hp-warm-100)", cursor: "pointer", userSelect: "none" }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {baselineExpanded ? <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} /> : <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />}
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>Baseline Scope</span>
+              {baselineExpanded ? <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} /> : <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} />}
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text-primary)" }}>Baseline Scope</span>
               {baselineDocs.length > 0 ? (
                 <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
                   {baselineDocs.length} document{baselineDocs.length !== 1 ? "s" : ""} · {baselineDocs.reduce((sum, d) => sum + d.item_count, 0)} scope items
@@ -1025,7 +1016,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   disabled={baselineUploading}
                   style={{
                     display: "flex", alignItems: "center", gap: 6, borderRadius: 8,
-                    border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)",
+                    border: "1px solid var(--hp-warm-800)", backgroundColor: "var(--hp-warm-800)",
                     padding: "6px 14px", fontSize: 12, fontWeight: 600, color: "#fff", cursor: "pointer",
                   }}
                 >
@@ -1036,13 +1027,13 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   style={{
                     display: "flex", alignItems: "center", gap: 6, borderRadius: 8,
                     border: "1px solid var(--hp-border)",
-                    padding: "6px 14px", fontSize: 12, fontWeight: 500, color: "var(--hp-warm-700)",
+                    padding: "6px 14px", fontSize: 12, fontWeight: 500, color: "var(--hp-text-secondary)",
                     background: "none", cursor: "pointer",
                   }}
                 >
                   <Search size={12} /> {showProcoreBrowser ? "Hide" : "Browse Procore Documents"}
                 </button>
-                {baselineUploading && <span style={{ fontSize: 11, color: "#92400E" }}>Processing document...</span>}
+                {baselineUploading && <span style={{ fontSize: 11, color: "var(--hp-significant)" }}>Processing document...</span>}
               </div>
 
               {/* Procore Documents browser */}
@@ -1097,16 +1088,16 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     <div key={node.id}>
                       <div
                         onClick={() => setCollapsedProcoreFolders((prev) => { const next = new Set(prev); if (next.has(node.id)) next.delete(node.id); else next.add(node.id); return next; })}
-                        style={{ display: "flex", alignItems: "center", gap: 8, padding: `6px 12px 6px ${indent}px`, borderBottom: "1px solid var(--hp-border)", backgroundColor: "#FAFAF9", cursor: "pointer", userSelect: "none" }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, padding: `6px 12px 6px ${indent}px`, borderBottom: "1px solid var(--hp-border)", backgroundColor: "var(--hp-bg)", cursor: "pointer", userSelect: "none" }}
                       >
-                        {isCollapsed ? <ChevronRight size={12} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronDown size={12} style={{ color: "var(--hp-warm-500)" }} />}
+                        {isCollapsed ? <ChevronRight size={12} style={{ color: "var(--hp-text-muted)" }} /> : <ChevronDown size={12} style={{ color: "var(--hp-text-muted)" }} />}
                         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-warm-800)" }}>{node.name}</span>
                         <span style={{ fontSize: 10, color: "var(--hp-text-muted)" }}>{totalFiles} file{totalFiles !== 1 ? "s" : ""}</span>
                         {unadded.length > 0 && (
                           <button
                             onClick={(e) => { e.stopPropagation(); addEntireFolder(node); }}
                             disabled={baselineUploading}
-                            style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", marginLeft: "auto" }}
+                            style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", marginLeft: "auto" }}
                           >
                             Add All ({unadded.length})
                           </button>
@@ -1123,12 +1114,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                   {file.size ? ` (${(file.size / 1024 / 1024).toFixed(1)} MB)` : ""}
                                 </span>
                                 {alreadyAdded ? (
-                                  <span style={{ fontSize: 10, color: "#166534", flexShrink: 0, marginLeft: 8 }}>Added</span>
+                                  <span style={{ fontSize: 10, color: "var(--hp-compliant)", flexShrink: 0, marginLeft: 8 }}>Added</span>
                                 ) : (
                                   <button
                                     onClick={() => addProcoreDoc(file)}
                                     disabled={baselineUploading}
-                                    style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", flexShrink: 0, marginLeft: 8 }}
+                                    style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", flexShrink: 0, marginLeft: 8 }}
                                   >
                                     Add
                                   </button>
@@ -1175,8 +1166,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {baselineDocs.map((doc) => {
-                    const statusColor = doc.status === "processed" ? "#166534" : doc.status === "failed" ? "#991B1B" : doc.status === "skipped" ? "#78716C" : "#92400E";
-                    const statusBg = doc.status === "processed" ? "#DCFCE7" : doc.status === "failed" ? "#FEE2E2" : doc.status === "skipped" ? "#F5F5F4" : "#FEF3C7";
+                    const statusColor = doc.status === "processed" ? "var(--hp-compliant)" : doc.status === "failed" ? "var(--hp-critical)" : doc.status === "skipped" ? "var(--hp-text-muted)" : "var(--hp-significant)";
+                    const statusBg = doc.status === "processed" ? "var(--hp-compliant-bg)" : doc.status === "failed" ? "var(--hp-critical-bg)" : doc.status === "skipped" ? "var(--hp-warm-100)" : "var(--hp-significant-bg)";
                     const statusLabel = doc.status === "processed" ? `${doc.item_count} items extracted`
                       : doc.status === "failed" ? "Failed"
                       : doc.status === "skipped" ? "Skipped"
@@ -1188,17 +1179,17 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                       {/* Doc header */}
                       <div
                         onClick={() => doc.status === "processed" ? setExpandedBaselineDoc((prev) => prev === doc.id ? null : doc.id) : undefined}
-                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", backgroundColor: "#FAFAF9", cursor: doc.status === "processed" ? "pointer" : "default", userSelect: "none" }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", backgroundColor: "var(--hp-bg)", cursor: doc.status === "processed" ? "pointer" : "default", userSelect: "none" }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-                          {doc.status === "processed" && (expandedBaselineDoc === doc.id ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />)}
+                          {doc.status === "processed" && (expandedBaselineDoc === doc.id ? <ChevronDown size={14} style={{ color: "var(--hp-text-muted)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-text-muted)" }} />)}
                           {doc.status !== "processed" && <span style={{ width: 14 }} />}
                           <span style={{ fontSize: 13, fontWeight: 500, color: doc.status === "skipped" ? "var(--hp-text-muted)" : "var(--hp-warm-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.document_name}</span>
                           {doc.file_size ? <span style={{ fontSize: 10, color: "var(--hp-text-muted)", flexShrink: 0 }}>{(doc.file_size / 1024 / 1024).toFixed(1)} MB</span> : null}
                           <span style={{ fontSize: 10, fontWeight: 500, borderRadius: 999, padding: "1px 8px", backgroundColor: statusBg, color: statusColor, flexShrink: 0 }}>{statusLabel}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                          {doc.error_message && <span style={{ fontSize: 10, color: "#991B1B", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.error_message}>{doc.error_message}</span>}
+                          {doc.error_message && <span style={{ fontSize: 10, color: "var(--hp-critical)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.error_message}>{doc.error_message}</span>}
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteBaselineDoc(doc.id); }}
                             title="Remove from baseline"
@@ -1228,7 +1219,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         </div>
                       )}
                       {expandedBaselineDoc === doc.id && doc.error_message && (
-                        <div style={{ padding: "8px 12px", borderTop: "1px solid var(--hp-border)", fontSize: 12, color: "#991B1B" }}>
+                        <div style={{ padding: "8px 12px", borderTop: "1px solid var(--hp-border)", fontSize: 12, color: "var(--hp-critical)" }}>
                           Error: {doc.error_message}
                         </div>
                       )}
@@ -1253,7 +1244,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               style={{
                 fontSize: 13,
                 fontWeight: 500,
-                color: "var(--hp-accent)",
+                color: "var(--hp-warm-800)",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -1266,7 +1257,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           )}
 
           {loading ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--hp-text-secondary)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, color: "var(--hp-text-secondary)", height: 48, backgroundColor: "var(--hp-warm-100)", borderRadius: 8 }}>
               <RefreshCw size={14} className="animate-spin" /> Loading drawings register...
             </div>
           ) : drawingPairs.length === 0 ? (
@@ -1288,20 +1279,20 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               {/* Toolbar + sticky scan bar */}
               <div style={{ position: "sticky", top: 0, zIndex: 5, backgroundColor: "var(--hp-bg)", paddingBottom: 8 }}>
                 {/* Scan action bar */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface-raised)", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-warm-100)", marginBottom: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     {!showScanConfirm ? (
                       <button
                         onClick={() => { if (selectedIds.size > 50) setShowScanConfirm(true); else runScan(); }}
                         disabled={selectedIds.size === 0}
-                        style={{ borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600, color: "#fff", backgroundColor: selectedIds.size === 0 ? "#CBD5E1" : "var(--hp-accent)", border: "none", cursor: selectedIds.size === 0 ? "default" : "pointer" }}
+                        style={{ borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600, color: "#fff", backgroundColor: "var(--hp-warm-800)", opacity: selectedIds.size === 0 ? 0.4 : 1, border: "none", cursor: selectedIds.size === 0 ? "default" : "pointer" }}
                       >
                         Scan {selectedIds.size} Drawing{selectedIds.size !== 1 ? "s" : ""}
                       </button>
                     ) : (
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 12, color: "#92400E" }}>Scan {selectedIds.size} drawings? This will take several minutes.</span>
-                        <button onClick={() => { setShowScanConfirm(false); runScan(); }} style={{ fontSize: 12, fontWeight: 600, color: "#fff", backgroundColor: "var(--hp-accent)", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}>Confirm</button>
+                        <span style={{ fontSize: 12, color: "var(--hp-significant)" }}>Scan {selectedIds.size} drawings? This will take several minutes.</span>
+                        <button onClick={() => { setShowScanConfirm(false); runScan(); }} style={{ fontSize: 12, fontWeight: 600, color: "#fff", backgroundColor: "var(--hp-warm-800)", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}>Confirm</button>
                         <button onClick={() => setShowScanConfirm(false)} style={{ fontSize: 12, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
                       </div>
                     )}
@@ -1310,7 +1301,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     </span>
                   </div>
                   {scan && changes.length > 0 && (
-                    <button onClick={() => setStep(2)} style={{ fontSize: 12, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                    <button onClick={() => setStep(2)} style={{ fontSize: 12, color: "var(--hp-warm-800)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                       Back to Register
                     </button>
                   )}
@@ -1319,19 +1310,19 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 {/* Filter + controls */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                   <div style={{ fontSize: 13, color: "var(--hp-text-secondary)" }}>
-                    <strong style={{ color: "var(--hp-warm-900)" }}>{drawingPairs.length}</strong> drawings with revisions ({totalDrawings} total)
+                    <strong style={{ color: "var(--hp-text-primary)" }}>{drawingPairs.length}</strong> drawings with revisions ({totalDrawings} total)
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ position: "relative" }}>
                       <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }} />
                       <input type="text" placeholder="Filter drawings..." value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
-                        style={{ borderRadius: 8, border: "1px solid var(--hp-border)", padding: "7px 12px 7px 30px", fontSize: 13, backgroundColor: "var(--hp-surface)", color: "var(--hp-warm-900)", width: 200 }}
+                        style={{ borderRadius: 8, border: "1px solid var(--hp-border)", padding: "7px 12px 7px 30px", fontSize: 13, backgroundColor: "var(--hp-surface)", color: "var(--hp-text-primary)", width: 200 }}
                       />
                     </div>
-                    <button onClick={expandAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-warm-700)" }}>Expand All</button>
-                    <button onClick={collapseAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-warm-700)" }}>Collapse All</button>
-                    <button onClick={selectAll} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Select all</button>
+                    <button onClick={expandAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-text-secondary)" }}>Expand All</button>
+                    <button onClick={collapseAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-text-secondary)" }}>Collapse All</button>
+                    <button onClick={selectAll} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Select all</button>
                     <button onClick={selectNone} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
                   </div>
                 </div>
@@ -1352,17 +1343,17 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   return (
                     <div key={discipline}>
                       <div
-                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", backgroundColor: "var(--hp-surface-raised)", borderTop: di > 0 ? "1px solid var(--hp-border)" : "none", cursor: "pointer", userSelect: "none" }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", backgroundColor: "var(--hp-warm-100)", borderTop: di > 0 ? "1px solid var(--hp-border)" : "none", cursor: "pointer", userSelect: "none" }}
                         onClick={() => toggleDiscoverySection(discipline)}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {isCollapsed ? <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} /> : <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} />}
+                          {isCollapsed ? <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} /> : <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} />}
                           <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{discipline}</span>
                           <span style={{ fontSize: 12, color: "var(--hp-text-muted)", fontWeight: 400 }}>({pairs.length} drawing{pairs.length !== 1 ? "s" : ""})</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{selCount}/{pairs.length} selected</span>
-                          <input type="checkbox" checked={allSelected} onChange={(e) => { e.stopPropagation(); toggleDisciplineSelection(discipline, pairs); }} onClick={(e) => e.stopPropagation()} style={{ accentColor: "var(--hp-accent)" }} />
+                          <input type="checkbox" checked={allSelected} onChange={(e) => { e.stopPropagation(); toggleDisciplineSelection(discipline, pairs); }} onClick={(e) => e.stopPropagation()} style={{ accentColor: "var(--hp-warm-800)" }} />
                         </div>
                       </div>
 
@@ -1370,25 +1361,25 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         const override = revisionOverrides.get(pair.drawing_id);
                         const activeOld = override?.old ?? pair.old_revision;
                         const activeNew = override?.new ?? pair.new_revision;
-                        const statusColor = pair.status === "scanned" ? "#166534" : pair.status === "new_revision" ? "#B45309" : "#78716C";
-                        const statusBg = pair.status === "scanned" ? "#DCFCE7" : pair.status === "new_revision" ? "#FEF3C7" : "#F5F5F4";
+                        const statusColor = pair.status === "scanned" ? "var(--hp-compliant)" : pair.status === "new_revision" ? "var(--hp-significant)" : "var(--hp-text-muted)";
+                        const statusBg = pair.status === "scanned" ? "var(--hp-compliant-bg)" : pair.status === "new_revision" ? "var(--hp-significant-bg)" : "var(--hp-warm-100)";
                         const statusLabel = pair.status === "scanned" ? "Scanned" : pair.status === "new_revision" ? "New Rev" : "Not scanned";
 
                         return (
                           <div key={pair.drawing_id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 16px 6px 44px", borderTop: "1px solid var(--hp-border)", fontSize: 13 }}>
-                            <input type="checkbox" checked={selectedIds.has(pair.drawing_id)} onChange={() => toggleDrawing(pair.drawing_id)} style={{ accentColor: "var(--hp-accent)", cursor: "pointer", flexShrink: 0 }} />
-                            <span style={{ fontWeight: 500, color: "var(--hp-warm-900)", whiteSpace: "nowrap" }}>{pair.drawing_number}</span>
+                            <input type="checkbox" checked={selectedIds.has(pair.drawing_id)} onChange={() => toggleDrawing(pair.drawing_id)} style={{ accentColor: "var(--hp-warm-800)", cursor: "pointer", flexShrink: 0 }} />
+                            <span style={{ fontWeight: 500, color: "var(--hp-text-primary)", whiteSpace: "nowrap" }}>{pair.drawing_number}</span>
                             <span style={{ color: "var(--hp-text-secondary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pair.drawing_title}</span>
-                            <span style={{ fontSize: 9, fontWeight: 500, borderRadius: 999, padding: "1px 6px", backgroundColor: statusBg, color: statusColor, whiteSpace: "nowrap", flexShrink: 0 }}>{statusLabel}</span>
+                            <span style={{ fontSize: 10, fontWeight: 500, borderRadius: 999, padding: "1px 6px", backgroundColor: statusBg, color: statusColor, whiteSpace: "nowrap", flexShrink: 0 }}>{statusLabel}</span>
                             {pair.revisions.length > 2 ? (
                               <>
                                 <select value={activeOld.revision_number} onChange={(e) => { const rev = pair.revisions.find((r) => r.revision_number === e.target.value); if (rev) setRevisionOverrides((prev) => { const next = new Map(prev); next.set(pair.drawing_id, { old: rev, new: activeNew }); return next; }); }}
-                                  style={{ fontSize: 11, border: "1px solid var(--hp-border)", borderRadius: 4, padding: "1px 4px", color: "var(--hp-warm-700)", backgroundColor: "var(--hp-surface)", flexShrink: 0 }}>
+                                  style={{ fontSize: 11, border: "1px solid var(--hp-border)", borderRadius: 4, padding: "1px 4px", color: "var(--hp-text-secondary)", backgroundColor: "var(--hp-surface)", flexShrink: 0 }}>
                                   {pair.revisions.slice(0, -1).map((r) => <option key={r.revision_number} value={r.revision_number}>Rev {r.revision_number}</option>)}
                                 </select>
                                 <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>→</span>
                                 <select value={activeNew.revision_number} onChange={(e) => { const rev = pair.revisions.find((r) => r.revision_number === e.target.value); if (rev) setRevisionOverrides((prev) => { const next = new Map(prev); next.set(pair.drawing_id, { old: activeOld, new: rev }); return next; }); }}
-                                  style={{ fontSize: 11, border: "1px solid var(--hp-border)", borderRadius: 4, padding: "1px 4px", color: "var(--hp-warm-700)", backgroundColor: "var(--hp-surface)", flexShrink: 0 }}>
+                                  style={{ fontSize: 11, border: "1px solid var(--hp-border)", borderRadius: 4, padding: "1px 4px", color: "var(--hp-text-secondary)", backgroundColor: "var(--hp-surface)", flexShrink: 0 }}>
                                   {pair.revisions.slice(1).map((r) => <option key={r.revision_number} value={r.revision_number}>Rev {r.revision_number}</option>)}
                                 </select>
                               </>
@@ -1401,7 +1392,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                       {!isCollapsed && hasMore && (
                         <button
                           onClick={() => setDisciplinePageSize((prev) => { const next = new Map(prev); next.set(discipline, pageSize + 50); return next; })}
-                          style={{ width: "100%", padding: "8px 16px", borderTop: "1px solid var(--hp-border)", fontSize: 12, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textAlign: "center" }}
+                          style={{ width: "100%", padding: "8px 16px", borderTop: "1px solid var(--hp-border)", fontSize: 12, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "none", cursor: "pointer", textAlign: "center" }}
                         >
                           Show more ({pairs.length - pageSize} remaining)
                         </button>
@@ -1418,7 +1409,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     onClick={() => setStep(2)}
                     style={{
                       fontSize: 13,
-                      color: "var(--hp-accent)",
+                      color: "var(--hp-warm-800)",
                       background: "none",
                       border: "none",
                       cursor: "pointer",
@@ -1448,9 +1439,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           <RefreshCw
             size={24}
             className="animate-spin"
-            style={{ color: "var(--hp-accent)", margin: "0 auto 12px" }}
+            style={{ color: "var(--hp-warm-800)", margin: "0 auto 12px" }}
           />
-          <div style={{ fontSize: 14, fontWeight: 500, color: "var(--hp-warm-900)" }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: "var(--hp-text-primary)" }}>
             Scanning drawings for changes...
           </div>
           <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 4 }}>
@@ -1469,7 +1460,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               style={{
                 height: "100%",
                 borderRadius: 3,
-                backgroundColor: "var(--hp-accent)",
+                backgroundColor: "var(--hp-warm-800)",
                 transition: "width 0.3s",
                 width: scanProgress.total > 0 ? `${(scanProgress.current / scanProgress.total) * 100}%` : "0%",
               }}
@@ -1506,9 +1497,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
         const BTN = {
           display: "flex" as const, alignItems: "center" as const, gap: 6,
-          borderRadius: 8, border: "1px solid var(--hp-border)", padding: "6px 12px",
-          fontSize: 12, fontWeight: 500, color: "var(--hp-warm-700)",
-          textDecoration: "none", background: "none", cursor: "pointer",
+          borderRadius: 8, border: "1px solid var(--hp-border)", padding: "5px 12px",
+          fontSize: 12, fontWeight: 500, color: "var(--hp-text-secondary)",
+          textDecoration: "none", background: "var(--hp-surface)", cursor: "pointer",
         };
 
         // Count unscanned drawings
@@ -1524,15 +1515,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 alignItems: "center",
                 justifyContent: "space-between",
                 borderRadius: 8,
-                border: "1px solid #FDE68A",
-                backgroundColor: "#FFFBEB",
+                border: "1px solid var(--hp-significant-bg)",
+                backgroundColor: "var(--hp-significant-bg)",
                 padding: "10px 16px",
                 marginBottom: 12,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <AlertTriangle size={14} style={{ color: "#B45309" }} />
-                <span style={{ fontSize: 13, color: "#92400E", fontWeight: 500 }}>
+                <AlertTriangle size={14} style={{ color: "var(--hp-significant)" }} />
+                <span style={{ fontSize: 13, color: "var(--hp-significant)", fontWeight: 500 }}>
                   {unscannedCount} drawing{unscannedCount !== 1 ? "s have" : " has"} new revisions to scan
                 </span>
               </div>
@@ -1542,7 +1533,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   fontSize: 12,
                   fontWeight: 600,
                   color: "#fff",
-                  backgroundColor: "#B45309",
+                  backgroundColor: "var(--hp-significant)",
                   border: "none",
                   borderRadius: 6,
                   padding: "6px 14px",
@@ -1555,11 +1546,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           )}
 
           {/* ── Header bar ── */}
-          <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface-raised)", padding: "16px 20px", marginBottom: 16 }}>
+          <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-warm-100)", padding: "16px 20px", marginBottom: 16 }}>
             {/* Row 1: Title + actions */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-warm-900)" }}>Change Register</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-text-primary)" }}>Change Register</div>
                 <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
                   {uniqueDrawings.size} drawings · {changes.length} changes · {highTotal} high severity
                   {(() => {
@@ -1577,13 +1568,13 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 <a href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=pdf`} download style={BTN}>
                   <Download size={12} /> Export PDF
                 </a>
-                <button onClick={() => { setStep(0); fetchDrawings(projectId); }} style={{ ...BTN, border: "1px solid var(--hp-accent)", backgroundColor: "var(--hp-accent)", color: "#fff", fontWeight: 600 }}>
+                <button onClick={() => { setStep(0); fetchDrawings(projectId); }} style={{ ...BTN, border: "1px solid var(--hp-warm-800)", backgroundColor: "var(--hp-warm-800)", color: "#fff", fontWeight: 600 }}>
                   <RefreshCw size={12} /> Scan New Drawings
                 </button>
                 <button onClick={removeDuplicates} title="Keep only the latest scan results for each drawing revision pair" style={BTN}>
                   Remove Duplicates
                 </button>
-                <button onClick={clearResults} title="Delete all scan results for this project" style={{ ...BTN, color: "#991B1B", borderColor: "#FCA5A5" }}>
+                <button onClick={clearResults} title="Delete all scan results for this project" style={{ ...BTN, color: "var(--hp-critical)", borderColor: "var(--hp-critical-bg)" }}>
                   <Trash2 size={12} /> Clear All
                 </button>
               </div>
@@ -1605,8 +1596,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   <span style={{ fontSize: 12, color: "var(--hp-text-muted)", marginRight: 4 }}>View:</span>
                   <button onClick={() => loadPreviousResults(projectId)} style={{
                     fontSize: 12, fontWeight: 600, borderRadius: 6, padding: "5px 12px", cursor: "pointer", border: "none",
-                    backgroundColor: !scan?.id || scan?.id === "all" ? "var(--hp-accent)" : "var(--hp-surface)",
-                    color: !scan?.id || scan?.id === "all" ? "#fff" : "var(--hp-warm-700)",
+                    backgroundColor: !scan?.id || scan?.id === "all" ? "var(--hp-warm-800)" : "var(--hp-surface)",
+                    color: !scan?.id || scan?.id === "all" ? "#fff" : "var(--hp-text-secondary)",
                   }}>
                     All Changes
                   </button>
@@ -1616,8 +1607,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     return (
                       <button key={date} onClick={() => loadScan(scans[0].id)} style={{
                         fontSize: 12, fontWeight: isActive ? 600 : 400, borderRadius: 6, padding: "5px 12px", cursor: "pointer", border: "none",
-                        backgroundColor: isActive ? "var(--hp-accent)" : "var(--hp-surface)",
-                        color: isActive ? "#fff" : "var(--hp-warm-700)",
+                        backgroundColor: isActive ? "var(--hp-warm-800)" : "var(--hp-surface)",
+                        color: isActive ? "#fff" : "var(--hp-text-secondary)",
                       }}>
                         {date} ({totalDrawings})
                       </button>
@@ -1642,8 +1633,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   <button onClick={() => setHighSeverityOnly((v) => !v)} style={{
                     borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500, border: "none", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 4,
-                    backgroundColor: highSeverityOnly ? "#991B1B" : "#FEE2E2",
-                    color: highSeverityOnly ? "#fff" : "#991B1B",
+                    backgroundColor: highSeverityOnly ? "var(--hp-critical)" : "var(--hp-critical-bg)",
+                    color: highSeverityOnly ? "#fff" : "var(--hp-critical)",
                   }}>
                     <AlertTriangle size={10} /> {highTotal} High {highSeverityOnly ? " ✕" : ""}
                   </button>
@@ -1653,7 +1644,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {selectMode ? (
                   <>
-                    <button onClick={deleteSelected} disabled={selectedChangeIds.size === 0 || deleting} style={{ ...BTN, padding: "4px 10px", fontSize: 11, color: selectedChangeIds.size > 0 ? "#991B1B" : "var(--hp-text-muted)", borderColor: selectedChangeIds.size > 0 ? "#FCA5A5" : "var(--hp-border)" }}>
+                    <button onClick={deleteSelected} disabled={selectedChangeIds.size === 0 || deleting} style={{ ...BTN, padding: "4px 10px", fontSize: 11, color: selectedChangeIds.size > 0 ? "var(--hp-critical)" : "var(--hp-text-muted)", borderColor: selectedChangeIds.size > 0 ? "var(--hp-critical-bg)" : "var(--hp-border)" }}>
                       <Trash2 size={11} /> Delete {selectedChangeIds.size > 0 ? `(${selectedChangeIds.size})` : ""}
                     </button>
                     <button onClick={() => { setSelectMode(false); setSelectedChangeIds(new Set()); }} style={{ ...BTN, padding: "4px 10px", fontSize: 11 }}>Cancel</button>
@@ -1702,13 +1693,13 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 return (
                   <div key={discipline} style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden" }}>
                     {/* Discipline header */}
-                    <div onClick={() => toggleResultSection(discipline)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", backgroundColor: "var(--hp-surface-raised)", cursor: "pointer", userSelect: "none" }}>
+                    <div onClick={() => toggleResultSection(discipline)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", backgroundColor: "var(--hp-warm-100)", cursor: "pointer", userSelect: "none" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {isExpanded ? <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} /> : <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />}
-                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-warm-900)" }}>{discipline}</span>
+                        {isExpanded ? <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} /> : <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} />}
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text-primary)" }}>{discipline}</span>
                         <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>({disciplineChanges.length} changes · {uniqueDrawingCount} drawings)</span>
                       </div>
-                      {discHigh > 0 && <span style={{ display: "flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}><AlertTriangle size={10} /> {discHigh}</span>}
+                      {discHigh > 0 && <span style={{ display: "flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 500, backgroundColor: "var(--hp-critical-bg)", color: "var(--hp-critical)" }}><AlertTriangle size={10} /> {discHigh}</span>}
                     </div>
 
                     {/* Drawings (each collapsible) */}
@@ -1722,23 +1713,23 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                           {/* Drawing header — clickable */}
                           <div
                             onClick={() => setExpandedDrawings((prev) => { const next = new Set(prev); if (next.has(drawingKey)) next.delete(drawingKey); else next.add(drawingKey); return next; })}
-                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 8px 40px", borderTop: "1px solid var(--hp-border)", backgroundColor: isDrawingExpanded ? "#F5F5F4" : "#FAFAF9", cursor: "pointer", userSelect: "none" }}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 8px 40px", borderTop: "1px solid var(--hp-border)", backgroundColor: isDrawingExpanded ? "var(--hp-warm-100)" : "var(--hp-bg)", cursor: "pointer", userSelect: "none" }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               {selectMode && (() => {
                                 const allIds = dg.revisions.flatMap((r) => r.changes.map((c) => c.id));
                                 const allSelected = allIds.length > 0 && allIds.every((id) => selectedChangeIds.has(id));
-                                return <input type="checkbox" checked={allSelected} onClick={(e) => e.stopPropagation()} onChange={() => selectDrawingChanges(allIds, !allSelected)} style={{ accentColor: "#991B1B", cursor: "pointer" }} />;
+                                return <input type="checkbox" checked={allSelected} onClick={(e) => e.stopPropagation()} onChange={() => selectDrawingChanges(allIds, !allSelected)} style={{ accentColor: "var(--hp-warm-800)", cursor: "pointer" }} />;
                               })()}
-                              {isDrawingExpanded ? <ChevronDown size={14} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-warm-500)" }} />}
+                              {isDrawingExpanded ? <ChevronDown size={14} style={{ color: "var(--hp-text-muted)" }} /> : <ChevronRight size={14} style={{ color: "var(--hp-text-muted)" }} />}
                               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{dg.number}</span>
                               <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>{dg.title}</span>
                               {!hasMultipleRevs && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Rev {dg.revisions[0]?.rev}</span>}
-                              {hasMultipleRevs && <span style={{ fontSize: 11, color: "var(--hp-accent)", fontWeight: 500 }}>{dg.revisions.length} revisions</span>}
+                              {hasMultipleRevs && <span style={{ fontSize: 11, color: "var(--hp-warm-800)", fontWeight: 500 }}>{dg.revisions.length} revisions</span>}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{dg.totalChanges}</span>
-                              {dg.totalHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}>{dg.totalHigh} high</span>}
+                              {dg.totalHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "var(--hp-critical-bg)", color: "var(--hp-critical)" }}>{dg.totalHigh} high</span>}
                               {(() => {
                                 const allChangeIds = dg.revisions.flatMap((r) => r.changes.map((c) => c.id));
                                 const hasEvent = dg.revisions.some((r) => r.changes.some((c) => c.change_event_id));
@@ -1749,12 +1740,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); raiseChangeEvent(allChangeIds, discipline, `${dg.number} ${dg.title} — Drawing revision changes`); }}
                                         title="Create a draft Change Event for all changes on this drawing"
-                                        style={{ fontSize: 10, fontWeight: 500, color: "#991B1B", background: "none", border: "1px solid #FCA5A5", borderRadius: 6, padding: "2px 8px", cursor: "pointer", whiteSpace: "nowrap" }}
+                                        style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-critical)", background: "none", border: "1px solid var(--hp-critical-bg)", borderRadius: 6, padding: "2px 8px", cursor: "pointer", whiteSpace: "nowrap" }}
                                       >
                                         Raise Event
                                       </button>
                                     )}
-                                    {hasEvent && <span style={{ fontSize: 10, fontWeight: 500, color: "#991B1B", borderRadius: 999, padding: "1px 6px", backgroundColor: "#FEE2E2" }}>Event Raised</span>}
+                                    {hasEvent && <span style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-critical)", borderRadius: 999, padding: "1px 6px", backgroundColor: "var(--hp-critical-bg)" }}>Event Raised</span>}
                                   </>
                                 );
                               })()}
@@ -1773,11 +1764,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                       rel="noopener noreferrer"
                                       onClick={(e) => e.stopPropagation()}
                                       title="Open this drawing in Procore to view and compare revisions"
-                                      style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-warm-700)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", textDecoration: "none", whiteSpace: "nowrap" }}
+                                      style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-text-secondary)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", textDecoration: "none", whiteSpace: "nowrap" }}
                                     >
                                       View in Procore
                                     </a>
-                                    <button onClick={(e) => { e.stopPropagation(); deepScanDrawing(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision); }} disabled={isDS} title="Re-scan with Opus (slower, more thorough, higher cost)" style={{ fontSize: 10, fontWeight: 500, color: isDS ? "var(--hp-text-muted)" : "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDS ? "default" : "pointer", whiteSpace: "nowrap" }}>{isDS ? "Scanning..." : "Deep Scan"}</button>
+                                    <button onClick={(e) => { e.stopPropagation(); deepScanDrawing(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision); }} disabled={isDS} title="Re-scan with Opus (slower, more thorough, higher cost)" style={{ fontSize: 10, fontWeight: 500, color: isDS ? "var(--hp-text-muted)" : "var(--hp-warm-800)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "2px 8px", cursor: isDS ? "default" : "pointer", whiteSpace: "nowrap" }}>{isDS ? "Scanning..." : "Deep Scan"}</button>
                                   </>
                                 );
                               })()}
@@ -1816,9 +1807,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                             const unscannedCount = allButtons.filter((p) => !p.scanned).length;
 
                             return (
-                              <div style={{ padding: "8px 16px 8px 64px", borderTop: "1px solid var(--hp-border)", backgroundColor: "#FEFCE8" }}>
+                              <div style={{ padding: "8px 16px 8px 64px", borderTop: "1px solid var(--hp-border)", backgroundColor: "var(--hp-significant-bg)" }}>
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                                  <span style={{ fontSize: 11, fontWeight: 600, color: "#854D0E" }}>
+                                  <span style={{ fontSize: 11, fontWeight: 600, color: "var(--hp-significant)" }}>
                                     Revisions: {revs.map((r) => r.revision_number).join(", ")}
                                     {unscannedCount > 0 && ` · ${unscannedCount} unscanned`}
                                   </span>
@@ -1842,9 +1833,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                           borderRadius: 6,
                                           padding: "3px 10px",
                                           cursor: ap.scanned || isScanning ? "default" : "pointer",
-                                          border: "1px solid " + (ap.scanned ? "#BBF7D0" : isScanning ? "#FDE68A" : ap.label.includes("full") ? "#7C3AED" : "#FCA5A5"),
-                                          backgroundColor: ap.scanned ? "#DCFCE7" : isScanning ? "#FEF3C7" : ap.label.includes("full") ? "#F5F3FF" : "#fff",
-                                          color: ap.scanned ? "#166534" : isScanning ? "#92400E" : ap.label.includes("full") ? "#6D28D9" : "#991B1B",
+                                          border: "1px solid " + (ap.scanned ? "var(--hp-compliant-bg)" : isScanning ? "var(--hp-significant-bg)" : ap.label.includes("full") ? "var(--hp-minor)" : "var(--hp-critical-bg)"),
+                                          backgroundColor: ap.scanned ? "var(--hp-compliant-bg)" : isScanning ? "var(--hp-significant-bg)" : ap.label.includes("full") ? "var(--hp-minor-bg)" : "#fff",
+                                          color: ap.scanned ? "var(--hp-compliant)" : isScanning ? "var(--hp-significant)" : ap.label.includes("full") ? "var(--hp-minor)" : "var(--hp-critical)",
                                         }}
                                       >
                                         {ap.label}
@@ -1865,11 +1856,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                               <div key={rg.revKey}>
                                 {/* Revision sub-header (only shown if multiple revisions) */}
                                 {hasMultipleRevs && (
-                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 16px 6px 64px", borderTop: "1px solid var(--hp-border)", backgroundColor: "#F5F5F4" }}>
-                                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-warm-700)" }}>Rev {rg.rev}</span>
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 16px 6px 64px", borderTop: "1px solid var(--hp-border)", backgroundColor: "var(--hp-warm-100)" }}>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-text-secondary)" }}>Rev {rg.rev}</span>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                       <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{rg.changes.length} changes</span>
-                                      {rgHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "#FEE2E2", color: "#991B1B" }}>{rgHigh} high</span>}
+                                      {rgHigh > 0 && <span style={{ borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 500, backgroundColor: "var(--hp-critical-bg)", color: "var(--hp-critical)" }}>{rgHigh} high</span>}
                                     </div>
                                   </div>
                                 )}
@@ -1880,8 +1871,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                   const sevColors = SEVERITY_COLORS[change.severity] ?? SEVERITY_COLORS.medium;
                                   const Icon = CHANGE_TYPE_ICONS[change.change_type] ?? ArrowRightLeft;
                                   return (
-                                    <div key={change.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 16px 10px 72px", borderTop: "1px solid var(--hp-border)", fontSize: 13, backgroundColor: selectMode && selectedChangeIds.has(change.id) ? "#FEF2F2" : undefined }}>
-                                      {selectMode && <input type="checkbox" checked={selectedChangeIds.has(change.id)} onChange={() => toggleChangeSelection(change.id)} style={{ accentColor: "#991B1B", cursor: "pointer", marginTop: 2, flexShrink: 0 }} />}
+                                    <div key={change.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 16px 10px 72px", borderTop: "1px solid var(--hp-border)", fontSize: 13, backgroundColor: selectMode && selectedChangeIds.has(change.id) ? "var(--hp-critical-bg)" : undefined }}>
+                                      {selectMode && <input type="checkbox" checked={selectedChangeIds.has(change.id)} onChange={() => toggleChangeSelection(change.id)} style={{ accentColor: "var(--hp-warm-800)", cursor: "pointer", marginTop: 2, flexShrink: 0 }} />}
                                       <span style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, backgroundColor: typeColors.bg, color: typeColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>
                                         <Icon size={10} />{CHANGE_TYPE_LABELS[change.change_type] ?? change.change_type}
                                       </span>
@@ -1900,8 +1891,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                             border: "1px solid var(--hp-border)",
                                             borderRadius: 4,
                                             padding: "2px 4px",
-                                            backgroundColor: STATUS_OPTIONS.find((s) => s.value === (change.review_status ?? "needs_review"))?.bg ?? "#FEF3C7",
-                                            color: STATUS_OPTIONS.find((s) => s.value === (change.review_status ?? "needs_review"))?.color ?? "#92400E",
+                                            backgroundColor: STATUS_OPTIONS.find((s) => s.value === (change.review_status ?? "needs_review"))?.bg ?? "var(--hp-significant-bg)",
+                                            color: STATUS_OPTIONS.find((s) => s.value === (change.review_status ?? "needs_review"))?.color ?? "var(--hp-significant)",
                                             cursor: "pointer",
                                             flexShrink: 0,
                                           }}
@@ -1928,6 +1919,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         </>
         );
       })()}
+    </div>
     </div>
   );
 }
