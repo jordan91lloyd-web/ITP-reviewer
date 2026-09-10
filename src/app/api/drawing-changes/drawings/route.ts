@@ -195,12 +195,19 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Sort revisions within each drawing
+  // Sort revisions within each drawing, then dedupe by revision label
+  // (Procore can have multiple uploads under one revision label)
   for (const entry of byDrawing.values()) {
     entry.revisions.sort(
       (a, b) =>
         revisionSortKey(a.revision_number) - revisionSortKey(b.revision_number)
     );
+    // Keep only the latest upload per revision label
+    const seen = new Map<string, typeof entry.revisions[0]>();
+    for (const rev of entry.revisions) {
+      seen.set(rev.revision_number, rev); // last one wins (latest upload)
+    }
+    entry.revisions = [...seen.values()];
   }
 
   // Query Supabase for already-scanned revision pairs on this project
@@ -240,10 +247,14 @@ export async function GET(request: NextRequest) {
   }[] = [];
 
   for (const entry of byDrawing.values()) {
+    // Need at least 2 distinct revision labels
     if (entry.revisions.length < 2) continue;
 
     const prev = entry.revisions[entry.revisions.length - 2];
     const curr = entry.revisions[entry.revisions.length - 1];
+
+    // Skip if the two latest revisions have the same label (same-revision pair)
+    if (prev.revision_number === curr.revision_number) continue;
 
     // Find which pairs have been scanned
     const scanned: string[] = [];

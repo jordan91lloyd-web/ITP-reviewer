@@ -169,6 +169,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [collapsedDiscovery, setCollapsedDiscovery] = useState<Set<string>>(new Set());
   // Custom revision overrides: drawing_id → { from_rev, to_rev }
   const [revisionOverrides, setRevisionOverrides] = useState<Map<number, { old: RevisionInfo; new: RevisionInfo }>>(new Map());
+  // Pagination for large disciplines (> 50 drawings)
+  const [disciplinePageSize, setDisciplinePageSize] = useState<Map<string, number>>(new Map());
+  // Inline confirm for large scans
+  const [showScanConfirm, setShowScanConfirm] = useState(false);
 
   // Scanning
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0, batchNum: 0, totalBatches: 0 });
@@ -287,7 +291,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setError(null);
       setDrawingPairs([]);
       setSelectedIds(new Set());
-      setCollapsedDiscovery(new Set());
       setRevisionOverrides(new Map());
       try {
         const res = await fetch(
@@ -298,13 +301,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         const pairs: DrawingPair[] = data.drawings_with_revisions ?? [];
         setDrawingPairs(pairs);
         setTotalDrawings(data.total_drawings ?? 0);
-        // Default: select only unscanned drawings (new_revision + not_scanned)
-        const ids = new Set<number>(
-          pairs
-            .filter((d) => d.status !== "scanned")
-            .map((d) => d.drawing_id)
-        );
-        setSelectedIds(ids);
+        // Default: nothing selected, all disciplines collapsed
+        setSelectedIds(new Set());
+        const allDisc = new Set(pairs.map((d) => d.discipline));
+        setCollapsedDiscovery(allDisc);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch drawings");
       } finally {
@@ -888,8 +888,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
   // ── Derived data ─────────────────────────────────────────────────────────
 
+  const isSearching = filterText.length > 0;
   const filteredPairs = drawingPairs.filter((d) => {
-    if (!filterText) return true;
+    if (!isSearching) return true;
     const lower = filterText.toLowerCase();
     return (
       d.drawing_number.toLowerCase().includes(lower) ||
@@ -914,7 +915,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     <div
       style={{
         padding: "24px 32px",
-        maxWidth: 1200,
+        maxWidth: 1600,
         minWidth: 800,
         margin: "0 auto",
         height: "calc(100vh - 100px)",
@@ -989,7 +990,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   {baselineDocs.length} document{baselineDocs.length !== 1 ? "s" : ""} · {baselineDocs.reduce((sum, d) => sum + d.item_count, 0)} scope items
                 </span>
               ) : (
-                <span style={{ fontSize: 12, color: "#B45309" }}>Not set — upload tender/contract documents</span>
+                <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>Optional — add tender or contract documents to compare changes against original scope</span>
               )}
             </div>
             {baselineDocs.length > 0 && (
@@ -1161,7 +1162,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               {/* Document register */}
               {baselineDocs.length === 0 ? (
                 <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", padding: "12px 0" }}>
-                  No baseline documents yet. Upload your tender specification, PBR, scope of works, allowances schedule, or any contract document that defines the original scope.
+                  Upload tender specifications, PBR, scope of works, allowances schedules, or contract documents. Claude extracts scope items from each document — when baseline documents are present, drawing revision changes can be compared against the original scope to flag potential variations.
                 </div>
               ) : (
                 <>
@@ -1284,293 +1285,134 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             </div>
           ) : (
             <>
-              {/* Toolbar */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <div style={{ fontSize: 13, color: "var(--hp-text-secondary)" }}>
-                  <strong style={{ color: "var(--hp-warm-900)" }}>{drawingPairs.length}</strong> drawing
-                  {drawingPairs.length !== 1 ? "s" : ""} with revisions ({totalDrawings} total)
-                  {" · "}
-                  <strong style={{ color: "var(--hp-warm-900)" }}>{selectedIds.size}</strong> selected
-                  {(() => {
-                    const newCount = drawingPairs.filter((d) => d.status === "new_revision").length;
-                    const scannedCount = drawingPairs.filter((d) => d.status === "scanned").length;
-                    const parts: string[] = [];
-                    if (scannedCount > 0) parts.push(`${scannedCount} scanned`);
-                    if (newCount > 0) parts.push(`${newCount} new`);
-                    return parts.length > 0 ? ` · ${parts.join(", ")}` : "";
-                  })()}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ position: "relative" }}>
-                    <Search
-                      size={14}
-                      style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Filter drawings..."
-                      value={filterText}
-                      onChange={(e) => setFilterText(e.target.value)}
-                      style={{
-                        borderRadius: 8,
-                        border: "1px solid var(--hp-border)",
-                        padding: "7px 12px 7px 30px",
-                        fontSize: 13,
-                        backgroundColor: "var(--hp-surface)",
-                        color: "var(--hp-warm-900)",
-                        width: 200,
-                      }}
-                    />
+              {/* Toolbar + sticky scan bar */}
+              <div style={{ position: "sticky", top: 0, zIndex: 5, backgroundColor: "var(--hp-bg)", paddingBottom: 8 }}>
+                {/* Scan action bar */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface-raised)", marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {!showScanConfirm ? (
+                      <button
+                        onClick={() => { if (selectedIds.size > 50) setShowScanConfirm(true); else runScan(); }}
+                        disabled={selectedIds.size === 0}
+                        style={{ borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600, color: "#fff", backgroundColor: selectedIds.size === 0 ? "#CBD5E1" : "var(--hp-accent)", border: "none", cursor: selectedIds.size === 0 ? "default" : "pointer" }}
+                      >
+                        Scan {selectedIds.size} Drawing{selectedIds.size !== 1 ? "s" : ""}
+                      </button>
+                    ) : (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: "#92400E" }}>Scan {selectedIds.size} drawings? This will take several minutes.</span>
+                        <button onClick={() => { setShowScanConfirm(false); runScan(); }} style={{ fontSize: 12, fontWeight: 600, color: "#fff", backgroundColor: "var(--hp-accent)", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}>Confirm</button>
+                        <button onClick={() => setShowScanConfirm(false)} style={{ fontSize: 12, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    )}
+                    <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                      {selectedIds.size} drawings · ~{selectedIds.size * 2} PDFs to download
+                    </span>
                   </div>
-                  <button onClick={expandAllDiscovery} title="Expand all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-                    <ChevronsDown size={16} style={{ color: "var(--hp-text-muted)" }} />
-                  </button>
-                  <button onClick={collapseAllDiscovery} title="Collapse all" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-                    <ChevronsUp size={16} style={{ color: "var(--hp-text-muted)" }} />
-                  </button>
-                  <span style={{ color: "var(--hp-border)", fontSize: 16 }}>|</span>
-                  <button
-                    onClick={selectAll}
-                    style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
-                  >
-                    Select all
-                  </button>
-                  <button
-                    onClick={selectNone}
-                    style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
-                  >
-                    Clear
-                  </button>
+                  {scan && changes.length > 0 && (
+                    <button onClick={() => setStep(2)} style={{ fontSize: 12, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                      Back to Register
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter + controls */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ fontSize: 13, color: "var(--hp-text-secondary)" }}>
+                    <strong style={{ color: "var(--hp-warm-900)" }}>{drawingPairs.length}</strong> drawings with revisions ({totalDrawings} total)
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ position: "relative" }}>
+                      <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }} />
+                      <input type="text" placeholder="Filter drawings..." value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        style={{ borderRadius: 8, border: "1px solid var(--hp-border)", padding: "7px 12px 7px 30px", fontSize: 13, backgroundColor: "var(--hp-surface)", color: "var(--hp-warm-900)", width: 200 }}
+                      />
+                    </div>
+                    <button onClick={expandAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-warm-700)" }}>Expand All</button>
+                    <button onClick={collapseAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-warm-700)" }}>Collapse All</button>
+                    <button onClick={selectAll} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Select all</button>
+                    <button onClick={selectNone} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
+                  </div>
                 </div>
               </div>
 
               {/* Discipline accordion */}
               <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden", marginBottom: 16 }}>
                 {disciplineEntries.map(([discipline, pairs], di) => {
-                  const isCollapsed = collapsedDiscovery.has(discipline);
+                  // When searching, auto-expand disciplines with matches
+                  const isCollapsed = isSearching ? false : collapsedDiscovery.has(discipline);
                   const selCount = pairs.filter((p) => selectedIds.has(p.drawing_id)).length;
-                  const allSelected = selCount === pairs.length;
+                  const allSelected = selCount === pairs.length && pairs.length > 0;
+                  // Pagination: default 50, expandable
+                  const pageSize = disciplinePageSize.get(discipline) ?? 50;
+                  const visiblePairs = pairs.slice(0, pageSize);
+                  const hasMore = pairs.length > pageSize;
 
                   return (
                     <div key={discipline}>
-                      {/* Discipline header — clickable to expand/collapse */}
                       <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "10px 16px",
-                          backgroundColor: "var(--hp-surface-raised)",
-                          borderTop: di > 0 ? "1px solid var(--hp-border)" : "none",
-                          cursor: "pointer",
-                          userSelect: "none",
-                        }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", backgroundColor: "var(--hp-surface-raised)", borderTop: di > 0 ? "1px solid var(--hp-border)" : "none", cursor: "pointer", userSelect: "none" }}
                         onClick={() => toggleDiscoverySection(discipline)}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {isCollapsed ? (
-                            <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} />
-                          ) : (
-                            <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} />
-                          )}
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>
-                            {discipline}
-                          </span>
-                          <span style={{ fontSize: 12, color: "var(--hp-text-muted)", fontWeight: 400 }}>
-                            ({pairs.length} drawing{pairs.length !== 1 ? "s" : ""})
-                          </span>
+                          {isCollapsed ? <ChevronRight size={16} style={{ color: "var(--hp-warm-600)" }} /> : <ChevronDown size={16} style={{ color: "var(--hp-warm-600)" }} />}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{discipline}</span>
+                          <span style={{ fontSize: 12, color: "var(--hp-text-muted)", fontWeight: 400 }}>({pairs.length} drawing{pairs.length !== 1 ? "s" : ""})</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                            {selCount}/{pairs.length} selected
-                          </span>
-                          <input
-                            type="checkbox"
-                            checked={allSelected}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              toggleDisciplineSelection(discipline, pairs);
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ accentColor: "var(--hp-accent)" }}
-                          />
+                          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{selCount}/{pairs.length} selected</span>
+                          <input type="checkbox" checked={allSelected} onChange={(e) => { e.stopPropagation(); toggleDisciplineSelection(discipline, pairs); }} onClick={(e) => e.stopPropagation()} style={{ accentColor: "var(--hp-accent)" }} />
                         </div>
                       </div>
 
-                      {/* Drawing rows */}
-                      {!isCollapsed &&
-                        pairs.map((pair) => {
-                          const override = revisionOverrides.get(pair.drawing_id);
-                          const activeOld = override?.old ?? pair.old_revision;
-                          const activeNew = override?.new ?? pair.new_revision;
-                          const statusColor =
-                            pair.status === "scanned" ? "#166534" :
-                            pair.status === "new_revision" ? "#B45309" : "#78716C";
-                          const statusBg =
-                            pair.status === "scanned" ? "#DCFCE7" :
-                            pair.status === "new_revision" ? "#FEF3C7" : "#F5F5F4";
-                          const statusLabel =
-                            pair.status === "scanned" ? "Scanned" :
-                            pair.status === "new_revision" ? "New Rev" : "Not scanned";
+                      {!isCollapsed && visiblePairs.map((pair) => {
+                        const override = revisionOverrides.get(pair.drawing_id);
+                        const activeOld = override?.old ?? pair.old_revision;
+                        const activeNew = override?.new ?? pair.new_revision;
+                        const statusColor = pair.status === "scanned" ? "#166534" : pair.status === "new_revision" ? "#B45309" : "#78716C";
+                        const statusBg = pair.status === "scanned" ? "#DCFCE7" : pair.status === "new_revision" ? "#FEF3C7" : "#F5F5F4";
+                        const statusLabel = pair.status === "scanned" ? "Scanned" : pair.status === "new_revision" ? "New Rev" : "Not scanned";
 
-                          return (
-                          <div
-                            key={pair.drawing_id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              padding: "8px 16px 8px 44px",
-                              borderTop: "1px solid var(--hp-border)",
-                              fontSize: 13,
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.has(pair.drawing_id)}
-                              onChange={() => toggleDrawing(pair.drawing_id)}
-                              style={{ accentColor: "var(--hp-accent)", cursor: "pointer" }}
-                            />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <span
-                                  style={{
-                                    fontWeight: 500,
-                                    color: "var(--hp-warm-900)",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                  }}
-                                >
-                                  {pair.drawing_number} — {pair.drawing_title}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: 9,
-                                    fontWeight: 500,
-                                    borderRadius: 999,
-                                    padding: "1px 6px",
-                                    backgroundColor: statusBg,
-                                    color: statusColor,
-                                    whiteSpace: "nowrap",
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  {statusLabel}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                                {/* Revision picker — from */}
-                                {pair.revisions.length > 2 ? (
-                                  <select
-                                    value={activeOld.revision_number}
-                                    onChange={(e) => {
-                                      const rev = pair.revisions.find((r) => r.revision_number === e.target.value);
-                                      if (!rev) return;
-                                      setRevisionOverrides((prev) => {
-                                        const next = new Map(prev);
-                                        next.set(pair.drawing_id, { old: rev, new: activeNew });
-                                        return next;
-                                      });
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{
-                                      fontSize: 11,
-                                      border: "1px solid var(--hp-border)",
-                                      borderRadius: 4,
-                                      padding: "1px 4px",
-                                      color: "var(--hp-warm-700)",
-                                      backgroundColor: "var(--hp-surface)",
-                                    }}
-                                  >
-                                    {pair.revisions.slice(0, -1).map((r) => (
-                                      <option key={r.revision_number} value={r.revision_number}>
-                                        Rev {r.revision_number}
-                                      </option>
-                                    ))}
-                                  </select>
-                                ) : (
-                                  <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                                    Rev {activeOld.revision_number}
-                                  </span>
-                                )}
+                        return (
+                          <div key={pair.drawing_id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 16px 6px 44px", borderTop: "1px solid var(--hp-border)", fontSize: 13 }}>
+                            <input type="checkbox" checked={selectedIds.has(pair.drawing_id)} onChange={() => toggleDrawing(pair.drawing_id)} style={{ accentColor: "var(--hp-accent)", cursor: "pointer", flexShrink: 0 }} />
+                            <span style={{ fontWeight: 500, color: "var(--hp-warm-900)", whiteSpace: "nowrap" }}>{pair.drawing_number}</span>
+                            <span style={{ color: "var(--hp-text-secondary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pair.drawing_title}</span>
+                            <span style={{ fontSize: 9, fontWeight: 500, borderRadius: 999, padding: "1px 6px", backgroundColor: statusBg, color: statusColor, whiteSpace: "nowrap", flexShrink: 0 }}>{statusLabel}</span>
+                            {pair.revisions.length > 2 ? (
+                              <>
+                                <select value={activeOld.revision_number} onChange={(e) => { const rev = pair.revisions.find((r) => r.revision_number === e.target.value); if (rev) setRevisionOverrides((prev) => { const next = new Map(prev); next.set(pair.drawing_id, { old: rev, new: activeNew }); return next; }); }}
+                                  style={{ fontSize: 11, border: "1px solid var(--hp-border)", borderRadius: 4, padding: "1px 4px", color: "var(--hp-warm-700)", backgroundColor: "var(--hp-surface)", flexShrink: 0 }}>
+                                  {pair.revisions.slice(0, -1).map((r) => <option key={r.revision_number} value={r.revision_number}>Rev {r.revision_number}</option>)}
+                                </select>
                                 <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>→</span>
-                                {pair.revisions.length > 2 ? (
-                                  <select
-                                    value={activeNew.revision_number}
-                                    onChange={(e) => {
-                                      const rev = pair.revisions.find((r) => r.revision_number === e.target.value);
-                                      if (!rev) return;
-                                      setRevisionOverrides((prev) => {
-                                        const next = new Map(prev);
-                                        next.set(pair.drawing_id, { old: activeOld, new: rev });
-                                        return next;
-                                      });
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{
-                                      fontSize: 11,
-                                      border: "1px solid var(--hp-border)",
-                                      borderRadius: 4,
-                                      padding: "1px 4px",
-                                      color: "var(--hp-warm-700)",
-                                      backgroundColor: "var(--hp-surface)",
-                                    }}
-                                  >
-                                    {pair.revisions.slice(1).map((r) => (
-                                      <option key={r.revision_number} value={r.revision_number}>
-                                        Rev {r.revision_number}
-                                      </option>
-                                    ))}
-                                  </select>
-                                ) : (
-                                  <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                                    Rev {activeNew.revision_number}
-                                  </span>
-                                )}
-                                {pair.scanned_pairs.length > 0 && (
-                                  <span style={{ fontSize: 10, color: "var(--hp-text-muted)", marginLeft: 4 }}>
-                                    (scanned: {pair.scanned_pairs.join(", ")})
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                                <select value={activeNew.revision_number} onChange={(e) => { const rev = pair.revisions.find((r) => r.revision_number === e.target.value); if (rev) setRevisionOverrides((prev) => { const next = new Map(prev); next.set(pair.drawing_id, { old: activeOld, new: rev }); return next; }); }}
+                                  style={{ fontSize: 11, border: "1px solid var(--hp-border)", borderRadius: 4, padding: "1px 4px", color: "var(--hp-warm-700)", backgroundColor: "var(--hp-surface)", flexShrink: 0 }}>
+                                  {pair.revisions.slice(1).map((r) => <option key={r.revision_number} value={r.revision_number}>Rev {r.revision_number}</option>)}
+                                </select>
+                              </>
+                            ) : (
+                              <span style={{ fontSize: 11, color: "var(--hp-text-muted)", flexShrink: 0 }}>Rev {activeOld.revision_number} → {activeNew.revision_number}</span>
+                            )}
                           </div>
-                          );
-                        })}
+                        );
+                      })}
+                      {!isCollapsed && hasMore && (
+                        <button
+                          onClick={() => setDisciplinePageSize((prev) => { const next = new Map(prev); next.set(discipline, pageSize + 50); return next; })}
+                          style={{ width: "100%", padding: "8px 16px", borderTop: "1px solid var(--hp-border)", fontSize: 12, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textAlign: "center" }}
+                        >
+                          Show more ({pairs.length - pageSize} remaining)
+                        </button>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Scan button + previous results */}
+              {/* Previous results link (moved from bottom, now in sticky bar above) */}
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <button
-                  onClick={runScan}
-                  disabled={selectedIds.size === 0}
-                  style={{
-                    borderRadius: 8,
-                    padding: "10px 20px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#fff",
-                    backgroundColor: selectedIds.size === 0 ? "#CBD5E1" : "var(--hp-accent)",
-                    border: "none",
-                    cursor: selectedIds.size === 0 ? "default" : "pointer",
-                  }}
-                >
-                  Scan {selectedIds.size} Drawing{selectedIds.size !== 1 ? "s" : ""} for Changes
-                </button>
-
                 {scan && (
                   <button
                     onClick={() => setStep(2)}
