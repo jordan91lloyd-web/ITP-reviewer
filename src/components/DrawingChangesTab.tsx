@@ -1065,6 +1065,23 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   return own + node.children.reduce((sum, c) => sum + countFiles(c), 0);
                 }
 
+                // Collect all supported files from a folder and its children
+                function allSupportedFiles(node: FolderNode): typeof node.files {
+                  const own = node.files.filter((f) => f.is_supported);
+                  return [...own, ...node.children.flatMap((c) => allSupportedFiles(c))];
+                }
+
+                // Add all files from a folder
+                async function addEntireFolder(node: FolderNode) {
+                  const files = allSupportedFiles(node).filter(
+                    (f) => !baselineDocs.some((d) => d.document_name === f.name)
+                  );
+                  if (files.length === 0) return;
+                  for (const file of files) {
+                    await addProcoreDoc(file);
+                  }
+                }
+
                 // Render a folder node recursively
                 function renderFolder(node: FolderNode, depth: number): React.ReactNode {
                   const isCollapsed = collapsedProcoreFolders.has(node.id);
@@ -1072,6 +1089,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   const totalFiles = countFiles(node);
                   if (totalFiles === 0) return null;
                   const indent = 12 + depth * 20;
+                  const unadded = allSupportedFiles(node).filter((f) => !baselineDocs.some((d) => d.document_name === f.name));
 
                   return (
                     <div key={node.id}>
@@ -1082,6 +1100,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         {isCollapsed ? <ChevronRight size={12} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronDown size={12} style={{ color: "var(--hp-warm-500)" }} />}
                         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-warm-800)" }}>{node.name}</span>
                         <span style={{ fontSize: 10, color: "var(--hp-text-muted)" }}>{totalFiles} file{totalFiles !== 1 ? "s" : ""}</span>
+                        {unadded.length > 0 && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); addEntireFolder(node); }}
+                            disabled={baselineUploading}
+                            style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", marginLeft: "auto" }}
+                          >
+                            Add All ({unadded.length})
+                          </button>
+                        )}
                       </div>
                       {!isCollapsed && (
                         <>
