@@ -1044,45 +1044,62 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               </div>
 
               {/* Procore Documents browser */}
-              {showProcoreBrowser && (
-                <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", marginBottom: 12, maxHeight: 300, overflowY: "auto" }}>
-                  {procoreFoldersLoading ? (
-                    <div style={{ padding: 16, fontSize: 12, color: "var(--hp-text-secondary)" }}>
-                      <RefreshCw size={12} className="animate-spin" style={{ display: "inline", verticalAlign: "middle", marginRight: 6 }} />
-                      Loading folders...
-                    </div>
-                  ) : procoreFolders.length === 0 ? (
-                    <div style={{ padding: 16, fontSize: 12, color: "var(--hp-text-secondary)" }}>No documents found in this project.</div>
-                  ) : (
-                    procoreFolders.map((folder) => {
-                      const isCollapsed = collapsedProcoreFolders.has(folder.id);
-                      const supportedFiles = folder.files.filter((f) => f.is_supported);
-                      if (supportedFiles.length === 0 && folder.files.length === 0) return null;
-                      return (
-                        <div key={folder.id}>
-                          <div
-                            onClick={() => setCollapsedProcoreFolders((prev) => { const next = new Set(prev); if (next.has(folder.id)) next.delete(folder.id); else next.add(folder.id); return next; })}
-                            style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderBottom: "1px solid var(--hp-border)", backgroundColor: "#FAFAF9", cursor: "pointer", userSelect: "none" }}
-                          >
-                            {isCollapsed ? <ChevronRight size={12} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronDown size={12} style={{ color: "var(--hp-warm-500)" }} />}
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-warm-800)" }}>{folder.name}</span>
-                            <span style={{ fontSize: 10, color: "var(--hp-text-muted)" }}>{supportedFiles.length} file{supportedFiles.length !== 1 ? "s" : ""}</span>
-                          </div>
-                          {!isCollapsed && supportedFiles.map((file) => {
+              {showProcoreBrowser && (() => {
+                // Build tree from flat folder list
+                type FolderNode = typeof procoreFolders[0] & { children: FolderNode[] };
+                const nodeMap = new Map<number, FolderNode>();
+                for (const f of procoreFolders) nodeMap.set(f.id, { ...f, children: [] });
+                const roots: FolderNode[] = [];
+                for (const f of procoreFolders) {
+                  const node = nodeMap.get(f.id)!;
+                  if (f.parent_id !== null && nodeMap.has(f.parent_id)) {
+                    nodeMap.get(f.parent_id)!.children.push(node);
+                  } else {
+                    roots.push(node);
+                  }
+                }
+
+                // Count total supported files recursively
+                function countFiles(node: FolderNode): number {
+                  const own = node.files.filter((f) => f.is_supported).length;
+                  return own + node.children.reduce((sum, c) => sum + countFiles(c), 0);
+                }
+
+                // Render a folder node recursively
+                function renderFolder(node: FolderNode, depth: number): React.ReactNode {
+                  const isCollapsed = collapsedProcoreFolders.has(node.id);
+                  const supportedFiles = node.files.filter((f) => f.is_supported);
+                  const totalFiles = countFiles(node);
+                  if (totalFiles === 0) return null;
+                  const indent = 12 + depth * 20;
+
+                  return (
+                    <div key={node.id}>
+                      <div
+                        onClick={() => setCollapsedProcoreFolders((prev) => { const next = new Set(prev); if (next.has(node.id)) next.delete(node.id); else next.add(node.id); return next; })}
+                        style={{ display: "flex", alignItems: "center", gap: 8, padding: `6px 12px 6px ${indent}px`, borderBottom: "1px solid var(--hp-border)", backgroundColor: "#FAFAF9", cursor: "pointer", userSelect: "none" }}
+                      >
+                        {isCollapsed ? <ChevronRight size={12} style={{ color: "var(--hp-warm-500)" }} /> : <ChevronDown size={12} style={{ color: "var(--hp-warm-500)" }} />}
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-warm-800)" }}>{node.name}</span>
+                        <span style={{ fontSize: 10, color: "var(--hp-text-muted)" }}>{totalFiles} file{totalFiles !== 1 ? "s" : ""}</span>
+                      </div>
+                      {!isCollapsed && (
+                        <>
+                          {supportedFiles.map((file) => {
                             const alreadyAdded = baselineDocs.some((d) => d.document_name === file.name);
                             return (
-                              <div key={file.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 12px 4px 36px", borderBottom: "1px solid var(--hp-border)", fontSize: 12 }}>
-                                <span style={{ color: alreadyAdded ? "var(--hp-text-muted)" : "var(--hp-warm-800)" }}>
+                              <div key={file.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: `4px 12px 4px ${indent + 24}px`, borderBottom: "1px solid var(--hp-border)", fontSize: 12 }}>
+                                <span style={{ color: alreadyAdded ? "var(--hp-text-muted)" : "var(--hp-warm-800)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                   {file.name}
                                   {file.size ? ` (${(file.size / 1024 / 1024).toFixed(1)} MB)` : ""}
                                 </span>
                                 {alreadyAdded ? (
-                                  <span style={{ fontSize: 10, color: "#166534" }}>Added</span>
+                                  <span style={{ fontSize: 10, color: "#166534", flexShrink: 0, marginLeft: 8 }}>Added</span>
                                 ) : (
                                   <button
                                     onClick={() => addProcoreDoc(file)}
                                     disabled={baselineUploading}
-                                    style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer" }}
+                                    style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", flexShrink: 0, marginLeft: 8 }}
                                   >
                                     Add
                                   </button>
@@ -1090,12 +1107,28 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                               </div>
                             );
                           })}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+                          {node.children.map((child) => renderFolder(child, depth + 1))}
+                        </>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", marginBottom: 12, maxHeight: 400, overflowY: "auto" }}>
+                    {procoreFoldersLoading ? (
+                      <div style={{ padding: 16, fontSize: 12, color: "var(--hp-text-secondary)" }}>
+                        <RefreshCw size={12} className="animate-spin" style={{ display: "inline", verticalAlign: "middle", marginRight: 6 }} />
+                        Loading folders...
+                      </div>
+                    ) : roots.length === 0 ? (
+                      <div style={{ padding: 16, fontSize: 12, color: "var(--hp-text-secondary)" }}>No documents found in this project.</div>
+                    ) : (
+                      roots.map((root) => renderFolder(root, 0))
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Document list */}
               {baselineDocs.length === 0 ? (

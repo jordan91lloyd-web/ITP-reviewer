@@ -140,8 +140,8 @@ export async function GET(request: NextRequest) {
         })),
       });
 
-      // Fetch subfolders (one level deeper)
-      if (depth < 2 && Array.isArray(data.folders)) {
+      // Fetch subfolders recursively (up to 5 levels deep)
+      if (depth < 5 && Array.isArray(data.folders)) {
         for (const sub of data.folders) {
           await fetchFolder({ ...sub, parent_id: folder.id }, depth + 1);
         }
