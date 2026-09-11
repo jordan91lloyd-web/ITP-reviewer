@@ -105,17 +105,33 @@ async function fetchPhotosInAlbum(
   return all;
 }
 
-async function downloadThumbnail(url: string): Promise<string | null> {
+async function downloadImage(url: string, token: string): Promise<string | null> {
   if (!url) return null;
   try {
-    // Procore thumbnail URLs are presigned S3 — no auth header
-    const res = await fetch(url);
-    if (!res.ok) return null;
+    // Try without auth first (presigned S3 URLs)
+    let res = await fetch(url);
+    if (!res.ok) {
+      // Retry with auth (some Procore URLs need it)
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+    if (!res.ok) {
+      console.warn(`[photo-classifier] Download failed: ${res.status} for ${url.slice(0, 100)}`);
+      return null;
+    }
     const buf = Buffer.from(await res.arrayBuffer());
-    // Skip if too large (> 4MB)
-    if (buf.length > 4 * 1024 * 1024) return null;
+    if (buf.length > 4 * 1024 * 1024) {
+      console.warn(`[photo-classifier] Image too large: ${(buf.length / 1024 / 1024).toFixed(1)} MB`);
+      return null;
+    }
+    if (buf.length < 100) {
+      console.warn(`[photo-classifier] Image too small (${buf.length} bytes), likely empty`);
+      return null;
+    }
     return buf.toString("base64");
-  } catch {
+  } catch (err) {
+    console.error(`[photo-classifier] Download error:`, err);
     return null;
   }
 }
@@ -329,6 +345,18 @@ export async function POST(request: NextRequest) {
       .eq("project_id", project_id)
       .in("procore_photo_id", photos.map((p) => p.id));
 
+    // Log first photo shape for debugging
+    if (photos.length > 0) {
+      const sample = photos[0];
+      console.log(`[photo-classifier] Sample photo shape:`, JSON.stringify({
+        id: sample.id,
+        url: sample.url?.slice(0, 80),
+        thumbnail_url: sample.thumbnail_url?.slice(0, 80),
+        filename: sample.filename,
+        prostore_file: sample.prostore_file,
+      }));
+    }
+
     const existingIds = new Set((existing ?? []).map((e) => e.procore_photo_id));
     const newPhotos = photos.filter((p) => !existingIds.has(p.id));
 
@@ -354,18 +382,19 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < newPhotos.length; i += BATCH_SIZE) {
       const batch = newPhotos.slice(i, i + BATCH_SIZE);
 
-      // Download thumbnails
+      // Download images
       const batchPhotos: { index: number; base64: string; filename: string; photo: ProcoreImage }[] = [];
       for (let j = 0; j < batch.length; j++) {
         const photo = batch[j];
         const imgUrl = photo.thumbnail_url ?? photo.url;
         if (!imgUrl) {
+          console.warn(`[photo-classifier] No URL for photo ${photo.id} (${photo.filename}): thumbnail_url=${photo.thumbnail_url}, url=${photo.url}`);
           albumResult.skipped++;
           totalSkipped++;
           continue;
         }
 
-        const base64 = await downloadThumbnail(imgUrl);
+        const base64 = await downloadImage(imgUrl, token);
         if (!base64) {
           albumResult.skipped++;
           totalSkipped++;
