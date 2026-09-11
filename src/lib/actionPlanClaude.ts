@@ -110,7 +110,7 @@ function extractJson(raw: string): unknown {
     } catch { /* fall through */ }
   }
 
-  throw new Error("No valid JSON object found in Claude response.");
+  throw new Error(`No valid JSON object found in Claude response. First 500 chars: ${raw.slice(0, 500)}`);
 }
 
 /**
