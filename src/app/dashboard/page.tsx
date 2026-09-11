@@ -17,6 +17,7 @@ import ResourcingTab from "@/components/ResourcingTab";
 import ReportTab from "@/components/ReportTab";
 import ActionPlansPage from "@/app/action-plans/page";
 import DrawingChangesTab from "@/components/DrawingChangesTab";
+import PhotoClassifierTab from "@/components/PhotoClassifierTab";
 import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
@@ -685,7 +686,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "resourcing" | "hold_points" | "report" | "action_plans" | "drawing_changes";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "resourcing" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [insightsFetched, setInsightsFetched] = useState(false);
 
@@ -1597,6 +1598,7 @@ export default function DashboardPage() {
           ["queue",           "Queue",           null],
           ["action_plans",   "Action Plans",    null],
           ["drawing_changes", "Drawing Changes", null],
+          ["photo_classifier", "Photo Classifier", null],
         ] as [DashboardView, string, string | null][]).map(([view, baseLabel, icon]) => {
           const runningCount = view === "queue"
             ? queueJobs.filter(j => j.status === "running").length
@@ -1721,6 +1723,11 @@ export default function DashboardPage() {
       {/* ── Drawing Changes tab ── */}
       {dashboardView === "drawing_changes" && selectedCompany && (
         <DrawingChangesTab company_id={String(selectedCompany.id)} projects={projects} />
+      )}
+
+      {/* ── Photo Classifier tab ── */}
+      {dashboardView === "photo_classifier" && selectedCompany && (
+        <PhotoClassifierTab company_id={String(selectedCompany.id)} projects={projects} />
       )}
 
       {/* ── ITP Reviews tab ── */}
