@@ -77,7 +77,8 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
   const [projectId, setProjectId] = useState("");
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loadingAlbums, setLoadingAlbums] = useState(false);
-  const [selectedAlbumId, setSelectedAlbumId] = useState<number | null>(null);
+  const [selectedAlbumIds, setSelectedAlbumIds] = useState<Set<number>>(new Set());
+  const [albumSearch, setAlbumSearch] = useState("");
   const [running, setRunning] = useState(false);
   const [summary, setSummary] = useState<RunSummary | null>(null);
   const [albumResults, setAlbumResults] = useState<AlbumResult[]>([]);
@@ -104,6 +105,8 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
     setProjectId(pid);
     setSummary(null);
     setAlbumResults([]);
+    setSelectedAlbumIds(new Set());
+    setAlbumSearch("");
     if (pid) fetchAlbums(pid);
   }, [fetchAlbums]);
 
@@ -113,28 +116,74 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
     setError(null);
     setSummary(null);
     setAlbumResults([]);
-    try {
-      const body: Record<string, unknown> = { company_id, project_id: projectId };
-      if (selectedAlbumId) body.album_id = selectedAlbumId;
 
-      const res = await fetch("/api/photo-classifier/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `Failed (HTTP ${res.status})`);
+    const albumIds = [...selectedAlbumIds];
+
+    try {
+      if (albumIds.length === 0) {
+        // Run all albums in one call
+        const res = await fetch("/api/photo-classifier/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ company_id, project_id: projectId }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error ?? `Failed (HTTP ${res.status})`);
+        }
+        const data = await res.json();
+        setSummary(data.summary);
+        setAlbumResults(data.albums ?? []);
+      } else {
+        // Run selected albums one at a time, accumulate results
+        const allAlbumResults: AlbumResult[] = [];
+        for (const albumId of albumIds) {
+          const res = await fetch("/api/photo-classifier/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ company_id, project_id: projectId, album_id: albumId }),
+          });
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data.albums) allAlbumResults.push(...data.albums);
+        }
+
+        // Build combined summary
+        const allClassifications = allAlbumResults.flatMap((r) => r.classifications);
+        const byCounts: Record<string, number> = {};
+        for (const c of allClassifications) byCounts[c.subject] = (byCounts[c.subject] ?? 0) + 1;
+
+        const combinedSummary: RunSummary = {
+          total_albums: allAlbumResults.length,
+          total_photos: allAlbumResults.reduce((s, r) => s + r.total_photos, 0),
+          already_classified: allAlbumResults.reduce((s, r) => s + r.already_classified, 0),
+          newly_classified: allAlbumResults.reduce((s, r) => s + r.newly_classified, 0),
+          skipped: allAlbumResults.reduce((s, r) => s + r.skipped, 0),
+          by_subject: byCounts,
+          confidence: {
+            confident: allClassifications.filter((c) => c.confidence >= 0.7).length,
+            needs_review: allClassifications.filter((c) => c.confidence >= 0.5 && c.confidence < 0.7).length,
+            low: allClassifications.filter((c) => c.confidence < 0.5).length,
+          },
+          unresolved_albums: allAlbumResults.filter((r) => !r.resolved_location).map((r) => ({
+            album_id: r.album_id, album_name: r.album_name, photo_count: r.total_photos,
+          })),
+          low_confidence_items: allClassifications.filter((c) => c.confidence < 0.5).map((c) => ({
+            photo_id: c.photo_id, filename: c.filename, subject: c.subject, confidence: c.confidence,
+          })),
+          needs_review_items: allClassifications.filter((c) => c.confidence >= 0.5 && c.confidence < 0.7).map((c) => ({
+            photo_id: c.photo_id, filename: c.filename, subject: c.subject, confidence: c.confidence,
+          })),
+        };
+        setSummary(combinedSummary);
+        setAlbumResults(allAlbumResults);
       }
-      const data = await res.json();
-      setSummary(data.summary);
-      setAlbumResults(data.albums ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Classification failed");
     } finally {
       setRunning(false);
     }
-  }, [projectId, company_id, selectedAlbumId]);
+  }, [projectId, company_id, selectedAlbumIds]);
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--hp-bg)" }}>
@@ -172,35 +221,75 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
             </div>
           ) : (
             <>
+              {/* Action bar */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                <select
-                  value={selectedAlbumId ?? ""}
-                  onChange={(e) => setSelectedAlbumId(e.target.value ? parseInt(e.target.value) : null)}
-                  style={{ borderRadius: 8, border: "1px solid var(--hp-border)", padding: "6px 10px", fontSize: 12, backgroundColor: "var(--hp-surface)", color: "var(--hp-text-primary)", minWidth: 250 }}
-                >
-                  <option value="">All albums ({albums.length})</option>
-                  {albums.filter(a => a.count > 0).map((a) => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.count} photos)</option>
-                  ))}
-                </select>
-
                 <button
                   onClick={runClassifier}
                   disabled={running}
                   style={{ borderRadius: 8, padding: "6px 16px", fontSize: 12, fontWeight: 600, color: "#fff", backgroundColor: "var(--hp-warm-800)", border: "none", cursor: running ? "default" : "pointer", opacity: running ? 0.4 : 1 }}
                 >
-                  {running ? "Classifying..." : selectedAlbumId ? "Classify Album" : "Classify All"}
+                  {running ? "Classifying..." : selectedAlbumIds.size > 0 ? `Classify ${selectedAlbumIds.size} Album${selectedAlbumIds.size !== 1 ? "s" : ""}` : "Classify All"}
                 </button>
-
-                {running && (
-                  <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                    This may take a few minutes for large albums...
-                  </span>
-                )}
+                <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+                  {selectedAlbumIds.size > 0
+                    ? `${albums.filter((a) => selectedAlbumIds.has(a.id)).reduce((s, a) => s + a.count, 0)} photos in selection`
+                    : `${albums.length} albums · ${albums.reduce((s, a) => s + a.count, 0)} total photos`}
+                </span>
+                {running && <span style={{ fontSize: 11, color: "var(--hp-significant)" }}>This may take a few minutes...</span>}
               </div>
 
-              <div style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                {albums.length} albums · {albums.reduce((sum, a) => sum + a.count, 0)} total photos
+              {/* Search + select controls */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Search albums..."
+                  value={albumSearch}
+                  onChange={(e) => setAlbumSearch(e.target.value)}
+                  style={{ borderRadius: 8, border: "1px solid var(--hp-border)", padding: "6px 10px", fontSize: 12, backgroundColor: "var(--hp-surface)", color: "var(--hp-text-primary)", flex: 1, maxWidth: 300 }}
+                />
+                <button
+                  onClick={() => setSelectedAlbumIds(new Set(albums.filter((a) => a.count > 0).map((a) => a.id)))}
+                  style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                >Select all</button>
+                <button
+                  onClick={() => setSelectedAlbumIds(new Set())}
+                  style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                >Clear</button>
+              </div>
+
+              {/* Album list */}
+              <div style={{ maxHeight: 300, overflowY: "auto", borderRadius: 8, border: "1px solid var(--hp-border)" }}>
+                {albums
+                  .filter((a) => a.count > 0)
+                  .filter((a) => !albumSearch || a.name.toLowerCase().includes(albumSearch.toLowerCase()))
+                  .map((a) => (
+                    <label
+                      key={a.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "6px 12px",
+                        borderBottom: "1px solid var(--hp-border)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        backgroundColor: selectedAlbumIds.has(a.id) ? "var(--hp-warm-100)" : "transparent",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedAlbumIds.has(a.id)}
+                        onChange={() => setSelectedAlbumIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(a.id)) next.delete(a.id); else next.add(a.id);
+                          return next;
+                        })}
+                        style={{ accentColor: "var(--hp-warm-800)", cursor: "pointer" }}
+                      />
+                      <span style={{ flex: 1, color: "var(--hp-text-primary)" }}>{a.name}</span>
+                      <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{a.count} photos</span>
+                    </label>
+                  ))}
               </div>
             </>
           )}
