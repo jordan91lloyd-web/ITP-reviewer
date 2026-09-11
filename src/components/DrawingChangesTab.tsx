@@ -284,9 +284,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [processingFolder, setProcessingFolder] = useState<number | null>(null);
   const [processingFolderProgress, setProcessingFolderProgress] = useState("");
 
-  const addProcoreDoc = useCallback(async (file: { id: number; name: string; url: string }) => {
+  const addProcoreDoc = useCallback(async (file: { id: number; name: string; url: string }, skipRefresh?: boolean) => {
     if (!projectId) return;
-    setBaselineUploading(true);
+    if (!skipRefresh) setBaselineUploading(true);
     try {
       const fd = new FormData();
       fd.append("company_id", company_id);
@@ -298,14 +298,14 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       const res = await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Failed to add document");
+        if (!skipRefresh) setError(data.error ?? "Failed to add document");
         return;
       }
-      await fetchBaseline(projectId);
+      if (!skipRefresh) await fetchBaseline(projectId);
     } catch {
-      setError("Failed to add document");
+      if (!skipRefresh) setError("Failed to add document");
     } finally {
-      setBaselineUploading(false);
+      if (!skipRefresh) setBaselineUploading(false);
     }
   }, [projectId, company_id, fetchBaseline]);
 
@@ -340,10 +340,14 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
       for (let i = 0; i < allFiles.length; i++) {
         setProcessingFolderProgress(`Processing ${i + 1}/${allFiles.length}: ${allFiles[i].name}`);
-        await addProcoreDoc(allFiles[i]);
+        await addProcoreDoc(allFiles[i], true);
       }
 
       setProcessingFolderProgress(`Done — ${allFiles.length} files processed from ${folderName}`);
+      // Auto-expand baseline section and refresh
+      setBaselineExpanded(true);
+      setShowProcoreBrowser(false);
+      await fetchBaseline(projectId);
     } catch {
       setProcessingFolderProgress("Error processing folder");
     } finally {
