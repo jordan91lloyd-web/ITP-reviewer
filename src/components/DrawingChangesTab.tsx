@@ -325,7 +325,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       const subs: { id: number; name: string }[] = data.subfolders ?? [];
 
       for (const f of files) {
-        if (f.is_supported && !baselineDocs.some((d) => d.document_name === f.name)) {
+        if (f.is_supported) {
           allFiles.push({ id: f.id, name: f.name, url: f.url });
         }
       }
@@ -340,10 +340,19 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
       for (let i = 0; i < allFiles.length; i++) {
         setProcessingFolderProgress(`Processing ${i + 1}/${allFiles.length}: ${allFiles[i].name}`);
-        await addProcoreDoc(allFiles[i], true);
+        // Inline POST instead of calling addProcoreDoc to avoid circular deps
+        try {
+          const fd = new FormData();
+          fd.append("company_id", company_id);
+          fd.append("project_id", projectId);
+          fd.append("procore_doc_url", allFiles[i].url);
+          fd.append("procore_doc_name", allFiles[i].name);
+          fd.append("procore_doc_id", String(allFiles[i].id));
+          await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
+        } catch { /* continue to next file */ }
       }
 
-      // Auto-expand baseline section and refresh
+      // Refresh and show results
       setBaselineExpanded(true);
       setShowProcoreBrowser(false);
       await fetchBaseline(projectId);
@@ -353,7 +362,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     } finally {
       setProcessingFolder(null);
     }
-  }, [projectId, company_id, baselineDocs, addProcoreDoc]);
+  }, [projectId, company_id, fetchBaseline]);
 
   const deleteBaselineDoc = useCallback(async (docId: string) => {
     if (!window.confirm("Remove this document from the baseline?")) return;
