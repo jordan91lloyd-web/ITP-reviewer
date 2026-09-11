@@ -343,11 +343,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         await addProcoreDoc(allFiles[i], true);
       }
 
-      setProcessingFolderProgress(`Done — ${allFiles.length} files processed from ${folderName}`);
       // Auto-expand baseline section and refresh
       setBaselineExpanded(true);
       setShowProcoreBrowser(false);
       await fetchBaseline(projectId);
+      setProcessingFolderProgress(allFiles.length > 0 ? `Done — ${allFiles.length} files processed from "${folderName}"` : `No supported files found in "${folderName}"`);
     } catch {
       setProcessingFolderProgress("Error processing folder");
     } finally {
@@ -1137,18 +1137,20 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                             {contents.files.filter((f) => f.is_supported).length} files · {contents.subfolders.length} folders
                           </span>
                         )}
-                        {/* Select entire folder — recursively process all files */}
-                        {processingFolder === folder.id ? (
-                          <span style={{ fontSize: 11, color: "var(--hp-significant)", marginLeft: "auto" }}>{processingFolderProgress}</span>
-                        ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); selectEntireFolder(folder.id, folder.name); }}
-                            disabled={!!processingFolder || baselineUploading}
-                            style={{ fontSize: 11, fontWeight: 600, color: "#fff", background: "var(--hp-warm-800)", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginLeft: "auto", opacity: processingFolder ? 0.4 : 1 }}
-                          >
-                            Select Folder
-                          </button>
-                        )}
+                        {/* Select Folder — only show when folder is expanded so user has seen contents */}
+                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+                          {processingFolder === folder.id ? (
+                            <span style={{ fontSize: 11, color: "var(--hp-significant)" }}>{processingFolderProgress}</span>
+                          ) : isExpanded ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); selectEntireFolder(folder.id, folder.name); }}
+                              disabled={!!processingFolder || baselineUploading}
+                              style={{ fontSize: 11, fontWeight: 600, color: "#fff", background: "var(--hp-warm-800)", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer", opacity: processingFolder ? 0.4 : 1 }}
+                            >
+                              Process This Folder
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                       {isExpanded && contents && (
                         <>
