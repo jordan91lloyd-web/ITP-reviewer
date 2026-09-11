@@ -7,7 +7,7 @@ import { buildActionPlanSystemPrompt, buildActionPlanInstructions } from "./acti
 import type { ConvertedActionPlan, ActionPlanActivity } from "./actionPlanTypes";
 
 const MODEL = "claude-sonnet-4-6";
-const MAX_TOKENS = 16000;
+const MAX_TOKENS = 32000;
 
 /**
  * Converts a single document into a structured Action Plan.
