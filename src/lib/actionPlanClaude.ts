@@ -56,12 +56,15 @@ export async function runActionPlanConversion(
     text: buildActionPlanInstructions(),
   });
 
-  const message = await client.messages.create({
+  // Use streaming to avoid SDK timeout warning on large responses
+  const stream = client.messages.stream({
     model: MODEL,
     max_tokens: MAX_TOKENS,
     system: buildActionPlanSystemPrompt(),
     messages: [{ role: "user", content: contentBlocks }],
   });
+
+  const message = await stream.finalMessage();
 
   const block = message.content[0];
   if (block.type !== "text") {
