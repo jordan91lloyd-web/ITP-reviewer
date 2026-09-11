@@ -534,9 +534,33 @@ export async function POST(request: NextRequest) {
     })),
   };
 
+  // Debug: include sample photo shape from first album
+  let debug: Record<string, unknown> | null = null;
+  for (const album of albums) {
+    const photos = await fetchPhotosInAlbum(token, company_id, project_id, album.id);
+    if (photos.length > 0) {
+      const s = photos[0];
+      debug = {
+        sample_album: album.name,
+        sample_photo: {
+          id: s.id,
+          has_url: !!s.url,
+          url_start: s.url?.slice(0, 100) ?? null,
+          has_thumbnail: !!s.thumbnail_url,
+          thumbnail_start: s.thumbnail_url?.slice(0, 100) ?? null,
+          filename: s.filename,
+          prostore_file: s.prostore_file,
+          keys: Object.keys(s),
+        },
+      };
+      break;
+    }
+  }
+
   return NextResponse.json({
     success: true,
     summary,
     albums: results,
+    debug,
   });
 }
