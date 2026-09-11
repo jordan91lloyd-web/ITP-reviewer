@@ -54,7 +54,7 @@ Use null for any metadata field (report_title, report_date, report_author, repor
 }
 
 export function buildActionPlanInstructions(): string {
-  return `Now convert this document into a structured Action Plan. Return a single JSON object matching this exact schema:
+  return `Now convert this document into a structured Action Plan. Return ONLY raw JSON — no markdown fences, no \`\`\`json, no explanation. Return a single JSON object matching this exact schema:
 
 {
   "action_plan_name": "string",
