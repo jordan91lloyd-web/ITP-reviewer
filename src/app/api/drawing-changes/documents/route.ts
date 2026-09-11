@@ -1,9 +1,8 @@
 // GET /api/drawing-changes/documents?company_id=X&project_id=Y
-//     Returns top-level folders.
+//     Returns top-level folders (via /rest/v1.0/folders — fast).
 // GET /api/drawing-changes/documents?company_id=X&project_id=Y&folder_id=Z
-//     Returns files and subfolders in a specific folder.
-//     Uses /rest/v1.0/projects/{pid}/documents?filters[folder_id]=Z
-//     which returns file.current_version.url for download.
+//     Returns files + subfolders (via /rest/v1.0/projects/{pid}/documents
+//     which includes file.current_version.url for download).
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -27,20 +26,6 @@ async function requireAuth(): Promise<string | null> {
   return cookieStore.get("procore_access_token")?.value ?? null;
 }
 
-interface DocItem {
-  id: number;
-  name: string;
-  document_type: string;
-  parent_id: number | null;
-  file?: {
-    current_version?: {
-      url?: string;
-      size?: number;
-    };
-    file_type?: string;
-  };
-}
-
 export async function GET(request: NextRequest) {
   const token = await requireAuth();
   if (!token) {
@@ -62,8 +47,8 @@ export async function GET(request: NextRequest) {
 
   try {
     if (folderId) {
-      // Fetch folder contents using the documents index with folder_id filter
-      const allDocs: DocItem[] = [];
+      // Use documents index with folder_id filter — this returns download URLs
+      const allDocs: Record<string, unknown>[] = [];
       let page = 1;
       while (true) {
         const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${folderId}&per_page=100&page=${page}`;
@@ -76,43 +61,62 @@ export async function GET(request: NextRequest) {
         page++;
       }
 
-      // Separate folders and files
       const subfolders = allDocs
         .filter((d) => d.document_type === "folder")
-        .map((d) => ({ id: d.id, name: d.name, has_children: true }));
+        .map((d) => ({ id: d.id as number, name: d.name as string, has_children: true }));
 
       const files = allDocs
         .filter((d) => d.document_type === "file")
-        .map((d) => ({
-          id: d.id,
-          name: d.name,
-          url: d.file?.current_version?.url ?? "",
-          content_type: d.file?.file_type ?? "",
-          size: d.file?.current_version?.size ?? null,
-          is_supported: isSupported(d.name),
-        }));
+        .map((d) => {
+          const file = d.file as Record<string, unknown> | undefined;
+          const cv = file?.current_version as Record<string, unknown> | undefined;
+          return {
+            id: d.id as number,
+            name: d.name as string,
+            url: (cv?.url as string) ?? "",
+            content_type: (file?.file_type as string) ?? "",
+            size: (cv?.size as number) ?? null,
+            is_supported: isSupported(d.name as string),
+          };
+        });
 
       return NextResponse.json({ folder_id: parseInt(folderId), subfolders, files });
     }
 
-    // Fetch root-level items (no folder_id filter = root)
-    const allDocs: DocItem[] = [];
-    let page = 1;
-    while (true) {
-      const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?per_page=100&page=${page}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) break;
-      const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) break;
-      allDocs.push(...data);
-      if (data.length < 100) break;
-      page++;
+    // Root folders — use the fast /folders endpoint
+    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=100`;
+    const rootRes = await fetch(rootUrl, { headers });
+    if (!rootRes.ok) {
+      return NextResponse.json({ error: `Procore returned ${rootRes.status}` }, { status: 502 });
     }
 
-    // Root level folders only
-    const folders = allDocs
-      .filter((d) => d.document_type === "folder")
-      .map((d) => ({ id: d.id, name: d.name, has_children: true }));
+    const rootData = await rootRes.json();
+
+    // Root can be an object with .folders or a direct array
+    let topFolders: { id: number; name: string }[] = [];
+    if (Array.isArray(rootData)) {
+      topFolders = rootData;
+    } else if (rootData.folders && Array.isArray(rootData.folders)) {
+      topFolders = rootData.folders;
+    } else if (rootData.id) {
+      // Single root folder — fetch its children
+      const childUrl = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${rootData.id}&per_page=100`;
+      const childRes = await fetch(childUrl, { headers });
+      if (childRes.ok) {
+        const childData = await childRes.json();
+        if (Array.isArray(childData)) {
+          topFolders = childData
+            .filter((d: Record<string, unknown>) => d.document_type === "folder")
+            .map((d: Record<string, unknown>) => ({ id: d.id as number, name: d.name as string }));
+        }
+      }
+    }
+
+    const folders = topFolders.map((f) => ({
+      id: f.id,
+      name: f.name,
+      has_children: true,
+    }));
 
     return NextResponse.json({ folders });
   } catch (err) {
