@@ -109,6 +109,33 @@ async function fetchFolder(
     }));
 
   const rawFiles = Array.isArray(data.files) ? data.files : [];
+
+  // Log file_versions structure once so we can discover the URL field
+  if (rawFiles.length > 0 && !rawFiles.some((f: Record<string, unknown>) => resolveFileUrl(f) !== "")) {
+    const sample = rawFiles[0] as Record<string, unknown>;
+    const fv = sample.file_versions;
+    if (Array.isArray(fv) && fv.length > 0) {
+      console.log(`[documents] file_versions[0] KEYS: ${JSON.stringify(Object.keys(fv[0]))}`);
+      // Log all string values that might be URLs
+      for (const k of Object.keys(fv[0])) {
+        const v = fv[0][k];
+        if (typeof v === "string" && v.length > 5) {
+          console.log(`[documents] file_versions[0].${k} = ${String(v).substring(0, 150)}`);
+        } else if (v && typeof v === "object" && !Array.isArray(v)) {
+          console.log(`[documents] file_versions[0].${k} KEYS: ${JSON.stringify(Object.keys(v as Record<string, unknown>))}`);
+          for (const sk of Object.keys(v as Record<string, unknown>)) {
+            const sv = (v as Record<string, unknown>)[sk];
+            if (typeof sv === "string" && sv.length > 5) {
+              console.log(`[documents] file_versions[0].${k}.${sk} = ${String(sv).substring(0, 150)}`);
+            }
+          }
+        }
+      }
+    } else {
+      console.log(`[documents] file_versions is ${JSON.stringify(fv)?.substring(0, 200)}`);
+    }
+  }
+
   const files: MappedFile[] = rawFiles.map(mapFolderFile);
 
   return { subfolders, files };

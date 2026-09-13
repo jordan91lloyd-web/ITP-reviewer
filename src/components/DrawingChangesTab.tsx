@@ -1044,6 +1044,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     setBaselineUploading(true);
                     let succeeded = 0;
                     let failed = 0;
+                    const errors: string[] = [];
                     setBaselineProgressText(`Processing 0/${files.length} files...`);
                     for (let i = 0; i < files.length; i++) {
                       setBaselineProgressText(`Processing ${i + 1}/${files.length} — ${files[i].name}`);
@@ -1060,17 +1061,19 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         } else {
                           failed++;
                           const errData = await res.json().catch(() => ({}));
-                          console.warn(`[baseline] ${files[i].name}: ${errData.error ?? res.status}`);
+                          const reason = errData.error ?? errData.reason ?? `HTTP ${res.status}`;
+                          errors.push(`${files[i].name}: ${reason}`);
                         }
-                      } catch {
+                      } catch (err) {
                         failed++;
+                        errors.push(`${files[i].name}: ${err instanceof Error ? err.message : "Network error"}`);
                       }
                     }
                     setBaselineUploading(false);
                     if (failed > 0 && succeeded === 0) {
-                      setBaselineProgressText(`All ${failed} files failed to process. Check browser console (F12) for details.`);
+                      setBaselineProgressText(`All ${failed} file${failed !== 1 ? "s" : ""} failed. ${errors.slice(0, 3).join(" | ")}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ""}`);
                     } else if (failed > 0) {
-                      setBaselineProgressText(`${succeeded} processed, ${failed} failed.`);
+                      setBaselineProgressText(`${succeeded} processed, ${failed} failed. ${errors.slice(0, 2).join(" | ")}`);
                     } else if (succeeded > 0) {
                       setBaselineProgressText(`${succeeded} file${succeeded !== 1 ? "s" : ""} processed successfully.`);
                     } else {
