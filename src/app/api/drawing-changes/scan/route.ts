@@ -12,11 +12,14 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import {
   SYSTEM_PROMPT,
+  buildSystemPrompt,
   CHANGE_TYPES,
   type DrawingPair,
   type DetectedChange,
   type ChangeType,
   type Severity,
+  type VariationRisk,
+  type BaselineScopeItemRef,
 } from "@/lib/drawing-changes-prompt";
 
 export const maxDuration = 300;
@@ -82,6 +85,7 @@ function parseChanges(raw: string): DetectedChange[] {
 
   const validTypes = new Set<string>(CHANGE_TYPES);
   const validSeverities = new Set<string>(["low", "medium", "high"]);
+  const validVariationRisks = new Set<string>(["likely_variation", "within_scope", "unclear"]);
 
   return parsed
     .filter(
@@ -105,6 +109,13 @@ function parseChanges(raw: string): DetectedChange[] {
       severity: validSeverities.has(item.severity as string)
         ? (item.severity as Severity)
         : "medium",
+      variation_risk: validVariationRisks.has(item.variation_risk as string)
+        ? (item.variation_risk as VariationRisk)
+        : null,
+      variation_note:
+        typeof item.variation_note === "string" && item.variation_note.length > 0
+          ? item.variation_note
+          : null,
     }));
 }
 
@@ -113,12 +124,13 @@ async function compareDrawings(
   pair: DrawingPair,
   oldPdfBase64: string,
   newPdfBase64: string,
-  deep?: boolean
+  deep?: boolean,
+  systemPrompt?: string,
 ): Promise<DetectedChange[]> {
   const response = await client.messages.create({
     model: deep ? "claude-opus-4-6" : "claude-sonnet-4-6",
     max_tokens: 8000,
-    system: SYSTEM_PROMPT,
+    system: systemPrompt ?? SYSTEM_PROMPT,
     messages: [
       {
         role: "user",
@@ -197,6 +209,31 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabase();
   const claude = new Anthropic();
+
+  // Fetch baseline scope items for this project (if any exist)
+  let scanSystemPrompt: string = SYSTEM_PROMPT;
+  try {
+    const { data: baselineDocs } = await supabase
+      .from("baseline_documents")
+      .select("scope_items")
+      .eq("project_id", project_id)
+      .eq("status", "processed");
+
+    if (baselineDocs && baselineDocs.length > 0) {
+      const allItems: BaselineScopeItemRef[] = [];
+      for (const doc of baselineDocs) {
+        if (Array.isArray(doc.scope_items)) {
+          allItems.push(...doc.scope_items);
+        }
+      }
+      if (allItems.length > 0) {
+        scanSystemPrompt = buildSystemPrompt(allItems);
+        console.log(`[scan] Using baseline: ${allItems.length} scope items from ${baselineDocs.length} documents`);
+      }
+    }
+  } catch {
+    // Non-critical — scan without baseline
+  }
 
   // Create or reuse scan record
   let scanRecordId: string;
@@ -295,7 +332,7 @@ export async function POST(request: NextRequest) {
         }),
       ]);
 
-      const changes = await compareDrawings(claude, pair, oldBase64, newBase64, deep);
+      const changes = await compareDrawings(claude, pair, oldBase64, newBase64, deep, scanSystemPrompt);
 
       // Deep scan replaces existing results for this drawing
       if (deep && scan_id) {
@@ -322,6 +359,8 @@ export async function POST(request: NextRequest) {
           description: c.description,
           location_on_drawing: c.location_on_drawing,
           severity: c.severity,
+          variation_risk: c.variation_risk,
+          variation_note: c.variation_note,
           old_pdf_storage_path: oldPath,
           new_pdf_storage_path: newPath,
         }));

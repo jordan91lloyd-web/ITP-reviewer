@@ -54,6 +54,8 @@ interface DrawingPair {
 
 type ReviewStatus = "needs_review" | "not_a_variation" | "variation_raised";
 
+type VariationRisk = "likely_variation" | "within_scope" | "unclear";
+
 interface ChangeRow {
   id: string;
   discipline: string;
@@ -65,6 +67,8 @@ interface ChangeRow {
   description: string;
   location_on_drawing: string | null;
   severity: string;
+  variation_risk: VariationRisk | null;
+  variation_note: string | null;
   review_status: ReviewStatus | null;
   change_event_id: string | null;
   old_pdf_storage_path: string | null;
@@ -137,6 +141,12 @@ const SEVERITY_COLORS: Record<string, { bg: string; text: string }> = {
   low: { bg: "var(--hp-compliant-bg)", text: "var(--hp-compliant)" },
 };
 
+const VARIATION_RISK_STYLES: Record<string, { label: string; bg: string; text: string }> = {
+  likely_variation: { label: "Likely Variation", bg: "var(--hp-critical-bg)", text: "var(--hp-critical)" },
+  within_scope: { label: "Within Scope", bg: "var(--hp-compliant-bg)", text: "var(--hp-compliant)" },
+  unclear: { label: "Unclear", bg: "var(--hp-significant-bg)", text: "var(--hp-significant)" },
+};
+
 const CHANGE_TYPE_ICONS: Record<string, typeof Plus> = {
   addition: Plus,
   deletion: Minus,
@@ -184,6 +194,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [byDiscipline, setByDiscipline] = useState<Record<string, ChangeRow[]>>({});
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [highSeverityOnly, setHighSeverityOnly] = useState(false);
+  const [variationsOnly, setVariationsOnly] = useState(false);
   const [deepScanning, setDeepScanning] = useState<Set<string>>(new Set());
   const [expandedDrawings, setExpandedDrawings] = useState<Set<string>>(new Set());
   const [allScans, setAllScans] = useState<{ id: string; created_at: string; status: string; total_drawings: number; completed_drawings: number }[]>([]);
@@ -1421,7 +1432,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
       {/* ═══ Step 2: Change Register ═══ */}
       {step === 2 && scan && (() => {
-        const filteredChanges = highSeverityOnly ? changes.filter((c) => c.severity === "high") : changes;
+        let filteredChanges = highSeverityOnly ? changes.filter((c) => c.severity === "high") : changes;
+        if (variationsOnly) filteredChanges = filteredChanges.filter((c) => c.variation_risk === "likely_variation");
         const filteredByDiscipline: Record<string, ChangeRow[]> = {};
         for (const c of filteredChanges) {
           const disc = c.discipline || "Other";
@@ -1430,6 +1442,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         }
         const uniqueDrawings = new Set(changes.map((c) => c.drawing_number));
         const highTotal = changes.filter((c) => c.severity === "high").length;
+        const variationTotal = changes.filter((c) => c.variation_risk === "likely_variation").length;
+        const withinScopeTotal = changes.filter((c) => c.variation_risk === "within_scope").length;
+        const hasBaseline = changes.some((c) => c.variation_risk !== null && c.variation_risk !== undefined);
 
         const BTN = {
           display: "flex" as const, alignItems: "center" as const, gap: 6,
@@ -1488,7 +1503,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-text-primary)" }}>Change Register</div>
                 <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
-                  {uniqueDrawings.size} drawings · {changes.length} changes · {highTotal} high severity
+                  {uniqueDrawings.size} drawings · {changes.length} changes · {highTotal} high severity{hasBaseline && ` · ${variationTotal} likely variation${variationTotal !== 1 ? "s" : ""}`}
                   {(() => {
                     const variationCount = changes.filter((c) => c.review_status === "variation_raised").length;
                     const reviewedCount = changes.filter((c) => c.review_status && c.review_status !== "needs_review").length;
@@ -1575,7 +1590,22 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     <AlertTriangle size={10} /> {highTotal} High {highSeverityOnly ? " ✕" : ""}
                   </button>
                 )}
-                {highSeverityOnly && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Showing {filteredChanges.length} of {changes.length}</span>}
+                {hasBaseline && variationTotal > 0 && (
+                  <button onClick={() => setVariationsOnly((v) => !v)} style={{
+                    borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500, border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 4,
+                    backgroundColor: variationsOnly ? "var(--hp-critical)" : "var(--hp-critical-bg)",
+                    color: variationsOnly ? "#fff" : "var(--hp-critical)",
+                  }}>
+                    {variationTotal} Variation{variationTotal !== 1 ? "s" : ""} {variationsOnly ? " ✕" : ""}
+                  </button>
+                )}
+                {hasBaseline && withinScopeTotal > 0 && (
+                  <span style={{ borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500, backgroundColor: "var(--hp-compliant-bg)", color: "var(--hp-compliant)" }}>
+                    {withinScopeTotal} Within Scope
+                  </span>
+                )}
+                {(highSeverityOnly || variationsOnly) && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Showing {filteredChanges.length} of {changes.length}</span>}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {selectMode ? (
@@ -1815,7 +1845,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                                       <div style={{ flex: 1, minWidth: 0, color: "var(--hp-warm-800)" }}>
                                         {change.description}
                                         {change.location_on_drawing && <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 3 }}>Location: {change.location_on_drawing}</div>}
+                                        {change.variation_note && <div style={{ fontSize: 11, color: "var(--hp-text-secondary)", marginTop: 3, fontStyle: "italic" }}>{change.variation_note}</div>}
                                       </div>
+                                      {change.variation_risk && (() => {
+                                        const vs = VARIATION_RISK_STYLES[change.variation_risk];
+                                        return vs ? <span style={{ borderRadius: 999, padding: "2px 10px", fontSize: 10, fontWeight: 600, backgroundColor: vs.bg, color: vs.text, whiteSpace: "nowrap", flexShrink: 0 }}>{vs.label}</span> : null;
+                                      })()}
                                       <span style={{ borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 500, textTransform: "capitalize", backgroundColor: sevColors.bg, color: sevColors.text, whiteSpace: "nowrap", flexShrink: 0 }}>{change.severity}</span>
                                       {/* Status dropdown */}
                                       {!selectMode && (
