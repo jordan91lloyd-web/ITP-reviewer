@@ -1057,23 +1057,37 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     }
                     setBaselineUploading(false);
                     if (failed > 0 && succeeded === 0) {
-                      setBaselineProgressText(`All ${failed} files failed to process. Check browser console for details.`);
-                      setTimeout(() => setBaselineProgressText(""), 8000);
+                      setBaselineProgressText(`All ${failed} files failed to process. Check browser console (F12) for details.`);
                     } else if (failed > 0) {
                       setBaselineProgressText(`${succeeded} processed, ${failed} failed.`);
-                      setTimeout(() => setBaselineProgressText(""), 6000);
+                    } else if (succeeded > 0) {
+                      setBaselineProgressText(`${succeeded} file${succeeded !== 1 ? "s" : ""} processed successfully.`);
                     } else {
                       setBaselineProgressText("");
                     }
                     setBaselineExpanded(true);
-                    setShowProcoreBrowser(false);
                     fetchBaseline(projectId);
                   }}
                 />
               )}
 
+              {/* Processing status banner — visible in the main section, not inside the browser */}
+              {baselineProgressText && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "10px 14px", marginBottom: 12, borderRadius: 8,
+                  border: `1px solid ${baselineProgressText.includes("failed") ? "var(--hp-critical-bg)" : baselineProgressText.includes("successfully") ? "var(--hp-compliant-bg)" : "var(--hp-significant-bg)"}`,
+                  backgroundColor: baselineProgressText.includes("failed") ? "var(--hp-critical-bg)" : baselineProgressText.includes("successfully") ? "var(--hp-compliant-bg)" : "var(--hp-significant-bg)",
+                  fontSize: 13, fontWeight: 500,
+                  color: baselineProgressText.includes("failed") ? "var(--hp-critical)" : baselineProgressText.includes("successfully") ? "var(--hp-compliant)" : "var(--hp-significant)",
+                }}>
+                  {baselineUploading && <RefreshCw size={14} className="animate-spin" />}
+                  {baselineProgressText}
+                </div>
+              )}
+
               {/* Document register */}
-              {baselineDocs.length === 0 ? (
+              {baselineDocs.length === 0 && !baselineProgressText ? (
                 <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", padding: "12px 0" }}>
                   Upload tender specifications, PBR, scope of works, allowances schedules, or contract documents. Claude extracts scope items from each document — when baseline documents are present, drawing revision changes can be compared against the original scope to flag potential variations.
                 </div>
