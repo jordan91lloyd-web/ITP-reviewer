@@ -267,9 +267,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     finally { setLoadingFolders((prev) => { const next = new Set(prev); next.delete(folderId); return next; }); }
   }, [projectId, company_id]);
 
-  const folderContentsRef = useRef(folderContents);
-  folderContentsRef.current = folderContents;
-
   const toggleFolder = useCallback((folderId: number) => {
     setExpandedFolders((prev) => {
       const next = new Set(prev);
@@ -277,19 +274,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         next.delete(folderId);
       } else {
         next.add(folderId);
-        if (!folderContentsRef.current.has(folderId)) fetchFolderContents(folderId);
+        if (!folderContents.has(folderId)) fetchFolderContents(folderId);
       }
       return next;
     });
-  }, [fetchFolderContents]);
+  }, [folderContents, fetchFolderContents]);
 
-  // State for folder processing
-  const [processingFolder, setProcessingFolder] = useState<number | null>(null);
-  const [processingFolderProgress, setProcessingFolderProgress] = useState("");
-
-  const addProcoreDoc = useCallback(async (file: { id: number; name: string; url: string }, skipRefresh?: boolean) => {
+  const addProcoreDoc = useCallback(async (file: { id: number; name: string; url: string }) => {
     if (!projectId) return;
-    if (!skipRefresh) setBaselineUploading(true);
+    setBaselineUploading(true);
     try {
       const fd = new FormData();
       fd.append("company_id", company_id);
@@ -301,69 +294,14 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       const res = await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (!skipRefresh) setError(data.error ?? "Failed to add document");
+        setError(data.error ?? "Failed to add document");
         return;
       }
-      if (!skipRefresh) await fetchBaseline(projectId);
-    } catch {
-      if (!skipRefresh) setError("Failed to add document");
-    } finally {
-      if (!skipRefresh) setBaselineUploading(false);
-    }
-  }, [projectId, company_id, fetchBaseline]);
-
-  // Recursively fetch all supported files from a folder and subfolders, then process
-  const selectEntireFolder = useCallback(async (folderId: number, folderName: string) => {
-    if (!projectId) return;
-    setProcessingFolder(folderId);
-    setProcessingFolderProgress("Scanning folder...");
-
-    const allFiles: { id: number; name: string; url: string }[] = [];
-
-    async function crawl(id: number): Promise<void> {
-      const res = await fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${projectId}&folder_id=${id}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const files: { id: number; name: string; url: string; is_supported: boolean }[] = data.files ?? [];
-      const subs: { id: number; name: string }[] = data.subfolders ?? [];
-
-      for (const f of files) {
-        if (f.is_supported) {
-          allFiles.push({ id: f.id, name: f.name, url: f.url });
-        }
-      }
-      for (const sub of subs) {
-        await crawl(sub.id);
-      }
-    }
-
-    try {
-      await crawl(folderId);
-      setProcessingFolderProgress(`Found ${allFiles.length} files. Processing...`);
-
-      for (let i = 0; i < allFiles.length; i++) {
-        setProcessingFolderProgress(`Processing ${i + 1}/${allFiles.length}: ${allFiles[i].name}`);
-        // Inline POST instead of calling addProcoreDoc to avoid circular deps
-        try {
-          const fd = new FormData();
-          fd.append("company_id", company_id);
-          fd.append("project_id", projectId);
-          fd.append("procore_doc_url", allFiles[i].url);
-          fd.append("procore_doc_name", allFiles[i].name);
-          fd.append("procore_doc_id", String(allFiles[i].id));
-          await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
-        } catch { /* continue to next file */ }
-      }
-
-      // Refresh and show results
-      setBaselineExpanded(true);
-      setShowProcoreBrowser(false);
       await fetchBaseline(projectId);
-      setProcessingFolderProgress(allFiles.length > 0 ? `Done — ${allFiles.length} files processed from "${folderName}"` : `No supported files found in "${folderName}"`);
     } catch {
-      setProcessingFolderProgress("Error processing folder");
+      setError("Failed to add document");
     } finally {
-      setProcessingFolder(null);
+      setBaselineUploading(false);
     }
   }, [projectId, company_id, fetchBaseline]);
 
@@ -374,6 +312,67 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setBaselineDocs((prev) => prev.filter((d) => d.id !== docId));
     } catch { /* ignore */ }
   }, []);
+
+  // ── Process entire folder recursively ─────────────────────────────────────
+
+  const [processingFolder, setProcessingFolder] = useState<number | null>(null);
+  const [processingProgress, setProcessingProgress] = useState("");
+
+  const processFolder = useCallback(async (folderId: number, folderName: string) => {
+    if (!projectId) return;
+    setProcessingFolder(folderId);
+    setProcessingProgress("Scanning folder...");
+
+    const allFiles: { id: number; name: string; url: string }[] = [];
+
+    async function crawl(id: number): Promise<void> {
+      try {
+        const res = await fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${projectId}&folder_id=${id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        for (const f of (data.files ?? [])) {
+          if (f.is_supported) allFiles.push({ id: f.id, name: f.name, url: f.url });
+        }
+        for (const sub of (data.subfolders ?? [])) {
+          await crawl(sub.id);
+        }
+      } catch { /* skip this folder */ }
+    }
+
+    try {
+      await crawl(folderId);
+      setProcessingProgress(`Found ${allFiles.length} files. Processing...`);
+
+      for (let i = 0; i < allFiles.length; i++) {
+        setProcessingProgress(`Processing ${i + 1}/${allFiles.length}: ${allFiles[i].name}`);
+        try {
+          const fd = new FormData();
+          fd.append("company_id", company_id);
+          fd.append("project_id", projectId);
+          fd.append("procore_doc_url", allFiles[i].url);
+          fd.append("procore_doc_name", allFiles[i].name);
+          fd.append("procore_doc_id", String(allFiles[i].id));
+          await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
+        } catch { /* continue */ }
+      }
+
+      setBaselineExpanded(true);
+      setShowProcoreBrowser(false);
+      // Refresh baseline list
+      try {
+        const res = await fetch(`/api/drawing-changes/baseline?company_id=${company_id}&project_id=${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setBaselineDocs(data.documents ?? []);
+        }
+      } catch { /* ignore */ }
+      setProcessingProgress(allFiles.length > 0 ? `Done — ${allFiles.length} files from "${folderName}"` : `No supported files in "${folderName}"`);
+    } catch {
+      setProcessingProgress("Error processing folder");
+    } finally {
+      setProcessingFolder(null);
+    }
+  }, [projectId, company_id]);
 
   // ── Fetch drawings with revisions ────────────────────────────────────────
 
@@ -1149,13 +1148,13 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                             {contents.files.filter((f) => f.is_supported).length} files · {contents.subfolders.length} folders
                           </span>
                         )}
-                        {/* Select Folder — only show when folder is expanded so user has seen contents */}
+                        {/* Process This Folder — recursively process all files */}
                         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
                           {processingFolder === folder.id ? (
-                            <span style={{ fontSize: 11, color: "var(--hp-significant)" }}>{processingFolderProgress}</span>
+                            <span style={{ fontSize: 11, color: "var(--hp-significant)" }}>{processingProgress}</span>
                           ) : isExpanded ? (
                             <button
-                              onClick={(e) => { e.stopPropagation(); selectEntireFolder(folder.id, folder.name); }}
+                              onClick={(e) => { e.stopPropagation(); processFolder(folder.id, folder.name); }}
                               disabled={!!processingFolder || baselineUploading}
                               style={{ fontSize: 11, fontWeight: 600, color: "#fff", background: "var(--hp-warm-800)", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer", opacity: processingFolder ? 0.4 : 1 }}
                             >
