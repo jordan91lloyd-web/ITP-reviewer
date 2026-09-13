@@ -3,7 +3,11 @@
 // GET /api/drawing-changes/documents?company_id=X&project_id=Y&folder_id=Z
 //     Returns one folder's direct contents: subfolders + files with download URLs.
 // GET /api/drawing-changes/documents?company_id=X&project_id=Y&folder_id=Z&recursive=true
-//     Returns all descendant files (for batch processing).
+//     Returns all descendant files (crawls subfolders server-side).
+//
+// Uses /rest/v1.0/folders and /rest/v1.0/folders/{id} exclusively.
+// The /documents endpoint only returns metadata (no download URLs).
+// File download URLs come from the file_versions array on /folders files.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -27,74 +31,111 @@ async function requireAuth(): Promise<string | null> {
   return cookieStore.get("procore_access_token")?.value ?? null;
 }
 
-// Resolve download URL from a Procore document/file object.
-// Tries every known field path — the shape varies between endpoints.
-function resolveDocUrl(d: Record<string, unknown>): string {
-  const file = d.file as Record<string, unknown> | undefined;
-  const cv = file?.current_version as Record<string, unknown> | undefined;
-  if (cv?.url && typeof cv.url === "string") return cv.url;
-  const ps = cv?.prostore_file as Record<string, unknown> | undefined;
-  if (ps?.url && typeof ps.url === "string") return ps.url;
-  if (d.url && typeof d.url === "string") return d.url;
-  if (d.file_url && typeof d.file_url === "string") return d.file_url;
-  if (d.download_url && typeof d.download_url === "string") return d.download_url;
-  if (file?.url && typeof file.url === "string") return file.url;
-  const vd = d.viewable_document as Record<string, unknown> | undefined;
-  if (vd?.url && typeof vd.url === "string") return vd.url;
-  // For files from the /folders endpoint: current_version directly on the file
-  const directCv = d.current_version as Record<string, unknown> | undefined;
-  if (directCv?.url && typeof directCv.url === "string") return directCv.url;
-  const directPs = directCv?.prostore_file as Record<string, unknown> | undefined;
-  if (directPs?.url && typeof directPs.url === "string") return directPs.url;
+// Extract download URL from a /folders file object.
+// Files have a file_versions array — use the most recent version's URL.
+function resolveFileUrl(f: Record<string, unknown>): string {
+  const versions = f.file_versions as Record<string, unknown>[] | undefined;
+  if (Array.isArray(versions) && versions.length > 0) {
+    // Most recent version is typically last
+    const latest = versions[versions.length - 1];
+    // Try multiple URL field paths on the version object
+    if (latest.url && typeof latest.url === "string") return latest.url;
+    if (latest.download_url && typeof latest.download_url === "string") return latest.download_url;
+    const ps = latest.prostore_file as Record<string, unknown> | undefined;
+    if (ps?.url && typeof ps.url === "string") return ps.url;
+    // Try first version as fallback
+    const first = versions[0];
+    if (first.url && typeof first.url === "string") return first.url;
+    if (first.download_url && typeof first.download_url === "string") return first.download_url;
+    const ps2 = first.prostore_file as Record<string, unknown> | undefined;
+    if (ps2?.url && typeof ps2.url === "string") return ps2.url;
+  }
+  // Direct fields as fallback
+  if (f.url && typeof f.url === "string") return f.url;
+  if (f.download_url && typeof f.download_url === "string") return f.download_url;
   return "";
 }
 
-function resolveDocSize(d: Record<string, unknown>): number | null {
-  const file = d.file as Record<string, unknown> | undefined;
-  const cv = file?.current_version as Record<string, unknown> | undefined;
-  if (typeof cv?.size === "number") return cv.size;
-  if (typeof d.size === "number") return d.size;
-  if (typeof file?.size === "number") return file.size;
-  const directCv = d.current_version as Record<string, unknown> | undefined;
-  if (typeof directCv?.size === "number") return directCv.size;
-  return null;
+interface MappedFile {
+  id: number;
+  name: string;
+  url: string;
+  content_type: string;
+  size: number | null;
+  is_supported: boolean;
 }
 
-function mapFile(d: Record<string, unknown>) {
-  const name = (d.name as string) ?? "";
+function mapFolderFile(f: Record<string, unknown>): MappedFile {
+  const name = (f.name as string) ?? "";
   return {
-    id: d.id as number,
+    id: f.id as number,
     name,
-    url: resolveDocUrl(d),
-    content_type: ((d.file as Record<string, unknown> | undefined)?.file_type as string)
-      ?? (d.file_type as string) ?? (d.content_type as string) ?? "",
-    size: resolveDocSize(d),
+    url: resolveFileUrl(f),
+    content_type: (f.file_type as string) ?? "",
+    size: typeof f.size === "number" ? f.size : null,
     is_supported: isSupported(name),
   };
 }
 
-// Paginate through /documents endpoint for a folder
-async function fetchDocumentFiles(
+interface MappedFolder {
+  id: number;
+  name: string;
+  has_children: true;
+}
+
+// Fetch a single folder from Procore and extract its direct children
+async function fetchFolder(
+  folderId: string | number,
+  companyId: string,
   projectId: string,
-  folderId: string,
   headers: Record<string, string>,
-): Promise<Record<string, unknown>[]> {
-  const allDocs: Record<string, unknown>[] = [];
-  let page = 1;
-  while (true) {
-    const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${folderId}&per_page=100&page=${page}`;
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      console.log(`[documents] /documents?filters[folder_id]=${folderId} page ${page} returned ${res.status}`);
-      break;
-    }
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) break;
-    allDocs.push(...data);
-    if (data.length < 100) break;
-    page++;
+): Promise<{ subfolders: MappedFolder[]; files: MappedFile[] }> {
+  const url = `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    console.log(`[documents] /folders/${folderId} returned ${res.status}`);
+    return { subfolders: [], files: [] };
   }
-  return allDocs;
+  const data = await res.json();
+  const parsedId = typeof folderId === "number" ? folderId : parseInt(String(folderId));
+
+  const rawFolders = Array.isArray(data.folders) ? data.folders : [];
+  const subfolders: MappedFolder[] = rawFolders
+    .filter((f: Record<string, unknown>) => (f.id as number) !== parsedId)
+    .map((f: Record<string, unknown>) => ({
+      id: f.id as number,
+      name: f.name as string,
+      has_children: true as const,
+    }));
+
+  const rawFiles = Array.isArray(data.files) ? data.files : [];
+  const files: MappedFile[] = rawFiles.map(mapFolderFile);
+
+  return { subfolders, files };
+}
+
+// Recursively crawl a folder and all subfolders, collecting all files
+async function crawlFolder(
+  folderId: string | number,
+  companyId: string,
+  projectId: string,
+  headers: Record<string, string>,
+  visited: Set<number>,
+  maxDepth: number,
+): Promise<MappedFile[]> {
+  const numId = typeof folderId === "number" ? folderId : parseInt(String(folderId));
+  if (visited.has(numId) || maxDepth <= 0) return [];
+  visited.add(numId);
+
+  const { subfolders, files } = await fetchFolder(folderId, companyId, projectId, headers);
+  const allFiles = [...files];
+
+  for (const sub of subfolders) {
+    const subFiles = await crawlFolder(sub.id, companyId, projectId, headers, visited, maxDepth - 1);
+    allFiles.push(...subFiles);
+  }
+
+  return allFiles;
 }
 
 export async function GET(request: NextRequest) {
@@ -119,119 +160,52 @@ export async function GET(request: NextRequest) {
 
   try {
     if (folderId) {
-      const parsedFolderId = parseInt(folderId);
+      if (recursive) {
+        // Crawl this folder + all subfolders, collecting every file
+        const visited = new Set<number>();
+        const allFiles = await crawlFolder(folderId, companyId, projectId, headers, visited, 20);
+        console.log(`[documents] folder_id=${folderId} recursive: crawled ${visited.size} folders, found ${allFiles.length} files (${allFiles.filter(f => !!f.url).length} with URLs)`);
 
-      // Fetch the folder via /folders/{id} — gives us subfolders AND files
-      const folderUrl = `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`;
-      const folderRes = await fetch(folderUrl, { headers });
-
-      let subfolders: { id: number; name: string; has_children: true }[] = [];
-      let folderFiles: Record<string, unknown>[] = [];
-
-      if (folderRes.ok) {
-        const folderData = await folderRes.json();
-        const rawFolders = Array.isArray(folderData.folders) ? folderData.folders : [];
-        subfolders = rawFolders
-          .filter((f: Record<string, unknown>) => (f.id as number) !== parsedFolderId)
-          .map((f: Record<string, unknown>) => ({
-            id: f.id as number,
-            name: f.name as string,
-            has_children: true as const,
-          }));
-        // Files from /folders endpoint (may or may not have download URLs)
-        folderFiles = Array.isArray(folderData.files) ? folderData.files : [];
-      }
-
-      // Also try /documents endpoint — it has download URLs
-      const docFiles = await fetchDocumentFiles(projectId, folderId, headers);
-
-      // Merge: prefer /documents files (have URLs), fall back to /folders files
-      const fileMap = new Map<number, Record<string, unknown>>();
-
-      // Add files from /folders first
-      for (const f of folderFiles) {
-        if (f.id) fileMap.set(f.id as number, f);
-      }
-
-      // Filter /documents results
-      const docFileItems = docFiles.filter((d) => d.document_type === "file");
-      if (!recursive) {
-        // Browser mode: only direct children
-        for (const d of docFileItems) {
-          const parentFolder = d.folder as { id: number } | undefined;
-          const parentId = parentFolder?.id ?? (d.folder_id as number | undefined);
-          if (parentId !== undefined && parentId !== parsedFolderId) continue;
-          fileMap.set(d.id as number, d); // overwrite with richer data
-        }
-      } else {
-        // Recursive mode: all descendants
-        for (const d of docFileItems) {
-          fileMap.set(d.id as number, d);
-        }
-      }
-
-      const files = [...fileMap.values()].map(mapFile);
-
-      console.log(`[documents] folder_id=${folderId} recursive=${recursive}: ${subfolders.length} subfolders, ${folderFiles.length} files from /folders, ${docFileItems.length} files from /documents, ${files.length} merged files (${files.filter(f => !!f.url).length} with URLs)`);
-
-      // The /documents list endpoint returns METADATA ONLY (no URLs).
-      // The /folders endpoint may include file objects with URLs.
-      // If still no URLs, try fetching the first file's detail to discover the URL field.
-      if (files.length > 0 && !files.some(f => !!f.url)) {
-        // Log folder-source file structure
-        if (folderFiles.length > 0) {
-          console.log(`[documents] FOLDER FILE KEYS: ${JSON.stringify(Object.keys(folderFiles[0]))}`);
-          for (const key of ["file", "current_version", "viewable_document", "prostore_file"]) {
-            const val = folderFiles[0][key];
-            if (val && typeof val === "object") {
-              console.log(`[documents] FOLDER FILE .${key} KEYS: ${JSON.stringify(Object.keys(val as Record<string, unknown>))}`);
-            }
-          }
-        }
-
-        // Try fetching individual document detail — the "show" endpoint may include URLs
-        const sampleId = docFileItems[0]?.id ?? folderFiles[0]?.id;
-        if (sampleId) {
-          try {
-            const detailRes = await fetch(
-              `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents/${sampleId}`,
-              { headers }
-            );
-            if (detailRes.ok) {
-              const detail = await detailRes.json();
-              console.log(`[documents] DETAIL /documents/${sampleId} KEYS: ${JSON.stringify(Object.keys(detail))}`);
-              for (const key of ["file", "current_version", "viewable_document", "prostore_file", "download_url"]) {
-                const val = detail[key];
-                if (val && typeof val === "object") {
-                  console.log(`[documents] DETAIL .${key} KEYS: ${JSON.stringify(Object.keys(val as Record<string, unknown>))}`);
-                  // One more level
-                  for (const subKey of Object.keys(val as Record<string, unknown>)) {
-                    const subVal = (val as Record<string, unknown>)[subKey];
-                    if (subVal && typeof subVal === "object" && !Array.isArray(subVal)) {
-                      console.log(`[documents] DETAIL .${key}.${subKey} KEYS: ${JSON.stringify(Object.keys(subVal as Record<string, unknown>))}`);
+        // Log sample file_versions structure on first run if URLs are missing
+        if (allFiles.length > 0 && !allFiles.some(f => !!f.url)) {
+          const parsedId = parseInt(folderId);
+          // Re-fetch one folder to log raw file_versions
+          const { files: rawCheck } = await fetchFolder(folderId, companyId, projectId, headers);
+          if (rawCheck.length === 0) {
+            // Try first subfolder
+            const { subfolders: subs } = await fetchFolder(folderId, companyId, projectId, headers);
+            if (subs.length > 0) {
+              const subUrl = `${PROCORE_BASE}/rest/v1.0/folders/${subs[0].id}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`;
+              const subRes = await fetch(subUrl, { headers });
+              if (subRes.ok) {
+                const subData = await subRes.json();
+                const sampleFiles = Array.isArray(subData.files) ? subData.files : [];
+                if (sampleFiles.length > 0) {
+                  const fv = sampleFiles[0].file_versions;
+                  if (Array.isArray(fv) && fv.length > 0) {
+                    console.log(`[documents] SAMPLE file_versions[0] KEYS: ${JSON.stringify(Object.keys(fv[0]))}`);
+                    // Log URL-like values
+                    for (const k of Object.keys(fv[0])) {
+                      if (typeof fv[0][k] === "string" && (fv[0][k].startsWith("http") || k.includes("url"))) {
+                        console.log(`[documents] file_versions[0].${k} = ${String(fv[0][k]).substring(0, 100)}`);
+                      }
                     }
+                  } else {
+                    console.log(`[documents] SAMPLE file_versions: ${JSON.stringify(fv)}`);
                   }
-                } else if (val && typeof val === "string" && val.startsWith("http")) {
-                  console.log(`[documents] DETAIL .${key} = URL found!`);
                 }
               }
-              // Also check for direct url-like fields
-              for (const key of Object.keys(detail)) {
-                const val = detail[key];
-                if (typeof val === "string" && val.startsWith("http")) {
-                  console.log(`[documents] DETAIL has URL at .${key}`);
-                }
-              }
-            } else {
-              console.log(`[documents] DETAIL /documents/${sampleId} returned ${detailRes.status}`);
             }
-          } catch (e) {
-            console.log(`[documents] DETAIL fetch failed:`, e);
           }
         }
+
+        return NextResponse.json({ folder_id: parseInt(folderId), subfolders: [], files: allFiles });
       }
 
-      return NextResponse.json({ folder_id: parsedFolderId, subfolders, files });
+      // Non-recursive: just this folder's direct children
+      const { subfolders, files } = await fetchFolder(folderId, companyId, projectId, headers);
+      console.log(`[documents] folder_id=${folderId}: ${subfolders.length} subfolders, ${files.length} files (${files.filter(f => !!f.url).length} with URLs)`);
+      return NextResponse.json({ folder_id: parseInt(folderId), subfolders, files });
     }
 
     // Top-level: fetch the root folder, return its direct child folders
@@ -246,7 +220,6 @@ export async function GET(request: NextRequest) {
       rootData = await rootRes.json();
     } catch (parseErr) {
       const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
-      console.error("[documents] Failed to parse root folders:", msg);
       return NextResponse.json({ error: `Failed to parse Procore response: ${msg}` }, { status: 502 });
     }
 
