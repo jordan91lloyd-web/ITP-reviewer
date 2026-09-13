@@ -122,6 +122,7 @@ async function extractWithClaude(
 // ── POST: Upload and process a baseline document ──────────────────────────
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB — Claude rejects large base64 image blocks
 const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png"];
 const UNSUPPORTED_EXTENSIONS = [".doc", ".xls", ".dwg", ".rvt", ".ifc", ".zip", ".rar", ".mp4", ".mov"];
 
@@ -285,6 +286,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No file or Procore document URL provided" }, { status: 400 });
   }
 
+  // Reject images over 5 MB — base64 encoding inflates them beyond Claude's block limit
+  if ((mimeType === "image/jpeg" || mimeType === "image/png") && buffer.length > MAX_IMAGE_SIZE) {
+    const sizeMB = (buffer.length / 1024 / 1024).toFixed(1);
+    await supabase.from("baseline_documents").insert({
+      company_id: companyId, project_id: projectId, document_name: filename,
+      document_type: mimeType, source, procore_document_id: procoreDocId ? parseInt(procoreDocId) : null,
+      status: "skipped", scope_items: [], item_count: 0, file_size: buffer.length,
+      error_message: `Image too large (${sizeMB} MB, max 5 MB for images)`,
+    });
+    return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: `Image too large (${sizeMB} MB, max 5 MB)` });
+  }
+
   // Create the baseline doc record (status: processing)
   const { data: doc, error: insertErr } = await supabase
     .from("baseline_documents")
@@ -349,6 +362,16 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = getSupabase();
+
+  // Clean up stuck "processing" records (older than 10 minutes)
+  const staleThreshold = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  await supabase
+    .from("baseline_documents")
+    .update({ status: "failed", error_message: "Processing timed out" })
+    .eq("company_id", companyId)
+    .eq("project_id", projectId)
+    .eq("status", "processing")
+    .lt("created_at", staleThreshold);
 
   const { data: docs, error } = await supabase
     .from("baseline_documents")

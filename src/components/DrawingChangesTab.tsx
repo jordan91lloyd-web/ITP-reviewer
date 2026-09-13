@@ -396,6 +396,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     setSelectedIds(new Set(drawingPairs.map((d) => d.drawing_id)));
   }, [drawingPairs]);
 
+  const selectUnscanned = useCallback(() => {
+    setSelectedIds(new Set(drawingPairs.filter((d) => d.status !== "scanned").map((d) => d.drawing_id)));
+  }, [drawingPairs]);
+
   const selectNone = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
@@ -1273,6 +1277,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     <button onClick={expandAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-text-secondary)" }}>Expand All</button>
                     <button onClick={collapseAllDiscovery} style={{ fontSize: 11, background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "var(--hp-text-secondary)" }}>Collapse All</button>
                     <button onClick={selectAll} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Select all</button>
+                    <button onClick={selectUnscanned} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Select unscanned</button>
                     <button onClick={selectNone} style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-text-muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
                   </div>
                 </div>

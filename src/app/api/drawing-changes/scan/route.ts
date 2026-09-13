@@ -25,6 +25,16 @@ import {
 export const maxDuration = 300;
 
 const PDF_SIZE_LIMIT = 15 * 1024 * 1024; // 15 MB per file
+const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB per image
+
+type FileInfo = { buffer: Buffer; mediaType: "application/pdf" | "image/jpeg" | "image/png" };
+
+function detectMediaType(buf: Buffer): "application/pdf" | "image/jpeg" | "image/png" | null {
+  if (buf.length >= 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) return "application/pdf"; // %PDF
+  if (buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return "image/jpeg";
+  if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return "image/png";
+  return null;
+}
 
 function getSupabase() {
   return createClient(
@@ -42,14 +52,17 @@ async function requireAuth(): Promise<string | null> {
   return cookieStore.get("procore_access_token")?.value ?? null;
 }
 
-async function downloadPdf(url: string): Promise<Buffer | null> {
+async function downloadFile(url: string): Promise<FileInfo | null> {
   if (!url) return null;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length > PDF_SIZE_LIMIT) return null;
-    return buf;
+    const mediaType = detectMediaType(buf);
+    if (!mediaType) return null; // unsupported format
+    const sizeLimit = mediaType === "application/pdf" ? PDF_SIZE_LIMIT : IMAGE_SIZE_LIMIT;
+    if (buf.length > sizeLimit) return null;
+    return { buffer: buf, mediaType };
   } catch {
     return null;
   }
@@ -119,14 +132,30 @@ function parseChanges(raw: string): DetectedChange[] {
     }));
 }
 
+function buildFileBlock(base64: string, mediaType: FileInfo["mediaType"]): Anthropic.ContentBlockParam {
+  if (mediaType === "application/pdf") {
+    return {
+      type: "document",
+      source: { type: "base64", media_type: "application/pdf", data: base64 },
+    } as Anthropic.DocumentBlockParam;
+  }
+  return {
+    type: "image",
+    source: { type: "base64", media_type: mediaType, data: base64 },
+  };
+}
+
 async function compareDrawings(
   client: Anthropic,
   pair: DrawingPair,
-  oldPdfBase64: string,
-  newPdfBase64: string,
+  oldFile: FileInfo,
+  newFile: FileInfo,
   deep?: boolean,
   systemPrompt?: string,
 ): Promise<DetectedChange[]> {
+  const oldBase64 = oldFile.buffer.toString("base64");
+  const newBase64 = newFile.buffer.toString("base64");
+
   const response = await client.messages.create({
     model: deep ? "claude-opus-4-6" : "claude-sonnet-4-6",
     max_tokens: 8000,
@@ -139,26 +168,12 @@ async function compareDrawings(
             type: "text",
             text: `OLD REVISION: Drawing ${pair.drawing_number} — ${pair.drawing_title}, Revision ${pair.old_revision.revision_number}`,
           },
-          {
-            type: "document",
-            source: {
-              type: "base64",
-              media_type: "application/pdf",
-              data: oldPdfBase64,
-            },
-          } as Anthropic.DocumentBlockParam,
+          buildFileBlock(oldBase64, oldFile.mediaType),
           {
             type: "text",
             text: `NEW REVISION: Drawing ${pair.drawing_number} — ${pair.drawing_title}, Revision ${pair.new_revision.revision_number}`,
           },
-          {
-            type: "document",
-            source: {
-              type: "base64",
-              media_type: "application/pdf",
-              data: newPdfBase64,
-            },
-          } as Anthropic.DocumentBlockParam,
+          buildFileBlock(newBase64, newFile.mediaType),
           {
             type: "text",
             text: "Compare these two revisions. Identify all scope and specification changes.",
@@ -302,37 +317,36 @@ export async function POST(request: NextRequest) {
         `[drawing-changes/scan] Comparing ${pair.drawing_number} rev ${pair.old_revision.revision_number} → ${pair.new_revision.revision_number}`
       );
 
-      const [oldPdf, newPdf] = await Promise.all([
-        downloadPdf(pair.old_revision.pdf_url),
-        downloadPdf(pair.new_revision.pdf_url),
+      const [oldFile, newFile] = await Promise.all([
+        downloadFile(pair.old_revision.pdf_url),
+        downloadFile(pair.new_revision.pdf_url),
       ]);
 
-      if (!oldPdf || !newPdf) {
-        console.warn(`[drawing-changes/scan] Failed to download PDFs for ${pair.drawing_number}`);
+      if (!oldFile || !newFile) {
+        console.warn(`[drawing-changes/scan] Failed to download files for ${pair.drawing_number}`);
         batchFailed++;
         continue;
       }
 
-      const oldBase64 = oldPdf.toString("base64");
-      const newBase64 = newPdf.toString("base64");
-
-      // Store PDFs in Supabase Storage for permanent access
+      // Store files in Supabase Storage for permanent access
       const storagePath = `drawing-revisions/${project_id}/${pair.drawing_number}`;
-      const oldPath = `${storagePath}/rev-${pair.old_revision.revision_number}.pdf`;
-      const newPath = `${storagePath}/rev-${pair.new_revision.revision_number}.pdf`;
+      const extOld = oldFile.mediaType === "application/pdf" ? ".pdf" : oldFile.mediaType === "image/png" ? ".png" : ".jpg";
+      const extNew = newFile.mediaType === "application/pdf" ? ".pdf" : newFile.mediaType === "image/png" ? ".png" : ".jpg";
+      const oldPath = `${storagePath}/rev-${pair.old_revision.revision_number}${extOld}`;
+      const newPath = `${storagePath}/rev-${pair.new_revision.revision_number}${extNew}`;
 
       await Promise.all([
-        supabase.storage.from("drawing-pdfs").upload(oldPath, oldPdf, {
-          contentType: "application/pdf",
+        supabase.storage.from("drawing-pdfs").upload(oldPath, oldFile.buffer, {
+          contentType: oldFile.mediaType,
           upsert: true,
         }),
-        supabase.storage.from("drawing-pdfs").upload(newPath, newPdf, {
-          contentType: "application/pdf",
+        supabase.storage.from("drawing-pdfs").upload(newPath, newFile.buffer, {
+          contentType: newFile.mediaType,
           upsert: true,
         }),
       ]);
 
-      const changes = await compareDrawings(claude, pair, oldBase64, newBase64, deep, scanSystemPrompt);
+      const changes = await compareDrawings(claude, pair, oldFile, newFile, deep, scanSystemPrompt);
 
       // Deep scan replaces existing results for this drawing
       if (deep && scan_id) {
