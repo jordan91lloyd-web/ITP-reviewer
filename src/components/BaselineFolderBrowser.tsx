@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronRight, ChevronDown, RefreshCw } from "lucide-react";
 
 // Dead simple folder browser. No useCallback, no useRef, no dependency chains.
@@ -32,15 +32,17 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, { subfolders: Folder[]; files: FileItem[] } | "loading" | undefined>>({});
 
-  // Load top folders on first render
-  if (topFolders === null && !loading) {
+  // Load top folders on mount
+  useEffect(() => {
     setLoading(true);
+    setTopFolders(null);
+    setExpanded({});
     fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${project_id}`)
       .then(r => r.json())
       .then(data => setTopFolders(data.folders ?? []))
       .catch(() => setTopFolders([]))
       .finally(() => setLoading(false));
-  }
+  }, [company_id, project_id]);
 
   function toggleFolder(id: number) {
     if (expanded[id]) {
