@@ -10,7 +10,7 @@ import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 import { BASELINE_SYSTEM_PROMPT, type BaselineScopeItem } from "@/lib/baseline-prompt";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 const PROCORE_BASE =
