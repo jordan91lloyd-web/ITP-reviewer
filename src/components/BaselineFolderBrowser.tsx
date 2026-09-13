@@ -101,19 +101,26 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
     const seenFileIds = new Set<number>();
     let skippedNoUrl = 0;
 
-    setCrawlStatus("Collecting files...");
+    setCrawlStatus("Collecting files from selected folders...");
+    let totalRaw = 0;
+    let totalUnsupported = 0;
 
     // Fetch all files for each selected folder using recursive=true
-    // (returns ALL descendant files in one call — no manual subfolder crawling needed)
     for (const fid of selectedFolders) {
       if (visited.has(fid)) continue;
       visited.add(fid);
       try {
+        setCrawlStatus(`Scanning folder ${visited.size}/${selectedFolders.size}...`);
         const res = await fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${project_id}&folder_id=${fid}&recursive=true`);
-        if (!res.ok) continue;
+        if (!res.ok) {
+          console.warn(`[BaselineFolderBrowser] folder ${fid} returned ${res.status}`);
+          continue;
+        }
         const data = await res.json();
-        for (const f of (data.files ?? [])) {
-          if (!f.is_supported) continue;
+        const rawFiles = data.files ?? [];
+        totalRaw += rawFiles.length;
+        for (const f of rawFiles) {
+          if (!f.is_supported) { totalUnsupported++; continue; }
           if (seenFileIds.has(f.id)) continue;
           seenFileIds.add(f.id);
           if (f.url) {
@@ -122,7 +129,9 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
             skippedNoUrl++;
           }
         }
-      } catch { /* skip */ }
+      } catch (err) {
+        console.warn(`[BaselineFolderBrowser] crawl error for folder ${fid}:`, err);
+      }
     }
 
     // Add individually selected files (from already-expanded folders)
@@ -150,12 +159,13 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
       setCrawlStatus(null);
       onProcessFolder(allFiles, label);
     } else {
-      setCrawlStatus(
-        skippedNoUrl > 0
-          ? `No processable files found (${skippedNoUrl} file${skippedNoUrl !== 1 ? "s" : ""} had no download URL).`
-          : "No supported files found in the selected folders."
-      );
-      setTimeout(() => setCrawlStatus(null), 6000);
+      const parts: string[] = [];
+      parts.push(`Found ${totalRaw} total item${totalRaw !== 1 ? "s" : ""}`);
+      if (totalUnsupported > 0) parts.push(`${totalUnsupported} unsupported format`);
+      if (skippedNoUrl > 0) parts.push(`${skippedNoUrl} missing download URL`);
+      if (totalRaw === 0) parts.push("— folders may only contain subfolders, not files directly");
+      setCrawlStatus(`No processable files. ${parts.join(", ")}.`);
+      setTimeout(() => setCrawlStatus(null), 10000);
     }
   }
 
