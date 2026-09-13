@@ -103,13 +103,14 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
 
     setCrawlStatus("Collecting files...");
 
-    // Crawl each selected folder
-    async function crawl(id: number, depth: number) {
-      if (visited.has(id) || depth > MAX_FOLDER_DEPTH) return;
-      visited.add(id);
+    // Fetch all files for each selected folder using recursive=true
+    // (returns ALL descendant files in one call — no manual subfolder crawling needed)
+    for (const fid of selectedFolders) {
+      if (visited.has(fid)) continue;
+      visited.add(fid);
       try {
-        const res = await fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${project_id}&folder_id=${id}`);
-        if (!res.ok) return;
+        const res = await fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${project_id}&folder_id=${fid}&recursive=true`);
+        if (!res.ok) continue;
         const data = await res.json();
         for (const f of (data.files ?? [])) {
           if (!f.is_supported) continue;
@@ -121,14 +122,7 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
             skippedNoUrl++;
           }
         }
-        for (const sub of (data.subfolders ?? [])) {
-          await crawl(sub.id, depth + 1);
-        }
       } catch { /* skip */ }
-    }
-
-    for (const folderId of selectedFolders) {
-      await crawl(folderId, 0);
     }
 
     // Add individually selected files (from already-expanded folders)

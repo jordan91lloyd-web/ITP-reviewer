@@ -76,6 +76,9 @@ export async function GET(request: NextRequest) {
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");
   const folderId = request.nextUrl.searchParams.get("folder_id");
+  // When recursive=true, return ALL descendant files (no parent filter).
+  // Used by the crawl/process flow which deduplicates on its own.
+  const recursive = request.nextUrl.searchParams.get("recursive") === "true";
 
   if (!companyId || !projectId) {
     return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
@@ -148,16 +151,15 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Filter to only files that are DIRECT children of this folder
+      // Filter files — when recursive, return all descendants; otherwise direct children only
       const files = allDocs
         .filter((d) => d.document_type === "file")
         .filter((d) => {
-          // Check if the file's parent folder matches our folder
+          if (recursive) return true; // crawl mode: take everything, client deduplicates
+          // Browser mode: only direct children of this folder
           const parentFolder = d.folder as { id: number } | undefined;
           const parentId = parentFolder?.id ?? (d.folder_id as number | undefined);
-          // If no parent info, include it (conservative)
           if (parentId === undefined) return true;
-          // Include only if the parent is exactly our folder (not a subfolder)
           return parentId === parsedFolderId;
         })
         .map((d) => ({
