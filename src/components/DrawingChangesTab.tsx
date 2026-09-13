@@ -195,6 +195,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [baselineDocs, setBaselineDocs] = useState<BaselineDoc[]>([]);
   const [baselineExpanded, setBaselineExpanded] = useState(false);
   const [baselineUploading, setBaselineUploading] = useState(false);
+  const [baselineProgressText, setBaselineProgressText] = useState("");
   const [expandedBaselineDoc, setExpandedBaselineDoc] = useState<string | null>(null);
   const baselineFileRef = useRef<HTMLInputElement>(null);
   const [showProcoreBrowser, setShowProcoreBrowser] = useState(false);
@@ -1027,10 +1028,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   company_id={company_id}
                   project_id={projectId}
                   processing={baselineUploading}
-                  progressText="Processing..."
-                  onProcessFolder={async (files, folderName) => {
+                  progressText={baselineProgressText}
+                  onProcessFolder={async (files, label) => {
                     setBaselineUploading(true);
+                    setBaselineProgressText(`Processing 0/${files.length} files...`);
                     for (let i = 0; i < files.length; i++) {
+                      setBaselineProgressText(`Processing ${i + 1}/${files.length} — ${files[i].name}`);
                       try {
                         const fd = new FormData();
                         fd.append("company_id", company_id);
@@ -1042,6 +1045,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                       } catch { /* continue */ }
                     }
                     setBaselineUploading(false);
+                    setBaselineProgressText("");
                     setBaselineExpanded(true);
                     setShowProcoreBrowser(false);
                     fetchBaseline(projectId);
