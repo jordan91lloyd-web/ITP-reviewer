@@ -3,8 +3,10 @@
 // GET /api/drawing-changes/documents?company_id=X&project_id=Y&folder_id=Z
 //     Returns one folder's direct contents: subfolders + files with download URLs.
 //
-// Uses /rest/v1.0/folders and /rest/v1.0/folders/{id} — these return only
-// direct children, unlike /documents?filters[folder_id] which returns ALL descendants.
+// Hybrid approach:
+//   Subfolders from /rest/v1.0/folders/{id} (direct children only, correct tree)
+//   Files from /rest/v1.0/projects/{pid}/documents (has download URLs),
+//     filtered to only include direct children of the requested folder.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -28,44 +30,6 @@ async function requireAuth(): Promise<string | null> {
   return cookieStore.get("procore_access_token")?.value ?? null;
 }
 
-// Extract subfolders and files from a Procore folder object.
-// The folder object has `folders` (child folders) and `files` (child files).
-function extractContents(folderData: Record<string, unknown>) {
-  const rawFolders = Array.isArray(folderData.folders) ? folderData.folders : [];
-  const rawFiles = Array.isArray(folderData.files) ? folderData.files : [];
-  const folderId = folderData.id as number | undefined;
-
-  const subfolders = rawFolders
-    .filter((f: Record<string, unknown>) => f.id !== folderId) // skip self-reference
-    .map((f: Record<string, unknown>) => ({
-      id: f.id as number,
-      name: f.name as string,
-      has_children: true,
-    }));
-
-  const files = rawFiles.map((f: Record<string, unknown>) => {
-    const name = (f.name as string) ?? "";
-    // Files from the folders endpoint have different shapes — try multiple paths
-    const cv = f.current_version as Record<string, unknown> | undefined;
-    const url = (cv?.url as string)
-      ?? (f.url as string)
-      ?? "";
-    const size = (cv?.size as number)
-      ?? (f.size as number)
-      ?? null;
-    return {
-      id: f.id as number,
-      name,
-      url,
-      content_type: (f.file_type as string) ?? (cv?.content_type as string) ?? "",
-      size,
-      is_supported: isSupported(name),
-    };
-  });
-
-  return { subfolders, files };
-}
-
 export async function GET(request: NextRequest) {
   const token = await requireAuth();
   if (!token) {
@@ -87,15 +51,92 @@ export async function GET(request: NextRequest) {
 
   try {
     if (folderId) {
-      // Fetch a specific folder's direct children via /rest/v1.0/folders/{id}
-      const url = `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) {
-        return NextResponse.json({ error: `Procore returned ${res.status}` }, { status: 502 });
+      const parsedFolderId = parseInt(folderId);
+
+      // Fetch subfolders from /folders/{id} (returns only direct children)
+      // and files from /documents endpoint (has download URLs)
+      const [folderRes, ...filePages] = await Promise.all([
+        fetch(
+          `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
+          { headers }
+        ),
+        // Fetch first page of documents for this folder (includes all descendants with URLs)
+        fetch(
+          `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${folderId}&per_page=100&page=1`,
+          { headers }
+        ),
+      ]);
+
+      // Extract subfolders from /folders/{id} (correct nesting)
+      let subfolders: { id: number; name: string; has_children: true }[] = [];
+      if (folderRes.ok) {
+        const folderData = await folderRes.json();
+        const rawFolders = Array.isArray(folderData.folders) ? folderData.folders : [];
+        subfolders = rawFolders
+          .filter((f: Record<string, unknown>) => (f.id as number) !== parsedFolderId)
+          .map((f: Record<string, unknown>) => ({
+            id: f.id as number,
+            name: f.name as string,
+            has_children: true as const,
+          }));
       }
-      const folderData = await res.json();
-      const { subfolders, files } = extractContents(folderData);
-      return NextResponse.json({ folder_id: parseInt(folderId), subfolders, files });
+
+      // Collect subfolder ids so we can distinguish direct files from descendant files
+      const subfolderIds = new Set(subfolders.map(s => s.id));
+
+      // Extract files from /documents endpoint, but only DIRECT children of this folder.
+      // The /documents endpoint returns ALL descendants. A file is a direct child if
+      // it's not inside any of our subfolders. We check the file's parent_folder_id.
+      const allDocs: Record<string, unknown>[] = [];
+      if (filePages[0]?.ok) {
+        const firstPage = await filePages[0].json();
+        if (Array.isArray(firstPage)) {
+          allDocs.push(...firstPage);
+          // Paginate if needed
+          if (firstPage.length >= 100) {
+            let page = 2;
+            while (true) {
+              const res = await fetch(
+                `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${folderId}&per_page=100&page=${page}`,
+                { headers }
+              );
+              if (!res.ok) break;
+              const data = await res.json();
+              if (!Array.isArray(data) || data.length === 0) break;
+              allDocs.push(...data);
+              if (data.length < 100) break;
+              page++;
+            }
+          }
+        }
+      }
+
+      // Filter to only files that are DIRECT children of this folder
+      const files = allDocs
+        .filter((d) => d.document_type === "file")
+        .filter((d) => {
+          // Check if the file's parent folder matches our folder
+          const parentFolder = d.folder as { id: number } | undefined;
+          const parentId = parentFolder?.id ?? (d.folder_id as number | undefined);
+          // If no parent info, include it (conservative)
+          if (parentId === undefined) return true;
+          // Include only if the parent is exactly our folder (not a subfolder)
+          return parentId === parsedFolderId;
+        })
+        .map((d) => {
+          const file = d.file as Record<string, unknown> | undefined;
+          const cv = file?.current_version as Record<string, unknown> | undefined;
+          return {
+            id: d.id as number,
+            name: d.name as string,
+            url: (cv?.url as string) ?? "",
+            content_type: (file?.file_type as string) ?? "",
+            size: (cv?.size as number) ?? null,
+            is_supported: isSupported(d.name as string),
+          };
+        });
+
+      return NextResponse.json({ folder_id: parsedFolderId, subfolders, files });
     }
 
     // Top-level: fetch the root folder, then return its direct child folders
@@ -116,11 +157,20 @@ export async function GET(request: NextRequest) {
 
     // The root endpoint returns a single folder object — extract its direct child folders
     if (rootData && typeof rootData === "object" && !Array.isArray(rootData)) {
-      const { subfolders } = extractContents(rootData as Record<string, unknown>);
+      const rd = rootData as Record<string, unknown>;
+      const rawFolders = Array.isArray(rd.folders) ? rd.folders : [];
+      const rootId = rd.id as number | undefined;
+      const subfolders = rawFolders
+        .filter((f: Record<string, unknown>) => f.id !== rootId)
+        .map((f: Record<string, unknown>) => ({
+          id: f.id as number,
+          name: f.name as string,
+          has_children: true,
+        }));
       return NextResponse.json({ folders: subfolders });
     }
 
-    // Fallback: if it's an array, return as-is (shouldn't happen)
+    // Fallback: if it's an array, return as-is
     if (Array.isArray(rootData)) {
       const folders = rootData.map((f: Record<string, unknown>) => ({
         id: f.id as number,
