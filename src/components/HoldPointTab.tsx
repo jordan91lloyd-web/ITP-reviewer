@@ -127,7 +127,8 @@ function buildDocTree(folders: DocFolder[]): DocTreeNode[] {
   const roots: DocTreeNode[] = [];
   for (const f of folders) {
     const node = nodeMap.get(f.id)!;
-    if (f.parent_id !== null && nodeMap.has(f.parent_id)) {
+    // Guard against self-referencing folders (parent_id === own id)
+    if (f.parent_id !== null && f.parent_id !== f.id && nodeMap.has(f.parent_id)) {
       nodeMap.get(f.parent_id)!.children.push(node);
     } else {
       roots.push(node);
@@ -137,11 +138,17 @@ function buildDocTree(folders: DocFolder[]): DocTreeNode[] {
 }
 
 // Recursively collect all files within a node (direct files + all descendant files).
-// Guards against non-array values from unexpected API response shapes.
-function allFilesInNode(node: DocTreeNode): DocFile[] {
+// Guards against non-array values, circular references, and excessive depth.
+const MAX_DOC_TREE_DEPTH = 30;
+
+function allFilesInNode(node: DocTreeNode, visited?: Set<number>): DocFile[] {
+  const seen = visited ?? new Set<number>();
+  if (seen.has(node.folder.id)) return []; // circular reference
+  seen.add(node.folder.id);
+  if (seen.size > 5000) return []; // safety cap
   const direct   = Array.isArray(node.folder.files) ? node.folder.files : [];
   const children = Array.isArray(node.children) ? node.children : [];
-  return [...direct, ...children.flatMap(c => allFilesInNode(c))];
+  return [...direct, ...children.flatMap(c => allFilesInNode(c, seen))];
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -624,7 +631,13 @@ export default function HoldPointTab({ company_id, projects }: Props) {
   // Renders a DocTreeNode recursively at the given nesting depth.
   // Captures state from the outer closure so we don't thread state through props.
 
-  function renderDocNode(node: DocTreeNode, depth: number): React.ReactElement {
+  function renderDocNode(node: DocTreeNode, depth: number, ancestors?: Set<number>): React.ReactElement {
+    // Guard against circular references and excessive depth
+    const parentIds = ancestors ?? new Set<number>();
+    if (depth > MAX_DOC_TREE_DEPTH || parentIds.has(node.folder.id)) return <></>;
+    const nextAncestors = new Set(parentIds);
+    nextAncestors.add(node.folder.id);
+
     const collapsed      = collapsedDocFolders.has(node.folder.id);
     const subtreeFiles   = allFilesInNode(node);
     const supported      = subtreeFiles.filter(f => f.is_supported);
@@ -747,7 +760,7 @@ export default function HoldPointTab({ company_id, projects }: Props) {
             })}
 
             {/* Subfolders — recursive */}
-            {node.children.map(child => renderDocNode(child, depth + 1))}
+            {node.children.map(child => renderDocNode(child, depth + 1, nextAncestors))}
           </>
         )}
       </div>

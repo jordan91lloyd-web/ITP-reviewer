@@ -61,8 +61,11 @@ export async function GET(request: NextRequest) {
         page++;
       }
 
+      const parsedFolderId = parseInt(folderId);
       const subfolders = allDocs
         .filter((d) => d.document_type === "folder")
+        // Filter out self-referencing folders to prevent infinite recursion on the client
+        .filter((d) => (d.id as number) !== parsedFolderId)
         .map((d) => ({ id: d.id as number, name: d.name as string, has_children: true }));
 
       const files = allDocs
@@ -84,19 +87,29 @@ export async function GET(request: NextRequest) {
     }
 
     // Top-level folders only (1 API call via /folders endpoint)
+    // Note: Procore returns the ENTIRE folder tree (deeply nested) as a single response.
+    // We only extract top-level folder ids and names, discarding the nested structure.
     const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=100`;
     const rootRes = await fetch(rootUrl, { headers });
     if (!rootRes.ok) {
       return NextResponse.json({ error: `Procore returned ${rootRes.status}` }, { status: 502 });
     }
 
-    const rootData = await rootRes.json();
+    let rootData: unknown;
+    try {
+      rootData = await rootRes.json();
+    } catch (parseErr) {
+      // JSON.parse can overflow on extremely deeply nested Procore folder trees
+      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      console.error("[drawing-changes/documents] Failed to parse Procore root folders response:", msg);
+      return NextResponse.json({ error: `Failed to parse Procore response: ${msg}` }, { status: 502 });
+    }
 
     let topFolders: { id: number; name: string }[] = [];
     if (Array.isArray(rootData)) {
       topFolders = rootData;
-    } else if (rootData.folders && Array.isArray(rootData.folders)) {
-      topFolders = rootData.folders;
+    } else if (rootData && typeof rootData === "object" && "folders" in rootData && Array.isArray((rootData as Record<string, unknown>).folders)) {
+      topFolders = (rootData as Record<string, unknown>).folders as { id: number; name: string }[];
     }
 
     const folders = topFolders.map((f) => ({

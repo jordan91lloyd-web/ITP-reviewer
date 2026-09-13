@@ -5,6 +5,9 @@ import { ChevronRight, ChevronDown, RefreshCw } from "lucide-react";
 
 // Dead simple folder browser. No useCallback, no useRef, no dependency chains.
 // State is local. Communicates via onProcessFolder prop.
+// Guards against circular/self-referencing folders from Procore.
+
+const MAX_FOLDER_DEPTH = 20;
 
 interface Folder {
   id: number;
@@ -56,7 +59,9 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
       fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${project_id}&folder_id=${id}`)
         .then(r => r.json())
         .then(data => {
-          setExpanded(prev => ({ ...prev, [id]: { subfolders: data.subfolders ?? [], files: data.files ?? [] } }));
+          // Filter out self-referencing subfolders to prevent infinite recursion
+          const subs = (data.subfolders ?? []).filter((s: Folder) => s.id !== id);
+          setExpanded(prev => ({ ...prev, [id]: { subfolders: subs, files: data.files ?? [] } }));
         })
         .catch(() => {
           setExpanded(prev => ({ ...prev, [id]: { subfolders: [], files: [] } }));
@@ -65,10 +70,14 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
   }
 
   async function handleProcessFolder(folderId: number, folderName: string) {
-    // Recursively collect all files from this folder and subfolders
+    // Recursively collect all files from this folder and subfolders.
+    // Visited set prevents infinite loops from circular folder references.
     const allFiles: { id: number; name: string; url: string }[] = [];
+    const visited = new Set<number>();
 
-    async function crawl(id: number) {
+    async function crawl(id: number, depth: number) {
+      if (visited.has(id) || depth > MAX_FOLDER_DEPTH) return;
+      visited.add(id);
       try {
         const res = await fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${project_id}&folder_id=${id}`);
         if (!res.ok) return;
@@ -77,16 +86,23 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
           if (f.is_supported && f.url) allFiles.push({ id: f.id, name: f.name, url: f.url });
         }
         for (const sub of (data.subfolders ?? [])) {
-          await crawl(sub.id);
+          await crawl(sub.id, depth + 1);
         }
       } catch { /* skip */ }
     }
 
-    await crawl(folderId);
+    await crawl(folderId, 0);
     onProcessFolder(allFiles, folderName);
   }
 
-  function renderFolder(folder: Folder, depth: number): React.ReactNode {
+  function renderFolder(folder: Folder, depth: number, ancestors?: Set<number>): React.ReactNode {
+    // Guard against circular references and excessive depth
+    if (depth > MAX_FOLDER_DEPTH) return null;
+    const parentIds = ancestors ?? new Set<number>();
+    if (parentIds.has(folder.id)) return null; // circular reference — skip
+    const nextAncestors = new Set(parentIds);
+    nextAncestors.add(folder.id);
+
     const state = expanded[folder.id];
     const isExpanded = !!state;
     const isLoading = state === "loading";
@@ -147,7 +163,7 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
                 </span>
               </div>
             ))}
-            {contents.subfolders.map(sub => renderFolder(sub, depth + 1))}
+            {contents.subfolders.map(sub => renderFolder(sub, depth + 1, nextAncestors))}
           </>
         )}
       </div>

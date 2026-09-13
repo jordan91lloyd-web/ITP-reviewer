@@ -1,11 +1,10 @@
 // GET /api/holdpoint/procore-documents?company_id=X&project_id=Y
-// TEMPORARY DEBUG VERSION 2 — captures file shape and subfolder shape
-// Remove fs.writeFileSync once confirmed.
+//     Returns top-level document folders for the project.
+// GET /api/holdpoint/procore-documents?company_id=X&project_id=Y&folder_id=Z
+//     Returns one folder's contents: subfolders + files with download URLs.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import fs from "fs";
-import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -13,17 +12,16 @@ const PROCORE_BASE = process.env.PROCORE_ENV === "production"
   ? "https://api.procore.com"
   : "https://sandbox.procore.com";
 
+const SUPPORTED_EXTENSIONS = new Set([".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png"]);
+
+function isSupported(name: string): boolean {
+  const lower = name.toLowerCase();
+  return [...SUPPORTED_EXTENSIONS].some((ext) => lower.endsWith(ext));
+}
+
 async function requireAuth(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get("procore_access_token")?.value ?? null;
-}
-
-async function get(url: string, H: Record<string, string>) {
-  const res = await fetch(url, { headers: H });
-  const text = await res.text();
-  let body: unknown = text;
-  try { body = JSON.parse(text); } catch { /* keep raw */ }
-  return { status: res.status, headers: Object.fromEntries(res.headers.entries()), body };
 }
 
 export async function GET(request: NextRequest) {
@@ -32,57 +30,82 @@ export async function GET(request: NextRequest) {
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");
+  const folderId = request.nextUrl.searchParams.get("folder_id");
+
   if (!companyId || !projectId) {
     return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
   }
 
-  const H: Record<string, string> = {
-    Authorization:        `Bearer ${token}`,
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
     "Procore-Company-Id": companyId,
   };
 
-  const debug: Record<string, unknown> = { company_id: companyId, project_id: projectId, captured_at: new Date().toISOString() };
-
-  // ── A. Folders root (already confirmed shape) ─────────────────────────────
-  debug.A_folders_root = await get(
-    `${PROCORE_BASE}/rest/v1.0/folders?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}&per_page=100`,
-    H,
-  );
-
-  // ── B. Fetch "Schedules" folder (id=598134463870146) — has_children_files:true, no subfolders
-  //       Expect its files[] to be populated with real file objects ────────────
-  debug.B_schedules_folder = await get(
-    `${PROCORE_BASE}/rest/v1.0/folders/598134463870146?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
-    H,
-  );
-
-  // ── C. Fetch "05 Design & Documentation" folder (id=598134465958570) — has subfolders
-  //       Expect folders[] to be populated with "1. Project Reports" etc. ─────
-  debug.C_design_docs_folder = await get(
-    `${PROCORE_BASE}/rest/v1.0/folders/598134465958570?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
-    H,
-  );
-
-  // ── D. Fetch documents endpoint page 10 (per_page=100) to find file items ─
-  debug.D_documents_page10_per100 = await get(
-    `${PROCORE_BASE}/rest/v1.0/documents?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}&per_page=100&page=10`,
-    H,
-  );
-
-  // ── E. Also try fetching children of root folder id directly ──────────────
-  //       (checking if there's a children endpoint)
-  debug.E_folder_children = await get(
-    `${PROCORE_BASE}/rest/v1.0/folders/598134463867571/folders?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
-    H,
-  );
-
   try {
-    const outPath = path.join(process.cwd(), "debug-procore-raw.json");
-    fs.writeFileSync(outPath, JSON.stringify(debug, null, 2), "utf8");
-    console.log("[procore-documents-debug] Wrote to", outPath);
-  } catch (e) {
-    console.error("[procore-documents-debug] Could not write debug file:", e);
-  }
+    if (folderId) {
+      // Fetch one folder's contents via documents index
+      const allDocs: Record<string, unknown>[] = [];
+      let page = 1;
+      while (true) {
+        const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${folderId}&per_page=100&page=${page}`;
+        const res = await fetch(url, { headers });
+        if (!res.ok) break;
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) break;
+        allDocs.push(...data);
+        if (data.length < 100) break;
+        page++;
+      }
 
-  return NextResponse.json({ debug: true, ...debug });
+      const parsedFolderId = parseInt(folderId);
+      const subfolders = allDocs
+        .filter((d) => d.document_type === "folder")
+        .filter((d) => (d.id as number) !== parsedFolderId)
+        .map((d) => ({ id: d.id as number, name: d.name as string, has_children: true }));
+
+      const files = allDocs
+        .filter((d) => d.document_type === "file")
+        .map((d) => {
+          const file = d.file as Record<string, unknown> | undefined;
+          const cv = file?.current_version as Record<string, unknown> | undefined;
+          return {
+            id: d.id as number,
+            name: d.name as string,
+            url: (cv?.url as string) ?? "",
+            content_type: (file?.file_type as string) ?? "",
+            size: (cv?.size as number) ?? null,
+            is_supported: isSupported(d.name as string),
+          };
+        });
+
+      return NextResponse.json({ folder_id: parsedFolderId, subfolders, files });
+    }
+
+    // Top-level folders only (1 API call via /folders endpoint)
+    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=100`;
+    const rootRes = await fetch(rootUrl, { headers });
+    if (!rootRes.ok) {
+      return NextResponse.json({ error: `Procore returned ${rootRes.status}` }, { status: 502 });
+    }
+
+    const rootData = await rootRes.json();
+
+    let topFolders: { id: number; name: string }[] = [];
+    if (Array.isArray(rootData)) {
+      topFolders = rootData;
+    } else if (rootData.folders && Array.isArray(rootData.folders)) {
+      topFolders = rootData.folders;
+    }
+
+    const folders = topFolders.map((f) => ({
+      id: f.id,
+      name: f.name,
+      has_children: true,
+    }));
+
+    return NextResponse.json({ folders });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
