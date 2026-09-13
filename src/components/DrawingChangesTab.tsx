@@ -267,6 +267,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     finally { setLoadingFolders((prev) => { const next = new Set(prev); next.delete(folderId); return next; }); }
   }, [projectId, company_id]);
 
+  const folderContentsRef = useRef(folderContents);
+  folderContentsRef.current = folderContents;
+
   const toggleFolder = useCallback((folderId: number) => {
     setExpandedFolders((prev) => {
       const next = new Set(prev);
@@ -274,11 +277,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         next.delete(folderId);
       } else {
         next.add(folderId);
-        if (!folderContents.has(folderId)) fetchFolderContents(folderId);
+        if (!folderContentsRef.current.has(folderId)) fetchFolderContents(folderId);
       }
       return next;
     });
-  }, [folderContents, fetchFolderContents]);
+  }, [fetchFolderContents]);
 
   // State for folder processing
   const [processingFolder, setProcessingFolder] = useState<number | null>(null);
