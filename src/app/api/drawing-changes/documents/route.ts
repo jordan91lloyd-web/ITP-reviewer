@@ -174,6 +174,28 @@ export async function GET(request: NextRequest) {
 
       console.log(`[documents] folder_id=${folderId} recursive=${recursive}: ${subfolders.length} subfolders, ${folderFiles.length} files from /folders, ${docFileItems.length} files from /documents, ${files.length} merged files (${files.filter(f => !!f.url).length} with URLs)`);
 
+      // Log first file's full structure so we can find the URL field
+      if (files.length > 0 && !files.some(f => !!f.url)) {
+        const sampleDoc = docFileItems[0] ?? folderFiles[0];
+        if (sampleDoc) {
+          console.log(`[documents] SAMPLE FILE KEYS: ${JSON.stringify(Object.keys(sampleDoc))}`);
+          // Log nested keys for common wrapper fields
+          for (const key of ["file", "current_version", "viewable_document", "prostore_file", "attachment"]) {
+            const val = sampleDoc[key];
+            if (val && typeof val === "object") {
+              console.log(`[documents] SAMPLE .${key} KEYS: ${JSON.stringify(Object.keys(val as Record<string, unknown>))}`);
+              // One more level deep
+              for (const subKey of Object.keys(val as Record<string, unknown>)) {
+                const subVal = (val as Record<string, unknown>)[subKey];
+                if (subVal && typeof subVal === "object" && !Array.isArray(subVal)) {
+                  console.log(`[documents] SAMPLE .${key}.${subKey} KEYS: ${JSON.stringify(Object.keys(subVal as Record<string, unknown>))}`);
+                }
+              }
+            }
+          }
+        }
+      }
+
       return NextResponse.json({ folder_id: parsedFolderId, subfolders, files });
     }
 
