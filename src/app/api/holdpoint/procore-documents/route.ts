@@ -22,6 +22,30 @@ function isSupported(name: string): boolean {
   return [...SUPPORTED_EXTENSIONS].some((ext) => lower.endsWith(ext));
 }
 
+function resolveDocUrl(d: Record<string, unknown>): string {
+  const file = d.file as Record<string, unknown> | undefined;
+  const cv = file?.current_version as Record<string, unknown> | undefined;
+  if (cv?.url && typeof cv.url === "string") return cv.url;
+  const ps = cv?.prostore_file as Record<string, unknown> | undefined;
+  if (ps?.url && typeof ps.url === "string") return ps.url;
+  if (d.url && typeof d.url === "string") return d.url;
+  if (d.file_url && typeof d.file_url === "string") return d.file_url;
+  if (d.download_url && typeof d.download_url === "string") return d.download_url;
+  if (file?.url && typeof file.url === "string") return file.url;
+  const vd = d.viewable_document as Record<string, unknown> | undefined;
+  if (vd?.url && typeof vd.url === "string") return vd.url;
+  return "";
+}
+
+function resolveDocSize(d: Record<string, unknown>): number | null {
+  const file = d.file as Record<string, unknown> | undefined;
+  const cv = file?.current_version as Record<string, unknown> | undefined;
+  if (typeof cv?.size === "number") return cv.size;
+  if (typeof d.size === "number") return d.size;
+  if (typeof file?.size === "number") return file.size;
+  return null;
+}
+
 async function requireAuth(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get("procore_access_token")?.value ?? null;
@@ -106,18 +130,14 @@ export async function GET(request: NextRequest) {
           if (parentId === undefined) return true;
           return parentId === parsedFolderId;
         })
-        .map((d) => {
-          const file = d.file as Record<string, unknown> | undefined;
-          const cv = file?.current_version as Record<string, unknown> | undefined;
-          return {
-            id: d.id as number,
-            name: d.name as string,
-            url: (cv?.url as string) ?? "",
-            content_type: (file?.file_type as string) ?? "",
-            size: (cv?.size as number) ?? null,
-            is_supported: isSupported(d.name as string),
-          };
-        });
+        .map((d) => ({
+          id: d.id as number,
+          name: d.name as string,
+          url: resolveDocUrl(d),
+          content_type: (d.file as Record<string, unknown> | undefined)?.file_type as string ?? "",
+          size: resolveDocSize(d),
+          is_supported: isSupported(d.name as string),
+        }));
 
       return NextResponse.json({ folder_id: parsedFolderId, subfolders, files });
     }

@@ -93,10 +93,15 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
   const totalSelected = selectedFolders.size + selectedFiles.size;
 
   // Collect all selected files (individual files + crawl selected folders)
+  const [crawlStatus, setCrawlStatus] = useState<string | null>(null);
+
   async function handleProcessSelected() {
     const allFiles: { id: number; name: string; url: string }[] = [];
     const visited = new Set<number>();
     const seenFileIds = new Set<number>();
+    let skippedNoUrl = 0;
+
+    setCrawlStatus("Collecting files...");
 
     // Crawl each selected folder
     async function crawl(id: number, depth: number) {
@@ -107,9 +112,13 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
         if (!res.ok) return;
         const data = await res.json();
         for (const f of (data.files ?? [])) {
-          if (f.is_supported && f.url && !seenFileIds.has(f.id)) {
-            seenFileIds.add(f.id);
+          if (!f.is_supported) continue;
+          if (seenFileIds.has(f.id)) continue;
+          seenFileIds.add(f.id);
+          if (f.url) {
             allFiles.push({ id: f.id, name: f.name, url: f.url });
+          } else {
+            skippedNoUrl++;
           }
         }
         for (const sub of (data.subfolders ?? [])) {
@@ -125,13 +134,16 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
     // Add individually selected files (from already-expanded folders)
     for (const fileId of selectedFiles) {
       if (seenFileIds.has(fileId)) continue;
-      // Find the file in expanded state
       for (const state of Object.values(expanded)) {
         if (typeof state !== "object" || !state) continue;
-        const match = state.files.find(f => f.id === fileId && f.is_supported && f.url);
+        const match = state.files.find(f => f.id === fileId && f.is_supported);
         if (match) {
           seenFileIds.add(fileId);
-          allFiles.push({ id: match.id, name: match.name, url: match.url });
+          if (match.url) {
+            allFiles.push({ id: match.id, name: match.name, url: match.url });
+          } else {
+            skippedNoUrl++;
+          }
           break;
         }
       }
@@ -141,7 +153,15 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
       const label = selectedFolders.size > 0
         ? `${selectedFolders.size} folder${selectedFolders.size !== 1 ? "s" : ""}${selectedFiles.size > 0 ? ` + ${selectedFiles.size} file${selectedFiles.size !== 1 ? "s" : ""}` : ""}`
         : `${selectedFiles.size} file${selectedFiles.size !== 1 ? "s" : ""}`;
+      setCrawlStatus(null);
       onProcessFolder(allFiles, label);
+    } else {
+      setCrawlStatus(
+        skippedNoUrl > 0
+          ? `No processable files found (${skippedNoUrl} file${skippedNoUrl !== 1 ? "s" : ""} had no download URL).`
+          : "No supported files found in the selected folders."
+      );
+      setTimeout(() => setCrawlStatus(null), 6000);
     }
   }
 
@@ -278,6 +298,17 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
               Process Selected
             </button>
           </div>
+        </div>
+      )}
+      {crawlStatus && !processing && (
+        <div style={{
+          padding: "8px 12px", marginBottom: 4, borderRadius: 8,
+          backgroundColor: crawlStatus.includes("No ") ? "var(--hp-significant-bg)" : "var(--hp-warm-100)",
+          fontSize: 12, color: crawlStatus.includes("No ") ? "var(--hp-significant)" : "var(--hp-warm-800)",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          {!crawlStatus.includes("No ") && <RefreshCw size={12} className="animate-spin" />}
+          {crawlStatus}
         </div>
       )}
       {processing && (
