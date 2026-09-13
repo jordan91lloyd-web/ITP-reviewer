@@ -688,6 +688,7 @@ export default function DashboardPage() {
   // Top-level tab
   type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "resourcing" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
+  const [visitedTabs, setVisitedTabs] = useState<Set<DashboardView>>(new Set(["itp_reviews"]));
   const [insightsFetched, setInsightsFetched] = useState(false);
 
   // Company tab
@@ -1612,6 +1613,7 @@ export default function DashboardPage() {
               type="button"
               onClick={() => {
                 setDashboardView(view);
+                setVisitedTabs(prev => new Set(prev).add(view));
                 if (view === "company" && !companyStatsFetched && selectedCompany) {
                   fetchCompanyStats(selectedCompany, companyDateRange);
                 }
@@ -1636,8 +1638,9 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* ── Company tab ── */}
-      {dashboardView === "company" && (
+      {/* ── Tabs: mount on first visit, hide with display:none to preserve state ── */}
+
+      {visitedTabs.has("company") && <div style={{ display: dashboardView === "company" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <CompanyTab
           companies={companies}
           selectedCompany={selectedCompany}
@@ -1658,13 +1661,13 @@ export default function DashboardPage() {
           }}
           onViewProject={(project) => {
             setDashboardView("itp_reviews");
+            setVisitedTabs(prev => new Set(prev).add("itp_reviews"));
             handleSelectProject(project);
           }}
         />
-      )}
+      </div>}
 
-      {/* ── Insights tab ── */}
-      {dashboardView === "insights" && (
+      {visitedTabs.has("insights") && <div style={{ display: dashboardView === "insights" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <InsightsTab
           companyId={selectedCompany?.id ?? null}
           projects={projects}
@@ -1673,65 +1676,47 @@ export default function DashboardPage() {
           selectedProject={selectedProject}
           onViewProject={(project) => {
             setDashboardView("itp_reviews");
+            setVisitedTabs(prev => new Set(prev).add("itp_reviews"));
             setStatusFilter("open");
             handleSelectProject(project);
           }}
         />
-      )}
+      </div>}
 
-      {/* ── Site Compliance tab ── */}
-      {dashboardView === "site_compliance" && (
-        <SiteComplianceTab
-          companyId={String(selectedCompany?.id ?? "")}
-        />
-      )}
+      {visitedTabs.has("site_compliance") && <div style={{ display: dashboardView === "site_compliance" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+        <SiteComplianceTab companyId={String(selectedCompany?.id ?? "")} />
+      </div>}
 
-      {/* ── Hold Points tab ── */}
-      {dashboardView === "hold_points" && (
-        <HoldPointTab
-          company_id={String(selectedCompany?.id ?? "")}
-          projects={projects}
-        />
-      )}
+      {visitedTabs.has("hold_points") && <div style={{ display: dashboardView === "hold_points" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+        <HoldPointTab company_id={String(selectedCompany?.id ?? "")} projects={projects} />
+      </div>}
 
-      {/* ── Report tab ── */}
-      {dashboardView === "report" && (
+      {visitedTabs.has("report") && <div style={{ display: dashboardView === "report" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <ReportTab companyId={selectedCompany?.id ?? null} companyName={selectedCompany?.name} />
-      )}
+      </div>}
 
-      {/* ── Queue tab ── */}
-      {dashboardView === "queue" && (
-        <QueuePanel
-          jobs={queueJobs}
-          onDismiss={(job_id) => setQueueJobs(prev => prev.filter(j => j.job_id !== job_id))}
-        />
-      )}
+      {visitedTabs.has("queue") && <div style={{ display: dashboardView === "queue" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+        <QueuePanel jobs={queueJobs} onDismiss={(job_id) => setQueueJobs(prev => prev.filter(j => j.job_id !== job_id))} />
+      </div>}
 
-      {/* ── Resourcing tab ── */}
-      {dashboardView === "resourcing" && (
-        <ResourcingTab
-          company_id={selectedCompany?.id ?? null}
-          projects={projects}
-        />
-      )}
+      {visitedTabs.has("resourcing") && <div style={{ display: dashboardView === "resourcing" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+        <ResourcingTab company_id={selectedCompany?.id ?? null} projects={projects} />
+      </div>}
 
-      {/* ── Action Plans tab ── */}
-      {dashboardView === "action_plans" && (
+      {visitedTabs.has("action_plans") && <div style={{ display: dashboardView === "action_plans" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <ActionPlansPage />
-      )}
+      </div>}
 
-      {/* ── Drawing Changes tab ── */}
-      {dashboardView === "drawing_changes" && selectedCompany && (
+      {selectedCompany && visitedTabs.has("drawing_changes") && <div style={{ display: dashboardView === "drawing_changes" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <DrawingChangesTab company_id={String(selectedCompany.id)} projects={projects} />
-      )}
+      </div>}
 
-      {/* ── Photo Classifier tab ── */}
-      {dashboardView === "photo_classifier" && selectedCompany && (
+      {selectedCompany && visitedTabs.has("photo_classifier") && <div style={{ display: dashboardView === "photo_classifier" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <PhotoClassifierTab company_id={String(selectedCompany.id)} projects={projects} />
-      )}
+      </div>}
 
       {/* ── ITP Reviews tab ── */}
-      {dashboardView === "itp_reviews" && (<>
+      <div style={{ display: dashboardView === "itp_reviews" ? undefined : "none", flex: 1, overflow: "hidden" }}><>
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left: project list ── */}
@@ -2140,7 +2125,7 @@ export default function DashboardPage() {
           onClose={() => setExportModalOpen(false)}
         />
       )}
-      </>)} {/* end itp_reviews tab */}
+      </></div> {/* end itp_reviews tab */}
 
     </div>
   );
