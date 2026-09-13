@@ -1,7 +1,10 @@
 // GET /api/holdpoint/procore-documents?company_id=X&project_id=Y
-//     Returns top-level document folders for the project.
+//     Returns top-level document folders (direct children of project root).
 // GET /api/holdpoint/procore-documents?company_id=X&project_id=Y&folder_id=Z
-//     Returns one folder's contents: subfolders + files with download URLs.
+//     Returns one folder's direct contents: subfolders + files with download URLs.
+//
+// Uses /rest/v1.0/folders/{id} which returns only direct children,
+// unlike /documents?filters[folder_id] which returns ALL descendants.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -24,6 +27,37 @@ async function requireAuth(): Promise<string | null> {
   return cookieStore.get("procore_access_token")?.value ?? null;
 }
 
+function extractContents(folderData: Record<string, unknown>) {
+  const rawFolders = Array.isArray(folderData.folders) ? folderData.folders : [];
+  const rawFiles = Array.isArray(folderData.files) ? folderData.files : [];
+  const folderId = folderData.id as number | undefined;
+
+  const subfolders = rawFolders
+    .filter((f: Record<string, unknown>) => f.id !== folderId)
+    .map((f: Record<string, unknown>) => ({
+      id: f.id as number,
+      name: f.name as string,
+      has_children: true,
+    }));
+
+  const files = rawFiles.map((f: Record<string, unknown>) => {
+    const name = (f.name as string) ?? "";
+    const cv = f.current_version as Record<string, unknown> | undefined;
+    const url = (cv?.url as string) ?? (f.url as string) ?? "";
+    const size = (cv?.size as number) ?? (f.size as number) ?? null;
+    return {
+      id: f.id as number,
+      name,
+      url,
+      content_type: (f.file_type as string) ?? (cv?.content_type as string) ?? "",
+      size,
+      is_supported: isSupported(name),
+    };
+  });
+
+  return { subfolders, files };
+}
+
 export async function GET(request: NextRequest) {
   const token = await requireAuth();
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -43,46 +77,18 @@ export async function GET(request: NextRequest) {
 
   try {
     if (folderId) {
-      // Fetch one folder's contents via documents index
-      const allDocs: Record<string, unknown>[] = [];
-      let page = 1;
-      while (true) {
-        const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${folderId}&per_page=100&page=${page}`;
-        const res = await fetch(url, { headers });
-        if (!res.ok) break;
-        const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) break;
-        allDocs.push(...data);
-        if (data.length < 100) break;
-        page++;
+      const url = `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        return NextResponse.json({ error: `Procore returned ${res.status}` }, { status: 502 });
       }
-
-      const parsedFolderId = parseInt(folderId);
-      const subfolders = allDocs
-        .filter((d) => d.document_type === "folder")
-        .filter((d) => (d.id as number) !== parsedFolderId)
-        .map((d) => ({ id: d.id as number, name: d.name as string, has_children: true }));
-
-      const files = allDocs
-        .filter((d) => d.document_type === "file")
-        .map((d) => {
-          const file = d.file as Record<string, unknown> | undefined;
-          const cv = file?.current_version as Record<string, unknown> | undefined;
-          return {
-            id: d.id as number,
-            name: d.name as string,
-            url: (cv?.url as string) ?? "",
-            content_type: (file?.file_type as string) ?? "",
-            size: (cv?.size as number) ?? null,
-            is_supported: isSupported(d.name as string),
-          };
-        });
-
-      return NextResponse.json({ folder_id: parsedFolderId, subfolders, files });
+      const folderData = await res.json();
+      const { subfolders, files } = extractContents(folderData);
+      return NextResponse.json({ folder_id: parseInt(folderId), subfolders, files });
     }
 
-    // Step 1: Get root folder id
-    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=1`;
+    // Top-level: fetch root folder, return its direct child folders
+    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`;
     const rootRes = await fetch(rootUrl, { headers });
     if (!rootRes.ok) {
       return NextResponse.json({ error: `Procore returned ${rootRes.status}` }, { status: 502 });
@@ -90,36 +96,21 @@ export async function GET(request: NextRequest) {
 
     const rootData = await rootRes.json();
 
-    let rootFolderId: number | null = null;
-    if (rootData && typeof rootData === "object" && !Array.isArray(rootData) && rootData.id) {
-      rootFolderId = rootData.id;
-    } else if (Array.isArray(rootData) && rootData.length > 0 && rootData[0]?.id) {
-      rootFolderId = rootData[0].id;
+    if (rootData && typeof rootData === "object" && !Array.isArray(rootData)) {
+      const { subfolders } = extractContents(rootData as Record<string, unknown>);
+      return NextResponse.json({ folders: subfolders });
     }
 
-    if (!rootFolderId) {
-      return NextResponse.json({ folders: [] });
+    if (Array.isArray(rootData)) {
+      const folders = rootData.map((f: Record<string, unknown>) => ({
+        id: f.id as number,
+        name: f.name as string,
+        has_children: true,
+      }));
+      return NextResponse.json({ folders });
     }
 
-    // Step 2: Fetch direct children of root via documents endpoint
-    const allDocs: Record<string, unknown>[] = [];
-    let page = 1;
-    while (true) {
-      const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${rootFolderId}&per_page=100&page=${page}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) break;
-      const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) break;
-      allDocs.push(...data);
-      if (data.length < 100) break;
-      page++;
-    }
-
-    const folders = allDocs
-      .filter((d) => d.document_type === "folder")
-      .map((d) => ({ id: d.id as number, name: d.name as string, has_children: true }));
-
-    return NextResponse.json({ folders });
+    return NextResponse.json({ folders: [] });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
