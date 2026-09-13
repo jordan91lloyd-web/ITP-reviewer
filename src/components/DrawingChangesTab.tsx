@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import BaselineFolderBrowser from "./BaselineFolderBrowser";
 import {
   Download,
   RefreshCw,
@@ -197,9 +198,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [expandedBaselineDoc, setExpandedBaselineDoc] = useState<string | null>(null);
   const baselineFileRef = useRef<HTMLInputElement>(null);
   const [showProcoreBrowser, setShowProcoreBrowser] = useState(false);
-  const [procoreFolders, setProcoreFolders] = useState<{ id: number; name: string; parent_id: number | null; files: { id: number; name: string; url: string; content_type: string; size: number | null; is_supported: boolean }[] }[]>([]);
-  const [procoreFoldersLoading, setProcoreFoldersLoading] = useState(false);
-  const [collapsedProcoreFolders, setCollapsedProcoreFolders] = useState<Set<number>>(new Set());
 
   const [error, setError] = useState<string | null>(null);
 
@@ -236,19 +234,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setBaselineUploading(false);
     }
   }, [projectId, company_id, fetchBaseline]);
-
-  const fetchProcoreDocs = useCallback(async () => {
-    if (!projectId) return;
-    setProcoreFoldersLoading(true);
-    try {
-      const res = await fetch(`/api/drawing-changes/documents?company_id=${company_id}&project_id=${projectId}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setProcoreFolders(data.folders ?? []);
-      setCollapsedProcoreFolders(new Set((data.folders ?? []).map((f: { id: number }) => f.id)));
-    } catch { /* ignore */ }
-    finally { setProcoreFoldersLoading(false); }
-  }, [projectId, company_id]);
 
   const addProcoreDoc = useCallback(async (file: { id: number; name: string; url: string }) => {
     if (!projectId) return;
@@ -1023,7 +1008,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   <FileUp size={12} /> {baselineUploading ? "Processing..." : "Upload File"}
                 </button>
                 <button
-                  onClick={() => { setShowProcoreBrowser((v) => !v); if (!showProcoreBrowser && procoreFolders.length === 0) fetchProcoreDocs(); }}
+                  onClick={() => setShowProcoreBrowser((v) => !v)}
                   style={{
                     display: "flex", alignItems: "center", gap: 6, borderRadius: 8,
                     border: "1px solid var(--hp-border)",
@@ -1036,119 +1021,33 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 {baselineUploading && <span style={{ fontSize: 11, color: "var(--hp-significant)" }}>Processing document...</span>}
               </div>
 
-              {/* Procore Documents browser */}
-              {showProcoreBrowser && (() => {
-                // Build tree from flat folder list
-                type FolderNode = typeof procoreFolders[0] & { children: FolderNode[] };
-                const nodeMap = new Map<number, FolderNode>();
-                for (const f of procoreFolders) nodeMap.set(f.id, { ...f, children: [] });
-                const roots: FolderNode[] = [];
-                for (const f of procoreFolders) {
-                  const node = nodeMap.get(f.id)!;
-                  if (f.parent_id !== null && nodeMap.has(f.parent_id)) {
-                    nodeMap.get(f.parent_id)!.children.push(node);
-                  } else {
-                    roots.push(node);
-                  }
-                }
-
-                // Count total supported files recursively
-                function countFiles(node: FolderNode): number {
-                  const own = node.files.filter((f) => f.is_supported).length;
-                  return own + node.children.reduce((sum, c) => sum + countFiles(c), 0);
-                }
-
-                // Collect all supported files from a folder and its children
-                function allSupportedFiles(node: FolderNode): typeof node.files {
-                  const own = node.files.filter((f) => f.is_supported);
-                  return [...own, ...node.children.flatMap((c) => allSupportedFiles(c))];
-                }
-
-                // Add all files from a folder
-                async function addEntireFolder(node: FolderNode) {
-                  const files = allSupportedFiles(node).filter(
-                    (f) => !baselineDocs.some((d) => d.document_name === f.name)
-                  );
-                  if (files.length === 0) return;
-                  for (const file of files) {
-                    await addProcoreDoc(file);
-                  }
-                }
-
-                // Render a folder node recursively
-                function renderFolder(node: FolderNode, depth: number): React.ReactNode {
-                  const isCollapsed = collapsedProcoreFolders.has(node.id);
-                  const supportedFiles = node.files.filter((f) => f.is_supported);
-                  const totalFiles = countFiles(node);
-                  if (totalFiles === 0) return null;
-                  const indent = 12 + depth * 20;
-                  const unadded = allSupportedFiles(node).filter((f) => !baselineDocs.some((d) => d.document_name === f.name));
-
-                  return (
-                    <div key={node.id}>
-                      <div
-                        onClick={() => setCollapsedProcoreFolders((prev) => { const next = new Set(prev); if (next.has(node.id)) next.delete(node.id); else next.add(node.id); return next; })}
-                        style={{ display: "flex", alignItems: "center", gap: 8, padding: `6px 12px 6px ${indent}px`, borderBottom: "1px solid var(--hp-border)", backgroundColor: "var(--hp-bg)", cursor: "pointer", userSelect: "none" }}
-                      >
-                        {isCollapsed ? <ChevronRight size={12} style={{ color: "var(--hp-text-muted)" }} /> : <ChevronDown size={12} style={{ color: "var(--hp-text-muted)" }} />}
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-warm-800)" }}>{node.name}</span>
-                        <span style={{ fontSize: 10, color: "var(--hp-text-muted)" }}>{totalFiles} file{totalFiles !== 1 ? "s" : ""}</span>
-                        {unadded.length > 0 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); addEntireFolder(node); }}
-                            disabled={baselineUploading}
-                            style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", marginLeft: "auto" }}
-                          >
-                            Add All ({unadded.length})
-                          </button>
-                        )}
-                      </div>
-                      {!isCollapsed && (
-                        <>
-                          {supportedFiles.map((file) => {
-                            const alreadyAdded = baselineDocs.some((d) => d.document_name === file.name);
-                            return (
-                              <div key={file.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: `4px 12px 4px ${indent + 24}px`, borderBottom: "1px solid var(--hp-border)", fontSize: 12 }}>
-                                <span style={{ color: alreadyAdded ? "var(--hp-text-muted)" : "var(--hp-warm-800)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {file.name}
-                                  {file.size ? ` (${(file.size / 1024 / 1024).toFixed(1)} MB)` : ""}
-                                </span>
-                                {alreadyAdded ? (
-                                  <span style={{ fontSize: 10, color: "var(--hp-compliant)", flexShrink: 0, marginLeft: 8 }}>Added</span>
-                                ) : (
-                                  <button
-                                    onClick={() => addProcoreDoc(file)}
-                                    disabled={baselineUploading}
-                                    style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-warm-800)", background: "none", border: "1px solid var(--hp-border)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", flexShrink: 0, marginLeft: 8 }}
-                                  >
-                                    Add
-                                  </button>
-                                )}
-                              </div>
-                            );
-                          })}
-                          {node.children.map((child) => renderFolder(child, depth + 1))}
-                        </>
-                      )}
-                    </div>
-                  );
-                }
-
-                return (
-                  <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", marginBottom: 12, maxHeight: 400, overflowY: "auto" }}>
-                    {procoreFoldersLoading ? (
-                      <div style={{ padding: 16, fontSize: 12, color: "var(--hp-text-secondary)" }}>
-                        <RefreshCw size={12} className="animate-spin" style={{ display: "inline", verticalAlign: "middle", marginRight: 6 }} />
-                        Loading folders...
-                      </div>
-                    ) : roots.length === 0 ? (
-                      <div style={{ padding: 16, fontSize: 12, color: "var(--hp-text-secondary)" }}>No documents found in this project.</div>
-                    ) : (
-                      roots.map((root) => renderFolder(root, 0))
-                    )}
-                  </div>
-                );
-              })()}
+              {/* Procore Documents browser — lazy loading, separate component */}
+              {showProcoreBrowser && projectId && (
+                <BaselineFolderBrowser
+                  company_id={company_id}
+                  project_id={projectId}
+                  processing={baselineUploading}
+                  progressText="Processing..."
+                  onProcessFolder={async (files, folderName) => {
+                    setBaselineUploading(true);
+                    for (let i = 0; i < files.length; i++) {
+                      try {
+                        const fd = new FormData();
+                        fd.append("company_id", company_id);
+                        fd.append("project_id", projectId);
+                        fd.append("procore_doc_url", files[i].url);
+                        fd.append("procore_doc_name", files[i].name);
+                        fd.append("procore_doc_id", String(files[i].id));
+                        await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
+                      } catch { /* continue */ }
+                    }
+                    setBaselineUploading(false);
+                    setBaselineExpanded(true);
+                    setShowProcoreBrowser(false);
+                    fetchBaseline(projectId);
+                  }}
+                />
+              )}
 
               {/* Document register */}
               {baselineDocs.length === 0 ? (
