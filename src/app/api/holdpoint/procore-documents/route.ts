@@ -81,8 +81,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ folder_id: parsedFolderId, subfolders, files });
     }
 
-    // Top-level folders only (1 API call via /folders endpoint)
-    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=100`;
+    // Step 1: Get root folder id
+    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=1`;
     const rootRes = await fetch(rootUrl, { headers });
     if (!rootRes.ok) {
       return NextResponse.json({ error: `Procore returned ${rootRes.status}` }, { status: 502 });
@@ -90,18 +90,34 @@ export async function GET(request: NextRequest) {
 
     const rootData = await rootRes.json();
 
-    let topFolders: { id: number; name: string }[] = [];
-    if (Array.isArray(rootData)) {
-      topFolders = rootData;
-    } else if (rootData.folders && Array.isArray(rootData.folders)) {
-      topFolders = rootData.folders;
+    let rootFolderId: number | null = null;
+    if (rootData && typeof rootData === "object" && !Array.isArray(rootData) && rootData.id) {
+      rootFolderId = rootData.id;
+    } else if (Array.isArray(rootData) && rootData.length > 0 && rootData[0]?.id) {
+      rootFolderId = rootData[0].id;
     }
 
-    const folders = topFolders.map((f) => ({
-      id: f.id,
-      name: f.name,
-      has_children: true,
-    }));
+    if (!rootFolderId) {
+      return NextResponse.json({ folders: [] });
+    }
+
+    // Step 2: Fetch direct children of root via documents endpoint
+    const allDocs: Record<string, unknown>[] = [];
+    let page = 1;
+    while (true) {
+      const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${rootFolderId}&per_page=100&page=${page}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) break;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) break;
+      allDocs.push(...data);
+      if (data.length < 100) break;
+      page++;
+    }
+
+    const folders = allDocs
+      .filter((d) => d.document_type === "folder")
+      .map((d) => ({ id: d.id as number, name: d.name as string, has_children: true }));
 
     return NextResponse.json({ folders });
   } catch (err) {

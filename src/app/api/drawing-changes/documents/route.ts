@@ -86,10 +86,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ folder_id: parseInt(folderId), subfolders, files });
     }
 
-    // Top-level folders only (1 API call via /folders endpoint)
-    // Note: Procore returns the ENTIRE folder tree (deeply nested) as a single response.
-    // We only extract top-level folder ids and names, discarding the nested structure.
-    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=100`;
+    // Step 1: Get the root folder id from /rest/v1.0/folders
+    const rootUrl = `${PROCORE_BASE}/rest/v1.0/folders?company_id=${companyId}&project_id=${projectId}&per_page=1`;
     const rootRes = await fetch(rootUrl, { headers });
     if (!rootRes.ok) {
       return NextResponse.json({ error: `Procore returned ${rootRes.status}` }, { status: 502 });
@@ -99,24 +97,43 @@ export async function GET(request: NextRequest) {
     try {
       rootData = await rootRes.json();
     } catch (parseErr) {
-      // JSON.parse can overflow on extremely deeply nested Procore folder trees
       const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
       console.error("[drawing-changes/documents] Failed to parse Procore root folders response:", msg);
       return NextResponse.json({ error: `Failed to parse Procore response: ${msg}` }, { status: 502 });
     }
 
-    let topFolders: { id: number; name: string }[] = [];
-    if (Array.isArray(rootData)) {
-      topFolders = rootData;
-    } else if (rootData && typeof rootData === "object" && "folders" in rootData && Array.isArray((rootData as Record<string, unknown>).folders)) {
-      topFolders = (rootData as Record<string, unknown>).folders as { id: number; name: string }[];
+    // Extract root folder id — response is a single folder object with nested children
+    let rootFolderId: number | null = null;
+    if (rootData && typeof rootData === "object" && "id" in rootData) {
+      rootFolderId = (rootData as { id: number }).id;
+    } else if (Array.isArray(rootData) && rootData.length > 0 && rootData[0]?.id) {
+      // Some Procore responses return an array — use the first folder's parent
+      rootFolderId = rootData[0].id;
     }
 
-    const folders = topFolders.map((f) => ({
-      id: f.id,
-      name: f.name,
-      has_children: true,
-    }));
+    if (!rootFolderId) {
+      return NextResponse.json({ folders: [] });
+    }
+
+    // Step 2: Fetch direct children of the root folder via the documents endpoint.
+    // This returns ONLY direct children (not all descendants), matching Procore's
+    // own folder tree structure.
+    const allDocs: Record<string, unknown>[] = [];
+    let page = 1;
+    while (true) {
+      const url = `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents?filters[folder_id]=${rootFolderId}&per_page=100&page=${page}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) break;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) break;
+      allDocs.push(...data);
+      if (data.length < 100) break;
+      page++;
+    }
+
+    const folders = allDocs
+      .filter((d) => d.document_type === "folder")
+      .map((d) => ({ id: d.id as number, name: d.name as string, has_children: true }));
 
     return NextResponse.json({ folders });
   } catch (err) {
