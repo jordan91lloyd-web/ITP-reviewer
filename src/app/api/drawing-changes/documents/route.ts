@@ -174,24 +174,59 @@ export async function GET(request: NextRequest) {
 
       console.log(`[documents] folder_id=${folderId} recursive=${recursive}: ${subfolders.length} subfolders, ${folderFiles.length} files from /folders, ${docFileItems.length} files from /documents, ${files.length} merged files (${files.filter(f => !!f.url).length} with URLs)`);
 
-      // Log first file's full structure so we can find the URL field
+      // The /documents list endpoint returns METADATA ONLY (no URLs).
+      // The /folders endpoint may include file objects with URLs.
+      // If still no URLs, try fetching the first file's detail to discover the URL field.
       if (files.length > 0 && !files.some(f => !!f.url)) {
-        const sampleDoc = docFileItems[0] ?? folderFiles[0];
-        if (sampleDoc) {
-          console.log(`[documents] SAMPLE FILE KEYS: ${JSON.stringify(Object.keys(sampleDoc))}`);
-          // Log nested keys for common wrapper fields
-          for (const key of ["file", "current_version", "viewable_document", "prostore_file", "attachment"]) {
-            const val = sampleDoc[key];
+        // Log folder-source file structure
+        if (folderFiles.length > 0) {
+          console.log(`[documents] FOLDER FILE KEYS: ${JSON.stringify(Object.keys(folderFiles[0]))}`);
+          for (const key of ["file", "current_version", "viewable_document", "prostore_file"]) {
+            const val = folderFiles[0][key];
             if (val && typeof val === "object") {
-              console.log(`[documents] SAMPLE .${key} KEYS: ${JSON.stringify(Object.keys(val as Record<string, unknown>))}`);
-              // One more level deep
-              for (const subKey of Object.keys(val as Record<string, unknown>)) {
-                const subVal = (val as Record<string, unknown>)[subKey];
-                if (subVal && typeof subVal === "object" && !Array.isArray(subVal)) {
-                  console.log(`[documents] SAMPLE .${key}.${subKey} KEYS: ${JSON.stringify(Object.keys(subVal as Record<string, unknown>))}`);
+              console.log(`[documents] FOLDER FILE .${key} KEYS: ${JSON.stringify(Object.keys(val as Record<string, unknown>))}`);
+            }
+          }
+        }
+
+        // Try fetching individual document detail — the "show" endpoint may include URLs
+        const sampleId = docFileItems[0]?.id ?? folderFiles[0]?.id;
+        if (sampleId) {
+          try {
+            const detailRes = await fetch(
+              `${PROCORE_BASE}/rest/v1.0/projects/${projectId}/documents/${sampleId}`,
+              { headers }
+            );
+            if (detailRes.ok) {
+              const detail = await detailRes.json();
+              console.log(`[documents] DETAIL /documents/${sampleId} KEYS: ${JSON.stringify(Object.keys(detail))}`);
+              for (const key of ["file", "current_version", "viewable_document", "prostore_file", "download_url"]) {
+                const val = detail[key];
+                if (val && typeof val === "object") {
+                  console.log(`[documents] DETAIL .${key} KEYS: ${JSON.stringify(Object.keys(val as Record<string, unknown>))}`);
+                  // One more level
+                  for (const subKey of Object.keys(val as Record<string, unknown>)) {
+                    const subVal = (val as Record<string, unknown>)[subKey];
+                    if (subVal && typeof subVal === "object" && !Array.isArray(subVal)) {
+                      console.log(`[documents] DETAIL .${key}.${subKey} KEYS: ${JSON.stringify(Object.keys(subVal as Record<string, unknown>))}`);
+                    }
+                  }
+                } else if (val && typeof val === "string" && val.startsWith("http")) {
+                  console.log(`[documents] DETAIL .${key} = URL found!`);
                 }
               }
+              // Also check for direct url-like fields
+              for (const key of Object.keys(detail)) {
+                const val = detail[key];
+                if (typeof val === "string" && val.startsWith("http")) {
+                  console.log(`[documents] DETAIL has URL at .${key}`);
+                }
+              }
+            } else {
+              console.log(`[documents] DETAIL /documents/${sampleId} returned ${detailRes.status}`);
             }
+          } catch (e) {
+            console.log(`[documents] DETAIL fetch failed:`, e);
           }
         }
       }
