@@ -92,11 +92,15 @@ export default function BaselineFolderBrowser({ company_id, project_id, onProces
         next.delete(folderId);
       } else {
         next.add(folderId);
-        if (!contents.has(folderId)) loadFolder(folderId);
+        // Load contents if not already loaded — check via state setter to avoid dep on contents
+        setContents((currentContents) => {
+          if (!currentContents.has(folderId)) loadFolder(folderId);
+          return currentContents; // no change, just reading
+        });
       }
       return next;
     });
-  }, [contents, loadFolder]);
+  }, [loadFolder]);
 
   // Recursively collect all supported files from a folder (uses API, not cached data)
   const collectAllFiles = useCallback(async (folderId: number): Promise<{ id: number; name: string; url: string }[]> => {
