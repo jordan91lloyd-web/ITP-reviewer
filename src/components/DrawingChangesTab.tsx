@@ -1031,6 +1031,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   progressText={baselineProgressText}
                   onProcessFolder={async (files, label) => {
                     setBaselineUploading(true);
+                    let succeeded = 0;
+                    let failed = 0;
                     setBaselineProgressText(`Processing 0/${files.length} files...`);
                     for (let i = 0; i < files.length; i++) {
                       setBaselineProgressText(`Processing ${i + 1}/${files.length} — ${files[i].name}`);
@@ -1041,11 +1043,28 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         fd.append("procore_doc_url", files[i].url);
                         fd.append("procore_doc_name", files[i].name);
                         fd.append("procore_doc_id", String(files[i].id));
-                        await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
-                      } catch { /* continue */ }
+                        const res = await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
+                        if (res.ok) {
+                          succeeded++;
+                        } else {
+                          failed++;
+                          const errData = await res.json().catch(() => ({}));
+                          console.warn(`[baseline] ${files[i].name}: ${errData.error ?? res.status}`);
+                        }
+                      } catch {
+                        failed++;
+                      }
                     }
                     setBaselineUploading(false);
-                    setBaselineProgressText("");
+                    if (failed > 0 && succeeded === 0) {
+                      setBaselineProgressText(`All ${failed} files failed to process. Check browser console for details.`);
+                      setTimeout(() => setBaselineProgressText(""), 8000);
+                    } else if (failed > 0) {
+                      setBaselineProgressText(`${succeeded} processed, ${failed} failed.`);
+                      setTimeout(() => setBaselineProgressText(""), 6000);
+                    } else {
+                      setBaselineProgressText("");
+                    }
                     setBaselineExpanded(true);
                     setShowProcoreBrowser(false);
                     fetchBaseline(projectId);

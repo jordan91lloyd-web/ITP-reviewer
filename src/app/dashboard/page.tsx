@@ -1727,7 +1727,7 @@ export default function DashboardPage() {
         <ActionPlansPage />
       </div>}
 
-      {selectedCompany && visitedTabs.has("drawing_changes") && <div style={{ display: dashboardView === "drawing_changes" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {selectedCompany && visitedTabs.has("drawing_changes") && <div style={{ display: dashboardView === "drawing_changes" ? undefined : "none", flex: 1, overflow: "auto" }}>
         <DrawingChangesTab company_id={String(selectedCompany.id)} projects={projects} />
       </div>}
 
