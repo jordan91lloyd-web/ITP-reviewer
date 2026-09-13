@@ -530,6 +530,7 @@ export default function DashboardPage() {
   // Projects
   const [projects, setProjects]               = useState<DashboardProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<DashboardProject | null>(null);
   const [hiddenCount, setHiddenCount]         = useState(0);
   const [showHidden, setShowHidden]           = useState(false);
@@ -743,10 +744,16 @@ export default function DashboardPage() {
     setBulkSummary(null);
     const url = `/api/dashboard/projects?company_id=${selectedCompany.id}${showHidden ? "&show_hidden=true" : ""}`;
     fetch(url)
-      .then(r => r.json())
-      .then(data => {
-        setProjects(data.projects ?? []);
-        setHiddenCount(data.hidden_count ?? 0);
+      .then(async r => {
+        const data = await r.json();
+        if (data.error && String(data.error).includes("429")) {
+          setApiError("Procore is temporarily rate-limited. Wait a few minutes and try again.");
+          setProjects([]);
+        } else {
+          setApiError(null);
+          setProjects(data.projects ?? []);
+          setHiddenCount(data.hidden_count ?? 0);
+        }
       })
       .catch(() => setProjects([]))
       .finally(() => setProjectsLoading(false));
@@ -1637,6 +1644,19 @@ export default function DashboardPage() {
           );
         })}
       </div>
+
+      {/* ── Rate limit / API error banner ── */}
+      {apiError && (
+        <div style={{ margin: "12px 16px 0", padding: "10px 16px", borderRadius: 8, backgroundColor: "var(--hp-significant-bg)", border: "1px solid var(--hp-significant-bg)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 13, color: "var(--hp-significant)" }}>{apiError}</span>
+          <button
+            onClick={() => { setApiError(null); if (selectedCompany) { setProjectsLoading(true); fetch(`/api/dashboard/projects?company_id=${selectedCompany.id}`).then(r => r.json()).then(data => { setProjects(data.projects ?? []); setApiError(null); }).catch(() => {}).finally(() => setProjectsLoading(false)); } }}
+            style={{ fontSize: 12, fontWeight: 600, color: "#fff", backgroundColor: "var(--hp-significant)", border: "none", borderRadius: 6, padding: "4px 14px", cursor: "pointer" }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* ── Tabs: mount on first visit, hide with display:none to preserve state ── */}
 
