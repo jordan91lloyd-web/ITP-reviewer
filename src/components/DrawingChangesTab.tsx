@@ -280,47 +280,26 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     } catch { /* ignore */ }
   }, []);
 
-  const retryFailedBaseline = useCallback(async () => {
+  const clearFailedBaseline = useCallback(async () => {
     if (!projectId) return;
-    const failedProcore = baselineDocs.filter((d) => (d.status === "failed" || d.status === "skipped") && d.source === "procore");
-    if (failedProcore.length === 0) return;
-    setBaselineUploading(true);
-    let totalSucceeded = 0;
-    let totalRetried = 0;
-    let totalFailed = 0;
-    let remaining = failedProcore.length;
-
+    const failedCount = baselineDocs.filter((d) => d.status === "failed" || d.status === "skipped").length;
+    if (failedCount === 0) return;
     try {
-      // Process in batches of 3 (server-side limit per request)
-      while (remaining > 0) {
-        setBaselineProgressText(`Retrying... ${totalSucceeded} done, ${remaining} remaining`);
-        const res = await fetch("/api/drawing-changes/baseline", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ company_id: company_id, project_id: projectId }),
-        });
-        const data = await res.json();
-        totalSucceeded += data.succeeded ?? 0;
-        totalRetried += data.retried ?? 0;
-        totalFailed += (data.retried ?? 0) - (data.succeeded ?? 0);
-        remaining = data.remaining ?? 0;
-        await fetchBaseline(projectId);
-        if ((data.retried ?? 0) === 0) break; // no more to retry
-      }
-
-      if (totalSucceeded > 0 && totalFailed === 0) {
-        setBaselineProgressText(`All ${totalSucceeded} document${totalSucceeded !== 1 ? "s" : ""} processed successfully`);
-      } else if (totalSucceeded > 0) {
-        setBaselineProgressText(`${totalSucceeded} processed, ${totalFailed} still failed`);
-      } else if (totalRetried > 0) {
-        setBaselineProgressText(`All ${totalRetried} document${totalRetried !== 1 ? "s" : ""} failed — check error messages for details`);
+      const res = await fetch("/api/drawing-changes/baseline", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ company_id: company_id, project_id: projectId }),
+      });
+      const data = await res.json();
+      if (data.cleared > 0) {
+        setBaselineProgressText(`Cleared ${data.cleared} failed documents — re-process the folder to scan them`);
+        setShowProcoreBrowser(true);
       } else {
-        setBaselineProgressText("No retryable Procore documents found — uploaded files must be deleted and re-uploaded");
+        setBaselineProgressText("No failed documents to clear");
       }
+      await fetchBaseline(projectId);
     } catch {
-      setBaselineProgressText("Retry request failed");
-    } finally {
-      setBaselineUploading(false);
+      setBaselineProgressText("Failed to clear documents");
     }
   }, [projectId, company_id, baselineDocs, fetchBaseline]);
 
@@ -1165,10 +1144,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     </span>
                     {baselineDocs.some((d) => (d.status === "failed" || d.status === "skipped")) && !baselineUploading && (
                       <button
-                        onClick={retryFailedBaseline}
+                        onClick={clearFailedBaseline}
                         style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                       >
-                        Retry failed
+                        Clear failed & re-scan
                       </button>
                     )}
                   </div>

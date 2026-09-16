@@ -149,6 +149,22 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabase();
 
+  // Check if this document already exists as processed (dedup for re-scans)
+  const incomingName = (formData.get("procore_doc_name") as string) ?? (formData.get("file") as File | null)?.name;
+  if (incomingName) {
+    const { data: existing } = await supabase
+      .from("baseline_documents")
+      .select("id, status")
+      .eq("company_id", companyId)
+      .eq("project_id", projectId)
+      .eq("document_name", incomingName)
+      .eq("status", "processed")
+      .limit(1);
+    if (existing && existing.length > 0) {
+      return NextResponse.json({ success: true, skipped: true, document_name: incomingName, reason: "Already processed" });
+    }
+  }
+
   const file = formData.get("file") as File | null;
   const procoreDocUrl = formData.get("procore_doc_url") as string | null;
   const procoreDocName = formData.get("procore_doc_name") as string | null;
@@ -402,87 +418,7 @@ export async function GET(request: NextRequest) {
   });
 }
 
-// ── PATCH: Retry failed/skipped baseline documents ────────────────────────
-// Procore download URLs are presigned S3 URLs that expire.
-// To get fresh URLs we crawl the project's folders (same as the folder browser),
-// collect ALL files with URLs, then match failed docs by FILENAME.
-
-const FETCH_TIMEOUT = 30_000;
-const DOWNLOAD_TIMEOUT = 120_000;
-
-function resolveFileUrl(f: Record<string, unknown>): string {
-  const versions = f.file_versions as Record<string, unknown>[] | undefined;
-  if (Array.isArray(versions) && versions.length > 0) {
-    for (const v of [versions[versions.length - 1], versions[0]]) {
-      if (v.url && typeof v.url === "string") return v.url;
-      if (v.download_url && typeof v.download_url === "string") return v.download_url;
-      const ps = v.prostore_file as Record<string, unknown> | undefined;
-      if (ps?.url && typeof ps.url === "string") return ps.url;
-    }
-  }
-  if (f.url && typeof f.url === "string") return f.url;
-  if (f.download_url && typeof f.download_url === "string") return f.download_url;
-  return "";
-}
-
-interface CrawledFile { name: string; url: string; id: number }
-
-// Crawl all project folders, collect every file with a download URL
-async function crawlProjectFiles(
-  companyId: string,
-  projectId: string,
-  token: string,
-): Promise<{ files: CrawledFile[]; foldersVisited: number; error?: string }> {
-  const headers = { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId };
-  const allFiles: CrawledFile[] = [];
-
-  const rootRes = await fetch(
-    `${PROCORE_BASE}/rest/v1.0/folders?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
-    { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT) }
-  );
-  if (!rootRes.ok) {
-    return { files: [], foldersVisited: 0, error: `Root folder failed (HTTP ${rootRes.status})` };
-  }
-  const rootData = await rootRes.json();
-  const queue: number[] = [];
-
-  if (rootData && typeof rootData === "object" && !Array.isArray(rootData)) {
-    const folders = Array.isArray(rootData.folders) ? rootData.folders : [];
-    for (const f of folders) {
-      if (f.id && f.id !== rootData.id) queue.push(f.id);
-    }
-    for (const f of (Array.isArray(rootData.files) ? rootData.files : [])) {
-      const url = resolveFileUrl(f);
-      if (url) allFiles.push({ name: f.name as string, url, id: f.id as number });
-    }
-  } else if (Array.isArray(rootData)) {
-    for (const f of rootData) queue.push(f.id);
-  }
-
-  const visited = new Set<number>();
-  while (queue.length > 0) {
-    const folderId = queue.shift()!;
-    if (visited.has(folderId)) continue;
-    visited.add(folderId);
-    try {
-      const res = await fetch(
-        `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
-        { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT) }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      for (const f of (Array.isArray(data.files) ? data.files : [])) {
-        const url = resolveFileUrl(f);
-        if (url) allFiles.push({ name: f.name as string, url, id: f.id as number });
-      }
-      for (const s of (Array.isArray(data.folders) ? data.folders : [])) {
-        if (s.id !== folderId && !visited.has(s.id)) queue.push(s.id);
-      }
-    } catch { continue; }
-  }
-
-  return { files: allFiles, foldersVisited: visited.size };
-}
+// ── PATCH: Clear failed/skipped docs so they can be re-added from the folder browser ──
 
 export async function PATCH(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
@@ -494,7 +430,7 @@ export async function PATCH(request: NextRequest) {
 
   const supabase = getSupabase();
 
-  // Clean up stuck "processing" records first (same as GET does)
+  // Clean up stuck "processing" records too
   const staleThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   await supabase
     .from("baseline_documents")
@@ -504,132 +440,26 @@ export async function PATCH(request: NextRequest) {
     .eq("status", "processing")
     .lt("created_at", staleThreshold);
 
-  // Find all failed/skipped docs
-  const { data: retryDocs, error: fetchErr } = await supabase
+  // Delete all failed/skipped records
+  const { data: deleted, error: delErr } = await supabase
     .from("baseline_documents")
-    .select("*")
+    .delete()
     .eq("company_id", companyId)
     .eq("project_id", projectId)
-    .in("status", ["failed", "skipped"]);
+    .in("status", ["failed", "skipped"])
+    .select("id, document_name");
 
-  if (fetchErr) {
-    return NextResponse.json({ error: fetchErr.message }, { status: 500 });
-  }
-  if (!retryDocs || retryDocs.length === 0) {
-    // Diagnostic: what IS in the table for this project?
-    const { data: allDocs } = await supabase
-      .from("baseline_documents")
-      .select("id, document_name, status, source, error_message")
-      .eq("company_id", companyId)
-      .eq("project_id", projectId);
-    const statusCounts: Record<string, number> = {};
-    for (const d of allDocs ?? []) statusCounts[d.status] = (statusCounts[d.status] ?? 0) + 1;
-    return NextResponse.json({
-      retried: 0, remaining: 0,
-      message: "No retryable documents found",
-      debug: { companyId, projectId, totalInDb: allDocs?.length ?? 0, statusCounts, sampleDocs: (allDocs ?? []).slice(0, 5) },
-    });
+  if (delErr) {
+    return NextResponse.json({ error: delErr.message }, { status: 500 });
   }
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("procore_access_token")?.value;
-  if (!token) {
-    return NextResponse.json({ error: "Not logged in to Procore" }, { status: 401 });
-  }
-
-  // Crawl the project's folders once — collect every file with a URL
-  const { files: projectFiles, foldersVisited, error: crawlError } = await crawlProjectFiles(companyId, projectId, token);
-  if (crawlError) {
-    return NextResponse.json({ error: crawlError }, { status: 502 });
-  }
-
-  // Build lookup: filename (lowercased) → fresh URL
-  // If multiple files share a name, keep all (use first match per doc)
-  const nameToUrl = new Map<string, string>();
-  for (const f of projectFiles) {
-    const key = f.name.toLowerCase();
-    if (!nameToUrl.has(key)) nameToUrl.set(key, f.url);
-  }
-
-  // Process 1 doc per request for visible progress
-  const doc = retryDocs[0];
-  const remaining = retryDocs.length - 1;
-  const results: { document_name: string; status: string; item_count?: number; error?: string }[] = [];
-
-  try {
-    const downloadUrl = nameToUrl.get(doc.document_name.toLowerCase());
-    if (!downloadUrl) {
-      await supabase.from("baseline_documents").update({
-        error_message: `"${doc.document_name}" not found in project (${foldersVisited} folders, ${projectFiles.length} files crawled)`,
-      }).eq("id", doc.id);
-      results.push({ document_name: doc.document_name, status: "failed", error: `Not found in ${projectFiles.length} project files` });
-    } else {
-      // Download — no auth header for S3 presigned URLs
-      const isS3 = !downloadUrl.includes("procore.com") || downloadUrl.includes("s3.");
-      const dlHeaders: Record<string, string> = {};
-      if (!isS3) dlHeaders.Authorization = `Bearer ${token}`;
-
-      const dlRes = await fetch(downloadUrl, { headers: dlHeaders, signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT) });
-      if (!dlRes.ok) {
-        await supabase.from("baseline_documents").update({ error_message: `Download failed (HTTP ${dlRes.status})` }).eq("id", doc.id);
-        results.push({ document_name: doc.document_name, status: "failed", error: `Download HTTP ${dlRes.status}` });
-      } else {
-        const rawBuffer = Buffer.from(await dlRes.arrayBuffer());
-        const fileSize = rawBuffer.length;
-
-        if (fileSize > MAX_FILE_SIZE) {
-          await supabase.from("baseline_documents").update({
-            status: "skipped", file_size: fileSize,
-            error_message: `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB, max 32 MB)`,
-          }).eq("id", doc.id);
-          results.push({ document_name: doc.document_name, status: "skipped", error: "Too large" });
-        } else {
-          const filename = doc.document_name;
-          let buffer: Buffer;
-          let mimeType: string;
-
-          if (filename.toLowerCase().endsWith(".docx")) {
-            const { value: text } = await mammoth.extractRawText({ buffer: rawBuffer });
-            buffer = Buffer.from(text.trim() ? text : " ", "utf-8");
-            mimeType = "text/plain";
-          } else if (filename.toLowerCase().endsWith(".xlsx")) {
-            const text = xlsxToText(rawBuffer);
-            buffer = Buffer.from(text.trim() ? text : " ", "utf-8");
-            mimeType = "text/plain";
-          } else if (filename.toLowerCase().match(/\.(jpg|jpeg)$/)) {
-            buffer = rawBuffer; mimeType = "image/jpeg";
-          } else if (filename.toLowerCase().endsWith(".png")) {
-            buffer = rawBuffer; mimeType = "image/png";
-          } else {
-            buffer = rawBuffer; mimeType = "application/pdf";
-          }
-
-          if ((mimeType === "image/jpeg" || mimeType === "image/png") && buffer.length > MAX_IMAGE_SIZE) {
-            await supabase.from("baseline_documents").update({
-              status: "skipped", file_size: buffer.length,
-              error_message: `Image too large (${(buffer.length / 1024 / 1024).toFixed(1)} MB, max 5 MB)`,
-            }).eq("id", doc.id);
-            results.push({ document_name: doc.document_name, status: "skipped", error: "Image too large" });
-          } else {
-            await supabase.from("baseline_documents").update({ status: "processing", error_message: null, file_size: fileSize }).eq("id", doc.id);
-            const items = await extractWithClaude(buffer, filename, mimeType);
-            await supabase.from("baseline_documents").update({
-              status: "processed", scope_items: items, item_count: items.length,
-              error_message: null, file_size: fileSize, document_type: mimeType,
-            }).eq("id", doc.id);
-            results.push({ document_name: doc.document_name, status: "processed", item_count: items.length });
-          }
-        }
-      }
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    await supabase.from("baseline_documents").update({ status: "failed", error_message: `Retry: ${msg}` }).eq("id", doc.id);
-    results.push({ document_name: doc.document_name, status: "failed", error: msg });
-  }
-
-  const succeeded = results.filter((r) => r.status === "processed").length;
-  return NextResponse.json({ retried: results.length, succeeded, remaining, results });
+  return NextResponse.json({
+    cleared: deleted?.length ?? 0,
+    names: (deleted ?? []).map((d) => d.document_name),
+    message: deleted?.length
+      ? `Cleared ${deleted.length} failed/skipped documents. Re-process the folder to scan them again.`
+      : "No failed or skipped documents to clear.",
+  });
 }
 
 // ── DELETE: Remove a baseline document ────────────────────────────────────
