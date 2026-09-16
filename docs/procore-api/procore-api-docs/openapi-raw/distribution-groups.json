@@ -1,0 +1,473 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Distribution Groups",
+  "x-product-category": "Core",
+  "x-tool-category": "Directory",
+  "x-resource-name": "Distribution Groups",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/distribution_groups": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Distribution Groups",
+    "description": "Return a list of all Distribution Groups associated with a Company.",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[search]",
+      "in": "query",
+      "description": "Returns item(s) matching the specified search query string.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "with_domain_users",
+      "in": "query",
+      "description": "Return list of user IDs that have permissions to view specified domain.",
+      "schema": {
+       "type": "object",
+       "properties": {
+        "domain_id": {
+         "type": "integer",
+         "description": "Domain ID",
+         "example": 12
+        },
+        "provider_id": {
+         "type": "integer",
+         "description": "Provider ID (provider class is inderred from domain)",
+         "example": 199432
+        }
+       }
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Return items with the specified sort.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "name"
+       ]
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "Parameter affecting what level of detail will be returned from the endpoint.\n'extended' will include the users included in each distribution group.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "extended"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Distribution Groups",
+         "items": {
+          "oneOf": [
+           {
+            "description": "Distribution Group",
+            "type": "object",
+            "title": "Normal View",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 1
+             },
+             "description": {
+              "type": "string",
+              "example": "Internal stakeholders to notify of any major events"
+             },
+             "name": {
+              "type": "string",
+              "example": "Internal Stakeholders"
+             }
+            }
+           },
+           {
+            "description": "Distribution Group",
+            "type": "object",
+            "title": "Extended View",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 1
+             },
+             "description": {
+              "type": "string",
+              "example": "Internal stakeholders to notify of any major events"
+             },
+             "name": {
+              "type": "string",
+              "example": "Internal Stakeholders"
+             },
+             "users": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Login Information ID of the User",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Name of the User",
+                 "example": "Carl the Contractor"
+                },
+                "company_name": {
+                 "type": "string",
+                 "description": "Company Name for the User",
+                 "example": "Brickworks"
+                },
+                "login": {
+                 "type": "string",
+                 "description": "Email of the User",
+                 "example": "carl.contractor@example.com"
+                },
+                "imageUrl": {
+                 "type": "string",
+                 "description": "User Avatar URL",
+                 "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+                },
+                "initials": {
+                 "type": "string",
+                 "description": "Initials of the User",
+                 "example": "BS"
+                },
+                "job_title": {
+                 "type": "string",
+                 "description": "Job Title of the User",
+                 "example": "General Contractor"
+                }
+               }
+              }
+             }
+            }
+           },
+           {
+            "description": "Distribution Group",
+            "type": "object",
+            "title": "Extended View with Domain User IDs",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 1
+             },
+             "description": {
+              "type": "string",
+              "example": "Internal stakeholders to notify of any major events"
+             },
+             "name": {
+              "type": "string",
+              "example": "Internal Stakeholders"
+             },
+             "users": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Login Information ID of the User",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Name of the User",
+                 "example": "Carl the Contractor"
+                },
+                "company_name": {
+                 "type": "string",
+                 "description": "Company Name for the User",
+                 "example": "Brickworks"
+                },
+                "login": {
+                 "type": "string",
+                 "description": "Email of the User",
+                 "example": "carl.contractor@example.com"
+                },
+                "imageUrl": {
+                 "type": "string",
+                 "description": "User Avatar URL",
+                 "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+                },
+                "initials": {
+                 "type": "string",
+                 "description": "Initials of the User",
+                 "example": "BS"
+                },
+                "job_title": {
+                 "type": "string",
+                 "description": "Job Title of the User",
+                 "example": "General Contractor"
+                }
+               }
+              }
+             },
+             "domain_user_ids": {
+              "type": "array",
+              "description": "List of user IDs that have permissions to view specified domain. Only included if the 'extended' view is supported and 'with_domain_users' param is sent.",
+              "items": {
+               "type": "integer",
+               "example": 161072
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/distribution_groups',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[search]': 'SOME_STRING_VALUE',\n    with_domain_users: 'SOME_OBJECT_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    view: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/distribution_groups?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&with_domain_users=SOME_OBJECT_VALUE&sort=SOME_STRING_VALUE&view=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/distribution_groups?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&with_domain_users=SOME_OBJECT_VALUE&sort=SOME_STRING_VALUE&view=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/distribution_groups?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&with_domain_users=SOME_OBJECT_VALUE&sort=SOME_STRING_VALUE&view=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new request parameter and response attribute Distribution Groups End Point for Conversations",
+      "description": "Added with_domain_users parameter and domain_user_ids response attribute",
+      "endpoint": "GET /companies/{company_id}/distribution_groups",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-05-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distribution-groups?version=1.0#list-distribution-groups"
+     },
+     {
+      "summary": "Correct Response Body Documentation",
+      "description": "Documentation now correctly shows the `login` key inside of items in the `users` array in the example response body.",
+      "endpoint": "GET /companies/{company_id}/distribution_groups",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2024-05-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distribution-groups?version=1.0#list-distribution-groups"
+     },
+     {
+      "summary": "Added Initials and Image URL to Extended View Response",
+      "description": "User initials and avatar URL are now included in the response for the extended view",
+      "endpoint": "GET /companies/{company_id}/distribution_groups",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-05-21",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distribution-groups?version=1.0#list-distribution-groups"
+     },
+     {
+      "summary": "Include Company Name and Job Title in projects distribution endpoint",
+      "description": "Added company_name and job_title to the response body for the projects distribution endpoint",
+      "endpoint": "GET /companies/{company_id}/distribution_groups",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-10-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distribution-groups?version=1.0#list-distribution-groups"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

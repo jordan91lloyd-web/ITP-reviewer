@@ -1,0 +1,306 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Coordination Issue Potential Assignees",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Coordination Issues",
+  "x-resource-name": "Coordination Issue Potential Assignees",
+  "version": "1.0",
+  "x-product-lines": [
+   "Design Coordination"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/coordination_issues/assignees": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "query",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Coordination Issue Assignable Users",
+    "description": "Lists potential assignees for Coordination Issues. Use the optional `min_access_level` query parameter to filter which project users (by access level on the Coordination Issues domain) are included; see that parameter for allowed values and default behavior.",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "min_access_level",
+      "in": "query",
+      "required": false,
+      "description": "Minimum project access level for users included in the assignee list for the Coordination Issues domain. `admin` limits results to Admin (plus project admins per server rules). `standard` includes Standard and Admin. `read_only` includes Read Only, Standard, and Admin. If omitted or not recognized, the response uses the same set as `standard`.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "admin",
+        "standard",
+        "read_only"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Coordination Issue assignees listed successfully",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Login Information",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Login Information ID uniquely identifying this user.",
+            "example": 1738090
+           },
+           "name": {
+            "type": "string",
+            "description": "User's display name, formatted first name then last name.",
+            "example": "John Doe"
+           },
+           "login": {
+            "type": "string",
+            "description": "User's login email address.",
+            "example": "johndoe@example.com"
+           },
+           "company_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "User Company name. If the user belongs to a vendor, the vendor name will be returned.",
+            "example": "Builders Inc."
+           },
+           "locale": {
+            "type": "string",
+            "nullable": true,
+            "description": "IETF locale code for the user's language preference (e.g., 'en', 'ko'). Null when the user has not set a locale.",
+            "example": "ko"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have permission to view Coordination Issue assignees",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/coordination_issues/assignees',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    min_access_level: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/coordination_issues/assignees?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&min_access_level=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/coordination_issues/assignees?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&min_access_level=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/coordination_issues/assignees?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&min_access_level=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

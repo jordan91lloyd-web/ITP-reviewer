@@ -1,0 +1,359 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Coordination Issue Statuses",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Drawings",
+  "x-resource-name": "Coordination Issue Statuses",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/coordination_issues/{coordination_issue_id}/statuses": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "coordination_issue_id",
+     "in": "path",
+     "required": true,
+     "description": "Coordination Issue ID",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Available Status Transitions",
+    "description": "Returns the available status transitions for a coordination issue based on the current user's permissions and the issue's current state.",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "required": [
+          "data",
+          "actions"
+         ],
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Available status transitions for the coordination issue.",
+           "items": {
+            "type": "object",
+            "required": [
+             "key",
+             "label",
+             "action_label",
+             "is_primary"
+            ],
+            "properties": {
+             "key": {
+              "type": "string",
+              "description": "The status key value to use when updating the coordination issue.",
+              "example": "ready_for_review"
+             },
+             "label": {
+              "type": "string",
+              "description": "The translated display name of the status.",
+              "example": "Ready for review"
+             },
+             "action_label": {
+              "type": "string",
+              "description": "The action button text for transitioning to this status.",
+              "example": "Mark done"
+             },
+             "is_primary": {
+              "type": "boolean",
+              "description": "Whether this is the primary/recommended action for the current user.",
+              "example": true
+             }
+            }
+           }
+          },
+          "actions": {
+           "type": "array",
+           "description": "Additional actions available for the coordination issue (e.g., unlink RFI when blocked).",
+           "items": {
+            "type": "object",
+            "required": [
+             "key",
+             "label",
+             "is_primary"
+            ],
+            "properties": {
+             "key": {
+              "type": "string",
+              "description": "The action key identifier.",
+              "example": "unlink_rfi"
+             },
+             "label": {
+              "type": "string",
+              "description": "The display label for the action.",
+              "example": "Unlink RFI"
+             },
+             "is_primary": {
+              "type": "boolean",
+              "description": "Whether this is the primary action.",
+              "example": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/statuses'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/statuses\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/statuses"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/statuses\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get available status transitions",
+      "description": "Added a new endpoint to retrieve available status transitions for a Coordination Issue based on the current user's permissions and the issue's current state. The response includes, for each status transition, the status key, display label, action label describing the transition, and whether it is the primary action for the user. It also includes a top-level actions array for additional actions (e.g., Unlink RFI when the issue is blocked).",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/coordination_issues/{coordination_issue_id}/statuses",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-27",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "coordination-issue-statuses?version=2.0#list-available-status-transitions"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  }
+ }
+}

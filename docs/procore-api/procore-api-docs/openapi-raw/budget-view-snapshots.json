@@ -1,0 +1,1537 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Budget View Snapshots",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Budget View Snapshots",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/budget_view_snapshots": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Budget View Snapshots",
+    "description": "Returns a list of project-level snapshots for both project status and ad hoc. You can filter by type.",
+    "tags": [
+     "Budget View Snapshots"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[budget_template_id]",
+      "in": "query",
+      "description": "Return snapshot(s) using the specified budget template id.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[budget_view_id]",
+      "in": "query",
+      "description": "Return snapshot(s) using the specified budget view id. (This will replace budget_template_id filter)",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[snapshot_type]",
+      "in": "query",
+      "description": "Return snapshot(s) of the specified type.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "ad_hoc",
+        "project_status_snapshot"
+       ]
+      }
+     },
+     {
+      "name": "filters[approval_status]",
+      "in": "query",
+      "description": "Return snapshot(s) in the specified status.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "approved",
+        "under_review"
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Direction (asc/desc) can be controlled by the presence or absence of '-' before the sort parameter",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "snapshot_type",
+        "approval_status"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Budget View Snapshots",
+         "items": {
+          "oneOf": [
+           {
+            "type": "object",
+            "description": "Budget View Snapshot",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the budget view snapshot. Use as the {budget_view_snapshot_id} path parameter to retrieve its summary rows or detail rows.",
+              "example": 75414
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the snapshot.",
+              "example": "January Snapshot"
+             },
+             "description": {
+              "type": "string",
+              "description": "Free-text description of the snapshot.",
+              "example": "This is the January Budget Snapshot"
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp when the snapshot was created, in ISO 8601 format.",
+              "example": "2018-01-17T18:09:03Z"
+             },
+             "created_by": {
+              "type": "object",
+              "description": "User who created the snapshot.",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID of the user who created the snapshot.",
+                "example": 1234
+               },
+               "name": {
+                "type": "string",
+                "description": "Full name of the user who created the snapshot.",
+                "example": "John Doe"
+               },
+               "login": {
+                "type": "string",
+                "description": "Login email address of the user who created the snapshot.",
+                "example": "john.doe@example.com"
+               }
+              }
+             },
+             "budget_view": {
+              "type": "object",
+              "description": "The budget view this snapshot was taken from.",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID of the budget view this snapshot was taken from.",
+                "example": 1234
+               }
+              }
+             },
+             "links": {
+              "type": "object",
+              "description": "URLs for retrieving the row data captured in this snapshot.",
+              "properties": {
+               "detail_rows": {
+                "type": "string",
+                "description": "URL to fetch the Snapshot Detail Rows for this budget view snapshot.",
+                "example": "https://app.procore.com/rest/v1.0/budget_view_snapshots/1/detail_rows?project_id=2"
+               },
+               "summary_rows": {
+                "type": "string",
+                "description": "URL to fetch the Snapshot Summary Rows for this budget view snapshot.",
+                "example": "https://app.procore.com/rest/v1.0/budget_view_snapshots/1/summary_rows?project_id=2"
+               }
+              }
+             }
+            }
+           },
+           {
+            "type": "object",
+            "description": "Budget View Snapshot",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the budget view snapshot. Use as the {budget_view_snapshot_id} path parameter to retrieve its summary rows or detail rows.",
+              "example": 75414
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the snapshot.",
+              "example": "January Snapshot"
+             },
+             "description": {
+              "type": "string",
+              "description": "Free-text description of the snapshot.",
+              "example": "This is the January Budget Snapshot"
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp when the snapshot was created, in ISO 8601 format.",
+              "example": "2018-01-17T18:09:03Z"
+             },
+             "created_by": {
+              "type": "object",
+              "description": "User who created the snapshot.",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID of the user who created the snapshot.",
+                "example": 1234
+               },
+               "name": {
+                "type": "string",
+                "description": "Full name of the user who created the snapshot.",
+                "example": "John Doe"
+               },
+               "login": {
+                "type": "string",
+                "description": "Login email address of the user who created the snapshot.",
+                "example": "john.doe@example.com"
+               }
+              }
+             },
+             "budget_view": {
+              "type": "object",
+              "description": "The budget view this snapshot was taken from.",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID of the budget view this snapshot was taken from.",
+                "example": 1234
+               }
+              }
+             },
+             "snapshot_type": {
+              "type": "string",
+              "enum": [
+               "ad_hoc",
+               "project_status_snapshot"
+              ],
+              "description": "Kind of snapshot. Use filters[snapshot_type] to filter collections by this value.",
+              "example": "ad_hoc"
+             },
+             "approval_status": {
+              "type": "string",
+              "enum": [
+               "approved",
+               "under_review",
+               "custom"
+              ],
+              "description": "Review state of the snapshot. Present for project status snapshots; when a company-defined custom status applies, see the status object. Use filters[approval_status] to filter collections by this value.",
+              "example": "approved"
+             },
+             "status": {
+              "type": "object",
+              "description": "The company-defined custom status assigned to the snapshot. Present for project status snapshots that have a custom status assigned.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the custom status.",
+                "example": "1234"
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the custom status.",
+                "example": "Approved"
+               },
+               "mapped_to_status": {
+                "type": "string",
+                "enum": [
+                 "open",
+                 "closed",
+                 "void",
+                 "pending"
+                ],
+                "description": "The built-in status that this custom status maps to.",
+                "example": "closed"
+               },
+               "available": {
+                "type": "boolean",
+                "description": "Whether the custom status can currently be selected for snapshots.",
+                "example": true
+               },
+               "initial": {
+                "type": "boolean",
+                "description": "Whether this custom status is the default applied to newly created snapshots.",
+                "example": false
+               },
+               "standard_type": {
+                "type": "string",
+                "enum": [
+                 "approved",
+                 "under_review",
+                 "custom"
+                ],
+                "description": "The underlying standard category of the custom status.",
+                "example": "approved"
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp when the custom status was created, in ISO 8601 format.",
+                "example": "2018-01-17T18:09:03Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp when the custom status was last updated, in ISO 8601 format.",
+                "example": "2018-01-17T18:09:03Z"
+               }
+              }
+             },
+             "financial_period_id": {
+              "type": "integer",
+              "deprecated": true,
+              "description": "Obsolete. Identifier of the financial period the snapshot is assigned to. Use the `financial_period` object instead; this field is retained only for backward compatibility.",
+              "example": 42,
+              "nullable": true
+             },
+             "date_range_for_actuals": {
+              "type": "array",
+              "description": "Start and end dates that bound the actuals captured in the snapshot, in ISO 8601 format. Null when the snapshot was generated without an actuals date range.",
+              "items": {
+               "type": "string",
+               "format": "date"
+              },
+              "example": [
+               "2024-01-01",
+               "2024-12-31"
+              ],
+              "nullable": true
+             },
+             "include_actuals_without_dates": {
+              "type": "boolean",
+              "description": "Whether actuals with no date were included alongside the date-ranged actuals when the snapshot was generated. Null when no actuals date range was applied.",
+              "example": true,
+              "nullable": true
+             },
+             "forecast_start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date from which forecasting calculations begin for this snapshot. Null when forecasting was not applied.",
+              "example": "2024-01-01",
+              "nullable": true
+             },
+             "financial_period": {
+              "type": "object",
+              "nullable": true,
+              "description": "The financial period the snapshot is assigned to. Present for project status snapshots that have a period assigned; null otherwise (including ad hoc snapshots).",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the financial period",
+                "example": "1234"
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the financial period",
+                "example": "January 2026"
+               },
+               "group_name": {
+                "type": "string",
+                "description": "Name of the group the financial period belongs to",
+                "example": "FY2026"
+               },
+               "status": {
+                "type": "string",
+                "enum": [
+                 "open",
+                 "closed"
+                ],
+                "description": "Whether the financial period is currently open or closed",
+                "example": "open"
+               },
+               "start_date": {
+                "type": "string",
+                "description": "First day of the financial period",
+                "example": "2026-01-01"
+               },
+               "end_date": {
+                "type": "string",
+                "description": "Last day of the financial period",
+                "example": "2026-01-31"
+               }
+              }
+             },
+             "links": {
+              "type": "object",
+              "description": "URLs for retrieving the row data captured in this snapshot.",
+              "properties": {
+               "detail_rows": {
+                "type": "string",
+                "description": "URL to fetch the Snapshot Detail Rows for this budget view snapshot.",
+                "example": "https://app.procore.com/rest/v1.0/budget_view_snapshots/1/detail_rows?project_id=2"
+               },
+               "summary_rows": {
+                "type": "string",
+                "description": "URL to fetch the Snapshot Summary Rows for this budget view snapshot.",
+                "example": "https://app.procore.com/rest/v1.0/budget_view_snapshots/1/summary_rows?project_id=2"
+               }
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/budget_view_snapshots',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[budget_template_id]': 'SOME_ARRAY_VALUE',\n    'filters[budget_view_id]': 'SOME_ARRAY_VALUE',\n    'filters[snapshot_type]': 'SOME_STRING_VALUE',\n    'filters[approval_status]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/budget_view_snapshots?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bbudget_template_id%5D=SOME_ARRAY_VALUE&filters%5Bbudget_view_id%5D=SOME_ARRAY_VALUE&filters%5Bsnapshot_type%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/budget_view_snapshots?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bbudget_template_id%5D=SOME_ARRAY_VALUE&filters%5Bbudget_view_id%5D=SOME_ARRAY_VALUE&filters%5Bsnapshot_type%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/budget_view_snapshots?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bbudget_template_id%5D=SOME_ARRAY_VALUE&filters%5Bbudget_view_id%5D=SOME_ARRAY_VALUE&filters%5Bsnapshot_type%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.0 Budget View Snapshots list endpoint",
+      "description": "Introduction of Public API to list Budget View Snapshots.",
+      "endpoint": "GET /budget_view_snapshots",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2021-06-01",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#list-budget-view-snapshots"
+     },
+     {
+      "summary": "Extend v1.0 Budget View Snapshot list endpoint",
+      "description": "Add the ability to filter Budget View Snapshots by budget_template_id.\nAdd the ability to filter and sort Budget View Snapshots by snapshot_type and approval_status if project status snapshots feature is active for the company.",
+      "endpoint": "GET /budget_view_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-10-22",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#list-budget-view-snapshots"
+     },
+     {
+      "summary": "Add v1.0 Budget View Snapshot filter parameter budget_view_id",
+      "description": "Add the ability to filter Budget View Snapshots by budget_view_id.",
+      "endpoint": "GET /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2024-12-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#list-budget-view-snapshots"
+     },
+     {
+      "summary": "Add status object in response for Custom Statuses",
+      "description": "Budget View Snapshots now include a `status` object in the response.",
+      "endpoint": "GET /budget_view_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#list-budget-view-snapshots"
+     },
+     {
+      "summary": "Add custom value to approval_status",
+      "description": "The `approval_status` field now includes `custom` as a possible value, in addition to `approved` and `under_review`.",
+      "endpoint": "GET /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-01-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#list-budget-view-snapshots"
+     },
+     {
+      "summary": "Always expose snapshot status fields in list responses",
+      "description": "List responses now always include `snapshot_type` and `approval_status` on each Budget View Snapshot (when applicable),\nindependent of project-level LaunchDarkly toggles. Company-level Project Status Snapshot settings are unchanged.",
+      "endpoint": "GET /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-05-01",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#list-budget-view-snapshots"
+     },
+     {
+      "summary": "Add financial_period object to the list response",
+      "description": "List responses now include a nested `financial_period` object (id, name, group_name, status,\nstart_date, end_date) for project status snapshots, null when no period is assigned.\nThe scalar `financial_period_id` is now deprecated in favor of `financial_period`; it is\nretained for backward compatibility.",
+      "endpoint": "GET /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-07-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#list-budget-view-snapshots"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Budget View Snapshot.",
+    "description": "Create a project-level snapshot for either project status or ad hoc type. This is rate limited to one request per hour for each project and budget view, regardless of snapshot type.",
+    "tags": [
+     "Budget View Snapshot"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Budget View Snapshot information Input",
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "The project identifier",
+          "example": 10
+         },
+         "budget_template_id": {
+          "type": "integer",
+          "description": "The budget template identifier (deprecated, use budget_view_id instead)",
+          "example": 99
+         },
+         "budget_view_id": {
+          "type": "integer",
+          "description": "The budget view identifier (replaces budget_template_id)",
+          "example": 99
+         },
+         "name": {
+          "type": "string",
+          "description": "Title of the budget view snapshot",
+          "example": "New Year Budget"
+         },
+         "description": {
+          "type": "string",
+          "description": "Description of the budget snapshot",
+          "example": "This is the budget snapshot for the new year"
+         },
+         "snapshot_type": {
+          "type": "string",
+          "enum": [
+           "ad_hoc",
+           "project_status_snapshot"
+          ],
+          "description": "Snapshot Type. Only available when Project Status Snapshots feature is enabled.",
+          "example": "ad_hoc"
+         },
+         "approval_status": {
+          "type": "string",
+          "enum": [
+           "approved",
+           "under_review"
+          ],
+          "description": "Approval Status.\n",
+          "example": "approved"
+         },
+         "status_id": {
+          "type": "integer",
+          "description": "The ID of a custom status.\nOnly available when the Custom Statuses feature is enabled. When enabled, use this\nparameter instead of approval_status. The status_id must reference an available\ncustom status configured for the company.\n",
+          "example": 12345
+         },
+         "date_range_for_actuals": {
+          "type": "array",
+          "description": "Filters actuals data to a specific date range when generating the snapshot.\nProvide exactly two dates in ISO 8601 format representing the start and end of the range.\n",
+          "items": {
+           "type": "string",
+           "format": "date"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "example": [
+           "2024-01-01",
+           "2024-12-31"
+          ]
+         },
+         "only_actuals_with_dates": {
+          "type": "boolean",
+          "description": "When true, only actuals records with a date within date_range_for_actuals are included.\nWhen false (default), actuals records with no date are also included alongside date-ranged results.\n",
+          "example": false
+         },
+         "financial_period_id": {
+          "type": "integer",
+          "description": "The ID of the Financial Period to associate with this snapshot.\nOnly available when the Financial Periods feature is enabled.\n",
+          "example": 42
+         },
+         "reassign_financial_period": {
+          "type": "boolean",
+          "description": "Only applies when snapshot_type is project_status_snapshot and financial_period_id is provided.\nWhen true, if the requested financial_period_id is already assigned to another snapshot in the\nsame project and budget view, that snapshot is converted to ad_hoc and its period released so\nthis snapshot can take it. When false or omitted, the request is rejected if the period is\nalready in use.\n",
+          "example": false
+         }
+        },
+        "required": [
+         "project_id",
+         "budget_template_id",
+         "name"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Budget View Snapshot",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the budget view snapshot. Use as the {budget_view_snapshot_id} path parameter to retrieve its summary rows or detail rows.",
+             "example": 75414
+            },
+            "name": {
+             "type": "string",
+             "description": "Display name of the snapshot.",
+             "example": "January Snapshot"
+            },
+            "description": {
+             "type": "string",
+             "description": "Free-text description of the snapshot.",
+             "example": "This is the January Budget Snapshot"
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp when the snapshot was created, in ISO 8601 format.",
+             "example": "2018-01-17T18:09:03Z"
+            },
+            "created_by": {
+             "type": "object",
+             "description": "User who created the snapshot.",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID of the user who created the snapshot.",
+               "example": 1234
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the user who created the snapshot.",
+               "example": "John Doe"
+              },
+              "login": {
+               "type": "string",
+               "description": "Login email address of the user who created the snapshot.",
+               "example": "john.doe@example.com"
+              }
+             }
+            },
+            "budget_view": {
+             "type": "object",
+             "description": "The budget view this snapshot was taken from.",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID of the budget view this snapshot was taken from.",
+               "example": 1234
+              }
+             }
+            },
+            "snapshot_type": {
+             "type": "string",
+             "enum": [
+              "ad_hoc",
+              "project_status_snapshot"
+             ],
+             "description": "Kind of snapshot. Use filters[snapshot_type] to filter collections by this value.",
+             "example": "ad_hoc"
+            },
+            "approval_status": {
+             "type": "string",
+             "enum": [
+              "approved",
+              "under_review",
+              "custom"
+             ],
+             "description": "Review state of the snapshot. Present for project status snapshots; when a company-defined custom status applies, see the status object. Use filters[approval_status] to filter collections by this value.",
+             "example": "approved"
+            },
+            "status": {
+             "type": "object",
+             "description": "The company-defined custom status assigned to the snapshot. Present for project status snapshots that have a custom status assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the custom status.",
+               "example": "1234"
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the custom status.",
+               "example": "Approved"
+              },
+              "mapped_to_status": {
+               "type": "string",
+               "enum": [
+                "open",
+                "closed",
+                "void",
+                "pending"
+               ],
+               "description": "The built-in status that this custom status maps to.",
+               "example": "closed"
+              },
+              "available": {
+               "type": "boolean",
+               "description": "Whether the custom status can currently be selected for snapshots.",
+               "example": true
+              },
+              "initial": {
+               "type": "boolean",
+               "description": "Whether this custom status is the default applied to newly created snapshots.",
+               "example": false
+              },
+              "standard_type": {
+               "type": "string",
+               "enum": [
+                "approved",
+                "under_review",
+                "custom"
+               ],
+               "description": "The underlying standard category of the custom status.",
+               "example": "approved"
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when the custom status was created, in ISO 8601 format.",
+               "example": "2018-01-17T18:09:03Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp when the custom status was last updated, in ISO 8601 format.",
+               "example": "2018-01-17T18:09:03Z"
+              }
+             }
+            },
+            "financial_period_id": {
+             "type": "integer",
+             "deprecated": true,
+             "description": "Obsolete. Identifier of the financial period the snapshot is assigned to. Use the `financial_period` object instead; this field is retained only for backward compatibility.",
+             "example": 42,
+             "nullable": true
+            },
+            "date_range_for_actuals": {
+             "type": "array",
+             "description": "Start and end dates that bound the actuals captured in the snapshot, in ISO 8601 format. Null when the snapshot was generated without an actuals date range.",
+             "items": {
+              "type": "string",
+              "format": "date"
+             },
+             "example": [
+              "2024-01-01",
+              "2024-12-31"
+             ],
+             "nullable": true
+            },
+            "include_actuals_without_dates": {
+             "type": "boolean",
+             "description": "Whether actuals with no date were included alongside the date-ranged actuals when the snapshot was generated. Null when no actuals date range was applied.",
+             "example": true,
+             "nullable": true
+            },
+            "forecast_start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Date from which forecasting calculations begin for this snapshot. Null when forecasting was not applied.",
+             "example": "2024-01-01",
+             "nullable": true
+            },
+            "financial_period": {
+             "type": "object",
+             "nullable": true,
+             "description": "The financial period the snapshot is assigned to. Present for project status snapshots that have a period assigned; null otherwise (including ad hoc snapshots).",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the financial period",
+               "example": "1234"
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the financial period",
+               "example": "January 2026"
+              },
+              "group_name": {
+               "type": "string",
+               "description": "Name of the group the financial period belongs to",
+               "example": "FY2026"
+              },
+              "status": {
+               "type": "string",
+               "enum": [
+                "open",
+                "closed"
+               ],
+               "description": "Whether the financial period is currently open or closed",
+               "example": "open"
+              },
+              "start_date": {
+               "type": "string",
+               "description": "First day of the financial period",
+               "example": "2026-01-01"
+              },
+              "end_date": {
+               "type": "string",
+               "description": "Last day of the financial period",
+               "example": "2026-01-31"
+              }
+             }
+            },
+            "links": {
+             "type": "object",
+             "description": "URLs for retrieving the row data captured in this snapshot.",
+             "properties": {
+              "detail_rows": {
+               "type": "string",
+               "description": "URL to fetch the Snapshot Detail Rows for this budget view snapshot.",
+               "example": "https://app.procore.com/rest/v1.0/budget_view_snapshots/1/detail_rows?project_id=2"
+              },
+              "summary_rows": {
+               "type": "string",
+               "description": "URL to fetch the Snapshot Summary Rows for this budget view snapshot.",
+               "example": "https://app.procore.com/rest/v1.0/budget_view_snapshots/1/summary_rows?project_id=2"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "202": {
+      "description": "Accepted",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Budget View Snapshot Request",
+           "properties": {
+            "snapshot_request_id": {
+             "type": "integer",
+             "description": "Identifier of the asynchronous snapshot request. Returned with a 202 Accepted when snapshot creation is queued for background processing; poll snapshot status to track progress.",
+             "example": 75414
+            },
+            "status": {
+             "type": "string",
+             "enum": [
+              "queued",
+              "processing",
+              "completed",
+              "failed"
+             ],
+             "description": "Processing state of the asynchronous snapshot request.",
+             "example": "queued"
+            },
+            "budget_template_id": {
+             "type": "integer",
+             "description": "ID of the budget view (template) the snapshot is being generated from.",
+             "example": 1234
+            },
+            "project_id": {
+             "type": "integer",
+             "description": "ID of the project the snapshot belongs to.",
+             "example": 1234
+            },
+            "company_id": {
+             "type": "integer",
+             "description": "ID of the company that owns the project.",
+             "example": 1234
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "array",
+           "description": "Validation errors that prevented the snapshot from being created, keyed by the offending request field with an array of human-readable messages.",
+           "items": {
+            "type": "object",
+            "example": {
+             "name": [
+              "can't be blank"
+             ],
+             "budget_template_id": [
+              "can't be blank"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Too Many Requests",
+      "headers": {
+       "X-Rate-Limit-Limit": {
+        "description": "The total number of requests per 60-minute window",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "X-Rate-Limit-Remaining": {
+        "description": "The number of requests you are allowed to make in the current 60-minute window.",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "X-Rate-Limit-Reset": {
+        "description": "The Unix timestamp for when the next window begins.",
+        "schema": {
+         "type": "integer"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "error": {
+             "type": "string",
+             "description": "Error Message",
+             "example": "Too many requests. Please try again in a few minutes."
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable \u2014 Budget Tool is in maintenance mode for this company",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "required": [
+          "error"
+         ],
+         "properties": {
+          "error": {
+           "type": "object",
+           "required": [
+            "code",
+            "message",
+            "details"
+           ],
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case",
+             "example": "SERVICE_UNAVAILABLE"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing the error",
+             "example": "The Budget Tool is temporarily unavailable for maintenance. Please try again later."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "Machine-readable code identifying the specific error",
+                "example": "MAINTENANCE_MODE"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "budget"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "The Budget Tool is temporarily unavailable for maintenance. Please try again later."
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/budget_view_snapshots',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 10,\n    budget_template_id: 99,\n    budget_view_id: 99,\n    name: 'New Year Budget',\n    description: 'This is the budget snapshot for the new year',\n    snapshot_type: 'ad_hoc',\n    approval_status: 'approved',\n    status_id: 12345,\n    date_range_for_actuals: ['2024-01-01', '2024-12-31'],\n    only_actuals_with_dates: false,\n    financial_period_id: 42,\n    reassign_financial_period: false\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":10,\\\"budget_template_id\\\":99,\\\"budget_view_id\\\":99,\\\"name\\\":\\\"New Year Budget\\\",\\\"description\\\":\\\"This is the budget snapshot for the new year\\\",\\\"snapshot_type\\\":\\\"ad_hoc\\\",\\\"approval_status\\\":\\\"approved\\\",\\\"status_id\\\":12345,\\\"date_range_for_actuals\\\":[\\\"2024-01-01\\\",\\\"2024-12-31\\\"],\\\"only_actuals_with_dates\\\":false,\\\"financial_period_id\\\":42,\\\"reassign_financial_period\\\":false}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/budget_view_snapshots\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/budget_view_snapshots \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":10,\"budget_template_id\":99,\"budget_view_id\":99,\"name\":\"New Year Budget\",\"description\":\"This is the budget snapshot for the new year\",\"snapshot_type\":\"ad_hoc\",\"approval_status\":\"approved\",\"status_id\":12345,\"date_range_for_actuals\":[\"2024-01-01\",\"2024-12-31\"],\"only_actuals_with_dates\":false,\"financial_period_id\":42,\"reassign_financial_period\":false}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/budget_view_snapshots\"),\n    Content = new StringContent(\"{\\\"project_id\\\":10,\\\"budget_template_id\\\":99,\\\"budget_view_id\\\":99,\\\"name\\\":\\\"New Year Budget\\\",\\\"description\\\":\\\"This is the budget snapshot for the new year\\\",\\\"snapshot_type\\\":\\\"ad_hoc\\\",\\\"approval_status\\\":\\\"approved\\\",\\\"status_id\\\":12345,\\\"date_range_for_actuals\\\":[\\\"2024-01-01\\\",\\\"2024-12-31\\\"],\\\"only_actuals_with_dates\\\":false,\\\"financial_period_id\\\":42,\\\"reassign_financial_period\\\":false}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.0 Budget View Snapshot create endpoint",
+      "description": "Introduction of Public API endpoint for creating a Budget Snapshot.\nThis endpoint was introduced with the rate limit of 1 request per project per budget per hour.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2024-01-01",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Extend v1.0 Budget View Snapshot create endpoint",
+      "description": "Introduction of Budget Snapshot asynchronous creation. This is limited to 1 request per project per budget per hour.\nWhen the asynchronous snapshot feature is enabled, a 202 response is returned, indicating that the system will process the requests asynchronously. For those with the feature disabled, the success response will be 201.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-04-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Add v1.0 Budget View Snapshot parameter budget_view_id",
+      "description": "Create Budget View Snapshot using the budget_view_id parameter instead of budget_template_id.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2024-12-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Add snapshot_type and approval_status parameters",
+      "description": "Add the ability to create Budget View Snapshots with snapshot_type and approval_status parameters when the Project Status Snapshots feature is enabled.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-03-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Add status_id parameter for Custom Statuses",
+      "description": "Add the ability to create Budget View Snapshots with `status_id` parameter.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Add actuals date range filter parameters",
+      "description": "Add `date_range_for_actuals` and `only_actuals_with_dates` parameters to the create endpoint.\n`date_range_for_actuals` accepts an array of two ISO 8601 dates (start and end) to scope actuals data to a specific date window.\n`only_actuals_with_dates` is a boolean that controls whether actuals records with no date are excluded when date filtering is applied.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-04-29",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Accept Project Status Snapshot attributes without project LD flag",
+      "description": "Create requests accept `snapshot_type`, `approval_status`, and related parameters whenever valid for the company,\nwithout a separate project-level LaunchDarkly gate for Project Status Snapshots.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-05-01",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Add financial_period_id parameter to create endpoint",
+      "description": "Add the ability to associate a Budget View Snapshot with a Financial Period\nby providing the `financial_period_id` parameter on create.\nOnly available when the Financial Periods feature is enabled.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-01",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Add reassign_financial_period parameter to create endpoint",
+      "description": "Add the `reassign_financial_period` parameter on create. When true and the snapshot is a\nproject_status_snapshot, if the requested `financial_period_id` is already assigned to another\nsnapshot in the same project and budget view, that snapshot is converted to ad_hoc and its period\nreleased so the new snapshot can take it, instead of the request being rejected.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     },
+     {
+      "summary": "Add financial_period object to the create response",
+      "description": "The create response now includes the same nested `financial_period` object as the list\nresponse. The scalar `financial_period_id` is now deprecated in favor of `financial_period`;\nit is retained for backward compatibility.",
+      "endpoint": "POST /budget_view_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-07-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshots?version=1.0#create-a-budget-view-snapshot"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

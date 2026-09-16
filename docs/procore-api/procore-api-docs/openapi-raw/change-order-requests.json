@@ -1,0 +1,3122 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Change Order Requests",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Change Orders",
+  "x-resource-name": "Change Order Requests",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/change_order_requests/sync": {
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Sync Change Order Requests",
+    "description": "This endpoint creates or updates a batch of Change Order Requests (COR).\nSee [Using Sync Actions](/documentation/using-sync-actions) for additional information.",
+    "tags": [
+     "Change Order Requests"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "contract_id",
+      "in": "query",
+      "description": "ID of the contract (Prime, Purchase Order, or Work Order Contract) the change order requests belong to.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Change Order Request Sync",
+        "type": "object",
+        "required": [
+         "updates"
+        ],
+        "properties": {
+         "updates": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID of an existing change order request to update. Omit to create a new request.",
+             "example": 1361673
+            },
+            "change_order_package_id": {
+             "type": "integer",
+             "description": "ID of the change order package (batch) this request belongs to.",
+             "example": 98762
+            },
+            "description": {
+             "type": "string",
+             "description": "Detailed description of the change order request. May contain HTML.",
+             "example": "<p>Freezer slab replacement</p>"
+            },
+            "due_date": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date the change order request is due, in ISO 8601 format.",
+             "example": "2016-11-23T21:39:40Z"
+            },
+            "invoiced_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+             "example": "2017-08-22"
+            },
+            "number": {
+             "type": "string",
+             "description": "Human-readable number identifying the change order request within its contract.",
+             "example": "B22"
+            },
+            "origin_data": {
+             "type": "string",
+             "format": "string",
+             "description": "Free-form data payload from the external system that created this record.",
+             "example": "OD-2398273424"
+            },
+            "origin_id": {
+             "type": "string",
+             "format": "string",
+             "description": "Identifier of this record in an external or integrated system.",
+             "example": "459247544"
+            },
+            "paid_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Date the change order request was paid (YYYY-MM-DD).",
+             "example": "2017-08-25"
+            },
+            "revision": {
+             "type": "integer",
+             "description": "Revision number, incremented each time the change order request is revised.",
+             "example": 1
+            },
+            "schedule_impact_amount": {
+             "type": "integer",
+             "description": "Estimated impact to the project schedule, in days.",
+             "example": 2
+            },
+            "status": {
+             "type": "string",
+             "description": "Workflow status of the change order request. Defaults to `draft` when omitted on create.",
+             "example": "draft",
+             "enum": [
+              "draft",
+              "not_pricing",
+              "pricing",
+              "pending",
+              "revised",
+              "proceeding",
+              "not_proceeding",
+              "pending_billable",
+              "no_charge",
+              "approved",
+              "rejected",
+              "void"
+             ]
+            },
+            "title": {
+             "type": "string",
+             "description": "Short title summarizing the change order request.",
+             "example": "Concrete freezer slab"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Array of Change Order Requests",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "arrayOfChangeOrderRequests",
+         "type": "object",
+         "properties": {
+          "entities": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for this change order request. Use as the {id} path parameter to retrieve or update it.",
+              "example": 3284756
+             },
+             "change_order_package_id": {
+              "type": "integer",
+              "description": "ID of the change order package (batch) this request belongs to. Null when not assigned to a package.",
+              "example": 2372497
+             },
+             "contract_id": {
+              "type": "integer",
+              "description": "ID of the parent contract this change order request belongs to.",
+              "example": 195735
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the change order request was created, in ISO 8601 format.",
+              "example": "2016-10-23T21:39:40Z"
+             },
+             "executed": {
+              "type": "boolean",
+              "description": "When true, the change order request has been fully executed (signed by all parties).",
+              "example": false
+             },
+             "creator": {
+              "type": "object",
+              "description": "User who created this change order request.",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the user.",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email/login of the user.",
+                "example": "carl.contractor@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Full name of the user.",
+                "example": "Carl Contractor"
+               }
+              }
+             },
+             "deleted_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the change order request was deleted, in ISO 8601 format. Null unless the record has been deleted.",
+              "example": "2017-07-29T21:39:40Z"
+             },
+             "description": {
+              "type": "string",
+              "description": "Detailed description of the change order request. May contain HTML.",
+              "example": "<p>Freezer slab replacement</p>"
+             },
+             "due_date": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date the change order request is due, in ISO 8601 format.",
+              "example": "2016-11-23T21:39:40Z"
+             },
+             "grand_total": {
+              "type": "string",
+              "format": "float",
+              "description": "Total amount of the change order request including markup. Computed from its line items.",
+              "example": "34535.0"
+             },
+             "total_tax_amount": {
+              "type": "string",
+              "description": "Total tax on the Change Order Request, aggregated from the line-item tax details of its associated change orders, in the contract's currency. Returned only in the `extended` view. Decimal encoded as a string.",
+              "example": "150.0"
+             },
+             "invoiced_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+              "example": "2017-08-22"
+             },
+             "number": {
+              "type": "string",
+              "description": "Human-readable number identifying the change order request within its contract.",
+              "example": "B22"
+             },
+             "origin_data": {
+              "type": "string",
+              "description": "Free-form data payload from the external system that created this record.",
+              "example": "OD-2398273424"
+             },
+             "origin_id": {
+              "type": "string",
+              "description": "Identifier of this record in an external or integrated system.",
+              "example": "459247544"
+             },
+             "paid_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date the change order request was paid (YYYY-MM-DD).",
+              "example": "2017-08-25"
+             },
+             "position": {
+              "type": "integer",
+              "description": "Sort position of the change order request relative to others in its contract.",
+              "example": 4
+             },
+             "private": {
+              "type": "boolean",
+              "description": "If true, visible to admins only; otherwise visible to those with access to the parent contract.",
+              "example": true
+             },
+             "revision": {
+              "type": "integer",
+              "description": "Revision number, incremented each time the change order request is revised.",
+              "example": 3
+             },
+             "schedule_impact_amount": {
+              "type": "integer",
+              "description": "Estimated impact to the project schedule, in days.",
+              "example": 2
+             },
+             "signed_change_order_received_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date the signed change order was received from the vendor (YYYY-MM-DD).",
+              "example": "2025-08-27"
+             },
+             "status": {
+              "type": "string",
+              "description": "Workflow status of the change order request.",
+              "example": "draft",
+              "enum": [
+               "draft",
+               "not_pricing",
+               "pricing",
+               "pending",
+               "revised",
+               "proceeding",
+               "not_proceeding",
+               "pending_billable",
+               "no_charge",
+               "approved",
+               "rejected",
+               "void"
+              ]
+             },
+             "title": {
+              "type": "string",
+              "description": "Short title summarizing the change order request.",
+              "example": "Concrete freezer slab"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the change order request was last updated, in ISO 8601 format.",
+              "example": "2016-10-25T21:39:40Z"
+             },
+             "attachments": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Use :name, :filename to be deprecated"
+                },
+                "url": {
+                 "type": "string"
+                },
+                "filename": {
+                 "type": "string",
+                 "description": ":filename to be deprecated, use :name"
+                }
+               }
+              }
+             },
+             "currency_configuration": {
+              "properties": {
+               "base_currency_iso_code": {
+                "type": "string",
+                "description": "Base Currency ISO Code configured from project level; It'll be populated only when multicurrency phase two feature flag is enabled",
+                "example": "USD",
+                "nullable": true
+               },
+               "currency_iso_code": {
+                "type": "string",
+                "description": "Currency ISO Code configured for the financial entity",
+                "example": "EUR",
+                "nullable": true
+               }
+              }
+             },
+             "contract": {
+              "type": "object",
+              "description": "Contract details (present if associated contract exists)",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Contract ID",
+                "example": 195735
+               },
+               "number": {
+                "type": "string",
+                "description": "Contract number",
+                "example": "C-001"
+               },
+               "title": {
+                "type": "string",
+                "description": "Contract title",
+                "example": "Main Concrete Package"
+               },
+               "type": {
+                "type": "string",
+                "description": "Contract type",
+                "example": "prime_contract"
+               },
+               "status": {
+                "type": "string",
+                "description": "Contract status",
+                "example": "draft"
+               },
+               "vendor": {
+                "type": "object",
+                "description": "Vendor associated to the contract (if applicable)",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Vendor ID",
+                  "example": 998877
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Vendor name",
+                  "example": "Acme Concrete LLC"
+                 }
+                }
+               }
+              }
+             },
+             "batch": {
+              "type": "object",
+              "nullable": true,
+              "description": "Change Order Batch this request belongs to (if any)",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Batch ID",
+                "example": 2372497
+               },
+               "title": {
+                "type": "string",
+                "description": "Batch title",
+                "example": "Batch 1 - Site Prep"
+               },
+               "number": {
+                "type": "string",
+                "description": "Batch number",
+                "example": "B-001"
+               },
+               "status": {
+                "type": "string",
+                "description": "Workflow status of the change order batch.",
+                "example": "draft",
+                "enum": [
+                 "draft",
+                 "not_pricing",
+                 "pricing",
+                 "pending",
+                 "revised",
+                 "proceeding",
+                 "not_proceeding",
+                 "pending_billable",
+                 "no_charge",
+                 "approved",
+                 "rejected",
+                 "void"
+                ]
+               }
+              }
+             }
+            }
+           }
+          },
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "allOf": [
+             {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 3284756
+               },
+               "change_order_package_id": {
+                "type": "integer",
+                "description": "Change Order Package ID",
+                "example": 2372497
+               },
+               "contract_id": {
+                "type": "integer",
+                "description": "Contract ID",
+                "example": 195735
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Created at",
+                "example": "2016-10-23T21:39:40Z"
+               },
+               "creator": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "ID",
+                  "example": 160586
+                 },
+                 "login": {
+                  "type": "string",
+                  "description": "Email",
+                  "example": "carl.contractor@example.com"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Name",
+                  "example": "Carl Contractor"
+                 }
+                }
+               },
+               "deleted_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Deleted at",
+                "example": "2017-07-29T21:39:40Z"
+               },
+               "description": {
+                "type": "string",
+                "description": "Description",
+                "example": "<p>Freezer slab replacement</p>"
+               },
+               "due_date": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Due date",
+                "example": "2016-11-23T21:39:40Z"
+               },
+               "grand_total": {
+                "type": "string",
+                "format": "float",
+                "description": "Total including markup",
+                "example": "34535.0"
+               },
+               "invoiced_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Invoiced date",
+                "example": "2017-08-22"
+               },
+               "number": {
+                "type": "string",
+                "description": "Number",
+                "example": "B22"
+               },
+               "origin_data": {
+                "type": "string",
+                "description": "Origin data",
+                "example": "OD-2398273424"
+               },
+               "origin_id": {
+                "type": "string",
+                "description": "Origin ID",
+                "example": "459247544"
+               },
+               "paid_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Paid date",
+                "example": "2017-08-25"
+               },
+               "position": {
+                "type": "integer",
+                "description": "Position",
+                "example": 4
+               },
+               "private": {
+                "type": "boolean",
+                "description": "If true, visible to admins only; otherwise visible to those with access to the parent contract.",
+                "example": true
+               },
+               "revision": {
+                "type": "integer",
+                "description": "Revision",
+                "example": 3
+               },
+               "schedule_impact_amount": {
+                "type": "integer",
+                "description": "Schedule impact in days",
+                "example": 2
+               },
+               "status": {
+                "type": "string",
+                "description": "Status",
+                "example": "draft",
+                "enum": [
+                 "draft",
+                 "not_pricing",
+                 "pricing",
+                 "pending",
+                 "revised",
+                 "proceeding",
+                 "not_proceeding",
+                 "no_charge",
+                 "approved",
+                 "rejected",
+                 "void"
+                ]
+               },
+               "title": {
+                "type": "string",
+                "description": "Title",
+                "example": "Concrete freezer slab"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Updated at",
+                "example": "2016-10-25T21:39:40Z"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "errors": {
+                "type": "object",
+                "properties": {
+                 "field_name": {
+                  "type": "array",
+                  "items": {
+                   "type": "string"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Project is not valid",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "User has insufficient access",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/change_order_requests/sync',\n  qs: {project_id: 'SOME_INTEGER_VALUE', contract_id: 'SOME_INTEGER_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {\n    updates: [\n      {\n        id: 1361673,\n        change_order_package_id: 98762,\n        description: '<p>Freezer slab replacement</p>',\n        due_date: '2016-11-23T21:39:40Z',\n        invoiced_date: '2017-08-22',\n        number: 'B22',\n        origin_data: 'OD-2398273424',\n        origin_id: '459247544',\n        paid_date: '2017-08-25',\n        revision: 1,\n        schedule_impact_amount: 2,\n        status: 'draft',\n        title: 'Concrete freezer slab'\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"updates\\\":[{\\\"id\\\":1361673,\\\"change_order_package_id\\\":98762,\\\"description\\\":\\\"<p>Freezer slab replacement</p>\\\",\\\"due_date\\\":\\\"2016-11-23T21:39:40Z\\\",\\\"invoiced_date\\\":\\\"2017-08-22\\\",\\\"number\\\":\\\"B22\\\",\\\"origin_data\\\":\\\"OD-2398273424\\\",\\\"origin_id\\\":\\\"459247544\\\",\\\"paid_date\\\":\\\"2017-08-25\\\",\\\"revision\\\":1,\\\"schedule_impact_amount\\\":2,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Concrete freezer slab\\\"}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/change_order_requests/sync?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/change_order_requests/sync?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"updates\":[{\"id\":1361673,\"change_order_package_id\":98762,\"description\":\"<p>Freezer slab replacement</p>\",\"due_date\":\"2016-11-23T21:39:40Z\",\"invoiced_date\":\"2017-08-22\",\"number\":\"B22\",\"origin_data\":\"OD-2398273424\",\"origin_id\":\"459247544\",\"paid_date\":\"2017-08-25\",\"revision\":1,\"schedule_impact_amount\":2,\"status\":\"draft\",\"title\":\"Concrete freezer slab\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/change_order_requests/sync?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE\"),\n    Content = new StringContent(\"{\\\"updates\\\":[{\\\"id\\\":1361673,\\\"change_order_package_id\\\":98762,\\\"description\\\":\\\"<p>Freezer slab replacement</p>\\\",\\\"due_date\\\":\\\"2016-11-23T21:39:40Z\\\",\\\"invoiced_date\\\":\\\"2017-08-22\\\",\\\"number\\\":\\\"B22\\\",\\\"origin_data\\\":\\\"OD-2398273424\\\",\\\"origin_id\\\":\\\"459247544\\\",\\\"paid_date\\\":\\\"2017-08-25\\\",\\\"revision\\\":1,\\\"schedule_impact_amount\\\":2,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Concrete freezer slab\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add currency_configuration field",
+      "description": "Adds the \"currency_configuration.currency_iso_code\" string field",
+      "endpoint": "PATCH /change_order_requests/sync",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-05-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#sync-change-order-requests"
+     },
+     {
+      "summary": "Update currency_configuration field",
+      "description": "Add \"currency_configuration.base_currency_iso_code\" string fields",
+      "endpoint": "PATCH /change_order_requests/sync",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-04-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#sync-change-order-requests"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/change_order_requests": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Change Order Requests",
+    "description": "Return a list of all Change Order Requests (COR) to a specific Contract in a Project.\n\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "tags": [
+     "Change Order Requests"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "contract_id",
+      "in": "query",
+      "description": "ID of the contract (Prime, Purchase Order, or Work Order Contract) the change order requests belong to.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "Parameter affecting the level of detail returned. The `extended` view includes the total tax amount for each Change Order Request.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "extended"
+       ]
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[due_date]",
+      "in": "query",
+      "description": "Returns item(s) due within the specified ISO 8601 datetime range.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[invoiced_date]",
+      "in": "query",
+      "description": "Returns item(s) invoiced within the specified ISO 8601 datetime range.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[paid_date]",
+      "in": "query",
+      "description": "Returns item(s) paid within the specified ISO 8601 datetime range.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[change_order_package_id]",
+      "in": "query",
+      "description": "Returns item(s) that belong to selected change order package.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[status]",
+      "in": "query",
+      "description": "Returns item(s) matching the specified status value.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "filters[not_status]",
+      "in": "query",
+      "description": "Array of Status. Return item(s) that does not have specified status.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this change order request. Use as the {id} path parameter to retrieve or update it.",
+            "example": 3284756
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the change order request was created, in ISO 8601 format.",
+            "example": "2016-10-23T21:39:40Z"
+           },
+           "created_by_id": {
+            "type": "integer",
+            "description": "ID of the user who created this change order request.",
+            "example": 1
+           },
+           "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the change order request was deleted, in ISO 8601 format. Null unless the record has been deleted.",
+            "example": "2017-07-29T21:39:40Z"
+           },
+           "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the change order request is due (YYYY-MM-DD).",
+            "example": "2016-11-23T21:39:40Z"
+           },
+           "invoiced_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+            "example": "2017-08-22"
+           },
+           "number": {
+            "type": "string",
+            "description": "Human-readable number identifying the change order request within its contract.",
+            "example": "B22"
+           },
+           "paid_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the change order request was paid (YYYY-MM-DD).",
+            "example": "2017-08-25"
+           },
+           "status": {
+            "type": "string",
+            "description": "Workflow status of the change order request.",
+            "example": "draft",
+            "enum": [
+             "draft",
+             "not_pricing",
+             "pricing",
+             "pending",
+             "revised",
+             "proceeding",
+             "not_proceeding",
+             "pending_billable",
+             "no_charge",
+             "approved",
+             "rejected",
+             "void"
+            ]
+           },
+           "title": {
+            "type": "string",
+            "description": "Short title summarizing the change order request.",
+            "example": "Concrete freezer slab"
+           },
+           "change_order_package_id": {
+            "type": "integer",
+            "description": "ID of the change order package (batch) this request belongs to. Null when not assigned to a package.",
+            "example": 2372497
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the change order request was last updated, in ISO 8601 format.",
+            "example": "2016-10-25T21:39:40Z"
+           },
+           "revision": {
+            "type": "integer",
+            "description": "Revision number, incremented each time the change order request is revised.",
+            "example": 1
+           },
+           "grand_total": {
+            "type": "string",
+            "description": "Total amount of the change order request including markup. Computed from its line items.",
+            "example": "23474.0"
+           },
+           "total_tax_amount": {
+            "type": "string",
+            "description": "Total tax on the Change Order Request, aggregated from the line-item tax details of its associated change orders, in the contract's currency. Returned only in the `extended` view. Decimal encoded as a string.",
+            "example": "150.0"
+           },
+           "schedule_impact_amount": {
+            "type": "integer",
+            "description": "Estimated impact to the project schedule, in days.",
+            "example": 2
+           },
+           "currency_configuration": {
+            "properties": {
+             "base_currency_iso_code": {
+              "type": "string",
+              "description": "Base Currency ISO Code configured from project level; It'll be populated only when multicurrency phase two feature flag is enabled",
+              "example": "USD",
+              "nullable": true
+             },
+             "currency_iso_code": {
+              "type": "string",
+              "description": "Currency ISO Code configured for the financial entity",
+              "example": "EUR",
+              "nullable": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "User does not have correct permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/change_order_requests',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    contract_id: 'SOME_INTEGER_VALUE',\n    view: 'SOME_STRING_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[due_date]': 'SOME_STRING_VALUE',\n    'filters[invoiced_date]': 'SOME_STRING_VALUE',\n    'filters[paid_date]': 'SOME_STRING_VALUE',\n    'filters[change_order_package_id]': 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[status]': 'SOME_ARRAY_VALUE',\n    'filters[not_status]': 'SOME_ARRAY_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/change_order_requests?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bdue_date%5D=SOME_STRING_VALUE&filters%5Binvoiced_date%5D=SOME_STRING_VALUE&filters%5Bpaid_date%5D=SOME_STRING_VALUE&filters%5Bchange_order_package_id%5D=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bstatus%5D=SOME_ARRAY_VALUE&filters%5Bnot_status%5D=SOME_ARRAY_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/change_order_requests?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bdue_date%5D=SOME_STRING_VALUE&filters%5Binvoiced_date%5D=SOME_STRING_VALUE&filters%5Bpaid_date%5D=SOME_STRING_VALUE&filters%5Bchange_order_package_id%5D=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bstatus%5D=SOME_ARRAY_VALUE&filters%5Bnot_status%5D=SOME_ARRAY_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/change_order_requests?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bdue_date%5D=SOME_STRING_VALUE&filters%5Binvoiced_date%5D=SOME_STRING_VALUE&filters%5Bpaid_date%5D=SOME_STRING_VALUE&filters%5Bchange_order_package_id%5D=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bstatus%5D=SOME_ARRAY_VALUE&filters%5Bnot_status%5D=SOME_ARRAY_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add currency_configuration field",
+      "description": "Adds the \"currency_configuration.currency_iso_code\" string field",
+      "endpoint": "GET /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-05-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#list-change-order-requests"
+     },
+     {
+      "summary": "Update currency_configuration field",
+      "description": "Add \"currency_configuration.base_currency_iso_code\" string fields",
+      "endpoint": "GET /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-04-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#list-change-order-requests"
+     },
+     {
+      "summary": "Add executed field",
+      "description": "Adds the \"executed\" boolean field",
+      "endpoint": "GET /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-09-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#list-change-order-requests"
+     },
+     {
+      "summary": "Add filtering for change_order_package_id",
+      "description": "Add ability to filter for change order requests from a change order package",
+      "endpoint": "GET /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-09-22",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#list-change-order-requests"
+     },
+     {
+      "summary": "Adds status and not in status filters",
+      "description": "Adds status and not in status filters to the list endpoint.",
+      "endpoint": "GET /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-01-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#list-change-order-requests"
+     },
+     {
+      "summary": "Add total tax amount to the extended view",
+      "description": "Adds the \"total_tax_amount\" string field when requesting the \"extended\" view. The value aggregates line-item tax details across the Change Order Request's associated change orders.",
+      "endpoint": "GET /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-07-22",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#list-change-order-requests"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Change Order Request",
+    "description": "Create Change Order Request (COR).",
+    "tags": [
+     "Change Order Requests"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "change_order",
+         "project_id",
+         "contract_id"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 38276
+         },
+         "contract_id": {
+          "type": "integer",
+          "description": "ID of the contract (Prime or Commitment Contract) the change order request belongs to.",
+          "example": 957294
+         },
+         "change_order": {
+          "type": "object",
+          "allOf": [
+           {
+            "type": "object",
+            "properties": {
+             "drawing_revision_ids": {
+              "type": "array",
+              "description": "Drawing Revisions to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               4,
+               5
+              ]
+             },
+             "file_version_ids": {
+              "type": "array",
+              "description": "File Versions to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               6,
+               7
+              ]
+             },
+             "form_ids": {
+              "type": "array",
+              "description": "Forms to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               7,
+               8
+              ]
+             },
+             "image_ids": {
+              "type": "array",
+              "description": "Images to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               9,
+               10
+              ]
+             },
+             "upload_ids": {
+              "type": "array",
+              "description": "Uploads to attach to the response",
+              "items": {
+               "type": "string"
+              },
+              "example": [
+               "4120226e-36a8-416f-970e-880bae78164f",
+               "de07e35a-4860-4f96-acd8-8360833dc495"
+              ]
+             },
+             "document_management_document_revision_ids": {
+              "type": "array",
+              "description": "PDM document to attach to the response",
+              "items": {
+               "type": "string"
+              },
+              "example": [
+               "01JC3TZNKJK6121Z1A2V7G574Q",
+               "01JC3TZPXCJMC6P88CHHD6PTZ9"
+              ]
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "change_order_package_id": {
+              "type": "integer",
+              "description": "ID of the change order package (batch) this request belongs to.",
+              "example": 98762
+             },
+             "description": {
+              "type": "string",
+              "description": "Detailed description of the change order request. May contain HTML.",
+              "example": "<p>Freezer slab replacement</p>"
+             },
+             "due_date": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date the change order request is due, in ISO 8601 format.",
+              "example": "2016-11-23T21:39:40Z"
+             },
+             "invoiced_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+              "example": "2017-08-22"
+             },
+             "number": {
+              "type": "string",
+              "description": "Human-readable number identifying the change order request within its contract.",
+              "example": "B22"
+             },
+             "origin_data": {
+              "type": "string",
+              "format": "string",
+              "description": "Free-form data payload from the external system that created this record.",
+              "example": "OD-2398273424"
+             },
+             "origin_id": {
+              "type": "string",
+              "format": "string",
+              "description": "Identifier of this record in an external or integrated system.",
+              "example": "459247544"
+             },
+             "paid_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date the change order request was paid. Accepts any valid date parseable by the server; YYYY-MM-DD is recommended.",
+              "example": "2017-08-25"
+             },
+             "revision": {
+              "type": "integer",
+              "description": "Revision number for this change order request. This is a manual input field; it is not automatically incremented.",
+              "example": 1
+             },
+             "schedule_impact_amount": {
+              "type": "integer",
+              "description": "Estimated impact to the project schedule, in days.",
+              "example": 2
+             },
+             "status": {
+              "type": "string",
+              "description": "Status of the change order request. Defaults to `draft` when omitted on create.",
+              "example": "draft",
+              "enum": [
+               "draft",
+               "not_pricing",
+               "pricing",
+               "pending",
+               "revised",
+               "proceeding",
+               "not_proceeding",
+               "no_charge",
+               "approved",
+               "rejected",
+               "void"
+              ]
+             },
+             "title": {
+              "type": "string",
+              "description": "Short title summarizing the change order request.",
+              "example": "Concrete freezer slab"
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this change order request. Use as the {id} path parameter to retrieve or update it.",
+           "example": 3284756
+          },
+          "contract_id": {
+           "type": "integer",
+           "description": "ID of the parent contract this change order request belongs to.",
+           "example": 195735
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was created, in ISO 8601 format.",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "creator": {
+           "type": "object",
+           "description": "User who created this change order request.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the user.",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email/login of the user.",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Full name of the user.",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "description": {
+           "type": "string",
+           "description": "Detailed description of the change order request. May contain HTML.",
+           "example": "<p>Freezer slab replacement</p>"
+          },
+          "due_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Date the change order request is due, in ISO 8601 format.",
+           "example": "2016-11-23T21:39:40Z"
+          },
+          "grand_total": {
+           "type": "string",
+           "format": "float",
+           "description": "Total amount of the change order request including markup. Computed from its line items.",
+           "example": "34535.0"
+          },
+          "invoiced_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+           "example": "2017-08-22"
+          },
+          "number": {
+           "type": "string",
+           "description": "Human-readable number identifying the change order request within its contract.",
+           "example": "B22"
+          },
+          "origin_data": {
+           "type": "string",
+           "description": "Free-form data payload from the external system that created this record.",
+           "example": "OD-2398273424"
+          },
+          "origin_id": {
+           "type": "string",
+           "description": "Identifier of this record in an external or integrated system.",
+           "example": "459247544"
+          },
+          "paid_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the change order request was paid (YYYY-MM-DD).",
+           "example": "2017-08-25"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Sort position of the change order request relative to others in its contract.",
+           "example": 4
+          },
+          "private": {
+           "type": "boolean",
+           "description": "If true, visible to admins only; otherwise visible to those with access to the parent contract.",
+           "example": true
+          },
+          "revision": {
+           "type": "integer",
+           "description": "Revision number, incremented each time the change order request is revised.",
+           "example": 3
+          },
+          "schedule_impact_amount": {
+           "type": "integer",
+           "description": "Estimated impact to the project schedule, in days.",
+           "example": 2
+          },
+          "status": {
+           "type": "string",
+           "description": "Workflow status of the change order request.",
+           "example": "draft",
+           "enum": [
+            "draft",
+            "not_pricing",
+            "pricing",
+            "pending",
+            "revised",
+            "proceeding",
+            "not_proceeding",
+            "pending_billable",
+            "no_charge",
+            "approved",
+            "rejected",
+            "void"
+           ]
+          },
+          "title": {
+           "type": "string",
+           "description": "Short title summarizing the change order request.",
+           "example": "Concrete freezer slab"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was last updated, in ISO 8601 format.",
+           "example": "2016-10-25T21:39:40Z"
+          },
+          "currency_configuration": {
+           "properties": {
+            "base_currency_iso_code": {
+             "type": "string",
+             "description": "Base Currency ISO Code configured from project level; It'll be populated only when multicurrency phase two feature flag is enabled",
+             "example": "USD",
+             "nullable": true
+            },
+            "currency_iso_code": {
+             "type": "string",
+             "description": "Currency ISO Code configured for the financial entity",
+             "example": "EUR",
+             "nullable": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Unable to create Change Order Request due to errors.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have correct permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/change_order_requests',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 38276,\n    contract_id: 957294,\n    change_order: {\n      drawing_revision_ids: [4, 5],\n      file_version_ids: [6, 7],\n      form_ids: [7, 8],\n      image_ids: [9, 10],\n      upload_ids: ['4120226e-36a8-416f-970e-880bae78164f', 'de07e35a-4860-4f96-acd8-8360833dc495'],\n      document_management_document_revision_ids: ['01JC3TZNKJK6121Z1A2V7G574Q', '01JC3TZPXCJMC6P88CHHD6PTZ9'],\n      change_order_package_id: 98762,\n      description: '<p>Freezer slab replacement</p>',\n      due_date: '2016-11-23T21:39:40Z',\n      invoiced_date: '2017-08-22',\n      number: 'B22',\n      origin_data: 'OD-2398273424',\n      origin_id: '459247544',\n      paid_date: '2017-08-25',\n      revision: 1,\n      schedule_impact_amount: 2,\n      status: 'draft',\n      title: 'Concrete freezer slab'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":38276,\\\"contract_id\\\":957294,\\\"change_order\\\":{\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"upload_ids\\\":[\\\"4120226e-36a8-416f-970e-880bae78164f\\\",\\\"de07e35a-4860-4f96-acd8-8360833dc495\\\"],\\\"document_management_document_revision_ids\\\":[\\\"01JC3TZNKJK6121Z1A2V7G574Q\\\",\\\"01JC3TZPXCJMC6P88CHHD6PTZ9\\\"],\\\"change_order_package_id\\\":98762,\\\"description\\\":\\\"<p>Freezer slab replacement</p>\\\",\\\"due_date\\\":\\\"2016-11-23T21:39:40Z\\\",\\\"invoiced_date\\\":\\\"2017-08-22\\\",\\\"number\\\":\\\"B22\\\",\\\"origin_data\\\":\\\"OD-2398273424\\\",\\\"origin_id\\\":\\\"459247544\\\",\\\"paid_date\\\":\\\"2017-08-25\\\",\\\"revision\\\":1,\\\"schedule_impact_amount\\\":2,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Concrete freezer slab\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/change_order_requests\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/change_order_requests \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":38276,\"contract_id\":957294,\"change_order\":{\"drawing_revision_ids\":[4,5],\"file_version_ids\":[6,7],\"form_ids\":[7,8],\"image_ids\":[9,10],\"upload_ids\":[\"4120226e-36a8-416f-970e-880bae78164f\",\"de07e35a-4860-4f96-acd8-8360833dc495\"],\"document_management_document_revision_ids\":[\"01JC3TZNKJK6121Z1A2V7G574Q\",\"01JC3TZPXCJMC6P88CHHD6PTZ9\"],\"change_order_package_id\":98762,\"description\":\"<p>Freezer slab replacement</p>\",\"due_date\":\"2016-11-23T21:39:40Z\",\"invoiced_date\":\"2017-08-22\",\"number\":\"B22\",\"origin_data\":\"OD-2398273424\",\"origin_id\":\"459247544\",\"paid_date\":\"2017-08-25\",\"revision\":1,\"schedule_impact_amount\":2,\"status\":\"draft\",\"title\":\"Concrete freezer slab\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/change_order_requests\"),\n    Content = new StringContent(\"{\\\"project_id\\\":38276,\\\"contract_id\\\":957294,\\\"change_order\\\":{\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"upload_ids\\\":[\\\"4120226e-36a8-416f-970e-880bae78164f\\\",\\\"de07e35a-4860-4f96-acd8-8360833dc495\\\"],\\\"document_management_document_revision_ids\\\":[\\\"01JC3TZNKJK6121Z1A2V7G574Q\\\",\\\"01JC3TZPXCJMC6P88CHHD6PTZ9\\\"],\\\"change_order_package_id\\\":98762,\\\"description\\\":\\\"<p>Freezer slab replacement</p>\\\",\\\"due_date\\\":\\\"2016-11-23T21:39:40Z\\\",\\\"invoiced_date\\\":\\\"2017-08-22\\\",\\\"number\\\":\\\"B22\\\",\\\"origin_data\\\":\\\"OD-2398273424\\\",\\\"origin_id\\\":\\\"459247544\\\",\\\"paid_date\\\":\\\"2017-08-25\\\",\\\"revision\\\":1,\\\"schedule_impact_amount\\\":2,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Concrete freezer slab\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add currency_configuration field",
+      "description": "Adds the \"currency_configuration.currency_iso_code\" string field",
+      "endpoint": "POST /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-05-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#create-change-order-request"
+     },
+     {
+      "summary": "Update currency_configuration field",
+      "description": "Add \"currency_configuration.base_currency_iso_code\" string fields",
+      "endpoint": "POST /change_order_requests",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-04-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#create-change-order-request"
+     },
+     {
+      "summary": "Add attachment support",
+      "description": "Added support for attaching files to Change Order Requests. You can now provide one of the following argument arrays, depending on your type of upload object: `upload_ids`, `drawing_revision_ids`, `file_version_ids`, `form_ids`, `image_ids`, or `document_management_document_revision_ids`.",
+      "endpoint": "POST /change_order_requests",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-12-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#create-change-order-request"
+     },
+     {
+      "summary": "Add change_order_ids parameter",
+      "description": "Added support for linking Change Orders (PCOs) to Change Order Requests:\n- `change_order_ids`: Array of PCO IDs to link. Only supported for three-tier projects.",
+      "endpoint": "POST /change_order_requests",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-12-31",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#create-change-order-request"
+     },
+     {
+      "summary": "Permit revision field for create and update",
+      "description": "The \"revision\" integer field can now be set when creating or updating a Change Order Request. Only supported for three-tier change order projects.",
+      "endpoint": "POST /change_order_requests",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-04-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#create-change-order-request"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/change_order_requests/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Change Order Request",
+    "description": "Return detailed information about a specified Change Order Request (COR).",
+    "tags": [
+     "Change Order Requests"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "contract_id",
+      "in": "query",
+      "description": "ID of the contract (Prime, Purchase Order, or Work Order Contract) the change order requests belong to.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "Parameter affecting the level of detail returned. The `extended` view includes the total tax amount for the Change Order Request.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "extended"
+       ]
+      }
+     },
+     {
+      "name": "filters[include_deleted]",
+      "in": "query",
+      "description": "Use 'only' for only deleted resources. Use 'with' for deleted and undeleted resources.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "only",
+        "with"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this change order request. Use as the {id} path parameter to retrieve or update it.",
+           "example": 3284756
+          },
+          "change_order_package_id": {
+           "type": "integer",
+           "description": "ID of the change order package (batch) this request belongs to. Null when not assigned to a package.",
+           "example": 2372497
+          },
+          "contract_id": {
+           "type": "integer",
+           "description": "ID of the parent contract this change order request belongs to.",
+           "example": 195735
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was created, in ISO 8601 format.",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "executed": {
+           "type": "boolean",
+           "description": "When true, the change order request has been fully executed (signed by all parties).",
+           "example": false
+          },
+          "creator": {
+           "type": "object",
+           "description": "User who created this change order request.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the user.",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email/login of the user.",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Full name of the user.",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "deleted_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was deleted, in ISO 8601 format. Null unless the record has been deleted.",
+           "example": "2017-07-29T21:39:40Z"
+          },
+          "description": {
+           "type": "string",
+           "description": "Detailed description of the change order request. May contain HTML.",
+           "example": "<p>Freezer slab replacement</p>"
+          },
+          "due_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Date the change order request is due, in ISO 8601 format.",
+           "example": "2016-11-23T21:39:40Z"
+          },
+          "grand_total": {
+           "type": "string",
+           "format": "float",
+           "description": "Total amount of the change order request including markup. Computed from its line items.",
+           "example": "34535.0"
+          },
+          "total_tax_amount": {
+           "type": "string",
+           "description": "Total tax on the Change Order Request, aggregated from the line-item tax details of its associated change orders, in the contract's currency. Returned only in the `extended` view. Decimal encoded as a string.",
+           "example": "150.0"
+          },
+          "invoiced_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+           "example": "2017-08-22"
+          },
+          "number": {
+           "type": "string",
+           "description": "Human-readable number identifying the change order request within its contract.",
+           "example": "B22"
+          },
+          "origin_data": {
+           "type": "string",
+           "description": "Free-form data payload from the external system that created this record.",
+           "example": "OD-2398273424"
+          },
+          "origin_id": {
+           "type": "string",
+           "description": "Identifier of this record in an external or integrated system.",
+           "example": "459247544"
+          },
+          "paid_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the change order request was paid (YYYY-MM-DD).",
+           "example": "2017-08-25"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Sort position of the change order request relative to others in its contract.",
+           "example": 4
+          },
+          "private": {
+           "type": "boolean",
+           "description": "If true, visible to admins only; otherwise visible to those with access to the parent contract.",
+           "example": true
+          },
+          "revision": {
+           "type": "integer",
+           "description": "Revision number, incremented each time the change order request is revised.",
+           "example": 3
+          },
+          "schedule_impact_amount": {
+           "type": "integer",
+           "description": "Estimated impact to the project schedule, in days.",
+           "example": 2
+          },
+          "signed_change_order_received_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the signed change order was received from the vendor (YYYY-MM-DD).",
+           "example": "2025-08-27"
+          },
+          "status": {
+           "type": "string",
+           "description": "Workflow status of the change order request.",
+           "example": "draft",
+           "enum": [
+            "draft",
+            "not_pricing",
+            "pricing",
+            "pending",
+            "revised",
+            "proceeding",
+            "not_proceeding",
+            "pending_billable",
+            "no_charge",
+            "approved",
+            "rejected",
+            "void"
+           ]
+          },
+          "title": {
+           "type": "string",
+           "description": "Short title summarizing the change order request.",
+           "example": "Concrete freezer slab"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was last updated, in ISO 8601 format.",
+           "example": "2016-10-25T21:39:40Z"
+          },
+          "attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer"
+             },
+             "name": {
+              "type": "string",
+              "description": "Use :name, :filename to be deprecated"
+             },
+             "url": {
+              "type": "string"
+             },
+             "filename": {
+              "type": "string",
+              "description": ":filename to be deprecated, use :name"
+             }
+            }
+           }
+          },
+          "currency_configuration": {
+           "properties": {
+            "base_currency_iso_code": {
+             "type": "string",
+             "description": "Base Currency ISO Code configured from project level; It'll be populated only when multicurrency phase two feature flag is enabled",
+             "example": "USD",
+             "nullable": true
+            },
+            "currency_iso_code": {
+             "type": "string",
+             "description": "Currency ISO Code configured for the financial entity",
+             "example": "EUR",
+             "nullable": true
+            }
+           }
+          },
+          "contract": {
+           "type": "object",
+           "description": "Contract details (present if associated contract exists)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Contract ID",
+             "example": 195735
+            },
+            "number": {
+             "type": "string",
+             "description": "Contract number",
+             "example": "C-001"
+            },
+            "title": {
+             "type": "string",
+             "description": "Contract title",
+             "example": "Main Concrete Package"
+            },
+            "type": {
+             "type": "string",
+             "description": "Contract type",
+             "example": "prime_contract"
+            },
+            "status": {
+             "type": "string",
+             "description": "Contract status",
+             "example": "draft"
+            },
+            "vendor": {
+             "type": "object",
+             "description": "Vendor associated to the contract (if applicable)",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Vendor ID",
+               "example": 998877
+              },
+              "name": {
+               "type": "string",
+               "description": "Vendor name",
+               "example": "Acme Concrete LLC"
+              }
+             }
+            }
+           }
+          },
+          "batch": {
+           "type": "object",
+           "nullable": true,
+           "description": "Change Order Batch this request belongs to (if any)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Batch ID",
+             "example": 2372497
+            },
+            "title": {
+             "type": "string",
+             "description": "Batch title",
+             "example": "Batch 1 - Site Prep"
+            },
+            "number": {
+             "type": "string",
+             "description": "Batch number",
+             "example": "B-001"
+            },
+            "status": {
+             "type": "string",
+             "description": "Workflow status of the change order batch.",
+             "example": "draft",
+             "enum": [
+              "draft",
+              "not_pricing",
+              "pricing",
+              "pending",
+              "revised",
+              "proceeding",
+              "not_proceeding",
+              "pending_billable",
+              "no_charge",
+              "approved",
+              "rejected",
+              "void"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Change Order Request not found.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/change_order_requests/%7Bid%7D',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    contract_id: 'SOME_INTEGER_VALUE',\n    view: 'SOME_STRING_VALUE',\n    'filters[include_deleted]': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/change_order_requests/%7Bid%7D?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Binclude_deleted%5D=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/change_order_requests/%7Bid%7D?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Binclude_deleted%5D=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/change_order_requests/%7Bid%7D?project_id=SOME_INTEGER_VALUE&contract_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Binclude_deleted%5D=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Attachments are now included in the SHOW response",
+      "description": "Updated the SHOW response to contain attachments associated to the Change Order Request",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-07-29",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add currency_configuration field",
+      "description": "Adds the \"currency_configuration.currency_iso_code\" string field",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-05-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Update currency_configuration field",
+      "description": "Add \"currency_configuration.base_currency_iso_code\" string fields",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-04-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add executed and signed_change_order_received_date fields",
+      "description": "Adds the \"executed\" boolean and \"signed_change_order_received_date\" date fields to the SHOW response",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-08-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add contract and vendor objects",
+      "description": "Adds the \"contract\" object (id, number, title, type) and nested \"vendor\" object (id, name) to the SHOW response",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-08-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add schedule_impact_amount field",
+      "description": "Adds the \"schedule_impact_amount\" numeric field",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-09-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add batch object",
+      "description": "Adds the \"batch\" object (id, title, number) when a Change Order Request is associated to a change order package",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-09-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add contract status field",
+      "description": "Adds the \"status\" field to the contract object in the response",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-09-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add action permissions",
+      "description": "Adds optional action permissions in the actions object showing whether each change order request can be edited or deleted, and provides reasons if actions are not allowed. Include by passing include_actions=true as a query parameter.",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-12-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Return 404 for deleted Change Order Requests; add filters[include_deleted] to show",
+      "description": "GET /change_order_requests/{id} now returns 404 Not Found when the requested Change Order Request has been deleted. To access deleted records, pass filters[include_deleted]=with (includes deleted alongside live records) or filters[include_deleted]=only (deleted records only). Previously, deleted records were returned with a 200 response without any filter.",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-04-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add status field to batch object",
+      "description": "The nested \"batch\" object in the SHOW response now includes a \"status\" string field representing the Change Order Package's lifecycle status.",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-05-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     },
+     {
+      "summary": "Add total tax amount to the extended view",
+      "description": "Adds the \"total_tax_amount\" string field when requesting the \"extended\" view. The value aggregates line-item tax details across the Change Order Request's associated change orders.",
+      "endpoint": "GET /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-07-22",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#show-change-order-request"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Change Order Request",
+    "description": "Update information about a specific Change Order Request (COR).",
+    "tags": [
+     "Change Order Requests"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "change_order",
+         "project_id",
+         "contract_id"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 38276
+         },
+         "contract_id": {
+          "type": "integer",
+          "description": "ID of the contract (Prime or Commitment Contract) the change order request belongs to.",
+          "example": 957294
+         },
+         "change_order": {
+          "type": "object",
+          "allOf": [
+           {
+            "type": "object",
+            "properties": {
+             "drawing_revision_ids": {
+              "type": "array",
+              "description": "Drawing Revisions to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               4,
+               5
+              ]
+             },
+             "file_version_ids": {
+              "type": "array",
+              "description": "File Versions to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               6,
+               7
+              ]
+             },
+             "form_ids": {
+              "type": "array",
+              "description": "Forms to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               7,
+               8
+              ]
+             },
+             "image_ids": {
+              "type": "array",
+              "description": "Images to attach to the response",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               9,
+               10
+              ]
+             },
+             "upload_ids": {
+              "type": "array",
+              "description": "Uploads to attach to the response",
+              "items": {
+               "type": "string"
+              },
+              "example": [
+               "4120226e-36a8-416f-970e-880bae78164f",
+               "de07e35a-4860-4f96-acd8-8360833dc495"
+              ]
+             },
+             "document_management_document_revision_ids": {
+              "type": "array",
+              "description": "PDM document to attach to the response",
+              "items": {
+               "type": "string"
+              },
+              "example": [
+               "01JC3TZNKJK6121Z1A2V7G574Q",
+               "01JC3TZPXCJMC6P88CHHD6PTZ9"
+              ]
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "change_order_package_id": {
+              "type": "integer",
+              "description": "ID of the change order package (batch) this request belongs to.",
+              "example": 98762
+             },
+             "description": {
+              "type": "string",
+              "description": "Detailed description of the change order request. May contain HTML.",
+              "example": "<p>Freezer slab replacement</p>"
+             },
+             "due_date": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date the change order request is due, in ISO 8601 format.",
+              "example": "2016-11-23T21:39:40Z"
+             },
+             "invoiced_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+              "example": "2017-08-22"
+             },
+             "number": {
+              "type": "string",
+              "description": "Human-readable number identifying the change order request within its contract.",
+              "example": "B22"
+             },
+             "origin_data": {
+              "type": "string",
+              "format": "string",
+              "description": "Free-form data payload from the external system that created this record.",
+              "example": "OD-2398273424"
+             },
+             "origin_id": {
+              "type": "string",
+              "format": "string",
+              "description": "Identifier of this record in an external or integrated system.",
+              "example": "459247544"
+             },
+             "paid_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date the change order request was paid. Accepts any valid date parseable by the server; YYYY-MM-DD is recommended.",
+              "example": "2017-08-25"
+             },
+             "revision": {
+              "type": "integer",
+              "description": "Revision number for this change order request. This is a manual input field; it is not automatically incremented.",
+              "example": 1
+             },
+             "schedule_impact_amount": {
+              "type": "integer",
+              "description": "Estimated impact to the project schedule, in days.",
+              "example": 2
+             },
+             "status": {
+              "type": "string",
+              "description": "Status of the change order request. Defaults to `draft` when omitted on create.",
+              "example": "draft",
+              "enum": [
+               "draft",
+               "not_pricing",
+               "pricing",
+               "pending",
+               "revised",
+               "proceeding",
+               "not_proceeding",
+               "no_charge",
+               "approved",
+               "rejected",
+               "void"
+              ]
+             },
+             "title": {
+              "type": "string",
+              "description": "Short title summarizing the change order request.",
+              "example": "Concrete freezer slab"
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this change order request. Use as the {id} path parameter to retrieve or update it.",
+           "example": 3284756
+          },
+          "change_order_package_id": {
+           "type": "integer",
+           "description": "ID of the change order package (batch) this request belongs to. Null when not assigned to a package.",
+           "example": 2372497
+          },
+          "contract_id": {
+           "type": "integer",
+           "description": "ID of the parent contract this change order request belongs to.",
+           "example": 195735
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was created, in ISO 8601 format.",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "executed": {
+           "type": "boolean",
+           "description": "When true, the change order request has been fully executed (signed by all parties).",
+           "example": false
+          },
+          "creator": {
+           "type": "object",
+           "description": "User who created this change order request.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the user.",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email/login of the user.",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Full name of the user.",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "deleted_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was deleted, in ISO 8601 format. Null unless the record has been deleted.",
+           "example": "2017-07-29T21:39:40Z"
+          },
+          "description": {
+           "type": "string",
+           "description": "Detailed description of the change order request. May contain HTML.",
+           "example": "<p>Freezer slab replacement</p>"
+          },
+          "due_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Date the change order request is due, in ISO 8601 format.",
+           "example": "2016-11-23T21:39:40Z"
+          },
+          "grand_total": {
+           "type": "string",
+           "format": "float",
+           "description": "Total amount of the change order request including markup. Computed from its line items.",
+           "example": "34535.0"
+          },
+          "total_tax_amount": {
+           "type": "string",
+           "description": "Total tax on the Change Order Request, aggregated from the line-item tax details of its associated change orders, in the contract's currency. Returned only in the `extended` view. Decimal encoded as a string.",
+           "example": "150.0"
+          },
+          "invoiced_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the change order request was invoiced (YYYY-MM-DD).",
+           "example": "2017-08-22"
+          },
+          "number": {
+           "type": "string",
+           "description": "Human-readable number identifying the change order request within its contract.",
+           "example": "B22"
+          },
+          "origin_data": {
+           "type": "string",
+           "description": "Free-form data payload from the external system that created this record.",
+           "example": "OD-2398273424"
+          },
+          "origin_id": {
+           "type": "string",
+           "description": "Identifier of this record in an external or integrated system.",
+           "example": "459247544"
+          },
+          "paid_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the change order request was paid (YYYY-MM-DD).",
+           "example": "2017-08-25"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Sort position of the change order request relative to others in its contract.",
+           "example": 4
+          },
+          "private": {
+           "type": "boolean",
+           "description": "If true, visible to admins only; otherwise visible to those with access to the parent contract.",
+           "example": true
+          },
+          "revision": {
+           "type": "integer",
+           "description": "Revision number, incremented each time the change order request is revised.",
+           "example": 3
+          },
+          "schedule_impact_amount": {
+           "type": "integer",
+           "description": "Estimated impact to the project schedule, in days.",
+           "example": 2
+          },
+          "signed_change_order_received_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the signed change order was received from the vendor (YYYY-MM-DD).",
+           "example": "2025-08-27"
+          },
+          "status": {
+           "type": "string",
+           "description": "Workflow status of the change order request.",
+           "example": "draft",
+           "enum": [
+            "draft",
+            "not_pricing",
+            "pricing",
+            "pending",
+            "revised",
+            "proceeding",
+            "not_proceeding",
+            "pending_billable",
+            "no_charge",
+            "approved",
+            "rejected",
+            "void"
+           ]
+          },
+          "title": {
+           "type": "string",
+           "description": "Short title summarizing the change order request.",
+           "example": "Concrete freezer slab"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the change order request was last updated, in ISO 8601 format.",
+           "example": "2016-10-25T21:39:40Z"
+          },
+          "attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer"
+             },
+             "name": {
+              "type": "string",
+              "description": "Use :name, :filename to be deprecated"
+             },
+             "url": {
+              "type": "string"
+             },
+             "filename": {
+              "type": "string",
+              "description": ":filename to be deprecated, use :name"
+             }
+            }
+           }
+          },
+          "currency_configuration": {
+           "properties": {
+            "base_currency_iso_code": {
+             "type": "string",
+             "description": "Base Currency ISO Code configured from project level; It'll be populated only when multicurrency phase two feature flag is enabled",
+             "example": "USD",
+             "nullable": true
+            },
+            "currency_iso_code": {
+             "type": "string",
+             "description": "Currency ISO Code configured for the financial entity",
+             "example": "EUR",
+             "nullable": true
+            }
+           }
+          },
+          "contract": {
+           "type": "object",
+           "description": "Contract details (present if associated contract exists)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Contract ID",
+             "example": 195735
+            },
+            "number": {
+             "type": "string",
+             "description": "Contract number",
+             "example": "C-001"
+            },
+            "title": {
+             "type": "string",
+             "description": "Contract title",
+             "example": "Main Concrete Package"
+            },
+            "type": {
+             "type": "string",
+             "description": "Contract type",
+             "example": "prime_contract"
+            },
+            "status": {
+             "type": "string",
+             "description": "Contract status",
+             "example": "draft"
+            },
+            "vendor": {
+             "type": "object",
+             "description": "Vendor associated to the contract (if applicable)",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Vendor ID",
+               "example": 998877
+              },
+              "name": {
+               "type": "string",
+               "description": "Vendor name",
+               "example": "Acme Concrete LLC"
+              }
+             }
+            }
+           }
+          },
+          "batch": {
+           "type": "object",
+           "nullable": true,
+           "description": "Change Order Batch this request belongs to (if any)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Batch ID",
+             "example": 2372497
+            },
+            "title": {
+             "type": "string",
+             "description": "Batch title",
+             "example": "Batch 1 - Site Prep"
+            },
+            "number": {
+             "type": "string",
+             "description": "Batch number",
+             "example": "B-001"
+            },
+            "status": {
+             "type": "string",
+             "description": "Workflow status of the change order batch.",
+             "example": "draft",
+             "enum": [
+              "draft",
+              "not_pricing",
+              "pricing",
+              "pending",
+              "revised",
+              "proceeding",
+              "not_proceeding",
+              "pending_billable",
+              "no_charge",
+              "approved",
+              "rejected",
+              "void"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Can not update Change Order Request due to errors.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/change_order_requests/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 38276,\n    contract_id: 957294,\n    change_order: {\n      drawing_revision_ids: [4, 5],\n      file_version_ids: [6, 7],\n      form_ids: [7, 8],\n      image_ids: [9, 10],\n      upload_ids: ['4120226e-36a8-416f-970e-880bae78164f', 'de07e35a-4860-4f96-acd8-8360833dc495'],\n      document_management_document_revision_ids: ['01JC3TZNKJK6121Z1A2V7G574Q', '01JC3TZPXCJMC6P88CHHD6PTZ9'],\n      change_order_package_id: 98762,\n      description: '<p>Freezer slab replacement</p>',\n      due_date: '2016-11-23T21:39:40Z',\n      invoiced_date: '2017-08-22',\n      number: 'B22',\n      origin_data: 'OD-2398273424',\n      origin_id: '459247544',\n      paid_date: '2017-08-25',\n      revision: 1,\n      schedule_impact_amount: 2,\n      status: 'draft',\n      title: 'Concrete freezer slab'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":38276,\\\"contract_id\\\":957294,\\\"change_order\\\":{\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"upload_ids\\\":[\\\"4120226e-36a8-416f-970e-880bae78164f\\\",\\\"de07e35a-4860-4f96-acd8-8360833dc495\\\"],\\\"document_management_document_revision_ids\\\":[\\\"01JC3TZNKJK6121Z1A2V7G574Q\\\",\\\"01JC3TZPXCJMC6P88CHHD6PTZ9\\\"],\\\"change_order_package_id\\\":98762,\\\"description\\\":\\\"<p>Freezer slab replacement</p>\\\",\\\"due_date\\\":\\\"2016-11-23T21:39:40Z\\\",\\\"invoiced_date\\\":\\\"2017-08-22\\\",\\\"number\\\":\\\"B22\\\",\\\"origin_data\\\":\\\"OD-2398273424\\\",\\\"origin_id\\\":\\\"459247544\\\",\\\"paid_date\\\":\\\"2017-08-25\\\",\\\"revision\\\":1,\\\"schedule_impact_amount\\\":2,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Concrete freezer slab\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/change_order_requests/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/change_order_requests/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":38276,\"contract_id\":957294,\"change_order\":{\"drawing_revision_ids\":[4,5],\"file_version_ids\":[6,7],\"form_ids\":[7,8],\"image_ids\":[9,10],\"upload_ids\":[\"4120226e-36a8-416f-970e-880bae78164f\",\"de07e35a-4860-4f96-acd8-8360833dc495\"],\"document_management_document_revision_ids\":[\"01JC3TZNKJK6121Z1A2V7G574Q\",\"01JC3TZPXCJMC6P88CHHD6PTZ9\"],\"change_order_package_id\":98762,\"description\":\"<p>Freezer slab replacement</p>\",\"due_date\":\"2016-11-23T21:39:40Z\",\"invoiced_date\":\"2017-08-22\",\"number\":\"B22\",\"origin_data\":\"OD-2398273424\",\"origin_id\":\"459247544\",\"paid_date\":\"2017-08-25\",\"revision\":1,\"schedule_impact_amount\":2,\"status\":\"draft\",\"title\":\"Concrete freezer slab\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/change_order_requests/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"project_id\\\":38276,\\\"contract_id\\\":957294,\\\"change_order\\\":{\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"upload_ids\\\":[\\\"4120226e-36a8-416f-970e-880bae78164f\\\",\\\"de07e35a-4860-4f96-acd8-8360833dc495\\\"],\\\"document_management_document_revision_ids\\\":[\\\"01JC3TZNKJK6121Z1A2V7G574Q\\\",\\\"01JC3TZPXCJMC6P88CHHD6PTZ9\\\"],\\\"change_order_package_id\\\":98762,\\\"description\\\":\\\"<p>Freezer slab replacement</p>\\\",\\\"due_date\\\":\\\"2016-11-23T21:39:40Z\\\",\\\"invoiced_date\\\":\\\"2017-08-22\\\",\\\"number\\\":\\\"B22\\\",\\\"origin_data\\\":\\\"OD-2398273424\\\",\\\"origin_id\\\":\\\"459247544\\\",\\\"paid_date\\\":\\\"2017-08-25\\\",\\\"revision\\\":1,\\\"schedule_impact_amount\\\":2,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Concrete freezer slab\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add currency_configuration field",
+      "description": "Adds the \"currency_configuration.currency_iso_code\" string field",
+      "endpoint": "PATCH /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-05-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#update-change-order-request"
+     },
+     {
+      "summary": "Update currency_configuration field",
+      "description": "Add \"currency_configuration.base_currency_iso_code\" string fields",
+      "endpoint": "PATCH /change_order_requests/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-04-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#update-change-order-request"
+     },
+     {
+      "summary": "Add attachment support",
+      "description": "Added support for attaching files to Change Order Requests. You can now provide one of the following argument arrays, depending on your type of upload object: `upload_ids`, `drawing_revision_ids`, `file_version_ids`, `form_ids`, `image_ids`, or `document_management_document_revision_ids`. To preserve any pre-existing attachments, you must provide their IDs in the `attachment_ids` array.",
+      "endpoint": "PATCH /change_order_requests/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-12-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#update-change-order-request"
+     },
+     {
+      "summary": "Add change_order_ids parameter",
+      "description": "Added support for linking Change Orders (PCOs) to Change Order Requests:\n- `change_order_ids`: Array of PCO IDs to link. Only supported for three-tier projects.",
+      "endpoint": "PATCH /change_order_requests/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-12-31",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#update-change-order-request"
+     },
+     {
+      "summary": "Permit revision field for create and update",
+      "description": "The \"revision\" integer field can now be set when creating or updating a Change Order Request. Only supported for three-tier change order projects.",
+      "endpoint": "PATCH /change_order_requests/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-04-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "change-order-requests?version=1.0#update-change-order-request"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,956 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Change Event Comments",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Change Events",
+  "x-resource-name": "Change Event Comments",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/change_events/{change_event_id}/comments": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "change_event_id",
+     "in": "path",
+     "required": true,
+     "description": "Change event ID.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Change Event Comments",
+    "description": "Returns comments for a change event.",
+    "tags": [
+     "Change Event Comments"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK. Paginated list of change event comments. Each comment includes id, body, created_at, attachments, creator, and optional rating.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier of the comment. Use as the {id} path parameter to delete the comment via DELETE /rest/v2.0/companies/{company_id}/projects/{project_id}/change_events/{change_event_id}/comments/{id}.",
+              "example": "123"
+             },
+             "body": {
+              "type": "string",
+              "description": "Free-text content of the comment as entered by its author.",
+              "example": "Comment's body"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the comment was created, in ISO 8601 format.",
+              "example": "2015-11-12T21:26:28Z"
+             },
+             "attachments": {
+              "type": "array",
+              "description": "Files attached to the comment. Each item describes a viewable Prostore file, including download URLs and file metadata.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string"
+                },
+                "name": {
+                 "type": "string"
+                },
+                "url": {
+                 "type": "string"
+                },
+                "can_be_viewed": {
+                 "type": "boolean"
+                },
+                "viewable": {
+                 "type": "boolean"
+                }
+               }
+              }
+             },
+             "creator": {
+              "description": "The user who authored the comment.",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Procore user ID of the comment's author.",
+                "example": "42"
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the comment's author.",
+                "example": "Jane Doe"
+               },
+               "login": {
+                "type": "string",
+                "description": "Login email of the comment's author.",
+                "example": "jane.doe@example.com"
+               },
+               "initials": {
+                "type": "string",
+                "description": "Author's initials, derived from their name, for avatar fallbacks.",
+                "example": "JD"
+               },
+               "avatar": {
+                "type": "string",
+                "nullable": true,
+                "description": "URL of the author's avatar image. Null when the author has no avatar set.",
+                "example": "https://example.com/avatars/42.png"
+               }
+              }
+             },
+             "rating": {
+              "type": "integer",
+              "description": "Optional numeric rating associated with the comment. Null when no rating was provided.",
+              "example": 5,
+              "nullable": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Change Change Event Comments endpoints to open beta",
+      "description": "Expose List, Create, and Delete Change Event Comments endpoints as public beta on the Developer Portal.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/change_events/{change_event_id}/comments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-04-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "change-event-comments?version=2.0#list-change-event-comments"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Create Change Event Comment",
+    "description": "Creates a comment on a change event.",
+    "tags": [
+     "Change Event Comments"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "comment"
+        ],
+        "properties": {
+         "comment": {
+          "type": "object",
+          "required": [
+           "body"
+          ],
+          "properties": {
+           "body": {
+            "type": "string",
+            "description": "Free-text content of the comment to create. Required."
+           },
+           "rating": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Optional numeric rating to associate with the comment. Omit or send null for no rating."
+           },
+           "prostore_file_ids": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            },
+            "description": "IDs of previously uploaded Prostore files to attach to the comment."
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created. The created comment.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier of the comment. Use as the {id} path parameter to delete the comment via DELETE /rest/v2.0/companies/{company_id}/projects/{project_id}/change_events/{change_event_id}/comments/{id}.",
+             "example": "123"
+            },
+            "body": {
+             "type": "string",
+             "description": "Free-text content of the comment as entered by its author.",
+             "example": "Comment's body"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the comment was created, in ISO 8601 format.",
+             "example": "2015-11-12T21:26:28Z"
+            },
+            "attachments": {
+             "type": "array",
+             "description": "Files attached to the comment. Each item describes a viewable Prostore file, including download URLs and file metadata.",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string"
+               },
+               "name": {
+                "type": "string"
+               },
+               "url": {
+                "type": "string"
+               },
+               "can_be_viewed": {
+                "type": "boolean"
+               },
+               "viewable": {
+                "type": "boolean"
+               }
+              }
+             }
+            },
+            "creator": {
+             "description": "The user who authored the comment.",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Procore user ID of the comment's author.",
+               "example": "42"
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the comment's author.",
+               "example": "Jane Doe"
+              },
+              "login": {
+               "type": "string",
+               "description": "Login email of the comment's author.",
+               "example": "jane.doe@example.com"
+              },
+              "initials": {
+               "type": "string",
+               "description": "Author's initials, derived from their name, for avatar fallbacks.",
+               "example": "JD"
+              },
+              "avatar": {
+               "type": "string",
+               "nullable": true,
+               "description": "URL of the author's avatar image. Null when the author has no avatar set.",
+               "example": "https://example.com/avatars/42.png"
+              }
+             }
+            },
+            "rating": {
+             "type": "integer",
+             "description": "Optional numeric rating associated with the comment. Null when no rating was provided.",
+             "example": 5,
+             "nullable": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments',\n  headers: {'content-type': 'application/json'},\n  body: {comment: {body: 'string', rating: 0, prostore_file_ids: ['string']}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"comment\\\":{\\\"body\\\":\\\"string\\\",\\\"rating\\\":0,\\\"prostore_file_ids\\\":[\\\"string\\\"]}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments \\\n  --header 'content-type: application/json' \\\n  --data '{\"comment\":{\"body\":\"string\",\"rating\":0,\"prostore_file_ids\":[\"string\"]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments\"),\n    Content = new StringContent(\"{\\\"comment\\\":{\\\"body\\\":\\\"string\\\",\\\"rating\\\":0,\\\"prostore_file_ids\\\":[\\\"string\\\"]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Change Change Event Comments endpoints to open beta",
+      "description": "Expose List, Create, and Delete Change Event Comments endpoints as public beta on the Developer Portal.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/change_events/{change_event_id}/comments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-04-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "change-event-comments?version=2.0#create-change-event-comment"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/change_events/{change_event_id}/comments/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "change_event_id",
+     "in": "path",
+     "required": true,
+     "description": "Change event ID.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Change event comment ID.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Delete Change Event Comment",
+    "description": "Deletes a comment on a change event. Returns 200 with empty body on success.",
+    "tags": [
+     "Change Event Comments"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK (empty body)"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/change_events/%7Bchange_event_id%7D/comments/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Change Change Event Comments endpoints to open beta",
+      "description": "Expose List, Create, and Delete Change Event Comments endpoints as public beta on the Developer Portal.",
+      "endpoint": "DELETE /companies/{company_id}/projects/{project_id}/change_events/{change_event_id}/comments/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-04-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "change-event-comments?version=2.0#delete-change-event-comment"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

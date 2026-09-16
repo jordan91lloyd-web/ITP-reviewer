@@ -1,0 +1,488 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Coordination Issue Export",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Coordination Issues",
+  "x-resource-name": "Coordination Issue Export",
+  "version": "1.0",
+  "x-product-lines": [
+   "Design Coordination"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/coordination_issues/export": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "query",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "filters[assignee_company_id][]",
+     "in": "query",
+     "description": "Filter item(s) with matching assignee vendor companies.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[created_by_company_id][]",
+     "in": "query",
+     "description": "Filter item(s) with matching created by vendor companies.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "column_state",
+     "in": "query",
+     "description": "Optional array of column configuration objects from frontend table state.\nAllows export to respect custom column visibility and ordering.\nEach object should have a 'field' property with the column name.",
+     "required": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "field": {
+         "type": "string",
+         "description": "The field/column name from the frontend table configuration"
+        }
+       },
+       "required": [
+        "field"
+       ]
+      }
+     }
+    },
+    {
+     "name": "filters[assignee_id][]",
+     "in": "query",
+     "description": "Filter item(s) with matching assignees.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[ids][]",
+     "in": "query",
+     "description": "Filter item(s) with matching ids.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[location_id][]",
+     "in": "query",
+     "description": "Filter item(s) with matching locations.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[search]",
+     "in": "query",
+     "description": "Filter item(s) with the matching search query. The search is performed on title and issue number.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "filters[coordination_issue_file_id][]",
+     "in": "query",
+     "description": "Filter item(s) with the exact coordination issue file.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[status][]",
+     "in": "query",
+     "description": "Filter item(s) with matching status.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "open",
+        "in_progress",
+        "blocked",
+        "unblocked",
+        "ready_for_review",
+        "closed",
+        "moved_to_observation"
+       ]
+      }
+     }
+    },
+    {
+     "name": "filters[updated_at]",
+     "in": "query",
+     "description": "Filter item(s) within a specific updated at iso8601 datetime range.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "filters[issue_type][]",
+     "in": "query",
+     "description": "Filter item(s) with matching issue_type.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "building_code",
+        "clash",
+        "client_feedback",
+        "constructability",
+        "coordination",
+        "design_review",
+        "existing_condition",
+        "requirement_change",
+        "other"
+       ]
+      }
+     }
+    },
+    {
+     "name": "filters[priority][]",
+     "in": "query",
+     "description": "Filter item(s) with matching priority.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+       ]
+      }
+     }
+    },
+    {
+     "name": "filters[trade_id][]",
+     "in": "query",
+     "description": "Filter item(s) with matching trades.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[overdue]",
+     "in": "query",
+     "description": "Filter item(s) with matching Overdue.",
+     "style": "form",
+     "explode": true,
+     "schema": {
+      "type": "boolean",
+      "default": false
+     }
+    },
+    {
+     "name": "view",
+     "in": "query",
+     "description": "Export View.",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "pdf",
+       "with_activity"
+      ]
+     }
+    },
+    {
+     "name": "sort",
+     "in": "query",
+     "description": "Sort item(s) by an attribute. The default sort is ascending. To sort in descending order, prepend the sort value with a hyphen character '-'",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "closed_date",
+       "company_then_status",
+       "description",
+       "due_date",
+       "issue_number",
+       "issue_type",
+       "location",
+       "location_then_created_at",
+       "location_then_due_date",
+       "location_then_issue_number",
+       "location_then_issue_type",
+       "location_then_priority",
+       "location_then_trade",
+       "priority",
+       "trade",
+       "updated_at"
+      ]
+     }
+    },
+    {
+     "name": "export_format",
+     "in": "query",
+     "description": "Export File Format.",
+     "required": true,
+     "schema": {
+      "type": "string",
+      "enum": [
+       "bcf",
+       "csv",
+       "pdf"
+      ]
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Download Coordination Issues",
+    "description": "Downloads coordination issues to a file specified by the export format. The items to be exported can be scoped by using filters. BCF export will only export the issues with a snapshot and valid camera data.",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "responses": {
+     "200": {
+      "description": "Coordination Issues CSV",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "string",
+         "description": "CSV Format (if export_format=csv)",
+         "example": "Issue Number,Title,Status,Priority,Assignee Company,Assignee,Due Date,Trade,Type,Location,Created At,Description\\n\n1,Bad Issue,Open,Low,Awesome Company,Bob Builder,2021-03-31,Electrical,Building Code,Building I>Level 02,2018-05-16,Electrical Needs Support\\n"
+        }
+       }
+      }
+     },
+     "202": {
+      "description": "Accepted"
+     },
+     "403": {
+      "description": "User does not have permission to export Coordination Issues",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/coordination_issues/export',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    'filters[assignee_company_id][]': 'SOME_ARRAY_VALUE',\n    'filters[created_by_company_id][]': 'SOME_ARRAY_VALUE',\n    column_state: 'SOME_ARRAY_VALUE',\n    'filters[assignee_id][]': 'SOME_ARRAY_VALUE',\n    'filters[ids][]': 'SOME_ARRAY_VALUE',\n    'filters[location_id][]': 'SOME_ARRAY_VALUE',\n    'filters[search]': 'SOME_STRING_VALUE',\n    'filters[coordination_issue_file_id][]': 'SOME_ARRAY_VALUE',\n    'filters[status][]': 'SOME_ARRAY_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[issue_type][]': 'SOME_ARRAY_VALUE',\n    'filters[priority][]': 'SOME_ARRAY_VALUE',\n    'filters[trade_id][]': 'SOME_ARRAY_VALUE',\n    'filters[overdue]': 'SOME_BOOLEAN_VALUE',\n    view: 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    export_format: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/coordination_issues/export?project_id=SOME_INTEGER_VALUE&filters%5Bassignee_company_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bcreated_by_company_id%5D%5B%5D=SOME_ARRAY_VALUE&column_state=SOME_ARRAY_VALUE&filters%5Bassignee_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bids%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Blocation_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&filters%5Bcoordination_issue_file_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bstatus%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bissue_type%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bpriority%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Boverdue%5D=SOME_BOOLEAN_VALUE&view=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&export_format=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/coordination_issues/export?project_id=SOME_INTEGER_VALUE&filters%5Bassignee_company_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bcreated_by_company_id%5D%5B%5D=SOME_ARRAY_VALUE&column_state=SOME_ARRAY_VALUE&filters%5Bassignee_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bids%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Blocation_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&filters%5Bcoordination_issue_file_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bstatus%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bissue_type%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bpriority%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Boverdue%5D=SOME_BOOLEAN_VALUE&view=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&export_format=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/coordination_issues/export?project_id=SOME_INTEGER_VALUE&filters%5Bassignee_company_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bcreated_by_company_id%5D%5B%5D=SOME_ARRAY_VALUE&column_state=SOME_ARRAY_VALUE&filters%5Bassignee_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bids%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Blocation_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&filters%5Bcoordination_issue_file_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bstatus%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bissue_type%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bpriority%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Boverdue%5D=SOME_BOOLEAN_VALUE&view=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&export_format=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Map frontend 'private' field name to 'is_private' in column exports",
+      "description": "The export endpoint now correctly maps the frontend `private` field name (used in\nCIColumnKeys) to the backend `is_private` column when building exports from table\ncolumn state. Previously, only the `is_private` key was recognised; the `private`\nvariant sent by the frontend was silently dropped, causing the column to be missing\nfrom exports when the user had selected it in the data table.\n\nThis mapping is only active when the private coordination issues feature flag is\nenabled for the project.\n\nAdditionally, export events are now tracked via analytics with the event key\n`project.coordination_issues.coordination_issue_export.list_exported`.",
+      "endpoint": "GET /coordination_issues/export",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-06-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "coordination-issue-export?version=1.0#download-coordination-issues"
+     },
+     {
+      "summary": "Support for custom column configuration from frontend table state",
+      "description": "A new optional `column_state` parameter allows the export endpoint to respect custom column configurations\nfrom the frontend table state. This enables users to export coordination issues with their personalized\ncolumn visibility and ordering from the web interface.\n\nThe `column_state` parameter accepts an array of objects with field names that correspond to the frontend\ntable configuration. The export will include only the visible columns in the order specified by the user.\n\nFeatures:\n* Custom column visibility based on frontend table state\n* Maintains user-defined column ordering in exports\n* Automatic mapping between frontend field names and backend column names\n* Falls back to configurable field sets or default columns when `column_state` is not provided\n* Always includes non-configurable columns (issue_number, status, created_at) for data integrity\n\nExample usage: `GET /coordination_issues/export` with `column_state: [{\"field\": \"title\"}, {\"field\": \"assignee\"}]`",
+      "endpoint": "GET /coordination_issues/export",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-09-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "coordination-issue-export?version=1.0#download-coordination-issues"
+     },
+     {
+      "summary": "Sort by Created By company name and then by status and finally by issue number",
+      "description": "A new optional sort allows the index endpoint to sort by company name of the issue creator, then by status, and finally by issue number in descending order.\n\nThe status order will always be:\n\n* `unblocked`\n* `open`\n* `ready_for_review`\n* `blocked`\n* `moved_to_observation`\n* `closed`\n\nTo use the new sort, include the following query parameter: `?sort=company_then_status`",
+      "endpoint": "GET /coordination_issues/export",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2020-12-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "coordination-issue-export?version=1.0#download-coordination-issues"
+     },
+     {
+      "summary": "Add Watchers column to CSV exports",
+      "description": "A new optional column allows the export endpoint to include watchers information in CSV exports.\n\nThe watchers column displays a comma-separated list of watcher names for each coordination issue.\n\nTo include watchers in the export, add 'watchers' to the column_state parameter.",
+      "endpoint": "GET /coordination_issues/export",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "coordination-issue-export?version=1.0#download-coordination-issues"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

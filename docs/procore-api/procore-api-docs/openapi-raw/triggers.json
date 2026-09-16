@@ -1,0 +1,4868 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Triggers",
+  "x-product-category": "Platform - Developer Tools",
+  "x-tool-category": "Webhooks",
+  "x-resource-name": "Triggers",
+  "version": "2.0",
+  "x-product-lines": [
+   "Utilities"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/webhooks/hooks/{hook_id}/triggers": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "hook_id",
+     "in": "path",
+     "description": "Webhook Hook ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Company Webhooks Triggers",
+    "description": "Returns an array of Triggers for the company webhook.",
+    "tags": [
+     "Webhooks"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Array of Webhooks Triggers",
+           "items": {
+            "title": "Webhooks Trigger",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Trigger ID",
+              "example": "231346546"
+             },
+             "webhook_hook_id": {
+              "type": "string",
+              "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+              "example": "43593499"
+             },
+             "resource_name": {
+              "type": "string",
+              "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+              "example": "Project Users"
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event action that fires this trigger (e.g., create, update, delete).",
+              "example": "CREATED"
+             },
+             "company_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+              "example": "5358233"
+             },
+             "project_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+              "example": "23498237"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Company Webhooks Triggers",
+    "description": "Create Triggers for the Company Webhook.",
+    "tags": [
+     "Webhooks"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "resource_name",
+         "event_type"
+        ],
+        "properties": {
+         "resource_name": {
+          "type": "string",
+          "description": "Name of the Procore resource to subscribe to (e.g., Work Orders, Company Users). Use the List Webhook Resources endpoint to discover valid values for your payload version.",
+          "example": "Company Users"
+         },
+         "event_type": {
+          "type": "string",
+          "description": "Event action to subscribe to on the specified resource. Common values are create, update, delete. Use the List Webhook Resources endpoint to confirm supported event types per resource.",
+          "example": "delete"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "title": "Webhooks Trigger",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Trigger ID",
+             "example": "231346546"
+            },
+            "webhook_hook_id": {
+             "type": "string",
+             "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+             "example": "43593499"
+            },
+            "resource_name": {
+             "type": "string",
+             "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+             "example": "Project Users"
+            },
+            "event_type": {
+             "type": "string",
+             "description": "Event action that fires this trigger (e.g., create, update, delete).",
+             "example": "CREATED"
+            },
+            "company_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+             "example": "5358233"
+            },
+            "project_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+             "example": "23498237"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers',\n  headers: {'content-type': 'application/json'},\n  body: {resource_name: 'Company Users', event_type: 'delete'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"resource_name\\\":\\\"Company Users\\\",\\\"event_type\\\":\\\"delete\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers \\\n  --header 'content-type: application/json' \\\n  --data '{\"resource_name\":\"Company Users\",\"event_type\":\"delete\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers\"),\n    Content = new StringContent(\"{\\\"resource_name\\\":\\\"Company Users\\\",\\\"event_type\\\":\\\"delete\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/webhooks/hooks/{hook_id}/triggers": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "hook_id",
+     "in": "path",
+     "description": "Webhook Hook ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Project Webhooks Triggers",
+    "description": "Returns an array of Triggers for the project webhook.",
+    "tags": [
+     "Webhooks"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Array of Webhooks Triggers",
+           "items": {
+            "title": "Webhooks Trigger",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Trigger ID",
+              "example": "231346546"
+             },
+             "webhook_hook_id": {
+              "type": "string",
+              "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+              "example": "43593499"
+             },
+             "resource_name": {
+              "type": "string",
+              "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+              "example": "Project Users"
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event action that fires this trigger (e.g., create, update, delete).",
+              "example": "CREATED"
+             },
+             "company_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+              "example": "5358233"
+             },
+             "project_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+              "example": "23498237"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Project Webhooks Triggers",
+    "description": "Create Triggers for the Project Webhook.",
+    "tags": [
+     "Webhooks"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "resource_name",
+         "event_type"
+        ],
+        "properties": {
+         "resource_name": {
+          "type": "string",
+          "description": "Name of the Procore resource to subscribe to (e.g., Work Orders, Company Users). Use the List Webhook Resources endpoint to discover valid values for your payload version.",
+          "example": "Project Users"
+         },
+         "event_type": {
+          "type": "string",
+          "description": "Event action to subscribe to on the specified resource. Common values are create, update, delete. Use the List Webhook Resources endpoint to confirm supported event types per resource.",
+          "example": "delete"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "title": "Webhooks Trigger",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Trigger ID",
+             "example": "231346546"
+            },
+            "webhook_hook_id": {
+             "type": "string",
+             "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+             "example": "43593499"
+            },
+            "resource_name": {
+             "type": "string",
+             "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+             "example": "Project Users"
+            },
+            "event_type": {
+             "type": "string",
+             "description": "Event action that fires this trigger (e.g., create, update, delete).",
+             "example": "CREATED"
+            },
+            "company_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+             "example": "5358233"
+            },
+            "project_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+             "example": "23498237"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers',\n  headers: {'content-type': 'application/json'},\n  body: {resource_name: 'Project Users', event_type: 'delete'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers \\\n  --header 'content-type: application/json' \\\n  --data '{\"resource_name\":\"Project Users\",\"event_type\":\"delete\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers\"),\n    Content = new StringContent(\"{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/webhooks/hooks/{hook_id}/triggers/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "hook_id",
+     "in": "path",
+     "description": "Webhook Hook ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Webhook Trigger ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Company Webhooks Trigger",
+    "description": "Delete Company Webhook Trigger.",
+    "tags": [
+     "Webhooks"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/webhooks/hooks/{hook_id}/triggers/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "hook_id",
+     "in": "path",
+     "description": "Webhook Hook ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Webhook Trigger ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Project Webhooks Trigger",
+    "description": "Delete Project Webhook Trigger",
+    "tags": [
+     "Webhooks"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/webhooks/hooks/{hook_id}/triggers/bulk": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "hook_id",
+     "in": "path",
+     "description": "Webhook Hook ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Create Company Webhooks Triggers",
+    "description": "Create multiple Triggers for the Company Webhook in a single request.",
+    "tags": [
+     "Webhooks"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "required": [
+          "resource_name",
+          "event_type"
+         ],
+         "properties": {
+          "resource_name": {
+           "type": "string",
+           "description": "Name of the Procore resource to subscribe to (e.g., Work Orders, Company Users). Use the List Webhook Resources endpoint to discover valid values for your payload version.",
+           "example": "Project Users"
+          },
+          "event_type": {
+           "type": "string",
+           "description": "Event action to subscribe to on the specified resource. Common values are create, update, delete. Use the List Webhook Resources endpoint to confirm supported event types per resource.",
+           "example": "delete"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "title": "Webhooks Trigger",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Trigger ID",
+              "example": "231346546"
+             },
+             "webhook_hook_id": {
+              "type": "string",
+              "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+              "example": "43593499"
+             },
+             "resource_name": {
+              "type": "string",
+              "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+              "example": "Project Users"
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event action that fires this trigger (e.g., create, update, delete).",
+              "example": "CREATED"
+             },
+             "company_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+              "example": "5358233"
+             },
+             "project_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+              "example": "23498237"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "207": {
+      "description": "Multi Status Response (Contains mix of successful and failed triggers)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "oneOf": [
+             {
+              "title": "Webhooks Trigger",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Trigger ID",
+                "example": "231346546"
+               },
+               "webhook_hook_id": {
+                "type": "string",
+                "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+                "example": "43593499"
+               },
+               "resource_name": {
+                "type": "string",
+                "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+                "example": "Project Users"
+               },
+               "event_type": {
+                "type": "string",
+                "description": "Event action that fires this trigger (e.g., create, update, delete).",
+                "example": "CREATED"
+               },
+               "company_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+                "example": "5358233"
+               },
+               "project_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+                "example": "23498237"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "error": {
+                "type": "object",
+                "properties": {
+                 "code": {
+                  "type": "string",
+                  "example": "BAD_REQUEST"
+                 },
+                 "message": {
+                  "type": "string",
+                  "example": "Must provide the resource_name and event_type parameters"
+                 }
+                }
+               },
+               "webhook_hook_id": {
+                "type": "string",
+                "description": "Webhook Hook ID",
+                "example": "43593499"
+               },
+               "resource_name": {
+                "type": "string",
+                "description": "Resource name provided in the failed request.",
+                "example": "Invalid Resource"
+               },
+               "event_type": {
+                "type": "string",
+                "description": "Event type provided in the failed request.",
+                "example": "invalid_event"
+               },
+               "company_id": {
+                "type": "string",
+                "description": "Company ID",
+                "example": "5358233"
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk',\n  headers: {'content-type': 'application/json'},\n  body: [{resource_name: 'Project Users', event_type: 'delete'}],\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"[{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}]\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk \\\n  --header 'content-type: application/json' \\\n  --data '[{\"resource_name\":\"Project Users\",\"event_type\":\"delete\"}]'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\"),\n    Content = new StringContent(\"[{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}]\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added v2 bulk create company triggers endpoint",
+      "description": "Create multiple company webhook triggers in a single request.",
+      "endpoint": "POST /companies/{company_id}/webhooks/hooks/{hook_id}/triggers/bulk",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-12-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "triggers?version=2.0#bulk-create-company-webhooks-triggers"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Delete Company Webhooks Triggers",
+    "description": "Deletes multiple Triggers for the Company Webhook in a single request.",
+    "tags": [
+     "Webhooks"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "items": {
+         "type": "string",
+         "description": "The ID of trigger to delete",
+         "example": "23215"
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK (All triggers deleted successfully)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "succeeded": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "ID of successfully deleted trigger"
+             },
+             "example": [
+              "1234",
+              "12345",
+              "12222"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "207": {
+      "description": "Partial success (some triggers deleted, others failed).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "succeeded": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "ID of successfully deleted trigger"
+             },
+             "example": [
+              "1234",
+              "12345",
+              "12222"
+             ]
+            },
+            "failed": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "ID of trigger that failed to delete"
+             },
+             "example": [
+              "67890",
+              "67891",
+              "67892"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk',\n  headers: {'content-type': 'application/json'},\n  body: ['23215'],\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"[\\\"23215\\\"]\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk \\\n  --header 'content-type: application/json' \\\n  --data '[\"23215\"]'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\"),\n    Content = new StringContent(\"[\\\"23215\\\"]\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/webhooks/hooks/{hook_id}/triggers/bulk": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "hook_id",
+     "in": "path",
+     "description": "Webhook Hook ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Create Project Webhooks Triggers",
+    "description": "Create multiple Triggers for the Project Webhook in a single request.",
+    "tags": [
+     "Webhooks"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "required": [
+          "resource_name",
+          "event_type"
+         ],
+         "properties": {
+          "resource_name": {
+           "type": "string",
+           "description": "Name of the Procore resource to subscribe to (e.g., Work Orders, Company Users). Use the List Webhook Resources endpoint to discover valid values for your payload version.",
+           "example": "Project Users"
+          },
+          "event_type": {
+           "type": "string",
+           "description": "Event action to subscribe to on the specified resource. Common values are create, update, delete. Use the List Webhook Resources endpoint to confirm supported event types per resource.",
+           "example": "delete"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "title": "Webhooks Trigger",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Trigger ID",
+              "example": "231346546"
+             },
+             "webhook_hook_id": {
+              "type": "string",
+              "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+              "example": "43593499"
+             },
+             "resource_name": {
+              "type": "string",
+              "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+              "example": "Project Users"
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event action that fires this trigger (e.g., create, update, delete).",
+              "example": "CREATED"
+             },
+             "company_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+              "example": "5358233"
+             },
+             "project_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+              "example": "23498237"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "207": {
+      "description": "Multi Status Response (Contains mix of successful and failed triggers)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "oneOf": [
+             {
+              "title": "Webhooks Trigger",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Trigger ID",
+                "example": "231346546"
+               },
+               "webhook_hook_id": {
+                "type": "string",
+                "description": "Unique string identifier of the webhook hook this trigger belongs to. Use as the {hook_id} path parameter when managing triggers on that hook.",
+                "example": "43593499"
+               },
+               "resource_name": {
+                "type": "string",
+                "description": "Name of the Procore resource this trigger listens to (e.g., Work Orders, Project Users).",
+                "example": "Project Users"
+               },
+               "event_type": {
+                "type": "string",
+                "description": "Event action that fires this trigger (e.g., create, update, delete).",
+                "example": "CREATED"
+               },
+               "company_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "Unique string identifier of the company this trigger is scoped to. Null for project-level triggers.",
+                "example": "5358233"
+               },
+               "project_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "Unique string identifier of the project this trigger is scoped to. Null for company-level triggers.",
+                "example": "23498237"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "error": {
+                "type": "object",
+                "properties": {
+                 "code": {
+                  "type": "string",
+                  "example": "BAD_REQUEST"
+                 },
+                 "message": {
+                  "type": "string",
+                  "example": "Must provide the resource_name and event_type parameters"
+                 }
+                }
+               },
+               "webhook_hook_id": {
+                "type": "string",
+                "description": "Webhook Hook ID",
+                "example": "43593499"
+               },
+               "resource_name": {
+                "type": "string",
+                "description": "Resource name provided in the failed request.",
+                "example": "Invalid Resource"
+               },
+               "event_type": {
+                "type": "string",
+                "description": "Event type provided in the failed request.",
+                "example": "invalid_event"
+               },
+               "company_id": {
+                "type": "string",
+                "description": "Company ID",
+                "example": "5358233"
+               },
+               "project_id": {
+                "type": "string",
+                "description": "Project ID",
+                "example": "23498237"
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk',\n  headers: {'content-type': 'application/json'},\n  body: [{resource_name: 'Project Users', event_type: 'delete'}],\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"[{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}]\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk \\\n  --header 'content-type: application/json' \\\n  --data '[{\"resource_name\":\"Project Users\",\"event_type\":\"delete\"}]'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\"),\n    Content = new StringContent(\"[{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}]\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added v2 bulk create project triggers endpoint",
+      "description": "Create multiple project webhook triggers in a single request.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/webhooks/hooks/{hook_id}/triggers/bulk",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-12-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "triggers?version=2.0#bulk-create-project-webhooks-triggers"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Delete Project Webhooks Triggers",
+    "description": "Deletes multiple Triggers for the Project Webhook in a single request.",
+    "tags": [
+     "Webhooks"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "items": {
+         "type": "string",
+         "description": "The ID of trigger to delete",
+         "example": "23215"
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK (All triggers deleted successfully)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "succeeded": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "ID of successfully deleted trigger"
+             },
+             "example": [
+              "12345",
+              "123456",
+              "1234567"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "207": {
+      "description": "Partial success (some triggers deleted, others failed).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "succeeded": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "ID of successfully deleted trigger"
+             },
+             "example": [
+              "12345",
+              "123456",
+              "1234567"
+             ]
+            },
+            "failed": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "ID of trigger that failed to delete"
+             },
+             "example": [
+              "67890",
+              "67891",
+              "67892"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk',\n  headers: {'content-type': 'application/json'},\n  body: ['23215'],\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"[\\\"23215\\\"]\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk \\\n  --header 'content-type: application/json' \\\n  --data '[\"23215\"]'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\"),\n    Content = new StringContent(\"[\\\"23215\\\"]\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/webhooks/hooks/{hook_id}/triggers": {
+   "get": {
+    "deprecated": true,
+    "x-deprecated-at": "2025-09-15",
+    "x-sunset": "2026-09-16",
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Webhooks Triggers",
+    "description": "Triggers must be listed within a company and/or project scope.",
+    "tags": [
+     "Webhooks"
+    ],
+    "parameters": [
+     {
+      "name": "hook_id",
+      "in": "path",
+      "description": "Webhooks Hook ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "query",
+      "description": "Unique identifier for the company. You must supply either a company_id or project_id.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "query",
+      "description": "Unique identifier for the project. You must supply either a company_id or project_id.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Webhooks Triggers",
+         "items": {
+          "title": "Webhooks Trigger",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "ID",
+            "example": 231346546
+           },
+           "webhook_hook_id": {
+            "type": "integer",
+            "description": "Hook ID",
+            "example": 43593499
+           },
+           "resource_name": {
+            "type": "string",
+            "description": "Resource Name",
+            "example": "Project Users"
+           },
+           "resource_id": {
+            "type": "integer",
+            "description": "Resource ID",
+            "example": 43597433
+           },
+           "event_type": {
+            "type": "string",
+            "description": "Event Type",
+            "enum": [
+             "CREATE",
+             "UPDATE",
+             "DELETE"
+            ],
+            "example": "DELETE"
+           },
+           "company_id": {
+            "type": "integer",
+            "description": "Company ID (for Company scope)",
+            "example": 5358233
+           },
+           "project_id": {
+            "type": "integer",
+            "description": "Project ID (for Project scope)",
+            "example": 23498237
+           },
+           "user_id": {
+            "type": "integer",
+            "description": "User ID",
+            "example": 532323
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers',\n  qs: {company_id: 'SOME_INTEGER_VALUE', project_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers?company_id=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers?company_id=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers?company_id=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Webhooks v1.0 Triggers API deprecated",
+      "description": "Deprecated v1.0 webhooks triggers API. Users should migrate to v2.0 API.",
+      "endpoint": "GET /webhooks/hooks/{hook_id}/triggers",
+      "type": "deprecated",
+      "breaking": false,
+      "datestamp": "2025-09-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "triggers?version=1.0#list-webhooks-triggers"
+     }
+    ]
+   },
+   "post": {
+    "deprecated": true,
+    "x-deprecated-at": "2025-09-15",
+    "x-sunset": "2026-09-16",
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Webhooks Trigger",
+    "description": "Triggers must be created within a company and/or project scope.",
+    "tags": [
+     "Webhooks"
+    ],
+    "parameters": [
+     {
+      "name": "hook_id",
+      "in": "path",
+      "description": "Webhooks Hook ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "oneOf": [
+         {
+          "type": "object",
+          "title": "company trigger",
+          "required": [
+           "company_id",
+           "trigger",
+           "api_version"
+          ],
+          "properties": {
+           "company_id": {
+            "type": "integer",
+            "description": "Company ID. You must supply either a company_id or project_id.",
+            "example": 5358233
+           },
+           "api_version": {
+            "type": "string",
+            "description": "API Version",
+            "example": "v2"
+           },
+           "trigger": {
+            "type": "object",
+            "required": [
+             "resource_name",
+             "event_type"
+            ],
+            "properties": {
+             "resource_name": {
+              "type": "string",
+              "description": "Resource Name",
+              "example": "Project Users"
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event Type",
+              "enum": [
+               "create",
+               "update",
+               "delete"
+              ],
+              "example": "delete"
+             }
+            }
+           }
+          }
+         },
+         {
+          "type": "object",
+          "title": "project trigger",
+          "required": [
+           "project_id",
+           "trigger",
+           "api_version"
+          ],
+          "properties": {
+           "project_id": {
+            "type": "integer",
+            "description": "Project ID. You must supply either a company_id or project_id.",
+            "example": 23498237
+           },
+           "api_version": {
+            "type": "string",
+            "description": "API Version",
+            "example": "v2"
+           },
+           "trigger": {
+            "type": "object",
+            "required": [
+             "resource_name",
+             "event_type"
+            ],
+            "properties": {
+             "resource_name": {
+              "type": "string",
+              "description": "Resource Name",
+              "example": "Project Users"
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event Type",
+              "enum": [
+               "create",
+               "update",
+               "delete"
+              ],
+              "example": "delete"
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Webhooks Trigger",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 231346546
+          },
+          "webhook_hook_id": {
+           "type": "integer",
+           "description": "Hook ID",
+           "example": 43593499
+          },
+          "resource_name": {
+           "type": "string",
+           "description": "Resource Name",
+           "example": "Project Users"
+          },
+          "resource_id": {
+           "type": "integer",
+           "description": "Resource ID",
+           "example": 43597433
+          },
+          "event_type": {
+           "type": "string",
+           "description": "Event Type",
+           "enum": [
+            "CREATE",
+            "UPDATE",
+            "DELETE"
+           ],
+           "example": "DELETE"
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "Company ID (for Company scope)",
+           "example": 5358233
+          },
+          "project_id": {
+           "type": "integer",
+           "description": "Project ID (for Project scope)",
+           "example": 23498237
+          },
+          "user_id": {
+           "type": "integer",
+           "description": "User ID",
+           "example": 532323
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers',\n  headers: {'content-type': 'application/json'},\n  body: {\n    company_id: 5358233,\n    api_version: 'v2',\n    trigger: {resource_name: 'Project Users', event_type: 'delete'}\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"company_id\\\":5358233,\\\"api_version\\\":\\\"v2\\\",\\\"trigger\\\":{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers \\\n  --header 'content-type: application/json' \\\n  --data '{\"company_id\":5358233,\"api_version\":\"v2\",\"trigger\":{\"resource_name\":\"Project Users\",\"event_type\":\"delete\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers\"),\n    Content = new StringContent(\"{\\\"company_id\\\":5358233,\\\"api_version\\\":\\\"v2\\\",\\\"trigger\\\":{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Respond 403 on missing hook",
+      "description": "Returns 403 instead of 500 if the hook ID does not exist or the user does not have access to it.",
+      "endpoint": "POST /webhooks/hooks/{hook_id}/triggers",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2021-07-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "triggers?version=1.0#create-webhooks-trigger"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/webhooks/hooks/{hook_id}/triggers/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "hook_id",
+     "in": "path",
+     "description": "Webhooks Hook ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Webhooks Trigger ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "query",
+     "description": "Unique identifier for the company. You must supply either a company_id or project_id.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "query",
+     "description": "Unique identifier for the project. You must supply either a company_id or project_id.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "delete": {
+    "deprecated": true,
+    "x-deprecated-at": "2025-09-15",
+    "x-sunset": "2026-09-16",
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Webhooks Trigger",
+    "description": "Triggers must be deleted within a company and/or project scope.",
+    "tags": [
+     "Webhooks"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D',\n  qs: {company_id: 'SOME_INTEGER_VALUE', project_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D?company_id=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url 'https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D?company_id=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/%7Bid%7D?company_id=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/webhooks/hooks/{hook_id}/triggers/bulk": {
+   "post": {
+    "deprecated": true,
+    "x-deprecated-at": "2025-09-15",
+    "x-sunset": "2026-09-16",
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Create Triggers",
+    "description": "Create multiple webhook triggers in a single request. All triggers must be within the same hook, and provide company and/or project scope. Max 500 triggers.",
+    "tags": [
+     "Webhooks"
+    ],
+    "parameters": [
+     {
+      "name": "hook_id",
+      "in": "path",
+      "description": "Webhooks Hook ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "oneOf": [
+         {
+          "type": "object",
+          "title": "company trigger",
+          "required": [
+           "company_id",
+           "api_version",
+           "triggers"
+          ],
+          "properties": {
+           "company_id": {
+            "type": "integer",
+            "description": "Company ID. You must supply either a company_id or project_id.",
+            "example": 5358233
+           },
+           "api_version": {
+            "type": "string",
+            "description": "API Version",
+            "example": "v2"
+           },
+           "triggers": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "required": [
+              "resource_name",
+              "event_type"
+             ],
+             "properties": {
+              "resource_name": {
+               "type": "string",
+               "description": "Resource Name",
+               "example": "Project Users"
+              },
+              "event_type": {
+               "type": "string",
+               "description": "Event Type",
+               "enum": [
+                "create",
+                "update",
+                "delete"
+               ],
+               "example": "delete"
+              }
+             }
+            }
+           }
+          }
+         },
+         {
+          "type": "object",
+          "title": "project trigger",
+          "required": [
+           "project_id",
+           "api_version",
+           "triggers"
+          ],
+          "properties": {
+           "project_id": {
+            "type": "integer",
+            "description": "Project ID. You must supply either a company_id or project_id.",
+            "example": 23498237
+           },
+           "api_version": {
+            "type": "string",
+            "description": "API Version",
+            "example": "v2"
+           },
+           "triggers": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "required": [
+              "resource_name",
+              "event_type"
+             ],
+             "properties": {
+              "resource_name": {
+               "type": "string",
+               "description": "Resource Name",
+               "example": "Project Users"
+              },
+              "event_type": {
+               "type": "string",
+               "description": "Event Type",
+               "enum": [
+                "create",
+                "update",
+                "delete"
+               ],
+               "example": "delete"
+              }
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "array",
+           "items": {
+            "title": "Webhooks Trigger",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 231346546
+             },
+             "webhook_hook_id": {
+              "type": "integer",
+              "description": "Hook ID",
+              "example": 43593499
+             },
+             "resource_name": {
+              "type": "string",
+              "description": "Resource Name",
+              "example": "Project Users"
+             },
+             "resource_id": {
+              "type": "integer",
+              "description": "Resource ID",
+              "example": 43597433
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event Type",
+              "enum": [
+               "CREATE",
+               "UPDATE",
+               "DELETE"
+              ],
+              "example": "DELETE"
+             },
+             "company_id": {
+              "type": "integer",
+              "description": "Company ID (for Company scope)",
+              "example": 5358233
+             },
+             "project_id": {
+              "type": "integer",
+              "description": "Project ID (for Project scope)",
+              "example": 23498237
+             },
+             "user_id": {
+              "type": "integer",
+              "description": "User ID",
+              "example": 532323
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "207": {
+      "description": "Multi-Status",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "array",
+           "items": {
+            "title": "Webhooks Trigger",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 231346546
+             },
+             "webhook_hook_id": {
+              "type": "integer",
+              "description": "Hook ID",
+              "example": 43593499
+             },
+             "resource_name": {
+              "type": "string",
+              "description": "Resource Name",
+              "example": "Project Users"
+             },
+             "resource_id": {
+              "type": "integer",
+              "description": "Resource ID",
+              "example": 43597433
+             },
+             "event_type": {
+              "type": "string",
+              "description": "Event Type",
+              "enum": [
+               "CREATE",
+               "UPDATE",
+               "DELETE"
+              ],
+              "example": "DELETE"
+             },
+             "company_id": {
+              "type": "integer",
+              "description": "Company ID (for Company scope)",
+              "example": 5358233
+             },
+             "project_id": {
+              "type": "integer",
+              "description": "Project ID (for Project scope)",
+              "example": 23498237
+             },
+             "user_id": {
+              "type": "integer",
+              "description": "User ID",
+              "example": 532323
+             }
+            }
+           }
+          },
+          "failed": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "code": {
+              "type": "string",
+              "example": 400
+             },
+             "message": {
+              "type": "string",
+              "example": "Bad Request"
+             },
+             "trigger": {
+              "type": "object",
+              "properties": {
+               "resource_name": {
+                "type": "string",
+                "example": "Project Users"
+               }
+              }
+             },
+             "errors": {
+              "type": "object",
+              "properties": {
+               "event_type": {
+                "type": "string",
+                "example": "Can't be blank"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "413": {
+      "description": "Payload Too Large",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "string",
+           "example": "Exceeded limit of 500 triggers per request"
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error"
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk',\n  headers: {'content-type': 'application/json'},\n  body: {\n    company_id: 5358233,\n    api_version: 'v2',\n    triggers: [{resource_name: 'Project Users', event_type: 'delete'}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"company_id\\\":5358233,\\\"api_version\\\":\\\"v2\\\",\\\"triggers\\\":[{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk \\\n  --header 'content-type: application/json' \\\n  --data '{\"company_id\":5358233,\"api_version\":\"v2\",\"triggers\":[{\"resource_name\":\"Project Users\",\"event_type\":\"delete\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\"),\n    Content = new StringContent(\"{\\\"company_id\\\":5358233,\\\"api_version\\\":\\\"v2\\\",\\\"triggers\\\":[{\\\"resource_name\\\":\\\"Project Users\\\",\\\"event_type\\\":\\\"delete\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added bulk create triggers endpoint",
+      "description": "Create multiple webhook triggers in a single request. All triggers must be within the same hook, and provide company and/or project scope. Max 500 triggers.",
+      "endpoint": "POST /webhooks/hooks/{hook_id}/triggers/bulk",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-07-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "triggers?version=1.0#bulk-create-triggers"
+     }
+    ]
+   },
+   "delete": {
+    "deprecated": true,
+    "x-deprecated-at": "2025-09-15",
+    "x-sunset": "2026-09-16",
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Delete Triggers",
+    "description": "Delete multiple webhook triggers in a single request. All triggers must be within the same hook, and provide company and/or project scope. Max 500 triggers.",
+    "tags": [
+     "Webhooks"
+    ],
+    "parameters": [
+     {
+      "name": "hook_id",
+      "in": "path",
+      "description": "Webhooks Hook ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "oneOf": [
+         {
+          "type": "object",
+          "title": "company trigger",
+          "required": [
+           "company_id",
+           "triggers"
+          ],
+          "properties": {
+           "company_id": {
+            "type": "integer",
+            "description": "Company ID. You must supply either a company_id or project_id.",
+            "example": 5358233
+           },
+           "triggers": {
+            "type": "array",
+            "example": [
+             42,
+             43
+            ],
+            "items": {
+             "type": "integer",
+             "description": "Trigger ID"
+            }
+           }
+          }
+         },
+         {
+          "type": "object",
+          "title": "project trigger",
+          "required": [
+           "project_id",
+           "triggers"
+          ],
+          "properties": {
+           "project_id": {
+            "type": "integer",
+            "description": "Project ID. You must supply either a company_id or project_id.",
+            "example": 5358233
+           },
+           "triggers": {
+            "type": "array",
+            "example": [
+             42,
+             43
+            ],
+            "items": {
+             "type": "integer",
+             "description": "Trigger ID"
+            }
+           }
+          }
+         }
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "array",
+           "example": [
+            42,
+            43
+           ],
+           "items": {
+            "type": "integer"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "207": {
+      "description": "Multi-Status",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "array",
+           "example": [
+            42
+           ],
+           "items": {
+            "type": "integer"
+           }
+          },
+          "failed": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "code": {
+              "type": "string",
+              "example": 403
+             },
+             "trigger": {
+              "type": "integer",
+              "example": 43
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "413": {
+      "description": "Payload Too Large",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "string",
+           "example": "Exceeded limit of 500 triggers per request"
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error"
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk',\n  headers: {'content-type': 'application/json'},\n  body: {company_id: 5358233, triggers: [42, 43]},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"company_id\\\":5358233,\\\"triggers\\\":[42,43]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk \\\n  --header 'content-type: application/json' \\\n  --data '{\"company_id\":5358233,\"triggers\":[42,43]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/webhooks/hooks/%7Bhook_id%7D/triggers/bulk\"),\n    Content = new StringContent(\"{\\\"company_id\\\":5358233,\\\"triggers\\\":[42,43]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added bulk delete triggers endpoint",
+      "description": "Delete multiple webhook triggers in a single request. All triggers must be within the same hook, and provide company and/or project scope. Max 500 triggers.",
+      "endpoint": "DELETE /webhooks/hooks/{hook_id}/triggers/bulk",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-07-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "triggers?version=1.0#bulk-delete-triggers"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

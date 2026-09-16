@@ -1,0 +1,4610 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Action Plan Sections",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Action Plans",
+  "x-resource-name": "Action Plan Sections",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/action_plans/plan_sections": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Action Plan Sections",
+    "description": "Returns all Action Plan Sections for a given Project.\n\n**View Parameter:**\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n- `ids`: Returns an array of Action Plan Section IDs only\n",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[plan_id]",
+      "in": "query",
+      "description": "Return item(s) associated with the specified Action Plan ID(s)",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "required": false,
+      "description": "Specifies which view (which attributes) of the Action Plan Section is going to be present in the response.\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n- `ids`: Returns an array of Action Plan Section IDs only (without standard object structure)\n",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "extended",
+        "ids"
+       ],
+       "default": "normal"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "oneOf": [
+          {
+           "type": "array",
+           "description": "Action Plan Sections (Index)",
+           "items": {
+            "type": "object",
+            "description": "Action Plan Section (Show)",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for this Action Plan section.",
+              "example": 43584
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp in ISO 8601 format when this section was created.",
+              "example": "2018-09-20T21:39:40Z"
+             },
+             "plan_id": {
+              "type": "integer",
+              "description": "ID of the Action Plan this section belongs to.",
+              "example": 57
+             },
+             "position": {
+              "type": "integer",
+              "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+              "example": 3
+             },
+             "title": {
+              "type": "string",
+              "description": "Display title of the section.",
+              "example": "A New Action Plan Section"
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "Timestamp in ISO 8601 format when this section was last updated.",
+              "example": "2018-09-20T21:39:40Z"
+             }
+            }
+           }
+          },
+          {
+           "type": "array",
+           "description": "Action Plan Sections (Index - Extended View)",
+           "items": {
+            "type": "object",
+            "description": "Action Plan Section (Show - Extended View)",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for this Action Plan section.",
+              "example": 43584
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp in ISO 8601 format when this section was created.",
+              "example": "2018-09-20T21:39:40Z"
+             },
+             "plan_id": {
+              "type": "integer",
+              "description": "ID of the Action Plan this section belongs to.",
+              "example": 57
+             },
+             "position": {
+              "type": "integer",
+              "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+              "example": 3
+             },
+             "title": {
+              "type": "string",
+              "description": "Display title of the section.",
+              "example": "A New Action Plan Section"
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "Timestamp in ISO 8601 format when this section was last updated.",
+              "example": "2018-09-20T21:39:40Z"
+             },
+             "plan_items": {
+              "type": "array",
+              "description": "Array of Action Plan items belonging to this section. Only present when the view parameter is set to extended.",
+              "items": {
+               "type": "object",
+               "description": "Action Plan Item (Show)",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Unique identifier for this Action Plan Item. Use as the {id} path parameter to show, update, delete, or move the item.",
+                 "example": 43584
+                },
+                "plan_item_assignees": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "description": "Action Plan Item Assignee (Compact)",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "Unique identifier for this Action Plan Item Assignee.",
+                    "example": 12
+                   },
+                   "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Timestamp in ISO 8601 format when this assignee was created.",
+                    "example": "2018-09-20T21:39:40Z"
+                   },
+                   "is_holding": {
+                    "type": "boolean",
+                    "description": "Boolean flag indicating whether the assignee is necessary to sign for a hold point",
+                    "example": true
+                   },
+                   "is_locked": {
+                    "type": "boolean",
+                    "description": "Boolean flag indicating whether the assignee was added prior to an Action Plan's approval",
+                    "example": false
+                   },
+                   "party": {
+                    "type": "object",
+                    "nullable": true,
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "Party Person ID",
+                      "example": 23
+                     },
+                     "first_name": {
+                      "type": "string",
+                      "description": "First name of the Party Person",
+                      "example": "Paul"
+                     },
+                     "last_name": {
+                      "type": "string",
+                      "description": "Last name of the Party Person",
+                      "example": "Admin"
+                     },
+                     "name": {
+                      "type": "string",
+                      "description": "Full name of the Party Person",
+                      "example": "Paul Admin"
+                     },
+                     "user_id": {
+                      "type": "integer",
+                      "description": "User ID of the login account associated with this party person.",
+                      "example": 453
+                     },
+                     "is_employee": {
+                      "type": "boolean",
+                      "description": "Whether this party person is an employee of the current company, as opposed to an external vendor contact.",
+                      "example": true
+                     },
+                     "employee_id": {
+                      "type": "string",
+                      "description": "Employee ID string for this party person. Null if no employee ID is assigned.",
+                      "example": "12",
+                      "nullable": true
+                     },
+                     "login": {
+                      "type": "string",
+                      "description": "Email address (login) of the party person's user account.",
+                      "example": "login@example.com"
+                     },
+                     "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Time the Party Person was updated",
+                      "example": "2018-09-20T21:39:40Z"
+                     },
+                     "vendor": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                       "id": {
+                        "type": "integer",
+                        "description": "Unique identifier of the vendor company this party person belongs to.",
+                        "example": 223
+                       },
+                       "name": {
+                        "type": "string",
+                        "description": "Name of the vendor company this party person belongs to.",
+                        "example": "Freddie's Excavating"
+                       }
+                      }
+                     }
+                    }
+                   },
+                   "role": {
+                    "type": "string",
+                    "description": "Organizational role of this assignee on the Action Plan Item.",
+                    "enum": [
+                     "contractor",
+                     "specialty_contractor",
+                     "client",
+                     "architect",
+                     "third_party",
+                     "null",
+                     "internal"
+                    ],
+                    "example": "specialty_contractor"
+                   },
+                   "role_id": {
+                    "type": "integer",
+                    "description": "ID of the role record assigned to this assignee. Null when the assignee was added by party rather than by role.",
+                    "example": 17
+                   },
+                   "signature": {
+                    "type": "object",
+                    "nullable": true,
+                    "description": "Action Plan Item Assignee Signature (Show)",
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "Unique identifier for this item assignee signature record.",
+                      "example": 32
+                     },
+                     "attachment": {
+                      "type": "object",
+                      "properties": {
+                       "id": {
+                        "type": "integer",
+                        "description": "Unique identifier of the Prostore file containing the signature image.",
+                        "example": 23
+                       },
+                       "content_type": {
+                        "type": "string",
+                        "description": "MIME type of the signature file.",
+                        "example": "image/png"
+                       },
+                       "name": {
+                        "type": "string",
+                        "description": "File name of the uploaded signature image.",
+                        "example": "action_plan_signature_1_2_assignee_53.png"
+                       },
+                       "url": {
+                        "type": "string",
+                        "description": "URL to download the signature image. The URL is temporary and expires after a period.",
+                        "example": "https://storage.procore.com/v4/d/us-east-1/pro-core.com/signature.png"
+                       }
+                      }
+                     },
+                     "captured_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Timestamp in ISO 8601 format when this signature was captured.",
+                      "example": "2015-02-07T00:00:00Z"
+                     },
+                     "captured_by": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                       "id": {
+                        "type": "integer",
+                        "description": "Party Person ID",
+                        "example": 23
+                       },
+                       "first_name": {
+                        "type": "string",
+                        "description": "First name of the Party Person",
+                        "example": "Paul"
+                       },
+                       "last_name": {
+                        "type": "string",
+                        "description": "Last name of the Party Person",
+                        "example": "Admin"
+                       },
+                       "name": {
+                        "type": "string",
+                        "description": "Full name of the Party Person",
+                        "example": "Paul Admin"
+                       },
+                       "user_id": {
+                        "type": "integer",
+                        "description": "User ID of the login account associated with this party person.",
+                        "example": 453
+                       },
+                       "is_employee": {
+                        "type": "boolean",
+                        "description": "Indicates whether Party is an Employee of the current Company",
+                        "example": true
+                       },
+                       "employee_id": {
+                        "type": "integer",
+                        "description": "Employee ID of this party person. Null if no employee ID is assigned.",
+                        "example": 12,
+                        "nullable": true
+                       },
+                       "login": {
+                        "type": "string",
+                        "description": "Email address (login) of the party person's user account.",
+                        "example": "contractor@example.com"
+                       },
+                       "vendor": {
+                        "type": "object",
+                        "properties": {
+                         "id": {
+                          "type": "integer",
+                          "description": "Unique identifier of the vendor company this party person belongs to.",
+                          "example": 223
+                         },
+                         "name": {
+                          "type": "string",
+                          "description": "Name of the vendor company this party person belongs to.",
+                          "example": "Freddie's Excavating"
+                         }
+                        }
+                       },
+                       "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Timestamp in ISO 8601 format when this party person record was last updated.",
+                        "example": "2017-01-04T21:27:18Z"
+                       }
+                      }
+                     }
+                    }
+                   },
+                   "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Timestamp in ISO 8601 format when this assignee was last updated.",
+                    "example": "2018-09-20T21:39:40Z"
+                   },
+                   "verification_method": {
+                    "type": "object",
+                    "nullable": true,
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "Unique identifier for this verification method.",
+                      "example": 21
+                     },
+                     "active": {
+                      "type": "boolean",
+                      "description": "Whether this verification method is currently available for assignment. Inactive methods may still appear on existing assignees.",
+                      "example": true
+                     },
+                     "name": {
+                      "type": "string",
+                      "description": "Display name of the verification method (e.g., Hold Point, Witness Point, Review Record).",
+                      "example": "Hold Point"
+                     },
+                     "source_key": {
+                      "type": "string",
+                      "description": "Machine-readable key for this verification method. Use for programmatic comparisons rather than the display name.",
+                      "example": "hold_point"
+                     }
+                    }
+                   }
+                  }
+                 }
+                },
+                "created_at": {
+                 "type": "string",
+                 "description": "Timestamp in ISO 8601 format when this item was created. Use with filters[created_at] for date-range filtering.",
+                 "example": "2018-09-20T21:39:40Z"
+                },
+                "description": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "Detailed description of the work or inspection required for this Action Plan Item.",
+                 "example": "A New Action Plan Item Description"
+                },
+                "due_at": {
+                 "type": "string",
+                 "format": "date-time",
+                 "nullable": true,
+                 "description": "Due date for this item in ISO 8601 format. Null if no due date has been set. Use with filters[due_at] for deadline-based filtering.",
+                 "example": "2017-07-29T21:39:40Z"
+                },
+                "holding_type": {
+                 "type": "string",
+                 "description": "Action Plan Item holding type specifies whether the current item holds all the succeeding items in the section or the plan",
+                 "enum": [
+                  "plan",
+                  "section"
+                 ],
+                 "example": "plan"
+                },
+                "is_blocked": {
+                 "type": "boolean",
+                 "description": "Indicates whether current Action Plan Item is blocked by another Action Plan Item"
+                },
+                "is_blocking": {
+                 "type": "boolean",
+                 "description": "Indicates whether current Action Plan Item is blocking other Action Plan Items"
+                },
+                "notes": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "Free-text notes attached to this Action Plan Item.",
+                 "example": "Noting this Action Plan Item is complete"
+                },
+                "plan_id": {
+                 "type": "integer",
+                 "description": "ID of the Action Plan this item belongs to. Use with filters[plan_id] to list all items in a specific plan.",
+                 "example": 43584
+                },
+                "position": {
+                 "type": "integer",
+                 "description": "Ordinal position of this item within its section. Items are displayed in ascending position order.",
+                 "example": 3
+                },
+                "plan_section_id": {
+                 "type": "integer",
+                 "description": "ID of the section this item belongs to within the Action Plan. Use with filters[plan_section_id] to list items in a specific section.",
+                 "example": 43584
+                },
+                "title": {
+                 "type": "string",
+                 "description": "Short title summarizing the inspection or task for this Action Plan Item.",
+                 "example": "A New Action Plan Item"
+                },
+                "status": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Unique identifier for the item status. For Procore mobile clients (requests sending a `Procore-OSName` header of `iOS` or `android`) the v1.0 Action Plan Item endpoints downgrade company-custom statuses to the built-in they map to, so this is always one of the four built-in statuses (1 - open, 2 - in_progress, 3 - delayed, 4 - closed). Other clients, and all v2.0 endpoints, return the untouched status, including any company-custom status.",
+                   "example": 2
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Display name of the status (e.g. 'In Progress', or a company-custom name such as 'Ready for Testing' where the status isn't downgraded).",
+                   "example": "in_progress"
+                  },
+                  "status": {
+                   "type": "string",
+                   "description": "Underlying status type category this status maps to. Custom company statuses map to one of these built-in keys.",
+                   "enum": [
+                    "open",
+                    "in_progress",
+                    "delayed",
+                    "closed"
+                   ],
+                   "example": "in_progress"
+                  },
+                  "global": {
+                   "type": "boolean",
+                   "description": "Whether this is a built-in Procore status available to every company. Always true for Procore mobile clients on the v1.0 Action Plan Item endpoints (their company-custom statuses are downgraded to built-ins); other clients may receive a company-custom status, where this is false.",
+                   "example": true
+                  }
+                 }
+                },
+                "template_item_id": {
+                 "type": "integer",
+                 "nullable": true,
+                 "description": "ID of the plan template item this item was generated from. Null if the item was created directly rather than from a template.",
+                 "example": 43584
+                },
+                "updated_at": {
+                 "type": "string",
+                 "description": "Timestamp in ISO 8601 format when this item was last updated. Use with filters[updated_at] for change-based polling.",
+                 "example": "2018-09-20T21:39:40Z"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          {
+           "type": "array",
+           "description": "Array of Action Plan Section IDs (when view=ids)",
+           "items": {
+            "type": "integer",
+            "example": 43584
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[plan_id]': 'SOME_ARRAY_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    view: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bplan_id%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&view=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bplan_id%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&view=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bplan_id%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&view=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Action Plan Section list endpoint",
+      "description": "Get a list of Action Plan Sections for a given Project ID.",
+      "endpoint": "GET /projects/{project_id}/action_plans/plan_sections",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#list-action-plan-sections"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Action Plan Section",
+    "description": "Creates an Action Plan Section for a given Action Plan.\n\n**View Parameter:**\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "parameters": [
+     {
+      "name": "view",
+      "in": "query",
+      "required": false,
+      "description": "Specifies which view (which attributes) of the Action Plan Section is going to be present in the response.\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n- `ids`: Returns an array of Action Plan Section IDs only (without standard object structure)\n",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "extended",
+        "ids"
+       ],
+       "default": "normal"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "plan_section"
+        ],
+        "properties": {
+         "plan_section": {
+          "type": "object",
+          "required": [
+           "plan_id",
+           "title"
+          ],
+          "properties": {
+           "plan_id": {
+            "type": "integer",
+            "description": "Action Plan ID",
+            "example": 42
+           },
+           "title": {
+            "type": "string",
+            "description": "Title",
+            "example": "A new Action Plan Section"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "oneOf": [
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show - Extended View)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_items": {
+             "type": "array",
+             "description": "Array of Action Plan items belonging to this section. Only present when the view parameter is set to extended.",
+             "items": {
+              "type": "object",
+              "description": "Action Plan Item (Show)",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for this Action Plan Item. Use as the {id} path parameter to show, update, delete, or move the item.",
+                "example": 43584
+               },
+               "plan_item_assignees": {
+                "type": "array",
+                "items": {
+                 "type": "object",
+                 "description": "Action Plan Item Assignee (Compact)",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Unique identifier for this Action Plan Item Assignee.",
+                   "example": 12
+                  },
+                  "created_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was created.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "is_holding": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee is necessary to sign for a hold point",
+                   "example": true
+                  },
+                  "is_locked": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee was added prior to an Action Plan's approval",
+                   "example": false
+                  },
+                  "party": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Party Person ID",
+                     "example": 23
+                    },
+                    "first_name": {
+                     "type": "string",
+                     "description": "First name of the Party Person",
+                     "example": "Paul"
+                    },
+                    "last_name": {
+                     "type": "string",
+                     "description": "Last name of the Party Person",
+                     "example": "Admin"
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Full name of the Party Person",
+                     "example": "Paul Admin"
+                    },
+                    "user_id": {
+                     "type": "integer",
+                     "description": "User ID of the login account associated with this party person.",
+                     "example": 453
+                    },
+                    "is_employee": {
+                     "type": "boolean",
+                     "description": "Whether this party person is an employee of the current company, as opposed to an external vendor contact.",
+                     "example": true
+                    },
+                    "employee_id": {
+                     "type": "string",
+                     "description": "Employee ID string for this party person. Null if no employee ID is assigned.",
+                     "example": "12",
+                     "nullable": true
+                    },
+                    "login": {
+                     "type": "string",
+                     "description": "Email address (login) of the party person's user account.",
+                     "example": "login@example.com"
+                    },
+                    "updated_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Time the Party Person was updated",
+                     "example": "2018-09-20T21:39:40Z"
+                    },
+                    "vendor": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the vendor company this party person belongs to.",
+                       "example": 223
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Name of the vendor company this party person belongs to.",
+                       "example": "Freddie's Excavating"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "role": {
+                   "type": "string",
+                   "description": "Organizational role of this assignee on the Action Plan Item.",
+                   "enum": [
+                    "contractor",
+                    "specialty_contractor",
+                    "client",
+                    "architect",
+                    "third_party",
+                    "null",
+                    "internal"
+                   ],
+                   "example": "specialty_contractor"
+                  },
+                  "role_id": {
+                   "type": "integer",
+                   "description": "ID of the role record assigned to this assignee. Null when the assignee was added by party rather than by role.",
+                   "example": 17
+                  },
+                  "signature": {
+                   "type": "object",
+                   "nullable": true,
+                   "description": "Action Plan Item Assignee Signature (Show)",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this item assignee signature record.",
+                     "example": 32
+                    },
+                    "attachment": {
+                     "type": "object",
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the Prostore file containing the signature image.",
+                       "example": 23
+                      },
+                      "content_type": {
+                       "type": "string",
+                       "description": "MIME type of the signature file.",
+                       "example": "image/png"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "File name of the uploaded signature image.",
+                       "example": "action_plan_signature_1_2_assignee_53.png"
+                      },
+                      "url": {
+                       "type": "string",
+                       "description": "URL to download the signature image. The URL is temporary and expires after a period.",
+                       "example": "https://storage.procore.com/v4/d/us-east-1/pro-core.com/signature.png"
+                      }
+                     }
+                    },
+                    "captured_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Timestamp in ISO 8601 format when this signature was captured.",
+                     "example": "2015-02-07T00:00:00Z"
+                    },
+                    "captured_by": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Party Person ID",
+                       "example": 23
+                      },
+                      "first_name": {
+                       "type": "string",
+                       "description": "First name of the Party Person",
+                       "example": "Paul"
+                      },
+                      "last_name": {
+                       "type": "string",
+                       "description": "Last name of the Party Person",
+                       "example": "Admin"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Full name of the Party Person",
+                       "example": "Paul Admin"
+                      },
+                      "user_id": {
+                       "type": "integer",
+                       "description": "User ID of the login account associated with this party person.",
+                       "example": 453
+                      },
+                      "is_employee": {
+                       "type": "boolean",
+                       "description": "Indicates whether Party is an Employee of the current Company",
+                       "example": true
+                      },
+                      "employee_id": {
+                       "type": "integer",
+                       "description": "Employee ID of this party person. Null if no employee ID is assigned.",
+                       "example": 12,
+                       "nullable": true
+                      },
+                      "login": {
+                       "type": "string",
+                       "description": "Email address (login) of the party person's user account.",
+                       "example": "contractor@example.com"
+                      },
+                      "vendor": {
+                       "type": "object",
+                       "properties": {
+                        "id": {
+                         "type": "integer",
+                         "description": "Unique identifier of the vendor company this party person belongs to.",
+                         "example": 223
+                        },
+                        "name": {
+                         "type": "string",
+                         "description": "Name of the vendor company this party person belongs to.",
+                         "example": "Freddie's Excavating"
+                        }
+                       }
+                      },
+                      "updated_at": {
+                       "type": "string",
+                       "format": "date-time",
+                       "description": "Timestamp in ISO 8601 format when this party person record was last updated.",
+                       "example": "2017-01-04T21:27:18Z"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "updated_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was last updated.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "verification_method": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this verification method.",
+                     "example": 21
+                    },
+                    "active": {
+                     "type": "boolean",
+                     "description": "Whether this verification method is currently available for assignment. Inactive methods may still appear on existing assignees.",
+                     "example": true
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Display name of the verification method (e.g., Hold Point, Witness Point, Review Record).",
+                     "example": "Hold Point"
+                    },
+                    "source_key": {
+                     "type": "string",
+                     "description": "Machine-readable key for this verification method. Use for programmatic comparisons rather than the display name.",
+                     "example": "hold_point"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was created. Use with filters[created_at] for date-range filtering.",
+                "example": "2018-09-20T21:39:40Z"
+               },
+               "description": {
+                "type": "string",
+                "nullable": true,
+                "description": "Detailed description of the work or inspection required for this Action Plan Item.",
+                "example": "A New Action Plan Item Description"
+               },
+               "due_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true,
+                "description": "Due date for this item in ISO 8601 format. Null if no due date has been set. Use with filters[due_at] for deadline-based filtering.",
+                "example": "2017-07-29T21:39:40Z"
+               },
+               "holding_type": {
+                "type": "string",
+                "description": "Action Plan Item holding type specifies whether the current item holds all the succeeding items in the section or the plan",
+                "enum": [
+                 "plan",
+                 "section"
+                ],
+                "example": "plan"
+               },
+               "is_blocked": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocked by another Action Plan Item"
+               },
+               "is_blocking": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocking other Action Plan Items"
+               },
+               "notes": {
+                "type": "string",
+                "nullable": true,
+                "description": "Free-text notes attached to this Action Plan Item.",
+                "example": "Noting this Action Plan Item is complete"
+               },
+               "plan_id": {
+                "type": "integer",
+                "description": "ID of the Action Plan this item belongs to. Use with filters[plan_id] to list all items in a specific plan.",
+                "example": 43584
+               },
+               "position": {
+                "type": "integer",
+                "description": "Ordinal position of this item within its section. Items are displayed in ascending position order.",
+                "example": 3
+               },
+               "plan_section_id": {
+                "type": "integer",
+                "description": "ID of the section this item belongs to within the Action Plan. Use with filters[plan_section_id] to list items in a specific section.",
+                "example": 43584
+               },
+               "title": {
+                "type": "string",
+                "description": "Short title summarizing the inspection or task for this Action Plan Item.",
+                "example": "A New Action Plan Item"
+               },
+               "status": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Unique identifier for the item status. For Procore mobile clients (requests sending a `Procore-OSName` header of `iOS` or `android`) the v1.0 Action Plan Item endpoints downgrade company-custom statuses to the built-in they map to, so this is always one of the four built-in statuses (1 - open, 2 - in_progress, 3 - delayed, 4 - closed). Other clients, and all v2.0 endpoints, return the untouched status, including any company-custom status.",
+                  "example": 2
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Display name of the status (e.g. 'In Progress', or a company-custom name such as 'Ready for Testing' where the status isn't downgraded).",
+                  "example": "in_progress"
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Underlying status type category this status maps to. Custom company statuses map to one of these built-in keys.",
+                  "enum": [
+                   "open",
+                   "in_progress",
+                   "delayed",
+                   "closed"
+                  ],
+                  "example": "in_progress"
+                 },
+                 "global": {
+                  "type": "boolean",
+                  "description": "Whether this is a built-in Procore status available to every company. Always true for Procore mobile clients on the v1.0 Action Plan Item endpoints (their company-custom statuses are downgraded to built-ins); other clients may receive a company-custom status, where this is false.",
+                  "example": true
+                 }
+                }
+               },
+               "template_item_id": {
+                "type": "integer",
+                "nullable": true,
+                "description": "ID of the plan template item this item was generated from. Null if the item was created directly rather than from a template.",
+                "example": 43584
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was last updated. Use with filters[updated_at] for change-based polling.",
+                "example": "2018-09-20T21:39:40Z"
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections',\n  qs: {view: 'SOME_STRING_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {plan_section: {plan_id: 42, title: 'A new Action Plan Section'}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"plan_section\\\":{\\\"plan_id\\\":42,\\\"title\\\":\\\"A new Action Plan Section\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections?view=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections?view=SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"plan_section\":{\"plan_id\":42,\"title\":\"A new Action Plan Section\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections?view=SOME_STRING_VALUE\"),\n    Content = new StringContent(\"{\\\"plan_section\\\":{\\\"plan_id\\\":42,\\\"title\\\":\\\"A new Action Plan Section\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Action Plan Section create endpoint",
+      "description": "Create a Action Plan Section for a given Project ID.",
+      "endpoint": "POST /projects/{project_id}/action_plans/plan_sections",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#create-action-plan-section"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/action_plans/plan_sections/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Action Plan Section ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Action Plan Section",
+    "description": "Returns an Action Plan Section.\n\n**View Parameter:**\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "parameters": [
+     {
+      "name": "view",
+      "in": "query",
+      "required": false,
+      "description": "Specifies which view (which attributes) of the Action Plan Section is going to be present in the response.\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n- `ids`: Returns an array of Action Plan Section IDs only (without standard object structure)\n",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "extended",
+        "ids"
+       ],
+       "default": "normal"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "oneOf": [
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show - Extended View)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_items": {
+             "type": "array",
+             "description": "Array of Action Plan items belonging to this section. Only present when the view parameter is set to extended.",
+             "items": {
+              "type": "object",
+              "description": "Action Plan Item (Show)",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for this Action Plan Item. Use as the {id} path parameter to show, update, delete, or move the item.",
+                "example": 43584
+               },
+               "plan_item_assignees": {
+                "type": "array",
+                "items": {
+                 "type": "object",
+                 "description": "Action Plan Item Assignee (Compact)",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Unique identifier for this Action Plan Item Assignee.",
+                   "example": 12
+                  },
+                  "created_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was created.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "is_holding": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee is necessary to sign for a hold point",
+                   "example": true
+                  },
+                  "is_locked": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee was added prior to an Action Plan's approval",
+                   "example": false
+                  },
+                  "party": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Party Person ID",
+                     "example": 23
+                    },
+                    "first_name": {
+                     "type": "string",
+                     "description": "First name of the Party Person",
+                     "example": "Paul"
+                    },
+                    "last_name": {
+                     "type": "string",
+                     "description": "Last name of the Party Person",
+                     "example": "Admin"
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Full name of the Party Person",
+                     "example": "Paul Admin"
+                    },
+                    "user_id": {
+                     "type": "integer",
+                     "description": "User ID of the login account associated with this party person.",
+                     "example": 453
+                    },
+                    "is_employee": {
+                     "type": "boolean",
+                     "description": "Whether this party person is an employee of the current company, as opposed to an external vendor contact.",
+                     "example": true
+                    },
+                    "employee_id": {
+                     "type": "string",
+                     "description": "Employee ID string for this party person. Null if no employee ID is assigned.",
+                     "example": "12",
+                     "nullable": true
+                    },
+                    "login": {
+                     "type": "string",
+                     "description": "Email address (login) of the party person's user account.",
+                     "example": "login@example.com"
+                    },
+                    "updated_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Time the Party Person was updated",
+                     "example": "2018-09-20T21:39:40Z"
+                    },
+                    "vendor": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the vendor company this party person belongs to.",
+                       "example": 223
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Name of the vendor company this party person belongs to.",
+                       "example": "Freddie's Excavating"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "role": {
+                   "type": "string",
+                   "description": "Organizational role of this assignee on the Action Plan Item.",
+                   "enum": [
+                    "contractor",
+                    "specialty_contractor",
+                    "client",
+                    "architect",
+                    "third_party",
+                    "null",
+                    "internal"
+                   ],
+                   "example": "specialty_contractor"
+                  },
+                  "role_id": {
+                   "type": "integer",
+                   "description": "ID of the role record assigned to this assignee. Null when the assignee was added by party rather than by role.",
+                   "example": 17
+                  },
+                  "signature": {
+                   "type": "object",
+                   "nullable": true,
+                   "description": "Action Plan Item Assignee Signature (Show)",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this item assignee signature record.",
+                     "example": 32
+                    },
+                    "attachment": {
+                     "type": "object",
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the Prostore file containing the signature image.",
+                       "example": 23
+                      },
+                      "content_type": {
+                       "type": "string",
+                       "description": "MIME type of the signature file.",
+                       "example": "image/png"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "File name of the uploaded signature image.",
+                       "example": "action_plan_signature_1_2_assignee_53.png"
+                      },
+                      "url": {
+                       "type": "string",
+                       "description": "URL to download the signature image. The URL is temporary and expires after a period.",
+                       "example": "https://storage.procore.com/v4/d/us-east-1/pro-core.com/signature.png"
+                      }
+                     }
+                    },
+                    "captured_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Timestamp in ISO 8601 format when this signature was captured.",
+                     "example": "2015-02-07T00:00:00Z"
+                    },
+                    "captured_by": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Party Person ID",
+                       "example": 23
+                      },
+                      "first_name": {
+                       "type": "string",
+                       "description": "First name of the Party Person",
+                       "example": "Paul"
+                      },
+                      "last_name": {
+                       "type": "string",
+                       "description": "Last name of the Party Person",
+                       "example": "Admin"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Full name of the Party Person",
+                       "example": "Paul Admin"
+                      },
+                      "user_id": {
+                       "type": "integer",
+                       "description": "User ID of the login account associated with this party person.",
+                       "example": 453
+                      },
+                      "is_employee": {
+                       "type": "boolean",
+                       "description": "Indicates whether Party is an Employee of the current Company",
+                       "example": true
+                      },
+                      "employee_id": {
+                       "type": "integer",
+                       "description": "Employee ID of this party person. Null if no employee ID is assigned.",
+                       "example": 12,
+                       "nullable": true
+                      },
+                      "login": {
+                       "type": "string",
+                       "description": "Email address (login) of the party person's user account.",
+                       "example": "contractor@example.com"
+                      },
+                      "vendor": {
+                       "type": "object",
+                       "properties": {
+                        "id": {
+                         "type": "integer",
+                         "description": "Unique identifier of the vendor company this party person belongs to.",
+                         "example": 223
+                        },
+                        "name": {
+                         "type": "string",
+                         "description": "Name of the vendor company this party person belongs to.",
+                         "example": "Freddie's Excavating"
+                        }
+                       }
+                      },
+                      "updated_at": {
+                       "type": "string",
+                       "format": "date-time",
+                       "description": "Timestamp in ISO 8601 format when this party person record was last updated.",
+                       "example": "2017-01-04T21:27:18Z"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "updated_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was last updated.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "verification_method": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this verification method.",
+                     "example": 21
+                    },
+                    "active": {
+                     "type": "boolean",
+                     "description": "Whether this verification method is currently available for assignment. Inactive methods may still appear on existing assignees.",
+                     "example": true
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Display name of the verification method (e.g., Hold Point, Witness Point, Review Record).",
+                     "example": "Hold Point"
+                    },
+                    "source_key": {
+                     "type": "string",
+                     "description": "Machine-readable key for this verification method. Use for programmatic comparisons rather than the display name.",
+                     "example": "hold_point"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was created. Use with filters[created_at] for date-range filtering.",
+                "example": "2018-09-20T21:39:40Z"
+               },
+               "description": {
+                "type": "string",
+                "nullable": true,
+                "description": "Detailed description of the work or inspection required for this Action Plan Item.",
+                "example": "A New Action Plan Item Description"
+               },
+               "due_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true,
+                "description": "Due date for this item in ISO 8601 format. Null if no due date has been set. Use with filters[due_at] for deadline-based filtering.",
+                "example": "2017-07-29T21:39:40Z"
+               },
+               "holding_type": {
+                "type": "string",
+                "description": "Action Plan Item holding type specifies whether the current item holds all the succeeding items in the section or the plan",
+                "enum": [
+                 "plan",
+                 "section"
+                ],
+                "example": "plan"
+               },
+               "is_blocked": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocked by another Action Plan Item"
+               },
+               "is_blocking": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocking other Action Plan Items"
+               },
+               "notes": {
+                "type": "string",
+                "nullable": true,
+                "description": "Free-text notes attached to this Action Plan Item.",
+                "example": "Noting this Action Plan Item is complete"
+               },
+               "plan_id": {
+                "type": "integer",
+                "description": "ID of the Action Plan this item belongs to. Use with filters[plan_id] to list all items in a specific plan.",
+                "example": 43584
+               },
+               "position": {
+                "type": "integer",
+                "description": "Ordinal position of this item within its section. Items are displayed in ascending position order.",
+                "example": 3
+               },
+               "plan_section_id": {
+                "type": "integer",
+                "description": "ID of the section this item belongs to within the Action Plan. Use with filters[plan_section_id] to list items in a specific section.",
+                "example": 43584
+               },
+               "title": {
+                "type": "string",
+                "description": "Short title summarizing the inspection or task for this Action Plan Item.",
+                "example": "A New Action Plan Item"
+               },
+               "status": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Unique identifier for the item status. For Procore mobile clients (requests sending a `Procore-OSName` header of `iOS` or `android`) the v1.0 Action Plan Item endpoints downgrade company-custom statuses to the built-in they map to, so this is always one of the four built-in statuses (1 - open, 2 - in_progress, 3 - delayed, 4 - closed). Other clients, and all v2.0 endpoints, return the untouched status, including any company-custom status.",
+                  "example": 2
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Display name of the status (e.g. 'In Progress', or a company-custom name such as 'Ready for Testing' where the status isn't downgraded).",
+                  "example": "in_progress"
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Underlying status type category this status maps to. Custom company statuses map to one of these built-in keys.",
+                  "enum": [
+                   "open",
+                   "in_progress",
+                   "delayed",
+                   "closed"
+                  ],
+                  "example": "in_progress"
+                 },
+                 "global": {
+                  "type": "boolean",
+                  "description": "Whether this is a built-in Procore status available to every company. Always true for Procore mobile clients on the v1.0 Action Plan Item endpoints (their company-custom statuses are downgraded to built-ins); other clients may receive a company-custom status, where this is false.",
+                  "example": true
+                 }
+                }
+               },
+               "template_item_id": {
+                "type": "integer",
+                "nullable": true,
+                "description": "ID of the plan template item this item was generated from. Null if the item was created directly rather than from a template.",
+                "example": 43584
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was last updated. Use with filters[updated_at] for change-based polling.",
+                "example": "2018-09-20T21:39:40Z"
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D',\n  qs: {view: 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D?view=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D?view=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D?view=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Action Plan Section show endpoint",
+      "description": "View the details of a Action Plan Section.",
+      "endpoint": "GET /projects/{project_id}/action_plans/plan_sections/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#show-action-plan-section"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Action Plan Section",
+    "description": "Updates an Action Plan Section.\n\n**View Parameter:**\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "parameters": [
+     {
+      "name": "view",
+      "in": "query",
+      "required": false,
+      "description": "Specifies which view (which attributes) of the Action Plan Section is going to be present in the response.\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n- `ids`: Returns an array of Action Plan Section IDs only (without standard object structure)\n",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "extended",
+        "ids"
+       ],
+       "default": "normal"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "plan_section"
+        ],
+        "properties": {
+         "plan_section": {
+          "type": "object",
+          "properties": {
+           "title": {
+            "type": "string",
+            "description": "Title",
+            "example": "An updated Action Plan Section"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "oneOf": [
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show - Extended View)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_items": {
+             "type": "array",
+             "description": "Array of Action Plan items belonging to this section. Only present when the view parameter is set to extended.",
+             "items": {
+              "type": "object",
+              "description": "Action Plan Item (Show)",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for this Action Plan Item. Use as the {id} path parameter to show, update, delete, or move the item.",
+                "example": 43584
+               },
+               "plan_item_assignees": {
+                "type": "array",
+                "items": {
+                 "type": "object",
+                 "description": "Action Plan Item Assignee (Compact)",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Unique identifier for this Action Plan Item Assignee.",
+                   "example": 12
+                  },
+                  "created_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was created.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "is_holding": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee is necessary to sign for a hold point",
+                   "example": true
+                  },
+                  "is_locked": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee was added prior to an Action Plan's approval",
+                   "example": false
+                  },
+                  "party": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Party Person ID",
+                     "example": 23
+                    },
+                    "first_name": {
+                     "type": "string",
+                     "description": "First name of the Party Person",
+                     "example": "Paul"
+                    },
+                    "last_name": {
+                     "type": "string",
+                     "description": "Last name of the Party Person",
+                     "example": "Admin"
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Full name of the Party Person",
+                     "example": "Paul Admin"
+                    },
+                    "user_id": {
+                     "type": "integer",
+                     "description": "User ID of the login account associated with this party person.",
+                     "example": 453
+                    },
+                    "is_employee": {
+                     "type": "boolean",
+                     "description": "Whether this party person is an employee of the current company, as opposed to an external vendor contact.",
+                     "example": true
+                    },
+                    "employee_id": {
+                     "type": "string",
+                     "description": "Employee ID string for this party person. Null if no employee ID is assigned.",
+                     "example": "12",
+                     "nullable": true
+                    },
+                    "login": {
+                     "type": "string",
+                     "description": "Email address (login) of the party person's user account.",
+                     "example": "login@example.com"
+                    },
+                    "updated_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Time the Party Person was updated",
+                     "example": "2018-09-20T21:39:40Z"
+                    },
+                    "vendor": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the vendor company this party person belongs to.",
+                       "example": 223
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Name of the vendor company this party person belongs to.",
+                       "example": "Freddie's Excavating"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "role": {
+                   "type": "string",
+                   "description": "Organizational role of this assignee on the Action Plan Item.",
+                   "enum": [
+                    "contractor",
+                    "specialty_contractor",
+                    "client",
+                    "architect",
+                    "third_party",
+                    "null",
+                    "internal"
+                   ],
+                   "example": "specialty_contractor"
+                  },
+                  "role_id": {
+                   "type": "integer",
+                   "description": "ID of the role record assigned to this assignee. Null when the assignee was added by party rather than by role.",
+                   "example": 17
+                  },
+                  "signature": {
+                   "type": "object",
+                   "nullable": true,
+                   "description": "Action Plan Item Assignee Signature (Show)",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this item assignee signature record.",
+                     "example": 32
+                    },
+                    "attachment": {
+                     "type": "object",
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the Prostore file containing the signature image.",
+                       "example": 23
+                      },
+                      "content_type": {
+                       "type": "string",
+                       "description": "MIME type of the signature file.",
+                       "example": "image/png"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "File name of the uploaded signature image.",
+                       "example": "action_plan_signature_1_2_assignee_53.png"
+                      },
+                      "url": {
+                       "type": "string",
+                       "description": "URL to download the signature image. The URL is temporary and expires after a period.",
+                       "example": "https://storage.procore.com/v4/d/us-east-1/pro-core.com/signature.png"
+                      }
+                     }
+                    },
+                    "captured_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Timestamp in ISO 8601 format when this signature was captured.",
+                     "example": "2015-02-07T00:00:00Z"
+                    },
+                    "captured_by": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Party Person ID",
+                       "example": 23
+                      },
+                      "first_name": {
+                       "type": "string",
+                       "description": "First name of the Party Person",
+                       "example": "Paul"
+                      },
+                      "last_name": {
+                       "type": "string",
+                       "description": "Last name of the Party Person",
+                       "example": "Admin"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Full name of the Party Person",
+                       "example": "Paul Admin"
+                      },
+                      "user_id": {
+                       "type": "integer",
+                       "description": "User ID of the login account associated with this party person.",
+                       "example": 453
+                      },
+                      "is_employee": {
+                       "type": "boolean",
+                       "description": "Indicates whether Party is an Employee of the current Company",
+                       "example": true
+                      },
+                      "employee_id": {
+                       "type": "integer",
+                       "description": "Employee ID of this party person. Null if no employee ID is assigned.",
+                       "example": 12,
+                       "nullable": true
+                      },
+                      "login": {
+                       "type": "string",
+                       "description": "Email address (login) of the party person's user account.",
+                       "example": "contractor@example.com"
+                      },
+                      "vendor": {
+                       "type": "object",
+                       "properties": {
+                        "id": {
+                         "type": "integer",
+                         "description": "Unique identifier of the vendor company this party person belongs to.",
+                         "example": 223
+                        },
+                        "name": {
+                         "type": "string",
+                         "description": "Name of the vendor company this party person belongs to.",
+                         "example": "Freddie's Excavating"
+                        }
+                       }
+                      },
+                      "updated_at": {
+                       "type": "string",
+                       "format": "date-time",
+                       "description": "Timestamp in ISO 8601 format when this party person record was last updated.",
+                       "example": "2017-01-04T21:27:18Z"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "updated_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was last updated.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "verification_method": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this verification method.",
+                     "example": 21
+                    },
+                    "active": {
+                     "type": "boolean",
+                     "description": "Whether this verification method is currently available for assignment. Inactive methods may still appear on existing assignees.",
+                     "example": true
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Display name of the verification method (e.g., Hold Point, Witness Point, Review Record).",
+                     "example": "Hold Point"
+                    },
+                    "source_key": {
+                     "type": "string",
+                     "description": "Machine-readable key for this verification method. Use for programmatic comparisons rather than the display name.",
+                     "example": "hold_point"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was created. Use with filters[created_at] for date-range filtering.",
+                "example": "2018-09-20T21:39:40Z"
+               },
+               "description": {
+                "type": "string",
+                "nullable": true,
+                "description": "Detailed description of the work or inspection required for this Action Plan Item.",
+                "example": "A New Action Plan Item Description"
+               },
+               "due_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true,
+                "description": "Due date for this item in ISO 8601 format. Null if no due date has been set. Use with filters[due_at] for deadline-based filtering.",
+                "example": "2017-07-29T21:39:40Z"
+               },
+               "holding_type": {
+                "type": "string",
+                "description": "Action Plan Item holding type specifies whether the current item holds all the succeeding items in the section or the plan",
+                "enum": [
+                 "plan",
+                 "section"
+                ],
+                "example": "plan"
+               },
+               "is_blocked": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocked by another Action Plan Item"
+               },
+               "is_blocking": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocking other Action Plan Items"
+               },
+               "notes": {
+                "type": "string",
+                "nullable": true,
+                "description": "Free-text notes attached to this Action Plan Item.",
+                "example": "Noting this Action Plan Item is complete"
+               },
+               "plan_id": {
+                "type": "integer",
+                "description": "ID of the Action Plan this item belongs to. Use with filters[plan_id] to list all items in a specific plan.",
+                "example": 43584
+               },
+               "position": {
+                "type": "integer",
+                "description": "Ordinal position of this item within its section. Items are displayed in ascending position order.",
+                "example": 3
+               },
+               "plan_section_id": {
+                "type": "integer",
+                "description": "ID of the section this item belongs to within the Action Plan. Use with filters[plan_section_id] to list items in a specific section.",
+                "example": 43584
+               },
+               "title": {
+                "type": "string",
+                "description": "Short title summarizing the inspection or task for this Action Plan Item.",
+                "example": "A New Action Plan Item"
+               },
+               "status": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Unique identifier for the item status. For Procore mobile clients (requests sending a `Procore-OSName` header of `iOS` or `android`) the v1.0 Action Plan Item endpoints downgrade company-custom statuses to the built-in they map to, so this is always one of the four built-in statuses (1 - open, 2 - in_progress, 3 - delayed, 4 - closed). Other clients, and all v2.0 endpoints, return the untouched status, including any company-custom status.",
+                  "example": 2
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Display name of the status (e.g. 'In Progress', or a company-custom name such as 'Ready for Testing' where the status isn't downgraded).",
+                  "example": "in_progress"
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Underlying status type category this status maps to. Custom company statuses map to one of these built-in keys.",
+                  "enum": [
+                   "open",
+                   "in_progress",
+                   "delayed",
+                   "closed"
+                  ],
+                  "example": "in_progress"
+                 },
+                 "global": {
+                  "type": "boolean",
+                  "description": "Whether this is a built-in Procore status available to every company. Always true for Procore mobile clients on the v1.0 Action Plan Item endpoints (their company-custom statuses are downgraded to built-ins); other clients may receive a company-custom status, where this is false.",
+                  "example": true
+                 }
+                }
+               },
+               "template_item_id": {
+                "type": "integer",
+                "nullable": true,
+                "description": "ID of the plan template item this item was generated from. Null if the item was created directly rather than from a template.",
+                "example": 43584
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was last updated. Use with filters[updated_at] for change-based polling.",
+                "example": "2018-09-20T21:39:40Z"
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D',\n  qs: {view: 'SOME_STRING_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {plan_section: {title: 'An updated Action Plan Section'}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"plan_section\\\":{\\\"title\\\":\\\"An updated Action Plan Section\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D?view=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D?view=SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"plan_section\":{\"title\":\"An updated Action Plan Section\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D?view=SOME_STRING_VALUE\"),\n    Content = new StringContent(\"{\\\"plan_section\\\":{\\\"title\\\":\\\"An updated Action Plan Section\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Action Plan Section update endpoint",
+      "description": "Update a Action Plan Section.",
+      "endpoint": "PATCH /projects/{project_id}/action_plans/plan_sections/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#update-action-plan-section"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Action Plan Section",
+    "description": "Deletes an Action Plan Section",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Action Plan Section delete endpoint",
+      "description": "Delete a Action Plan Section.",
+      "endpoint": "DELETE /projects/{project_id}/action_plans/plan_sections/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#delete-action-plan-section"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/action_plans/plan_sections/{id}/move": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Action Plan Section ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Move Action Plan Section",
+    "description": "Moves the Action Plan Section.",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "parameters": [
+     {
+      "name": "next_section_id",
+      "in": "query",
+      "description": "ID of the Action Plan Section that will follow the newly moved Section. When moving an Action Plan Section to the last position of the Action Plan, do not provide this parameter.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D/move',\n  qs: {next_section_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D/move?next_section_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D/move?next_section_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/%7Bid%7D/move?next_section_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Action Plan Section move endpoint",
+      "description": "Procedural action for updating a Action Plan Section's position within an Action Plan.",
+      "endpoint": "POST /projects/{project_id}/action_plans/plan_sections/{id}/move",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#move-action-plan-section"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/action_plans/plan_sections/create_from_section": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a copy of the Action Plan Section in the Action Plan of the Section.",
+    "description": "Create a copy of the Action Plan Section in the Action Plan of the Section.\n\n**View Parameter:**\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "parameters": [
+     {
+      "name": "view",
+      "in": "query",
+      "required": false,
+      "description": "Specifies which view (which attributes) of the Action Plan Section is going to be present in the response.\n- `normal` (default): Returns standard Action Plan Section attributes\n- `extended`: Returns standard attributes plus nested `plan_items` array\n- `ids`: Returns an array of Action Plan Section IDs only (without standard object structure)\n",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "extended",
+        "ids"
+       ],
+       "default": "normal"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "plan_section_id"
+        ],
+        "properties": {
+         "plan_section_id": {
+          "type": "integer",
+          "description": "ID of the Action Plan Section to copy from.",
+          "example": 4435
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "oneOf": [
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "description": "Action Plan Section (Show - Extended View)",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this Action Plan section.",
+             "example": 43584
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was created.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_id": {
+             "type": "integer",
+             "description": "ID of the Action Plan this section belongs to.",
+             "example": 57
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordinal position of this section within its Action Plan. Use when displaying sections in order. Can be changed via the move endpoint.",
+             "example": 3
+            },
+            "title": {
+             "type": "string",
+             "description": "Display title of the section.",
+             "example": "A New Action Plan Section"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp in ISO 8601 format when this section was last updated.",
+             "example": "2018-09-20T21:39:40Z"
+            },
+            "plan_items": {
+             "type": "array",
+             "description": "Array of Action Plan items belonging to this section. Only present when the view parameter is set to extended.",
+             "items": {
+              "type": "object",
+              "description": "Action Plan Item (Show)",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for this Action Plan Item. Use as the {id} path parameter to show, update, delete, or move the item.",
+                "example": 43584
+               },
+               "plan_item_assignees": {
+                "type": "array",
+                "items": {
+                 "type": "object",
+                 "description": "Action Plan Item Assignee (Compact)",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Unique identifier for this Action Plan Item Assignee.",
+                   "example": 12
+                  },
+                  "created_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was created.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "is_holding": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee is necessary to sign for a hold point",
+                   "example": true
+                  },
+                  "is_locked": {
+                   "type": "boolean",
+                   "description": "Boolean flag indicating whether the assignee was added prior to an Action Plan's approval",
+                   "example": false
+                  },
+                  "party": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Party Person ID",
+                     "example": 23
+                    },
+                    "first_name": {
+                     "type": "string",
+                     "description": "First name of the Party Person",
+                     "example": "Paul"
+                    },
+                    "last_name": {
+                     "type": "string",
+                     "description": "Last name of the Party Person",
+                     "example": "Admin"
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Full name of the Party Person",
+                     "example": "Paul Admin"
+                    },
+                    "user_id": {
+                     "type": "integer",
+                     "description": "User ID of the login account associated with this party person.",
+                     "example": 453
+                    },
+                    "is_employee": {
+                     "type": "boolean",
+                     "description": "Whether this party person is an employee of the current company, as opposed to an external vendor contact.",
+                     "example": true
+                    },
+                    "employee_id": {
+                     "type": "string",
+                     "description": "Employee ID string for this party person. Null if no employee ID is assigned.",
+                     "example": "12",
+                     "nullable": true
+                    },
+                    "login": {
+                     "type": "string",
+                     "description": "Email address (login) of the party person's user account.",
+                     "example": "login@example.com"
+                    },
+                    "updated_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Time the Party Person was updated",
+                     "example": "2018-09-20T21:39:40Z"
+                    },
+                    "vendor": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the vendor company this party person belongs to.",
+                       "example": 223
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Name of the vendor company this party person belongs to.",
+                       "example": "Freddie's Excavating"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "role": {
+                   "type": "string",
+                   "description": "Organizational role of this assignee on the Action Plan Item.",
+                   "enum": [
+                    "contractor",
+                    "specialty_contractor",
+                    "client",
+                    "architect",
+                    "third_party",
+                    "null",
+                    "internal"
+                   ],
+                   "example": "specialty_contractor"
+                  },
+                  "role_id": {
+                   "type": "integer",
+                   "description": "ID of the role record assigned to this assignee. Null when the assignee was added by party rather than by role.",
+                   "example": 17
+                  },
+                  "signature": {
+                   "type": "object",
+                   "nullable": true,
+                   "description": "Action Plan Item Assignee Signature (Show)",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this item assignee signature record.",
+                     "example": 32
+                    },
+                    "attachment": {
+                     "type": "object",
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Unique identifier of the Prostore file containing the signature image.",
+                       "example": 23
+                      },
+                      "content_type": {
+                       "type": "string",
+                       "description": "MIME type of the signature file.",
+                       "example": "image/png"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "File name of the uploaded signature image.",
+                       "example": "action_plan_signature_1_2_assignee_53.png"
+                      },
+                      "url": {
+                       "type": "string",
+                       "description": "URL to download the signature image. The URL is temporary and expires after a period.",
+                       "example": "https://storage.procore.com/v4/d/us-east-1/pro-core.com/signature.png"
+                      }
+                     }
+                    },
+                    "captured_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Timestamp in ISO 8601 format when this signature was captured.",
+                     "example": "2015-02-07T00:00:00Z"
+                    },
+                    "captured_by": {
+                     "type": "object",
+                     "nullable": true,
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "Party Person ID",
+                       "example": 23
+                      },
+                      "first_name": {
+                       "type": "string",
+                       "description": "First name of the Party Person",
+                       "example": "Paul"
+                      },
+                      "last_name": {
+                       "type": "string",
+                       "description": "Last name of the Party Person",
+                       "example": "Admin"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Full name of the Party Person",
+                       "example": "Paul Admin"
+                      },
+                      "user_id": {
+                       "type": "integer",
+                       "description": "User ID of the login account associated with this party person.",
+                       "example": 453
+                      },
+                      "is_employee": {
+                       "type": "boolean",
+                       "description": "Indicates whether Party is an Employee of the current Company",
+                       "example": true
+                      },
+                      "employee_id": {
+                       "type": "integer",
+                       "description": "Employee ID of this party person. Null if no employee ID is assigned.",
+                       "example": 12,
+                       "nullable": true
+                      },
+                      "login": {
+                       "type": "string",
+                       "description": "Email address (login) of the party person's user account.",
+                       "example": "contractor@example.com"
+                      },
+                      "vendor": {
+                       "type": "object",
+                       "properties": {
+                        "id": {
+                         "type": "integer",
+                         "description": "Unique identifier of the vendor company this party person belongs to.",
+                         "example": 223
+                        },
+                        "name": {
+                         "type": "string",
+                         "description": "Name of the vendor company this party person belongs to.",
+                         "example": "Freddie's Excavating"
+                        }
+                       }
+                      },
+                      "updated_at": {
+                       "type": "string",
+                       "format": "date-time",
+                       "description": "Timestamp in ISO 8601 format when this party person record was last updated.",
+                       "example": "2017-01-04T21:27:18Z"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "updated_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp in ISO 8601 format when this assignee was last updated.",
+                   "example": "2018-09-20T21:39:40Z"
+                  },
+                  "verification_method": {
+                   "type": "object",
+                   "nullable": true,
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "Unique identifier for this verification method.",
+                     "example": 21
+                    },
+                    "active": {
+                     "type": "boolean",
+                     "description": "Whether this verification method is currently available for assignment. Inactive methods may still appear on existing assignees.",
+                     "example": true
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Display name of the verification method (e.g., Hold Point, Witness Point, Review Record).",
+                     "example": "Hold Point"
+                    },
+                    "source_key": {
+                     "type": "string",
+                     "description": "Machine-readable key for this verification method. Use for programmatic comparisons rather than the display name.",
+                     "example": "hold_point"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was created. Use with filters[created_at] for date-range filtering.",
+                "example": "2018-09-20T21:39:40Z"
+               },
+               "description": {
+                "type": "string",
+                "nullable": true,
+                "description": "Detailed description of the work or inspection required for this Action Plan Item.",
+                "example": "A New Action Plan Item Description"
+               },
+               "due_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true,
+                "description": "Due date for this item in ISO 8601 format. Null if no due date has been set. Use with filters[due_at] for deadline-based filtering.",
+                "example": "2017-07-29T21:39:40Z"
+               },
+               "holding_type": {
+                "type": "string",
+                "description": "Action Plan Item holding type specifies whether the current item holds all the succeeding items in the section or the plan",
+                "enum": [
+                 "plan",
+                 "section"
+                ],
+                "example": "plan"
+               },
+               "is_blocked": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocked by another Action Plan Item"
+               },
+               "is_blocking": {
+                "type": "boolean",
+                "description": "Indicates whether current Action Plan Item is blocking other Action Plan Items"
+               },
+               "notes": {
+                "type": "string",
+                "nullable": true,
+                "description": "Free-text notes attached to this Action Plan Item.",
+                "example": "Noting this Action Plan Item is complete"
+               },
+               "plan_id": {
+                "type": "integer",
+                "description": "ID of the Action Plan this item belongs to. Use with filters[plan_id] to list all items in a specific plan.",
+                "example": 43584
+               },
+               "position": {
+                "type": "integer",
+                "description": "Ordinal position of this item within its section. Items are displayed in ascending position order.",
+                "example": 3
+               },
+               "plan_section_id": {
+                "type": "integer",
+                "description": "ID of the section this item belongs to within the Action Plan. Use with filters[plan_section_id] to list items in a specific section.",
+                "example": 43584
+               },
+               "title": {
+                "type": "string",
+                "description": "Short title summarizing the inspection or task for this Action Plan Item.",
+                "example": "A New Action Plan Item"
+               },
+               "status": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Unique identifier for the item status. For Procore mobile clients (requests sending a `Procore-OSName` header of `iOS` or `android`) the v1.0 Action Plan Item endpoints downgrade company-custom statuses to the built-in they map to, so this is always one of the four built-in statuses (1 - open, 2 - in_progress, 3 - delayed, 4 - closed). Other clients, and all v2.0 endpoints, return the untouched status, including any company-custom status.",
+                  "example": 2
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Display name of the status (e.g. 'In Progress', or a company-custom name such as 'Ready for Testing' where the status isn't downgraded).",
+                  "example": "in_progress"
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Underlying status type category this status maps to. Custom company statuses map to one of these built-in keys.",
+                  "enum": [
+                   "open",
+                   "in_progress",
+                   "delayed",
+                   "closed"
+                  ],
+                  "example": "in_progress"
+                 },
+                 "global": {
+                  "type": "boolean",
+                  "description": "Whether this is a built-in Procore status available to every company. Always true for Procore mobile clients on the v1.0 Action Plan Item endpoints (their company-custom statuses are downgraded to built-ins); other clients may receive a company-custom status, where this is false.",
+                  "example": true
+                 }
+                }
+               },
+               "template_item_id": {
+                "type": "integer",
+                "nullable": true,
+                "description": "ID of the plan template item this item was generated from. Null if the item was created directly rather than from a template.",
+                "example": 43584
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp in ISO 8601 format when this item was last updated. Use with filters[updated_at] for change-based polling.",
+                "example": "2018-09-20T21:39:40Z"
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/create_from_section',\n  qs: {view: 'SOME_STRING_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {plan_section_id: 4435},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"plan_section_id\\\":4435}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/create_from_section?view=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/create_from_section?view=SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"plan_section_id\":4435}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/action_plans/plan_sections/create_from_section?view=SOME_STRING_VALUE\"),\n    Content = new StringContent(\"{\\\"plan_section_id\\\":4435}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Action Plan Sections create_from_section endpoint",
+      "description": "Added an endpoint to create an Action Plan Section from another Action Plan Section.",
+      "endpoint": "POST /projects/{project_id}/action_plans/plan_sections/create_from_section",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-10-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#create-a-copy-of-the-action-plan-section-in-the-action-plan-of-the-section"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/action_plans/plan_sections": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Recycled Action Plan Sections",
+    "description": "Returns all Recycled Action Plan Sections for a given Project",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[plan_id]",
+      "in": "query",
+      "description": "Return item(s) associated with the specified Action Plan ID(s)",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Recycled Action Plan Sections (Index)",
+         "items": {
+          "type": "object",
+          "description": "Recycled Action Plan Section (Show)",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this deleted Action Plan section.",
+            "example": 43584
+           },
+           "created_at": {
+            "type": "string",
+            "description": "Timestamp in ISO 8601 format when this section was created.",
+            "example": "2018-09-20T21:39:40Z"
+           },
+           "deleted_at": {
+            "type": "string",
+            "description": "Timestamp in ISO 8601 format when this section was soft-deleted.",
+            "example": "2017-01-16T18:42:12Z"
+           },
+           "plan_id": {
+            "type": "integer",
+            "description": "ID of the Action Plan this deleted section belonged to.",
+            "example": 57
+           },
+           "position": {
+            "type": "integer",
+            "description": "Ordinal position this section held within its Action Plan before deletion.",
+            "example": 3
+           },
+           "title": {
+            "type": "string",
+            "description": "Display title of the deleted section.",
+            "example": "A New Action Plan Section"
+           },
+           "updated_at": {
+            "type": "string",
+            "description": "Timestamp in ISO 8601 format when this section was last updated before deletion.",
+            "example": "2018-09-20T21:39:40Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[plan_id]': 'SOME_ARRAY_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bplan_id%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bplan_id%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bplan_id%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Recycled Action Plan Section list endpoint",
+      "description": "Get a list of Recycled Action Plan Sections for a given project.",
+      "endpoint": "GET /projects/{project_id}/recycle_bin/action_plans/plan_sections",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-03-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#list-recycled-action-plan-sections"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/action_plans/plan_sections/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Action Plan Section ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Recycled Action Plan Section",
+    "description": "Returns a Recycled Action Plan Section",
+    "tags": [
+     "Action Plan Sections"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Recycled Action Plan Section (Show)",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this deleted Action Plan section.",
+           "example": 43584
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp in ISO 8601 format when this section was created.",
+           "example": "2018-09-20T21:39:40Z"
+          },
+          "deleted_at": {
+           "type": "string",
+           "description": "Timestamp in ISO 8601 format when this section was soft-deleted.",
+           "example": "2017-01-16T18:42:12Z"
+          },
+          "plan_id": {
+           "type": "integer",
+           "description": "ID of the Action Plan this deleted section belonged to.",
+           "example": 57
+          },
+          "position": {
+           "type": "integer",
+           "description": "Ordinal position this section held within its Action Plan before deletion.",
+           "example": 3
+          },
+          "title": {
+           "type": "string",
+           "description": "Display title of the deleted section.",
+           "example": "A New Action Plan Section"
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp in ISO 8601 format when this section was last updated before deletion.",
+           "example": "2018-09-20T21:39:40Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/action_plans/plan_sections/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Recycled Action Plan Section show endpoint",
+      "description": "View the details of a Recycled Action Plan Section.",
+      "endpoint": "GET /projects/{project_id}/recycle_bin/action_plans/plan_sections/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-03-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "action-plan-sections?version=1.0#show-recycled-action-plan-section"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

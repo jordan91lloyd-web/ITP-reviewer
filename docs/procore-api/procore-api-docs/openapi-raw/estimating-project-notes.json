@@ -1,0 +1,777 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Estimating Project Notes",
+  "version": "2.0",
+  "x-product-category": "Preconstruction",
+  "x-tool-category": "Estimating",
+  "x-resource-name": "Estimating Project Notes",
+  "x-product-lines": [
+   "Preconstruction"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/estimating/notes": {
+   "post": {
+    "tags": [
+     "Note"
+    ],
+    "summary": "Create a note in the project",
+    "operationId": "Note_CreateNote",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "requestBody": {
+     "x-name": "model",
+     "description": "Note",
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "value"
+        ],
+        "properties": {
+         "value": {
+          "type": "string",
+          "description": "The content of the note.",
+          "minLength": 1
+         }
+        }
+       }
+      }
+     },
+     "required": true,
+     "x-position": 1
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "data": {
+           "nullable": true,
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "value"
+           ],
+           "properties": {
+            "value": {
+             "type": "string",
+             "description": "The content of the note.",
+             "minLength": 1
+            },
+            "id": {
+             "type": "string",
+             "description": "The unique identifier of the note.",
+             "nullable": true
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time when the note was last updated.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2026-03-25T13:25:00Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to create a note",
+      "description": "This endpoint allows creating a note for a project.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/estimating/notes",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-02-16",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/estimating/notes",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes',\n  headers: {'content-type': 'application/json'},\n  body: {value: 'string'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"value\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes \\\n  --header 'content-type: application/json' \\\n  --data '{\"value\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes\"),\n    Content = new StringContent(\"{\\\"value\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "get": {
+    "tags": [
+     "Note"
+    ],
+    "summary": "Retrieve all notes in the project",
+    "operationId": "Note_GetNotes",
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page number",
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      },
+      "x-position": 1,
+      "required": false
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Items per page",
+      "schema": {
+       "type": "integer",
+       "format": "int32",
+       "default": 10,
+       "maximum": 100
+      },
+      "x-position": 2,
+      "required": false
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 4
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "headers": {
+       "Total": {
+        "description": "Total number of items",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Per-Page": {
+        "description": "Number of items per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Links to other pages",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "array",
+           "nullable": true,
+           "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+             "value"
+            ],
+            "properties": {
+             "value": {
+              "type": "string",
+              "description": "The content of the note.",
+              "minLength": 1
+             },
+             "id": {
+              "type": "string",
+              "description": "The unique identifier of the note.",
+              "nullable": true
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "The date and time when the note was last updated.",
+              "format": "date-time",
+              "nullable": true,
+              "example": "2026-03-25T13:25:00Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to retrieve all notes for a project",
+      "description": "This endpoint allows retrieving all notes for a project.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/notes",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-16",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/notes",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/estimating/notes/{note_id}": {
+   "patch": {
+    "tags": [
+     "Note"
+    ],
+    "summary": "Update a note of the project",
+    "operationId": "Note_UpdateNote",
+    "parameters": [
+     {
+      "name": "note_id",
+      "in": "path",
+      "required": true,
+      "description": "Note Id",
+      "schema": {
+       "type": "string",
+       "format": "int64"
+      },
+      "x-position": 1
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 4
+     }
+    ],
+    "requestBody": {
+     "x-name": "model",
+     "description": "Note fields to update",
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "value"
+        ],
+        "properties": {
+         "value": {
+          "type": "string",
+          "description": "The content of the note.",
+          "minLength": 1
+         }
+        }
+       }
+      }
+     },
+     "required": true,
+     "x-position": 2
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "data": {
+           "nullable": true,
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "value"
+           ],
+           "properties": {
+            "value": {
+             "type": "string",
+             "description": "The content of the note.",
+             "minLength": 1
+            },
+            "id": {
+             "type": "string",
+             "description": "The unique identifier of the note.",
+             "nullable": true
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time when the note was last updated.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2026-03-25T13:25:00Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to update a note",
+      "description": "This endpoint allows updating a note for a project.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/estimating/notes/{note_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-02-23",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/estimating/notes/{note_id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D',\n  headers: {'content-type': 'application/json'},\n  body: {value: 'string'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"value\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"value\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D\"),\n    Content = new StringContent(\"{\\\"value\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "tags": [
+     "Note"
+    ],
+    "summary": "Delete a note from the project",
+    "operationId": "Note_DeleteNote",
+    "parameters": [
+     {
+      "name": "note_id",
+      "in": "path",
+      "required": true,
+      "description": "Note Id",
+      "schema": {
+       "type": "string",
+       "format": "int64"
+      },
+      "x-position": 1
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/octet-stream": {
+        "schema": {
+         "type": "string",
+         "format": "binary"
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to delete a note",
+      "description": "This endpoint allows deleting a note for a project.",
+      "endpoint": "DELETE /companies/{company_id}/projects/{project_id}/estimating/notes/{note_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-02",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "get": {
+    "tags": [
+     "Note"
+    ],
+    "summary": "Retrieve a note by Id in the project",
+    "operationId": "Note_GetNote",
+    "parameters": [
+     {
+      "name": "note_id",
+      "in": "path",
+      "required": true,
+      "description": "Note Id",
+      "schema": {
+       "type": "string",
+       "format": "int64"
+      },
+      "x-position": 1
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "data": {
+           "nullable": true,
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "value"
+           ],
+           "properties": {
+            "value": {
+             "type": "string",
+             "description": "The content of the note.",
+             "minLength": 1
+            },
+            "id": {
+             "type": "string",
+             "description": "The unique identifier of the note.",
+             "nullable": true
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time when the note was last updated.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2026-03-25T13:25:00Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to retrieve a note by Id",
+      "description": "This endpoint allows retrieving a note by its Id for a project.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/notes/{note_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-16",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/notes/{note_id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/notes/%7Bnote_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

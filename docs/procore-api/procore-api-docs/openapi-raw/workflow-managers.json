@@ -1,0 +1,873 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Workflow Managers",
+  "x-product-category": "Core",
+  "x-tool-category": "Workflows",
+  "x-resource-name": "Workflow Managers",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/workflows/workflow_managers": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Workflow Managers (Project)",
+    "description": "Returns a list of all workflow managers for a given project and tool.",
+    "tags": [
+     "Workflow Managers"
+    ],
+    "parameters": [
+     {
+      "name": "tool_type",
+      "in": "query",
+      "description": "Return workflow managers for the associated tool.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "tool_subtype",
+      "in": "query",
+      "description": "Return workflow managers for the associated tool_subtype. Required when tool_type is 'correspondence'.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Managers (Index)",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "List of workflow managers",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier for the workflow manager",
+              "example": "161072"
+             },
+             "login": {
+              "type": "string",
+              "description": "Workflow manager login",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the workflow manager",
+              "example": "Carl the Contractor"
+             },
+             "company": {
+              "type": "object",
+              "nullable": true,
+              "description": "Vendor company for the workflow manager when one is associated in the requested company context",
+              "properties": {
+               "name": {
+                "type": "string",
+                "description": "Vendor display name",
+                "example": "Brickworks"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/workflow_managers',\n  qs: {\n    tool_type: 'SOME_STRING_VALUE',\n    tool_subtype: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/workflow_managers?tool_type=SOME_STRING_VALUE&tool_subtype=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/workflow_managers?tool_type=SOME_STRING_VALUE&tool_subtype=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/workflow_managers?tool_type=SOME_STRING_VALUE&tool_subtype=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Workflow managers include company name",
+      "description": "List items now include a company object with name when a vendor is present.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/workflows/workflow_managers",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-managers?version=2.0#list-workflow-managers-project"
+     },
+     {
+      "summary": "V2 API Release",
+      "description": "Part of our new batch of V2 APIs for Workflows.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/workflows/workflow_managers",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-managers?version=2.0#list-workflow-managers-project"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/workflows/workflow_managers": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Workflow Managers (Company)",
+    "description": "Returns a list of all workflow managers for a given company and tool.",
+    "tags": [
+     "Workflow Managers"
+    ],
+    "parameters": [
+     {
+      "name": "tool_type",
+      "in": "query",
+      "description": "Return workflow managers for the associated tool.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "tool_subtype",
+      "in": "query",
+      "description": "Return workflow managers for the associated tool_subtype. Required when tool_type is 'correspondence'.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Managers (Index)",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "List of workflow managers",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier for the workflow manager",
+              "example": "161072"
+             },
+             "login": {
+              "type": "string",
+              "description": "Workflow manager login",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the workflow manager",
+              "example": "Carl the Contractor"
+             },
+             "company": {
+              "type": "object",
+              "nullable": true,
+              "description": "Vendor company for the workflow manager when one is associated in the requested company context",
+              "properties": {
+               "name": {
+                "type": "string",
+                "description": "Vendor display name",
+                "example": "Brickworks"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/workflow_managers',\n  qs: {\n    tool_type: 'SOME_STRING_VALUE',\n    tool_subtype: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/workflow_managers?tool_type=SOME_STRING_VALUE&tool_subtype=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/workflow_managers?tool_type=SOME_STRING_VALUE&tool_subtype=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/workflow_managers?tool_type=SOME_STRING_VALUE&tool_subtype=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Workflow managers include company name",
+      "description": "List items now include a company object with name when a vendor is present.",
+      "endpoint": "GET /companies/{company_id}/workflows/workflow_managers",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-managers?version=2.0#list-workflow-managers-company"
+     },
+     {
+      "summary": "V2 API Release",
+      "description": "Part of our new batch of V2 APIs for Workflows.",
+      "endpoint": "GET /companies/{company_id}/workflows/workflow_managers",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-managers?version=2.0#list-workflow-managers-company"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

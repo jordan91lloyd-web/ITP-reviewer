@@ -1,0 +1,470 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Workflow Templates",
+  "x-product-category": "Core",
+  "x-tool-category": "Workflows",
+  "x-resource-name": "Workflow Templates",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/workflows/templates": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Workflow Templates",
+    "description": "Returns a list of all workflow templates for a given company.",
+    "tags": [
+     "Workflow Templates"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflows Templates (Index)",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "List of workflow templates",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier for the workflow template",
+              "example": "161072"
+             },
+             "name": {
+              "type": "string",
+              "description": "Workflow template name",
+              "example": "Purchase Order Approval"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date when the template was created",
+              "example": "2020-01-01T00:00:00Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date when the template was last updated",
+              "example": "2020-01-01T00:00:00Z"
+             },
+             "archived_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date when the template was archived",
+              "example": "2020-01-01T00:00:00Z",
+              "nullable": true
+             },
+             "assigned_projects_count": {
+              "type": "integer",
+              "example": 1,
+              "description": "Number of projects this template is assigned to"
+             },
+             "tool_type": {
+              "type": "string",
+              "example": "purchase_order_contract",
+              "description": "The type of tool this template is for"
+             },
+             "tool_subtype": {
+              "type": "string",
+              "example": "-1234",
+              "description": "The subtype of tool this template is for (only applies to \"correspondence\" types)",
+              "nullable": true
+             },
+             "format": {
+              "type": "string",
+              "description": "Workflow layout format (`diagram` or `linear`).",
+              "enum": [
+               "diagram",
+               "linear"
+              ],
+              "example": "diagram"
+             },
+             "latest_published_version": {
+              "type": "object",
+              "description": "Latest published version of the template",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for the version",
+                "example": "161072"
+               },
+               "version": {
+                "type": "string",
+                "description": "Version number",
+                "example": "1.0"
+               }
+              },
+              "nullable": true
+             },
+             "versions": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "Unique identifier for the version",
+                 "example": "161072"
+                },
+                "version": {
+                 "type": "string",
+                 "description": "Version number",
+                 "example": "1.0"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "V2 API Release",
+      "description": "Part of our new batch of V2 APIs for Workflows.",
+      "endpoint": "GET /companies/{company_id}/workflows/templates",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-templates?version=2.0#list-workflow-templates"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

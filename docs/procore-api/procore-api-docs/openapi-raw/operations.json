@@ -1,0 +1,1107 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Operations",
+  "x-product-category": "Company Admin",
+  "x-tool-category": "Company Settings",
+  "x-resource-name": "Operations",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/async_operations": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Operations",
+    "description": "List all asynchronous operations for the company. Non-admin users only see operations they created, unless the request is filtered to a company-readable operation type (for example `bulk_create_and_initialize_projects`) \u2014 either directly via `operation_type` or via `parent_id` \u2014 in which case matching operations are returned with a restricted payload that omits `result`, `error`, and `created_by_id`.",
+    "tags": [
+     "Operations"
+    ],
+    "parameters": [
+     {
+      "name": "parent_id",
+      "in": "query",
+      "description": "Return child operations of the specified parent operation.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[operation_type]",
+      "in": "query",
+      "description": "Return operations of the specified type.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[started_after]",
+      "in": "query",
+      "description": "Return operations that started after the started_after time.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date-time"
+      }
+     },
+     {
+      "name": "filters[started_before]",
+      "in": "query",
+      "description": "Return operations that started before the started_before time.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date-time"
+      }
+     },
+     {
+      "name": "filters[status]",
+      "in": "query",
+      "description": "Return operations with the specified status.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "created",
+        "in_progress",
+        "done",
+        "failed"
+       ]
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Operation details",
+           "items": {
+            "type": "object",
+            "description": "Operation details",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier for the operation",
+              "example": "12345"
+             },
+             "operation_type": {
+              "type": "string",
+              "description": "Operation type",
+              "example": "create_and_initialize_project"
+             },
+             "started_at": {
+              "type": "string",
+              "description": "Time that the operation started",
+              "format": "date-time",
+              "example": "2024-08-12T08:40:51Z",
+              "nullable": true
+             },
+             "completed_at": {
+              "type": "string",
+              "description": "Time that the operation completed",
+              "format": "date-time",
+              "example": "2024-08-12T08:40:51Z",
+              "nullable": true
+             },
+             "status": {
+              "type": "string",
+              "description": "Operation status",
+              "enum": [
+               "created",
+               "in_progress",
+               "done",
+               "failed"
+              ]
+             },
+             "error": {
+              "description": "Error message if operation failed",
+              "type": "object",
+              "properties": {
+               "message": {
+                "type": "string",
+                "description": "Error message",
+                "example": "Item not found"
+               }
+              },
+              "nullable": true
+             },
+             "result": {
+              "description": "Operation-specific result.  See the initiating API for details on the result format.",
+              "type": "object",
+              "nullable": true
+             },
+             "context": {
+              "description": "Opaque internal context information for the operation.",
+              "type": "object",
+              "nullable": true
+             },
+             "created_by_id": {
+              "type": "string",
+              "description": "User ID of the user who created the operation",
+              "example": "123456",
+              "nullable": true
+             },
+             "project_id": {
+              "type": "string",
+              "description": "ID of the project the operation belongs to, if any",
+              "example": "789",
+              "nullable": true
+             },
+             "parent_id": {
+              "type": "string",
+              "description": "ID of the parent operation, if this operation is a child of a batch operation",
+              "example": "12344",
+              "nullable": true
+             },
+             "failure_details": {
+              "description": "Why this operation failed, when the failure was recorded with a reason. Populated for rows of a bulk create that were rejected before a project was attempted, or that failed while initializing. Null for operations that did not fail this way.",
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "errors": {
+                "type": "array",
+                "description": "Reasons this operation failed",
+                "items": {
+                 "type": "string",
+                 "example": "Name can't be blank"
+                }
+               },
+               "submitted_row": {
+                "type": "object",
+                "description": "Values submitted for this row, keyed by bulk-create template column. Restricted to the name and project_number columns for readers who are neither the operation creator nor a company admin.",
+                "additionalProperties": {
+                 "type": "string"
+                }
+               },
+               "row_index": {
+                "type": "integer",
+                "description": "Zero-based position of this row in the original bulk-create upload. Present on failed create_and_initialize_project children so clients can label the row and restore upload order. Children are not created in upload order \u2014 pre-flight rejects are inserted after executed rows \u2014 so created_at is not a substitute.",
+                "example": 0,
+                "nullable": true
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/async_operations',\n  qs: {\n    parent_id: 'SOME_STRING_VALUE',\n    'filters[operation_type]': 'SOME_STRING_VALUE',\n    'filters[started_after]': 'SOME_STRING_VALUE',\n    'filters[started_before]': 'SOME_STRING_VALUE',\n    'filters[status]': 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/async_operations?parent_id=SOME_STRING_VALUE&filters%5Boperation_type%5D=SOME_STRING_VALUE&filters%5Bstarted_after%5D=SOME_STRING_VALUE&filters%5Bstarted_before%5D=SOME_STRING_VALUE&filters%5Bstatus%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/async_operations?parent_id=SOME_STRING_VALUE&filters%5Boperation_type%5D=SOME_STRING_VALUE&filters%5Bstarted_after%5D=SOME_STRING_VALUE&filters%5Bstarted_before%5D=SOME_STRING_VALUE&filters%5Bstatus%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/async_operations?parent_id=SOME_STRING_VALUE&filters%5Boperation_type%5D=SOME_STRING_VALUE&filters%5Bstarted_after%5D=SOME_STRING_VALUE&filters%5Bstarted_before%5D=SOME_STRING_VALUE&filters%5Bstatus%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add parent_id filter to asynchronous operations list endpoint",
+      "description": "Add a new filter to the asynchronous operations list endpoint to filter child operations by their parent operation id. The parent_id field is now also included in operation responses.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-27",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#list-operations"
+     },
+     {
+      "summary": "Add project_id filter to asynchronous operations list endpoint",
+      "description": "Add a new filter to the asynchronous operations list endpoint to filter operations by project_id.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-12",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#list-operations"
+     },
+     {
+      "summary": "Add new v2 asynchronous operations list endpoint",
+      "description": "Add a new v2 endpoint to get a list of asynchronous operations for a company.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-07",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#list-operations"
+     },
+     {
+      "summary": "Add created_by_id to asynchronous operations list response",
+      "description": "Added created_by_id field to the asynchronous operations list response to identify the user who created the operation.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#list-operations"
+     },
+     {
+      "summary": "Add failure_details to asynchronous operations list response",
+      "description": "Added an optional failure_details field to the asynchronous operations list response, matching the\nfield added to the details response. This field is populated for operations that failed with a\nrecorded reason and contains an errors array of failure reasons, a submitted_row object\nholding the values that were submitted, and a row_index integer for the row's 0-based position\nin the original bulk-create upload. Operations that did not fail this way return null. Readers\nwho are neither the operation creator nor a company admin receive submitted_row restricted to the\nname and project_number columns; errors and row_index are returned in full because showing\nreasons to company readers is the purpose of the field.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#list-operations"
+     },
+     {
+      "summary": "Return the unrestricted view when listing children of an operation you created",
+      "description": "Filtering the asynchronous operations list by parent_id now returns the unrestricted payload when\nthe requesting user created the parent operation, matching the entitlement the details endpoint\nalready grants a creator. Previously a creator who was not a company admin was served the\nrestricted company-readable payload, which omits result, error, and created_by_id.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-08-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#list-operations"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/async_operations/{operation_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Operation Details",
+    "description": "Retrieve details of a specific asynchronous operation for the company. Available to the operation's creator and company admins. For company-readable operation types (for example `bulk_create_and_initialize_projects`), any company member may read the operation, receiving a restricted payload that omits `result`, `error`, `created_by_id`, and `sub_operations`.",
+    "tags": [
+     "Operations"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "operation_id",
+      "in": "path",
+      "description": "Unique identifier for the operation.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Operation details",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for the operation",
+             "example": "12345"
+            },
+            "operation_type": {
+             "type": "string",
+             "description": "Operation type",
+             "example": "create_and_initialize_project"
+            },
+            "started_at": {
+             "type": "string",
+             "description": "Time that the operation started",
+             "format": "date-time",
+             "example": "2024-08-12T08:40:51Z",
+             "nullable": true
+            },
+            "completed_at": {
+             "type": "string",
+             "description": "Time that the operation completed",
+             "format": "date-time",
+             "example": "2024-08-12T08:40:51Z",
+             "nullable": true
+            },
+            "status": {
+             "type": "string",
+             "description": "Operation status",
+             "enum": [
+              "created",
+              "in_progress",
+              "done",
+              "failed",
+              "partial_done",
+              "cancelled"
+             ]
+            },
+            "error": {
+             "description": "Error message if operation failed",
+             "type": "object",
+             "properties": {
+              "message": {
+               "type": "string",
+               "description": "Error message",
+               "example": "Item not found"
+              }
+             },
+             "nullable": true
+            },
+            "result": {
+             "description": "Operation-specific result.  See the initiating API for details on the result format.",
+             "type": "object",
+             "nullable": true
+            },
+            "context": {
+             "description": "Opaque internal context information for the operation.",
+             "type": "object",
+             "nullable": true
+            },
+            "created_by_id": {
+             "type": "string",
+             "description": "User ID of the user who created the operation",
+             "example": "123456",
+             "nullable": true
+            },
+            "parent_id": {
+             "type": "string",
+             "description": "ID of the parent operation, if this operation is a child of a batch operation",
+             "example": "12344",
+             "nullable": true
+            },
+            "failure_details": {
+             "description": "Why this operation failed, when the failure was recorded with a reason. Populated for rows of a bulk create that were rejected before a project was attempted, or that failed while initializing. Null for operations that did not fail this way.",
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "errors": {
+               "type": "array",
+               "description": "Reasons this operation failed",
+               "items": {
+                "type": "string",
+                "example": "Name can't be blank"
+               }
+              },
+              "submitted_row": {
+               "type": "object",
+               "description": "Values submitted for this row, keyed by bulk-create template column. Restricted to the name and project_number columns for readers who are neither the operation creator nor a company admin.",
+               "additionalProperties": {
+                "type": "string"
+               }
+              },
+              "row_index": {
+               "type": "integer",
+               "description": "Zero-based position of this row in the original bulk-create upload. Present on failed create_and_initialize_project children so clients can label the row and restore upload order. Children are not created in upload order \u2014 pre-flight rejects are inserted after executed rows \u2014 so created_at is not a substitute.",
+               "example": 0,
+               "nullable": true
+              }
+             }
+            },
+            "progress": {
+             "description": "Progress summary for parent operations that fan out into child operations. Only populated for bulk-create parent operations.",
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "total": {
+               "type": "integer",
+               "description": "Total number of child operations (submitted rows), capped at 100",
+               "example": 100
+              },
+              "successful": {
+               "type": "integer",
+               "description": "Number of child operations whose base project was successfully initialized",
+               "example": 95
+              },
+              "failed": {
+               "type": "integer",
+               "description": "Number of child operations that failed validation or base initialization",
+               "example": 5
+              },
+              "in_progress": {
+               "type": "integer",
+               "description": "Number of child operations still in progress",
+               "example": 0
+              },
+              "percentage": {
+               "type": "integer",
+               "description": "Percentage of successful base-project initializations (successful / total * 100)",
+               "example": 95
+              }
+             }
+            },
+            "sub_operations": {
+             "type": "array",
+             "description": "Sub-operation details",
+             "items": {
+              "type": "object",
+              "description": "Sub-operation details",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for the sub-operation",
+                "example": "12345"
+               },
+               "sub_operation_type": {
+                "type": "string",
+                "description": "Sub-operation type",
+                "example": "directory_initializer"
+               },
+               "started_at": {
+                "type": "string",
+                "description": "Time that the sub-operation started",
+                "format": "date-time",
+                "example": "2024-08-12T08:40:51Z",
+                "nullable": true
+               },
+               "completed_at": {
+                "type": "string",
+                "description": "Time that the sub-operation completed",
+                "format": "date-time",
+                "example": "2024-08-12T08:40:51Z",
+                "nullable": true
+               },
+               "status": {
+                "type": "string",
+                "description": "Sub-operation status",
+                "enum": [
+                 "created",
+                 "enqueued",
+                 "in_progress",
+                 "done",
+                 "failed",
+                 "retry",
+                 "partial_done",
+                 "cancelled"
+                ]
+               },
+               "error": {
+                "description": "Error message if sub-operation failed",
+                "type": "object",
+                "properties": {
+                 "message": {
+                  "type": "string",
+                  "description": "Error message",
+                  "example": "Item not found"
+                 }
+                },
+                "nullable": true
+               },
+               "result": {
+                "description": "Sub-operation-specific result.  See the initiating API for details on the result format.",
+                "type": "object",
+                "nullable": true
+               },
+               "context": {
+                "description": "Opaque internal context information for the sub-operation.",
+                "type": "object",
+                "nullable": true
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/async_operations/%7Boperation_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/async_operations/%7Boperation_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/async_operations/%7Boperation_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/async_operations/%7Boperation_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Allow company members to read bulk project creation operations",
+      "description": "For company-readable operation types (bulk_create_and_initialize_projects, create_and_initialize_project), any company member may now read operations via the list and details endpoints. Non-creator, non-admin readers receive a restricted payload that omits result, error, and created_by_id.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations/{operation_id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-27",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#get-operation-details"
+     },
+     {
+      "summary": "Add new v2 asynchronous operation details endpoints",
+      "description": "Add a new v2 endpoint to get the details of an asynchronous operation.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations/{operation_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-07",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#get-operation-details"
+     },
+     {
+      "summary": "Add created_by_id to asynchronous operation details response",
+      "description": "Added created_by_id field to the asynchronous operation details response to identify the user who created the operation.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations/{operation_id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#get-operation-details"
+     },
+     {
+      "summary": "Add progress summary to asynchronous operation details response for bulk-create operations",
+      "description": "Added an optional progress field to the asynchronous operation details response. This field is\npopulated for bulk-create parent operations and contains total, successful, failed, in_progress,\nand percentage counts computed from child operation statuses.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations/{operation_id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#get-operation-details"
+     },
+     {
+      "summary": "Add failure_details to asynchronous operation details response",
+      "description": "Added an optional failure_details field to the asynchronous operation details response. This field\nis populated for operations that failed with a recorded reason and contains an errors array of\nfailure reasons, a submitted_row object holding the values that were submitted, and a row_index\ninteger for the row's 0-based position in the original bulk-create upload. Operations\nthat did not fail this way return null. Readers who are neither the operation creator nor a company\nadmin receive submitted_row restricted to the name and project_number columns; errors and row_index\nare returned in full because showing reasons to company readers is the purpose of the field.\n",
+      "endpoint": "GET /companies/{company_id}/async_operations/{operation_id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "operations?version=2.0#get-operation-details"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

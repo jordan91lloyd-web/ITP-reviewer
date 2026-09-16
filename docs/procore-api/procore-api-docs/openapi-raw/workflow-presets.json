@@ -1,0 +1,3689 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Workflow Presets",
+  "x-product-category": "Core",
+  "x-tool-category": "Workflows",
+  "x-resource-name": "Workflow Presets",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/workflows/presets": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Workflow Presets (Project)",
+    "description": "Get a list of Workflow Presets",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "parameters": [
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "filters[tool_type]",
+      "in": "query",
+      "description": "Filter by tool type",
+      "required": true,
+      "explode": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[tool_subtype]",
+      "in": "query",
+      "description": "Filter by tool subtype",
+      "required": false,
+      "explode": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[is_default]",
+      "in": "query",
+      "description": "Filter by default preset. When true, returns only presets marked as default. When false, returns only non-default presets.",
+      "required": false,
+      "explode": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[is_valid]",
+      "in": "query",
+      "description": "Filter by configuration validity. When true, returns only presets with valid configuration (no configuration or external errors). When false, returns only presets with invalid configuration. When omitted, returns all presets for the tool type without filtering by validity.",
+      "required": false,
+      "explode": false,
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow::Templates::Presets (Index)",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "List of presets",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Template Preset ID",
+              "example": "30"
+             },
+             "valid": {
+              "type": "boolean",
+              "description": "If true, this configured template is ready to use to generate an instance\n"
+             },
+             "default": {
+              "type": "boolean",
+              "description": "If true, this configured template will be used by default for this tool\n"
+             },
+             "template": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Workflow Template ID",
+                "example": "2"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name of the Workflow Template",
+                "example": "Super neat workflow"
+               },
+               "last_published_version_id": {
+                "type": "string",
+                "description": "Last published version of the Workflow template",
+                "example": "1002"
+               },
+               "format": {
+                "type": "string",
+                "description": "Workflow layout format (`diagram` or `linear`).",
+                "enum": [
+                 "diagram",
+                 "linear"
+                ],
+                "example": "diagram"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets',\n  qs: {\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[tool_type]': 'SOME_STRING_VALUE',\n    'filters[tool_subtype]': 'SOME_STRING_VALUE',\n    'filters[is_default]': 'SOME_BOOLEAN_VALUE',\n    'filters[is_valid]': 'SOME_BOOLEAN_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets?per_page=SOME_INTEGER_VALUE&filters%5Btool_type%5D=SOME_STRING_VALUE&filters%5Btool_subtype%5D=SOME_STRING_VALUE&filters%5Bis_default%5D=SOME_BOOLEAN_VALUE&filters%5Bis_valid%5D=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets?per_page=SOME_INTEGER_VALUE&filters%5Btool_type%5D=SOME_STRING_VALUE&filters%5Btool_subtype%5D=SOME_STRING_VALUE&filters%5Bis_default%5D=SOME_BOOLEAN_VALUE&filters%5Bis_valid%5D=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets?per_page=SOME_INTEGER_VALUE&filters%5Btool_type%5D=SOME_STRING_VALUE&filters%5Btool_subtype%5D=SOME_STRING_VALUE&filters%5Bis_default%5D=SOME_BOOLEAN_VALUE&filters%5Bis_valid%5D=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "V2 API Release",
+      "description": "Part of our new batch of V2 APIs for Workflows.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/workflows/presets",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#list-workflow-presets-project"
+     },
+     {
+      "summary": "List Workflow Presets - is_default filter",
+      "description": "List Workflow Presets (GET) now supports an optional filters[is_default] query parameter.\nWhen true, returns only presets marked as default. When false, returns only non-default presets.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/workflows/presets",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-02-26",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#list-workflow-presets-project"
+     },
+     {
+      "summary": "List Workflow Presets - is_valid filter",
+      "description": "List Workflow Presets (GET) now supports an optional filters[is_valid] query parameter.\nWhen true, returns only presets considered valid.\nWhen false, returns only presets considered invalid.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/workflows/presets",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-02-26",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#list-workflow-presets-project"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/workflows/presets": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Workflow Presets (Company)",
+    "description": "Get a list of Workflow Presets",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "parameters": [
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "filters[tool_type]",
+      "in": "query",
+      "description": "Filter by tool type",
+      "required": true,
+      "explode": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[tool_subtype]",
+      "in": "query",
+      "description": "Filter by tool subtype",
+      "required": false,
+      "explode": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[is_default]",
+      "in": "query",
+      "description": "Filter by default preset. When true, returns only presets marked as default. When false, returns only non-default presets.",
+      "required": false,
+      "explode": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[is_valid]",
+      "in": "query",
+      "description": "Filter by configuration validity. When true, returns only presets with valid configuration (no configuration or external errors). When false, returns only presets with invalid configuration. When omitted, returns all presets for the tool type without filtering by validity.",
+      "required": false,
+      "explode": false,
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow::Templates::Presets (Index)",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "List of presets",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Template Preset ID",
+              "example": "30"
+             },
+             "valid": {
+              "type": "boolean",
+              "description": "If true, this configured template is ready to use to generate an instance\n"
+             },
+             "default": {
+              "type": "boolean",
+              "description": "If true, this configured template will be used by default for this tool\n"
+             },
+             "template": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Workflow Template ID",
+                "example": "2"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name of the Workflow Template",
+                "example": "Super neat workflow"
+               },
+               "last_published_version_id": {
+                "type": "string",
+                "description": "Last published version of the Workflow template",
+                "example": "1002"
+               },
+               "format": {
+                "type": "string",
+                "description": "Workflow layout format (`diagram` or `linear`).",
+                "enum": [
+                 "diagram",
+                 "linear"
+                ],
+                "example": "diagram"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets',\n  qs: {\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[tool_type]': 'SOME_STRING_VALUE',\n    'filters[tool_subtype]': 'SOME_STRING_VALUE',\n    'filters[is_default]': 'SOME_BOOLEAN_VALUE',\n    'filters[is_valid]': 'SOME_BOOLEAN_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets?per_page=SOME_INTEGER_VALUE&filters%5Btool_type%5D=SOME_STRING_VALUE&filters%5Btool_subtype%5D=SOME_STRING_VALUE&filters%5Bis_default%5D=SOME_BOOLEAN_VALUE&filters%5Bis_valid%5D=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets?per_page=SOME_INTEGER_VALUE&filters%5Btool_type%5D=SOME_STRING_VALUE&filters%5Btool_subtype%5D=SOME_STRING_VALUE&filters%5Bis_default%5D=SOME_BOOLEAN_VALUE&filters%5Bis_valid%5D=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets?per_page=SOME_INTEGER_VALUE&filters%5Btool_type%5D=SOME_STRING_VALUE&filters%5Btool_subtype%5D=SOME_STRING_VALUE&filters%5Bis_default%5D=SOME_BOOLEAN_VALUE&filters%5Bis_valid%5D=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "V2 API Release",
+      "description": "Part of our new batch of V2 APIs for Workflows.",
+      "endpoint": "GET /companies/{company_id}/workflows/presets",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#list-workflow-presets-company"
+     },
+     {
+      "summary": "List Workflow Presets - is_default filter",
+      "description": "List Workflow Presets (GET) now supports an optional filters[is_default] query parameter.\nWhen true, returns only presets marked as default. When false, returns only non-default presets.",
+      "endpoint": "GET /companies/{company_id}/workflows/presets",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-02-26",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#list-workflow-presets-company"
+     },
+     {
+      "summary": "List Workflow Presets - is_valid filter",
+      "description": "List Workflow Presets (GET) now supports an optional filters[is_valid] query parameter.\nWhen true, returns only presets whose configuration is considered valid.\nWhen false, returns only presets whose configuration is considered invalid.",
+      "endpoint": "GET /companies/{company_id}/workflows/presets",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-02-26",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#list-workflow-presets-company"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/workflows/presets/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier for the workflow preset",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Workflow Preset (Project)",
+    "description": "Get details of a specific workflow preset.",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Preset (Show)",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Workflow preset details",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for the workflow preset",
+             "example": "30"
+            },
+            "valid": {
+             "type": "boolean",
+             "description": "If true, this preset has a valid configuration and is ready to use for new instances\n"
+            },
+            "default": {
+             "type": "boolean",
+             "description": "If true, this preset will be used by default for this tool\n"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was created",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was last updated",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "template": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier of the workflow template",
+               "example": "2"
+              },
+              "last_published_version_id": {
+               "type": "string",
+               "description": "Unique identifier of the latest published version of the template",
+               "example": "2566",
+               "nullable": true
+              },
+              "format": {
+               "type": "string",
+               "description": "Workflow layout format (`diagram` or `linear`).",
+               "enum": [
+                "diagram",
+                "linear"
+               ],
+               "example": "diagram"
+              }
+             }
+            },
+            "workflow_manager": {
+             "description": "Workflow manager",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the workflow manager",
+               "example": "161072"
+              },
+              "login": {
+               "type": "string",
+               "description": "Workflow manager login",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the workflow manager",
+               "example": "Carl the Contractor"
+              },
+              "company": {
+               "type": "object",
+               "description": "Workflow manager's company",
+               "nullable": true,
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "Name of the company",
+                 "example": "Procore"
+                }
+               }
+              }
+             }
+            },
+            "distribution_list": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the distribution list",
+               "example": "1"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the distribution list",
+               "example": "Project Managers"
+              }
+             }
+            },
+            "responsible_group_memberships": {
+             "type": "array",
+             "description": "Associations between assignees and responsible groups",
+             "items": {
+              "type": "object",
+              "properties": {
+               "responsible_group_uuid": {
+                "type": "string",
+                "description": "UUID of the responsible group",
+                "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+               },
+               "assignees": {
+                "type": "array",
+                "description": "List of assignees in the responsible group",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Unique identifier for the assignee",
+                   "example": "161072"
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Assignee login",
+                   "example": "carl.contractor@example.com"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Name of the assignee",
+                   "example": "Carl the Contractor"
+                  },
+                  "company_name": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Vendor company name for the assignee when one is associated in the requested company context",
+                   "example": "Brickworks"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "individual_assignees": {
+             "type": "array",
+             "description": "Individual assignees per step, enriched with login information",
+             "items": {
+              "type": "object",
+              "properties": {
+               "step_uuid": {
+                "type": "string",
+                "description": "UUID of the step this assignee belongs to",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "logins": {
+                "type": "array",
+                "description": "List of individual assignee logins for the step",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Login information ID of the assignee",
+                   "example": "161072"
+                  },
+                  "required": {
+                   "type": "boolean",
+                   "description": "Whether the assignee's response is required",
+                   "example": true
+                  },
+                  "role_type": {
+                   "type": "string",
+                   "enum": [
+                    "responder",
+                    "commenter"
+                   ],
+                   "description": "Role of the individual assignee on this step.",
+                   "example": "responder"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Full name of the assignee",
+                   "example": "Carl the Contractor",
+                   "nullable": true
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Email login of the assignee",
+                   "example": "carl.contractor@example.com",
+                   "nullable": true
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added role_type to individual_assignees on workflow preset show",
+      "description": "Added a `role_type` field on each `individual_assignees[].logins[]` entry in the workflow preset show response. Indicates the responsibility role of the individual assignee on the step: `responder` or `commenter`.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/workflows/presets/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-12",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#get-workflow-preset-project"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Workflow Preset (Project)",
+    "description": "Updates a workflow preset for a project tool.",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Workflow Presets Assignees",
+        "properties": {
+         "default": {
+          "type": "boolean",
+          "description": "Indicates if this is the default preset",
+          "example": true
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Preset (Show)",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Workflow preset details",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for the workflow preset",
+             "example": "30"
+            },
+            "valid": {
+             "type": "boolean",
+             "description": "If true, this preset has a valid configuration and is ready to use for new instances\n"
+            },
+            "default": {
+             "type": "boolean",
+             "description": "If true, this preset will be used by default for this tool\n"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was created",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was last updated",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "template": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier of the workflow template",
+               "example": "2"
+              },
+              "last_published_version_id": {
+               "type": "string",
+               "description": "Unique identifier of the latest published version of the template",
+               "example": "2566",
+               "nullable": true
+              },
+              "format": {
+               "type": "string",
+               "description": "Workflow layout format (`diagram` or `linear`).",
+               "enum": [
+                "diagram",
+                "linear"
+               ],
+               "example": "diagram"
+              }
+             }
+            },
+            "workflow_manager": {
+             "description": "Workflow manager",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the workflow manager",
+               "example": "161072"
+              },
+              "login": {
+               "type": "string",
+               "description": "Workflow manager login",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the workflow manager",
+               "example": "Carl the Contractor"
+              },
+              "company": {
+               "type": "object",
+               "description": "Workflow manager's company",
+               "nullable": true,
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "Name of the company",
+                 "example": "Procore"
+                }
+               }
+              }
+             }
+            },
+            "distribution_list": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the distribution list",
+               "example": "1"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the distribution list",
+               "example": "Project Managers"
+              }
+             }
+            },
+            "responsible_group_memberships": {
+             "type": "array",
+             "description": "Associations between assignees and responsible groups",
+             "items": {
+              "type": "object",
+              "properties": {
+               "responsible_group_uuid": {
+                "type": "string",
+                "description": "UUID of the responsible group",
+                "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+               },
+               "assignees": {
+                "type": "array",
+                "description": "List of assignees in the responsible group",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Unique identifier for the assignee",
+                   "example": "161072"
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Assignee login",
+                   "example": "carl.contractor@example.com"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Name of the assignee",
+                   "example": "Carl the Contractor"
+                  },
+                  "company_name": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Vendor company name for the assignee when one is associated in the requested company context",
+                   "example": "Brickworks"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "individual_assignees": {
+             "type": "array",
+             "description": "Individual assignees per step, enriched with login information",
+             "items": {
+              "type": "object",
+              "properties": {
+               "step_uuid": {
+                "type": "string",
+                "description": "UUID of the step this assignee belongs to",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "logins": {
+                "type": "array",
+                "description": "List of individual assignee logins for the step",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Login information ID of the assignee",
+                   "example": "161072"
+                  },
+                  "required": {
+                   "type": "boolean",
+                   "description": "Whether the assignee's response is required",
+                   "example": true
+                  },
+                  "role_type": {
+                   "type": "string",
+                   "enum": [
+                    "responder",
+                    "commenter"
+                   ],
+                   "description": "Role of the individual assignee on this step.",
+                   "example": "responder"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Full name of the assignee",
+                   "example": "Carl the Contractor",
+                   "nullable": true
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Email login of the assignee",
+                   "example": "carl.contractor@example.com",
+                   "nullable": true
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {default: true},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"default\\\":true}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"default\":true}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"default\\\":true}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "New Update Preset API",
+      "description": "Added new API to set the default flag for a preset.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/workflows/presets/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-01-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#update-workflow-preset-project"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/workflows/presets/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier for the workflow preset",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Workflow Preset (Company)",
+    "description": "Get details of a specific workflow preset.",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Preset (Show)",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Workflow preset details",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for the workflow preset",
+             "example": "30"
+            },
+            "valid": {
+             "type": "boolean",
+             "description": "If true, this preset has a valid configuration and is ready to use for new instances\n"
+            },
+            "default": {
+             "type": "boolean",
+             "description": "If true, this preset will be used by default for this tool\n"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was created",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was last updated",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "template": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier of the workflow template",
+               "example": "2"
+              },
+              "last_published_version_id": {
+               "type": "string",
+               "description": "Unique identifier of the latest published version of the template",
+               "example": "2566",
+               "nullable": true
+              },
+              "format": {
+               "type": "string",
+               "description": "Workflow layout format (`diagram` or `linear`).",
+               "enum": [
+                "diagram",
+                "linear"
+               ],
+               "example": "diagram"
+              }
+             }
+            },
+            "workflow_manager": {
+             "description": "Workflow manager",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the workflow manager",
+               "example": "161072"
+              },
+              "login": {
+               "type": "string",
+               "description": "Workflow manager login",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the workflow manager",
+               "example": "Carl the Contractor"
+              },
+              "company": {
+               "type": "object",
+               "description": "Workflow manager's company",
+               "nullable": true,
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "Name of the company",
+                 "example": "Procore"
+                }
+               }
+              }
+             }
+            },
+            "distribution_list": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the distribution list",
+               "example": "1"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the distribution list",
+               "example": "Project Managers"
+              }
+             }
+            },
+            "responsible_group_memberships": {
+             "type": "array",
+             "description": "Associations between assignees and responsible groups",
+             "items": {
+              "type": "object",
+              "properties": {
+               "responsible_group_uuid": {
+                "type": "string",
+                "description": "UUID of the responsible group",
+                "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+               },
+               "assignees": {
+                "type": "array",
+                "description": "List of assignees in the responsible group",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Unique identifier for the assignee",
+                   "example": "161072"
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Assignee login",
+                   "example": "carl.contractor@example.com"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Name of the assignee",
+                   "example": "Carl the Contractor"
+                  },
+                  "company_name": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Vendor company name for the assignee when one is associated in the requested company context",
+                   "example": "Brickworks"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "individual_assignees": {
+             "type": "array",
+             "description": "Individual assignees per step, enriched with login information",
+             "items": {
+              "type": "object",
+              "properties": {
+               "step_uuid": {
+                "type": "string",
+                "description": "UUID of the step this assignee belongs to",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "logins": {
+                "type": "array",
+                "description": "List of individual assignee logins for the step",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Login information ID of the assignee",
+                   "example": "161072"
+                  },
+                  "required": {
+                   "type": "boolean",
+                   "description": "Whether the assignee's response is required",
+                   "example": true
+                  },
+                  "role_type": {
+                   "type": "string",
+                   "enum": [
+                    "responder",
+                    "commenter"
+                   ],
+                   "description": "Role of the individual assignee on this step.",
+                   "example": "responder"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Full name of the assignee",
+                   "example": "Carl the Contractor",
+                   "nullable": true
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Email login of the assignee",
+                   "example": "carl.contractor@example.com",
+                   "nullable": true
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added role_type to individual_assignees on workflow preset show (company)",
+      "description": "Added a `role_type` field on each `individual_assignees[].logins[]` entry in the company-level workflow preset show response. Indicates the responsibility role of the individual assignee on the step: `responder` or `commenter`.",
+      "endpoint": "GET /companies/{company_id}/workflows/presets/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-12",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#get-workflow-preset-company"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Workflow Preset (Company)",
+    "description": "Updates a workflow preset for a company tool.",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Workflow Presets Assignees",
+        "properties": {
+         "default": {
+          "type": "boolean",
+          "description": "Indicates if this is the default preset",
+          "example": true
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Preset (Show)",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Workflow preset details",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for the workflow preset",
+             "example": "30"
+            },
+            "valid": {
+             "type": "boolean",
+             "description": "If true, this preset has a valid configuration and is ready to use for new instances\n"
+            },
+            "default": {
+             "type": "boolean",
+             "description": "If true, this preset will be used by default for this tool\n"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was created",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the preset was last updated",
+             "example": "2020-01-01T00:00:00Z"
+            },
+            "template": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier of the workflow template",
+               "example": "2"
+              },
+              "last_published_version_id": {
+               "type": "string",
+               "description": "Unique identifier of the latest published version of the template",
+               "example": "2566",
+               "nullable": true
+              },
+              "format": {
+               "type": "string",
+               "description": "Workflow layout format (`diagram` or `linear`).",
+               "enum": [
+                "diagram",
+                "linear"
+               ],
+               "example": "diagram"
+              }
+             }
+            },
+            "workflow_manager": {
+             "description": "Workflow manager",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the workflow manager",
+               "example": "161072"
+              },
+              "login": {
+               "type": "string",
+               "description": "Workflow manager login",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the workflow manager",
+               "example": "Carl the Contractor"
+              },
+              "company": {
+               "type": "object",
+               "description": "Workflow manager's company",
+               "nullable": true,
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "Name of the company",
+                 "example": "Procore"
+                }
+               }
+              }
+             }
+            },
+            "distribution_list": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the distribution list",
+               "example": "1"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the distribution list",
+               "example": "Project Managers"
+              }
+             }
+            },
+            "responsible_group_memberships": {
+             "type": "array",
+             "description": "Associations between assignees and responsible groups",
+             "items": {
+              "type": "object",
+              "properties": {
+               "responsible_group_uuid": {
+                "type": "string",
+                "description": "UUID of the responsible group",
+                "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+               },
+               "assignees": {
+                "type": "array",
+                "description": "List of assignees in the responsible group",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Unique identifier for the assignee",
+                   "example": "161072"
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Assignee login",
+                   "example": "carl.contractor@example.com"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Name of the assignee",
+                   "example": "Carl the Contractor"
+                  },
+                  "company_name": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Vendor company name for the assignee when one is associated in the requested company context",
+                   "example": "Brickworks"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "individual_assignees": {
+             "type": "array",
+             "description": "Individual assignees per step, enriched with login information",
+             "items": {
+              "type": "object",
+              "properties": {
+               "step_uuid": {
+                "type": "string",
+                "description": "UUID of the step this assignee belongs to",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "logins": {
+                "type": "array",
+                "description": "List of individual assignee logins for the step",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Login information ID of the assignee",
+                   "example": "161072"
+                  },
+                  "required": {
+                   "type": "boolean",
+                   "description": "Whether the assignee's response is required",
+                   "example": true
+                  },
+                  "role_type": {
+                   "type": "string",
+                   "enum": [
+                    "responder",
+                    "commenter"
+                   ],
+                   "description": "Role of the individual assignee on this step.",
+                   "example": "responder"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Full name of the assignee",
+                   "example": "Carl the Contractor",
+                   "nullable": true
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Email login of the assignee",
+                   "example": "carl.contractor@example.com",
+                   "nullable": true
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {default: true},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"default\\\":true}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"default\":true}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"default\\\":true}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "New Update Preset API",
+      "description": "Added new API to set the default flag for a preset.",
+      "endpoint": "PATCH /companies/{company_id}/workflows/presets/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-01-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#update-workflow-preset-company"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/workflows/presets/{id}/assignees": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier for the resource.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Assignees and Workflow Manager (Project)",
+    "description": "Updates assignees and workflow manager for a workflow preset for a project tool.",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Workflow Presets Assignees",
+        "properties": {
+         "workflow_manager_id": {
+          "type": "string",
+          "description": "ID of the new workflow manager",
+          "example": "115654"
+         },
+         "responsible_group_memberships": {
+          "type": "array",
+          "description": "List of responsible groups memberships",
+          "items": {
+           "type": "object",
+           "properties": {
+            "uuid": {
+             "type": "string",
+             "description": "UUID of the group",
+             "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+            },
+            "login_ids": {
+             "type": "array",
+             "description": "List of assignee login ids",
+             "items": {
+              "type": "string",
+              "example": "161072"
+             }
+            }
+           }
+          }
+         },
+         "individual_assignees": {
+          "type": "array",
+          "description": "List of individual assignees per step",
+          "items": {
+           "type": "object",
+           "properties": {
+            "step_uuid": {
+             "type": "string",
+             "description": "UUID of the step",
+             "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+            },
+            "logins": {
+             "type": "array",
+             "description": "List of individual assignee logins",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Login ID of the assignee",
+                "example": "161072"
+               },
+               "required": {
+                "type": "boolean",
+                "description": "Whether this assignee's response is required",
+                "example": true
+               },
+               "role_type": {
+                "type": "string",
+                "enum": [
+                 "responder",
+                 "commenter"
+                ],
+                "description": "Optional role for this individual assignee on this step. When omitted, defaults to `responder`.",
+                "example": "responder"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Presets Assignees",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Result of the update",
+           "properties": {
+            "workflow_manager_id": {
+             "type": "string",
+             "description": "ID of the new workflow manager",
+             "example": "115654"
+            },
+            "responsible_group_memberships": {
+             "type": "array",
+             "description": "List of responsible groups memberships",
+             "items": {
+              "type": "object",
+              "properties": {
+               "uuid": {
+                "type": "string",
+                "description": "UUID of the group",
+                "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+               },
+               "login_ids": {
+                "type": "array",
+                "description": "List of assignees ids",
+                "items": {
+                 "type": "string",
+                 "example": "161072"
+                }
+               }
+              }
+             }
+            },
+            "individual_assignees": {
+             "type": "array",
+             "description": "List of individual assignees per step, enriched with login information",
+             "items": {
+              "type": "object",
+              "properties": {
+               "step_uuid": {
+                "type": "string",
+                "description": "UUID of the step this assignee belongs to",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "logins": {
+                "type": "array",
+                "description": "List of individual assignee logins for the step",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Login information ID of the assignee",
+                   "example": "161072"
+                  },
+                  "required": {
+                   "type": "boolean",
+                   "description": "Whether the assignee's response is required",
+                   "example": true
+                  },
+                  "role_type": {
+                   "type": "string",
+                   "enum": [
+                    "responder",
+                    "commenter"
+                   ],
+                   "description": "Role of the individual assignee on this step.",
+                   "example": "responder"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Full name of the assignee",
+                   "example": "Carl the Contractor",
+                   "nullable": true
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Email login of the assignee",
+                   "example": "carl.contractor@example.com",
+                   "nullable": true
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D/assignees',\n  headers: {'content-type': 'application/json'},\n  body: {\n    workflow_manager_id: '115654',\n    responsible_group_memberships: [{uuid: 'adb387e3-8deb-417e-b863-3b2cea6e07e1', login_ids: ['161072']}],\n    individual_assignees: [\n      {\n        step_uuid: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',\n        logins: [{id: '161072', required: true, role_type: 'responder'}]\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"workflow_manager_id\\\":\\\"115654\\\",\\\"responsible_group_memberships\\\":[{\\\"uuid\\\":\\\"adb387e3-8deb-417e-b863-3b2cea6e07e1\\\",\\\"login_ids\\\":[\\\"161072\\\"]}],\\\"individual_assignees\\\":[{\\\"step_uuid\\\":\\\"f47ac10b-58cc-4372-a567-0e02b2c3d479\\\",\\\"logins\\\":[{\\\"id\\\":\\\"161072\\\",\\\"required\\\":true,\\\"role_type\\\":\\\"responder\\\"}]}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D/assignees\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D/assignees \\\n  --header 'content-type: application/json' \\\n  --data '{\"workflow_manager_id\":\"115654\",\"responsible_group_memberships\":[{\"uuid\":\"adb387e3-8deb-417e-b863-3b2cea6e07e1\",\"login_ids\":[\"161072\"]}],\"individual_assignees\":[{\"step_uuid\":\"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\"logins\":[{\"id\":\"161072\",\"required\":true,\"role_type\":\"responder\"}]}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/presets/%7Bid%7D/assignees\"),\n    Content = new StringContent(\"{\\\"workflow_manager_id\\\":\\\"115654\\\",\\\"responsible_group_memberships\\\":[{\\\"uuid\\\":\\\"adb387e3-8deb-417e-b863-3b2cea6e07e1\\\",\\\"login_ids\\\":[\\\"161072\\\"]}],\\\"individual_assignees\\\":[{\\\"step_uuid\\\":\\\"f47ac10b-58cc-4372-a567-0e02b2c3d479\\\",\\\"logins\\\":[{\\\"id\\\":\\\"161072\\\",\\\"required\\\":true,\\\"role_type\\\":\\\"responder\\\"}]}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added role_type to individual_assignees on preset assignees",
+      "description": "Added an optional `role_type` field on each `individual_assignees[].logins[]` entry in the preset assignees request payload. Accepted values are `responder` and `commenter`; defaults to `responder` when omitted. The same field is now returned on each `individual_assignees[].logins[]` entry in the response.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/workflows/presets/{id}/assignees",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-12",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#update-assignees-and-workflow-manager-project"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/workflows/presets/{id}/assignees": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier for the resource.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Assignees and Workflow Manager (Company)",
+    "description": "Updates assignees and workflow manager for a workflow preset for a company tool.",
+    "tags": [
+     "Workflow Presets"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Workflow Presets Assignees",
+        "properties": {
+         "workflow_manager_id": {
+          "type": "string",
+          "description": "ID of the new workflow manager",
+          "example": "115654"
+         },
+         "responsible_group_memberships": {
+          "type": "array",
+          "description": "List of responsible groups memberships",
+          "items": {
+           "type": "object",
+           "properties": {
+            "uuid": {
+             "type": "string",
+             "description": "UUID of the group",
+             "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+            },
+            "login_ids": {
+             "type": "array",
+             "description": "List of assignee login ids",
+             "items": {
+              "type": "string",
+              "example": "161072"
+             }
+            }
+           }
+          }
+         },
+         "individual_assignees": {
+          "type": "array",
+          "description": "List of individual assignees per step",
+          "items": {
+           "type": "object",
+           "properties": {
+            "step_uuid": {
+             "type": "string",
+             "description": "UUID of the step",
+             "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+            },
+            "logins": {
+             "type": "array",
+             "description": "List of individual assignee logins",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Login ID of the assignee",
+                "example": "161072"
+               },
+               "required": {
+                "type": "boolean",
+                "description": "Whether this assignee's response is required",
+                "example": true
+               },
+               "role_type": {
+                "type": "string",
+                "enum": [
+                 "responder",
+                 "commenter"
+                ],
+                "description": "Optional role for this individual assignee on this step. When omitted, defaults to `responder`.",
+                "example": "responder"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Presets Assignees",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Result of the update",
+           "properties": {
+            "workflow_manager_id": {
+             "type": "string",
+             "description": "ID of the new workflow manager",
+             "example": "115654"
+            },
+            "responsible_group_memberships": {
+             "type": "array",
+             "description": "List of responsible groups memberships",
+             "items": {
+              "type": "object",
+              "properties": {
+               "uuid": {
+                "type": "string",
+                "description": "UUID of the group",
+                "example": "adb387e3-8deb-417e-b863-3b2cea6e07e1"
+               },
+               "login_ids": {
+                "type": "array",
+                "description": "List of assignees ids",
+                "items": {
+                 "type": "string",
+                 "example": "161072"
+                }
+               }
+              }
+             }
+            },
+            "individual_assignees": {
+             "type": "array",
+             "description": "List of individual assignees per step, enriched with login information",
+             "items": {
+              "type": "object",
+              "properties": {
+               "step_uuid": {
+                "type": "string",
+                "description": "UUID of the step this assignee belongs to",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "logins": {
+                "type": "array",
+                "description": "List of individual assignee logins for the step",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Login information ID of the assignee",
+                   "example": "161072"
+                  },
+                  "required": {
+                   "type": "boolean",
+                   "description": "Whether the assignee's response is required",
+                   "example": true
+                  },
+                  "role_type": {
+                   "type": "string",
+                   "enum": [
+                    "responder",
+                    "commenter"
+                   ],
+                   "description": "Role of the individual assignee on this step.",
+                   "example": "responder"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Full name of the assignee",
+                   "example": "Carl the Contractor",
+                   "nullable": true
+                  },
+                  "login": {
+                   "type": "string",
+                   "description": "Email login of the assignee",
+                   "example": "carl.contractor@example.com",
+                   "nullable": true
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D/assignees',\n  headers: {'content-type': 'application/json'},\n  body: {\n    workflow_manager_id: '115654',\n    responsible_group_memberships: [{uuid: 'adb387e3-8deb-417e-b863-3b2cea6e07e1', login_ids: ['161072']}],\n    individual_assignees: [\n      {\n        step_uuid: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',\n        logins: [{id: '161072', required: true, role_type: 'responder'}]\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"workflow_manager_id\\\":\\\"115654\\\",\\\"responsible_group_memberships\\\":[{\\\"uuid\\\":\\\"adb387e3-8deb-417e-b863-3b2cea6e07e1\\\",\\\"login_ids\\\":[\\\"161072\\\"]}],\\\"individual_assignees\\\":[{\\\"step_uuid\\\":\\\"f47ac10b-58cc-4372-a567-0e02b2c3d479\\\",\\\"logins\\\":[{\\\"id\\\":\\\"161072\\\",\\\"required\\\":true,\\\"role_type\\\":\\\"responder\\\"}]}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D/assignees\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D/assignees \\\n  --header 'content-type: application/json' \\\n  --data '{\"workflow_manager_id\":\"115654\",\"responsible_group_memberships\":[{\"uuid\":\"adb387e3-8deb-417e-b863-3b2cea6e07e1\",\"login_ids\":[\"161072\"]}],\"individual_assignees\":[{\"step_uuid\":\"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\"logins\":[{\"id\":\"161072\",\"required\":true,\"role_type\":\"responder\"}]}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/presets/%7Bid%7D/assignees\"),\n    Content = new StringContent(\"{\\\"workflow_manager_id\\\":\\\"115654\\\",\\\"responsible_group_memberships\\\":[{\\\"uuid\\\":\\\"adb387e3-8deb-417e-b863-3b2cea6e07e1\\\",\\\"login_ids\\\":[\\\"161072\\\"]}],\\\"individual_assignees\\\":[{\\\"step_uuid\\\":\\\"f47ac10b-58cc-4372-a567-0e02b2c3d479\\\",\\\"logins\\\":[{\\\"id\\\":\\\"161072\\\",\\\"required\\\":true,\\\"role_type\\\":\\\"responder\\\"}]}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added role_type to individual_assignees on preset assignees (company)",
+      "description": "Added an optional `role_type` field on each `individual_assignees[].logins[]` entry in the company-level preset assignees request payload. Accepted values are `responder` and `commenter`; defaults to `responder` when omitted. The same field is now returned on each `individual_assignees[].logins[]` entry in the response.",
+      "endpoint": "PATCH /companies/{company_id}/workflows/presets/{id}/assignees",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-12",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-presets?version=2.0#update-assignees-and-workflow-manager-company"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

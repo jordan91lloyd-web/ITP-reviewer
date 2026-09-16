@@ -1,0 +1,1466 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "App Configurations",
+  "x-product-category": "Platform - Developer Tools",
+  "x-tool-category": "App Marketplace",
+  "x-resource-name": "App Configurations",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/app_configurations": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "sort",
+     "in": "query",
+     "description": "Direction (asc/desc) can be controlled by the presence or absence of '-' before the sort parameter.",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "created_at",
+       "created_by",
+       "title",
+       "project_count",
+       "updated_at"
+      ]
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List app configurations",
+    "description": "Returns a list of app configurations on a given company or project",
+    "tags": [
+     "App Configurations"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[app_installation_id]",
+      "in": "query",
+      "description": "App installation ID",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[project_id]",
+      "in": "query",
+      "description": "Project ID",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "allOf": [
+           {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 999
+             },
+             "title": {
+              "type": "string",
+              "description": "Title of app configuration",
+              "example": "Procore Drive Project Configuration"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the login information.",
+                "example": 513
+               },
+               "name": {
+                "type": "string",
+                "description": "The name that is associated with the login information.",
+                "example": "Jane Doe"
+               },
+               "login": {
+                "type": "string",
+                "description": "The email address that is associated with the login information.",
+                "example": "jane.doe@example.com"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The UTC datetime for the creation of the resource in ISO 8601 format.",
+              "example": "2019-09-14T16:20:00Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The UTC datetime for the last update of the resource in ISO 8601 format.",
+              "example": "2019-09-14T16:20:00Z"
+             }
+            }
+           }
+          ],
+          "type": "object",
+          "properties": {
+           "app_installation_id": {
+            "type": "integer",
+            "description": "App Installation ID",
+            "example": 3559
+           },
+           "company_id": {
+            "type": "integer",
+            "description": "Company ID",
+            "example": 2217
+           },
+           "applies_to_all_projects": {
+            "type": "boolean",
+            "description": "Whether the app configuration applies to all projects under the company.",
+            "example": false
+           },
+           "applies_to_company": {
+            "type": "boolean",
+            "description": "Whether the app configuration is available from company routes.",
+            "example": false
+           },
+           "renderer": {
+            "type": "integer",
+            "description": "Renderer type for the app configuration.",
+            "example": 0
+           },
+           "manifest_url": {
+            "type": "string",
+            "description": "Presigned Temporary Url For Manifest Configuration",
+            "example": "https://www.example.com"
+           },
+           "projects": {
+            "description": "List of project ids the app configuration applies to",
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier for the project.",
+               "example": 99
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations',\n  qs: {\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[app_installation_id]': 'SOME_INTEGER_VALUE',\n    'filters[project_id]': 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations?sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bapp_installation_id%5D=SOME_INTEGER_VALUE&filters%5Bproject_id%5D=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations?sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bapp_installation_id%5D=SOME_INTEGER_VALUE&filters%5Bproject_id%5D=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations?sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bapp_installation_id%5D=SOME_INTEGER_VALUE&filters%5Bproject_id%5D=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Remove app name from index",
+      "description": "Retrieving app configurations will no longer return the app name they are associated to.",
+      "endpoint": "GET /companies/{company_id}/app_configurations",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2021-05-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "app-configurations?version=1.0#list-app-configurations"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create app configuration",
+    "description": "Create new app configuration for a specified project",
+    "tags": [
+     "App Configurations"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "app_installation_id",
+         "company_id",
+         "title",
+         "instance_configuration"
+        ],
+        "properties": {
+         "applies_to_all_projects": {
+          "type": "boolean",
+          "description": "Apply the app configuration to all projects under a company ( if set to true, project_ids field must be blank )",
+          "example": true
+         },
+         "applies_to_company": {
+          "type": "boolean",
+          "description": "Apply the app configuration to be available from company routes",
+          "example": true
+         },
+         "app_installation_id": {
+          "type": "integer",
+          "description": "App Installation ID",
+          "example": 3559
+         },
+         "company_id": {
+          "type": "integer",
+          "description": "Company ID"
+         },
+         "instance_configuration": {
+          "type": "object",
+          "example": {
+           "resource_id": 1287
+          },
+          "description": "App configuration values for a set of projects."
+         },
+         "project_ids": {
+          "type": "array",
+          "description": "A list of projects which will have the app configuration",
+          "items": {
+           "type": "integer",
+           "description": "Project ID",
+           "example": "44124, 44155"
+          }
+         },
+         "title": {
+          "type": "string",
+          "description": "Single title for app configurations",
+          "example": "Drone Deploy Project Configurations"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 999
+            },
+            "title": {
+             "type": "string",
+             "description": "Title of app configuration",
+             "example": "Procore Drive Project Configuration"
+            },
+            "created_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the login information.",
+               "example": 513
+              },
+              "name": {
+               "type": "string",
+               "description": "The name that is associated with the login information.",
+               "example": "Jane Doe"
+              },
+              "login": {
+               "type": "string",
+               "description": "The email address that is associated with the login information.",
+               "example": "jane.doe@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "The UTC datetime for the creation of the resource in ISO 8601 format.",
+             "example": "2019-09-14T16:20:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "The UTC datetime for the last update of the resource in ISO 8601 format.",
+             "example": "2019-09-14T16:20:00Z"
+            }
+           }
+          }
+         ],
+         "type": "object",
+         "properties": {
+          "app_installation_id": {
+           "type": "integer",
+           "description": "App Installation ID",
+           "example": 3559
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "Company ID",
+           "example": 2217
+          },
+          "applies_to_all_projects": {
+           "type": "boolean",
+           "description": "Whether the app configuration applies to all projects under the company.",
+           "example": false
+          },
+          "applies_to_company": {
+           "type": "boolean",
+           "description": "Whether the app configuration is available from company routes.",
+           "example": false
+          },
+          "renderer": {
+           "type": "integer",
+           "description": "Renderer type for the app configuration.",
+           "example": 0
+          },
+          "manifest_url": {
+           "type": "string",
+           "description": "Presigned Temporary Url For Manifest Configuration",
+           "example": "https://www.example.com"
+          },
+          "projects": {
+           "description": "List of project ids the app configuration applies to",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for the project.",
+              "example": 99
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessible Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations',\n  qs: {sort: 'SOME_STRING_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {\n    applies_to_all_projects: true,\n    applies_to_company: true,\n    app_installation_id: 3559,\n    company_id: 0,\n    instance_configuration: {resource_id: 1287},\n    project_ids: ['44124, 44155'],\n    title: 'Drone Deploy Project Configurations'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"applies_to_all_projects\\\":true,\\\"applies_to_company\\\":true,\\\"app_installation_id\\\":3559,\\\"company_id\\\":0,\\\"instance_configuration\\\":{\\\"resource_id\\\":1287},\\\"project_ids\\\":[\\\"44124, 44155\\\"],\\\"title\\\":\\\"Drone Deploy Project Configurations\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations?sort=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations?sort=SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"applies_to_all_projects\":true,\"applies_to_company\":true,\"app_installation_id\":3559,\"company_id\":0,\"instance_configuration\":{\"resource_id\":1287},\"project_ids\":[\"44124, 44155\"],\"title\":\"Drone Deploy Project Configurations\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations?sort=SOME_STRING_VALUE\"),\n    Content = new StringContent(\"{\\\"applies_to_all_projects\\\":true,\\\"applies_to_company\\\":true,\\\"app_installation_id\\\":3559,\\\"company_id\\\":0,\\\"instance_configuration\\\":{\\\"resource_id\\\":1287},\\\"project_ids\\\":[\\\"44124, 44155\\\"],\\\"title\\\":\\\"Drone Deploy Project Configurations\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/companies/{company_id}/app_configurations/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "App Configuration ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show app configuration",
+    "description": "Get the details of a single app configuration",
+    "tags": [
+     "App Configurations"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 999
+            },
+            "title": {
+             "type": "string",
+             "description": "Title of app configuration",
+             "example": "Procore Drive Project Configuration"
+            },
+            "created_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the login information.",
+               "example": 513
+              },
+              "name": {
+               "type": "string",
+               "description": "The name that is associated with the login information.",
+               "example": "Jane Doe"
+              },
+              "login": {
+               "type": "string",
+               "description": "The email address that is associated with the login information.",
+               "example": "jane.doe@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "The UTC datetime for the creation of the resource in ISO 8601 format.",
+             "example": "2019-09-14T16:20:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "The UTC datetime for the last update of the resource in ISO 8601 format.",
+             "example": "2019-09-14T16:20:00Z"
+            }
+           }
+          }
+         ],
+         "type": "object",
+         "properties": {
+          "app_installation_id": {
+           "type": "integer",
+           "description": "App Installation ID",
+           "example": 3559
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "Company ID",
+           "example": 2217
+          },
+          "applies_to_all_projects": {
+           "type": "boolean",
+           "description": "Whether the app configuration applies to all projects under the company.",
+           "example": false
+          },
+          "applies_to_company": {
+           "type": "boolean",
+           "description": "Whether the app configuration is available from company routes.",
+           "example": false
+          },
+          "renderer": {
+           "type": "integer",
+           "description": "Renderer type for the app configuration.",
+           "example": 0
+          },
+          "manifest_url": {
+           "type": "string",
+           "description": "Presigned Temporary Url For Manifest Configuration",
+           "example": "https://www.example.com"
+          },
+          "projects": {
+           "description": "List of project ids the app configuration applies to",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for the project.",
+              "example": 99
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Remove app name from show",
+      "description": "Retrieving an app configuration will no longer return the app name it is associated to.",
+      "endpoint": "GET /companies/{company_id}/app_configurations/{id}",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2021-05-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "app-configurations?version=1.0#show-app-configuration"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update app configuration",
+    "description": "Change the configuration of an existing app configuration",
+    "tags": [
+     "App Configurations"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "applies_to_all_projects": {
+          "type": "boolean",
+          "description": "Apply the app configuration to all projects under a company ( if set to true, project_ids field must be blank )",
+          "example": true
+         },
+         "applies_to_company": {
+          "type": "boolean",
+          "description": "Apply the app configuration to be available from company routes",
+          "example": true
+         },
+         "instance_configuration": {
+          "type": "object",
+          "example": {
+           "resource_id": 1287
+          },
+          "description": "Configuration values for an configuration of an app installation."
+         },
+         "title": {
+          "type": "string",
+          "description": "Title for app configuration",
+          "example": "Procore Drive Project Configuration"
+         },
+         "project_ids": {
+          "type": "array",
+          "description": "A list of projects which will have the app configuration",
+          "items": {
+           "type": "integer",
+           "description": "Project ID",
+           "example": "44124, 44155"
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 999
+            },
+            "title": {
+             "type": "string",
+             "description": "Title of app configuration",
+             "example": "Procore Drive Project Configuration"
+            },
+            "created_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the login information.",
+               "example": 513
+              },
+              "name": {
+               "type": "string",
+               "description": "The name that is associated with the login information.",
+               "example": "Jane Doe"
+              },
+              "login": {
+               "type": "string",
+               "description": "The email address that is associated with the login information.",
+               "example": "jane.doe@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "The UTC datetime for the creation of the resource in ISO 8601 format.",
+             "example": "2019-09-14T16:20:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "The UTC datetime for the last update of the resource in ISO 8601 format.",
+             "example": "2019-09-14T16:20:00Z"
+            }
+           }
+          }
+         ],
+         "type": "object",
+         "properties": {
+          "app_installation_id": {
+           "type": "integer",
+           "description": "App Installation ID",
+           "example": 3559
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "Company ID",
+           "example": 2217
+          },
+          "applies_to_all_projects": {
+           "type": "boolean",
+           "description": "Whether the app configuration applies to all projects under the company.",
+           "example": false
+          },
+          "applies_to_company": {
+           "type": "boolean",
+           "description": "Whether the app configuration is available from company routes.",
+           "example": false
+          },
+          "renderer": {
+           "type": "integer",
+           "description": "Renderer type for the app configuration.",
+           "example": 0
+          },
+          "manifest_url": {
+           "type": "string",
+           "description": "Presigned Temporary Url For Manifest Configuration",
+           "example": "https://www.example.com"
+          },
+          "projects": {
+           "description": "List of project ids the app configuration applies to",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for the project.",
+              "example": 99
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    applies_to_all_projects: true,\n    applies_to_company: true,\n    instance_configuration: {resource_id: 1287},\n    title: 'Procore Drive Project Configuration',\n    project_ids: ['44124, 44155']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"applies_to_all_projects\\\":true,\\\"applies_to_company\\\":true,\\\"instance_configuration\\\":{\\\"resource_id\\\":1287},\\\"title\\\":\\\"Procore Drive Project Configuration\\\",\\\"project_ids\\\":[\\\"44124, 44155\\\"]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"applies_to_all_projects\":true,\"applies_to_company\":true,\"instance_configuration\":{\"resource_id\":1287},\"title\":\"Procore Drive Project Configuration\",\"project_ids\":[\"44124, 44155\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"applies_to_all_projects\\\":true,\\\"applies_to_company\\\":true,\\\"instance_configuration\\\":{\\\"resource_id\\\":1287},\\\"title\\\":\\\"Procore Drive Project Configuration\\\",\\\"project_ids\\\":[\\\"44124, 44155\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete app configuration",
+    "description": "Deletes an app configuration",
+    "tags": [
+     "App Configurations"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/app_configurations/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

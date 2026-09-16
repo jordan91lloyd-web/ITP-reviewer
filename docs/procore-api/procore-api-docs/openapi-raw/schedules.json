@@ -1,0 +1,554 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Schedules",
+  "version": "2.0",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Schedules",
+  "x-tool-category": "Scheduling",
+  "x-product-lines": [
+   "schedule-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules": {
+   "get": {
+    "tags": [
+     "schedules-controller"
+    ],
+    "summary": "List Schedules",
+    "description": "List all schedules in a project. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "listSchedules",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "filters[schedule_id]",
+      "in": "query",
+      "description": "Filter schedules by schedule_id",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[schedule_name]",
+      "in": "query",
+      "description": "Filter schedules by name",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[schedule_type]",
+      "in": "query",
+      "description": "Filter schedules by type. Values must exactly match a valid schedule type (case-sensitive)",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "ONBOARDING",
+        "READONLY_PROJECT_SCHEDULE",
+        "LOOKAHEAD",
+        "READONLY_ONBOARDING",
+        "IMPORTED_READ_WRITE_ONBOARDING",
+        "IMPORTED_READ_WRITE_PROJECT_SCHEDULE",
+        "LOOKAHEAD_ONBOARDING"
+       ]
+      }
+     },
+     {
+      "name": "filters[is_active]",
+      "in": "query",
+      "description": "Filter schedules by active status",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[updated_at][gt]",
+      "in": "query",
+      "description": "Filter for schedules updated after this timestamp (ISO 8601 instant)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort by supported fields. Accepts comma separated values to sort by multiple fields. Order is ascending by default, prefix field with '-' for descending",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "schedule_id",
+        "schedule_name",
+        "schedule_type",
+        "is_active",
+        "updated_at"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved schedules",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int32"
+        }
+       },
+       "Total": {
+        "description": "Total number of records available",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int64"
+        }
+       },
+       "Link": {
+        "description": "Link header for the first, prev, next, and the last page links",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "schedule_id": {
+              "type": "string",
+              "description": "The unique identifier for the schedule",
+              "example": "15",
+              "pattern": "^\\d+$"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "Procore Project ID",
+              "example": "12345",
+              "pattern": "^\\d+$"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Procore Company ID",
+              "example": "67890",
+              "pattern": "^\\d+$"
+             },
+             "schedule_name": {
+              "type": "string",
+              "description": "The name of the schedule",
+              "example": "Main Project Schedule"
+             },
+             "schedule_type": {
+              "type": "string",
+              "description": "Indicates whether the schedule type is project schedule or lookahead",
+              "example": "IMPORTED_READ_WRITE_PROJECT_SCHEDULE"
+             },
+             "is_active": {
+              "type": "boolean",
+              "description": "Flag to indicate whether the schedule is active or archived",
+              "example": true
+             },
+             "data_date": {
+              "type": "string",
+              "description": "Datetime string when the schedule's progress was last recorded in UTC ISO-8601 format",
+              "example": "2024-05-14T00:00:00Z"
+             },
+             "start_date": {
+              "type": "string",
+              "description": "The schedule's start date as a datetime string in UTC ISO-8601 format",
+              "example": "2024-05-01T00:00:00Z"
+             },
+             "calendar_id": {
+              "type": "string",
+              "description": "The schedule's default workday calendar",
+              "example": "101",
+              "pattern": "^\\d+$"
+             },
+             "parent_schedule_id": {
+              "type": "string",
+              "description": "The schedule_id of the associated project schedule if this schedule is a lookahead",
+              "example": "10",
+              "pattern": "^\\d+$"
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "The date and time the schedule was last modified in UTC",
+              "example": "2024-05-14T13:30:00Z"
+             },
+             "updated_by": {
+              "type": "string",
+              "description": "The user ID of the user who last modified the schedule",
+              "example": "999",
+              "pattern": "^\\d+$"
+             },
+             "created_at": {
+              "type": "string",
+              "description": "The date and time the schedule was created in UTC",
+              "example": "2024-05-14T13:30:00Z"
+             },
+             "created_by": {
+              "type": "string",
+              "description": "The user ID of the user who created the schedule",
+              "example": "999",
+              "pattern": "^\\d+$"
+             },
+             "deleted_at": {
+              "type": "string",
+              "description": "The date and time the schedule was deleted in UTC",
+              "example": "2024-05-14T13:30:00Z"
+             },
+             "deleted_by": {
+              "type": "string",
+              "description": "The user ID of the user who deleted the schedule",
+              "example": "999",
+              "pattern": "^\\d+$"
+             }
+            },
+            "required": [
+             "company_id",
+             "is_active",
+             "project_id",
+             "schedule_id",
+             "schedule_name",
+             "schedule_type"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules',\n  qs: {\n    'filters[schedule_id]': 'SOME_STRING_VALUE',\n    'filters[schedule_name]': 'SOME_STRING_VALUE',\n    'filters[schedule_type]': 'SOME_STRING_VALUE',\n    'filters[is_active]': 'SOME_BOOLEAN_VALUE',\n    'filters[updated_at][gt]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules?filters%5Bschedule_id%5D=SOME_STRING_VALUE&filters%5Bschedule_name%5D=SOME_STRING_VALUE&filters%5Bschedule_type%5D=SOME_STRING_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules?filters%5Bschedule_id%5D=SOME_STRING_VALUE&filters%5Bschedule_name%5D=SOME_STRING_VALUE&filters%5Bschedule_type%5D=SOME_STRING_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules?filters%5Bschedule_id%5D=SOME_STRING_VALUE&filters%5Bschedule_name%5D=SOME_STRING_VALUE&filters%5Bschedule_type%5D=SOME_STRING_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}": {
+   "get": {
+    "tags": [
+     "schedules-controller"
+    ],
+    "summary": "Get Schedule by ID",
+    "description": "Get a single schedule by id. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "getScheduleById",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved schedule",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "schedule_id": {
+             "type": "string",
+             "description": "The unique identifier for the schedule",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            },
+            "schedule_name": {
+             "type": "string",
+             "description": "The name of the schedule",
+             "example": "Main Project Schedule"
+            },
+            "schedule_type": {
+             "type": "string",
+             "description": "Indicates whether the schedule type is project schedule or lookahead",
+             "example": "IMPORTED_READ_WRITE_PROJECT_SCHEDULE"
+            },
+            "is_active": {
+             "type": "boolean",
+             "description": "Flag to indicate whether the schedule is active or archived",
+             "example": true
+            },
+            "data_date": {
+             "type": "string",
+             "description": "Datetime string when the schedule's progress was last recorded in UTC ISO-8601 format",
+             "example": "2024-05-14T00:00:00Z"
+            },
+            "start_date": {
+             "type": "string",
+             "description": "The schedule's start date as a datetime string in UTC ISO-8601 format",
+             "example": "2024-05-01T00:00:00Z"
+            },
+            "calendar_id": {
+             "type": "string",
+             "description": "The schedule's default workday calendar",
+             "example": "101",
+             "pattern": "^\\d+$"
+            },
+            "parent_schedule_id": {
+             "type": "string",
+             "description": "The schedule_id of the associated project schedule if this schedule is a lookahead",
+             "example": "10",
+             "pattern": "^\\d+$"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time the schedule was last modified in UTC",
+             "example": "2024-05-14T13:30:00Z"
+            },
+            "updated_by": {
+             "type": "string",
+             "description": "The user ID of the user who last modified the schedule",
+             "example": "999",
+             "pattern": "^\\d+$"
+            },
+            "created_at": {
+             "type": "string",
+             "description": "The date and time the schedule was created in UTC",
+             "example": "2024-05-14T13:30:00Z"
+            },
+            "created_by": {
+             "type": "string",
+             "description": "The user ID of the user who created the schedule",
+             "example": "999",
+             "pattern": "^\\d+$"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "The date and time the schedule was deleted in UTC",
+             "example": "2024-05-14T13:30:00Z"
+            },
+            "deleted_by": {
+             "type": "string",
+             "description": "The user ID of the user who deleted the schedule",
+             "example": "999",
+             "pattern": "^\\d+$"
+            }
+           },
+           "required": [
+            "company_id",
+            "is_active",
+            "project_id",
+            "schedule_id",
+            "schedule_name",
+            "schedule_type"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

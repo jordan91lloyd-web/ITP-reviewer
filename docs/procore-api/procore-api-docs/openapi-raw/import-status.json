@@ -1,0 +1,225 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Import Status",
+  "version": "2.0",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Import Status",
+  "x-tool-category": "Scheduling",
+  "x-product-lines": [
+   "schedule-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/imports/{job_id}": {
+   "get": {
+    "tags": [
+     "schedule-import-controller"
+    ],
+    "summary": "Get import status",
+    "description": "Get the status of an import job.",
+    "operationId": "getImportStatus",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "job_id",
+      "in": "path",
+      "description": "Import job id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Import status",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "job_id": {
+             "type": "string",
+             "description": "Import job id",
+             "example": "123"
+            },
+            "status": {
+             "type": "string",
+             "description": "Current status",
+             "enum": [
+              "queued",
+              "processing",
+              "completed",
+              "failed",
+              "none"
+             ],
+             "example": "processing"
+            },
+            "status_url": {
+             "type": "string",
+             "description": "URL to poll for status",
+             "example": "https://api.procore.com/rest/v2.0/..."
+            },
+            "finished_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "When the import job finished in UTC (ISO 8601)",
+             "example": "2024-01-15T10:30:45Z"
+            },
+            "errors": {
+             "description": "Present when status is failed (with optional detailed_log_url if logs exist), or when status is completed with warnings (warning message + detailed_log_url). Omitted on success with no logs.",
+             "type": "object",
+             "properties": {
+              "message": {
+               "type": "string",
+               "description": "Error or warning message"
+              },
+              "detailed_log_url": {
+               "type": "string",
+               "description": "URL to fetch detailed log. Omitted when there are no logs (e.g. failed with no logs)."
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "Import job or schedule not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string"
+               },
+               "message": {
+                "type": "string"
+               },
+               "source": {
+                "type": "string"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

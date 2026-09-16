@@ -1,0 +1,1149 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Calendars",
+  "version": "2.1",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Calendars",
+  "x-tool-category": "Scheduling",
+  "x-product-lines": [
+   "schedule-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.1/companies/{company_id}/projects/{project_id}/calendars": {
+   "get": {
+    "tags": [
+     "calendars-controller-v-21"
+    ],
+    "summary": "List Calendars (V2.1)",
+    "description": "List all calendars in a project associated with the Scheduling/Programming tool. V2.1 returns only source intervals (parent_interval_id IS NULL) and exposes the availability JSON on Exception intervals. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "listCalendars",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "filters[calendar_id]",
+      "in": "query",
+      "description": "Filter calendars by calendar_id",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[name]",
+      "in": "query",
+      "description": "Filter calendars by name",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[is_global]",
+      "in": "query",
+      "description": "Filter calendars by global status",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort by supported fields. Accepts comma separated values to sort by multiple fields. Order is ascending by default, prefix field with '-' for descending",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "calendar_id",
+        "name",
+        "is_global"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved calendars",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int32"
+        }
+       },
+       "Total": {
+        "description": "Total number of records available",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int64"
+        }
+       },
+       "Link": {
+        "description": "Link header for the first, prev, next, and the last page links",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "calendar_id": {
+              "type": "string",
+              "description": "The unique identifier for the calendar",
+              "example": "101",
+              "pattern": "^\\d+$"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the calendar",
+              "example": 5
+             },
+             "is_global": {
+              "type": "boolean",
+              "description": "Indicates if the calendar is available to all projects in the company",
+              "example": false
+             },
+             "hours_per_day": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The number of working hours in a day",
+              "example": 8
+             },
+             "days_per_week": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The number of working days in a week",
+              "example": 5
+             },
+             "days_per_month": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The number of working days in a month",
+              "example": 20
+             },
+             "project_id": {
+              "type": "string",
+              "description": "Procore Project ID",
+              "example": "12345",
+              "pattern": "^\\d+$"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Procore Company ID",
+              "example": "67890",
+              "pattern": "^\\d+$"
+             },
+             "calendar_intervals": {
+              "type": "array",
+              "description": "The intervals associated with this calendar",
+              "items": {
+               "type": "object",
+               "properties": {
+                "interval_id": {
+                 "type": "string",
+                 "description": "The unique identifier for the interval",
+                 "example": "1001",
+                 "pattern": "^\\d+$"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the interval",
+                 "example": "Exception 1"
+                },
+                "recurrent_start_date": {
+                 "type": "string",
+                 "description": "The start of a recurring interval. The day of week and time values are in project time zone",
+                 "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 17:00"
+                },
+                "recurrent_end_date": {
+                 "type": "string",
+                 "description": "The end of a recurring interval. The day of week and time values are in project time zone",
+                 "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 18:00"
+                },
+                "start_date": {
+                 "type": "string",
+                 "description": "The start date and time of the interval in UTC (ISO 8601 format)",
+                 "example": "2024-05-14T08:00:00Z"
+                },
+                "end_date": {
+                 "type": "string",
+                 "description": "The end date and time of the interval in UTC (ISO 8601 format)",
+                 "example": "2024-05-14T17:00:00Z"
+                },
+                "type": {
+                 "type": "string",
+                 "description": "The type of interval",
+                 "example": "working"
+                },
+                "is_working": {
+                 "type": "boolean",
+                 "description": "A flag to indicate whether this period is considered working time",
+                 "example": true
+                },
+                "availability": {
+                 "description": "JSON array of working slots within an Exception interval. Only present on Exception intervals.",
+                 "example": [
+                  {
+                   "id": "slot-1",
+                   "startDate": "08:00",
+                   "endDate": "12:00"
+                  }
+                 ]
+                }
+               },
+               "required": [
+                "interval_id",
+                "is_working",
+                "type"
+               ]
+              }
+             },
+             "is_archived": {
+              "type": "boolean",
+              "description": "Indicates if the calendar is archived",
+              "example": false
+             },
+             "created_at": {
+              "type": "string",
+              "description": "The creation timestamp of the calendar in UTC (ISO 8601 format)",
+              "example": "2024-05-14T08:00:00Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "The last update timestamp of the calendar in UTC (ISO 8601 format)",
+              "example": "2024-05-15T09:30:00Z"
+             }
+            },
+            "required": [
+             "calendar_id",
+             "calendar_intervals",
+             "company_id",
+             "days_per_month",
+             "days_per_week",
+             "hours_per_day",
+             "is_global",
+             "name"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.1/companies/1234/projects/5678/calendars',\n  qs: {\n    'filters[calendar_id]': 'SOME_STRING_VALUE',\n    'filters[name]': 'SOME_STRING_VALUE',\n    'filters[is_global]': 'SOME_BOOLEAN_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.1/companies/1234/projects/5678/calendars?filters%5Bcalendar_id%5D=SOME_STRING_VALUE&filters%5Bname%5D=SOME_STRING_VALUE&filters%5Bis_global%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.1/companies/1234/projects/5678/calendars?filters%5Bcalendar_id%5D=SOME_STRING_VALUE&filters%5Bname%5D=SOME_STRING_VALUE&filters%5Bis_global%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.1/companies/1234/projects/5678/calendars?filters%5Bcalendar_id%5D=SOME_STRING_VALUE&filters%5Bname%5D=SOME_STRING_VALUE&filters%5Bis_global%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.1/companies/{company_id}/projects/{project_id}/calendars/{calendar_id}": {
+   "get": {
+    "tags": [
+     "calendars-controller-v-21"
+    ],
+    "summary": "Get Calendar by ID (V2.1)",
+    "description": "Get a single calendar by id. V2.1 returns only source intervals (parent_interval_id IS NULL) and exposes the availability JSON on Exception intervals. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "getCalendarById",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "calendar_id",
+      "in": "path",
+      "description": "Calendar ID",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d+$"
+      },
+      "example": "101"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved calendar",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "calendar_id": {
+             "type": "string",
+             "description": "The unique identifier for the calendar",
+             "example": "101",
+             "pattern": "^\\d+$"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the calendar",
+             "example": 5
+            },
+            "is_global": {
+             "type": "boolean",
+             "description": "Indicates if the calendar is available to all projects in the company",
+             "example": false
+            },
+            "hours_per_day": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The number of working hours in a day",
+             "example": 8
+            },
+            "days_per_week": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The number of working days in a week",
+             "example": 5
+            },
+            "days_per_month": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The number of working days in a month",
+             "example": 20
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            },
+            "calendar_intervals": {
+             "type": "array",
+             "description": "The intervals associated with this calendar",
+             "items": {
+              "type": "object",
+              "properties": {
+               "interval_id": {
+                "type": "string",
+                "description": "The unique identifier for the interval",
+                "example": "1001",
+                "pattern": "^\\d+$"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the interval",
+                "example": "Exception 1"
+               },
+               "recurrent_start_date": {
+                "type": "string",
+                "description": "The start of a recurring interval. The day of week and time values are in project time zone",
+                "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 17:00"
+               },
+               "recurrent_end_date": {
+                "type": "string",
+                "description": "The end of a recurring interval. The day of week and time values are in project time zone",
+                "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 18:00"
+               },
+               "start_date": {
+                "type": "string",
+                "description": "The start date and time of the interval in UTC (ISO 8601 format)",
+                "example": "2024-05-14T08:00:00Z"
+               },
+               "end_date": {
+                "type": "string",
+                "description": "The end date and time of the interval in UTC (ISO 8601 format)",
+                "example": "2024-05-14T17:00:00Z"
+               },
+               "type": {
+                "type": "string",
+                "description": "The type of interval",
+                "example": "working"
+               },
+               "is_working": {
+                "type": "boolean",
+                "description": "A flag to indicate whether this period is considered working time",
+                "example": true
+               },
+               "availability": {
+                "description": "JSON array of working slots within an Exception interval. Only present on Exception intervals.",
+                "example": [
+                 {
+                  "id": "slot-1",
+                  "startDate": "08:00",
+                  "endDate": "12:00"
+                 }
+                ]
+               }
+              },
+              "required": [
+               "interval_id",
+               "is_working",
+               "type"
+              ]
+             }
+            },
+            "is_archived": {
+             "type": "boolean",
+             "description": "Indicates if the calendar is archived",
+             "example": false
+            },
+            "created_at": {
+             "type": "string",
+             "description": "The creation timestamp of the calendar in UTC (ISO 8601 format)",
+             "example": "2024-05-14T08:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The last update timestamp of the calendar in UTC (ISO 8601 format)",
+             "example": "2024-05-15T09:30:00Z"
+            }
+           },
+           "required": [
+            "calendar_id",
+            "calendar_intervals",
+            "company_id",
+            "days_per_month",
+            "days_per_week",
+            "hours_per_day",
+            "is_global",
+            "name"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.1/companies/1234/projects/5678/calendars/101'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.1/companies/1234/projects/5678/calendars/101\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.1/companies/1234/projects/5678/calendars/101"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.1/companies/1234/projects/5678/calendars/101\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/calendars": {
+   "get": {
+    "tags": [
+     "calendars-controller"
+    ],
+    "summary": "List Calendars",
+    "description": "List all calendars in a project associated with the Scheduling/Programming tool. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "listCalendars_1",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "filters[calendar_id]",
+      "in": "query",
+      "description": "Filter calendars by calendar_id",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[name]",
+      "in": "query",
+      "description": "Filter calendars by name",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[is_global]",
+      "in": "query",
+      "description": "Filter calendars by global status",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort by supported fields. Accepts comma separated values to sort by multiple fields. Order is ascending by default, prefix field with '-' for descending",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "calendar_id",
+        "name",
+        "is_global"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved calendars",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int32"
+        }
+       },
+       "Total": {
+        "description": "Total number of records available",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int64"
+        }
+       },
+       "Link": {
+        "description": "Link header for the first, prev, next, and the last page links",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "calendar_id": {
+              "type": "string",
+              "description": "The unique identifier for the calendar",
+              "example": "101",
+              "pattern": "^\\d+$"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the calendar",
+              "example": 5
+             },
+             "is_global": {
+              "type": "boolean",
+              "description": "Indicates if the calendar is available to all projects in the company",
+              "example": false
+             },
+             "hours_per_day": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The number of working hours in a day",
+              "example": 8
+             },
+             "days_per_week": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The number of working days in a week",
+              "example": 5
+             },
+             "days_per_month": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The number of working days in a month",
+              "example": 20
+             },
+             "project_id": {
+              "type": "string",
+              "description": "Procore Project ID",
+              "example": "12345",
+              "pattern": "^\\d+$"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Procore Company ID",
+              "example": "67890",
+              "pattern": "^\\d+$"
+             },
+             "calendar_intervals": {
+              "type": "array",
+              "description": "The intervals associated with this calendar",
+              "items": {
+               "type": "object",
+               "properties": {
+                "interval_id": {
+                 "type": "string",
+                 "description": "The unique identifier for the interval",
+                 "example": "1001",
+                 "pattern": "^\\d+$"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the interval",
+                 "example": "Exception 1"
+                },
+                "recurrent_start_date": {
+                 "type": "string",
+                 "description": "The start of a recurring interval. The day of week and time values are in project time zone",
+                 "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 17:00"
+                },
+                "recurrent_end_date": {
+                 "type": "string",
+                 "description": "The end of a recurring interval. The day of week and time values are in project time zone",
+                 "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 18:00"
+                },
+                "start_date": {
+                 "type": "string",
+                 "description": "The start date and time of the interval in UTC (ISO 8601 format)",
+                 "example": "2024-05-14T08:00:00Z"
+                },
+                "end_date": {
+                 "type": "string",
+                 "description": "The end date and time of the interval in UTC (ISO 8601 format)",
+                 "example": "2024-05-14T17:00:00Z"
+                },
+                "type": {
+                 "type": "string",
+                 "description": "The type of interval",
+                 "example": "working"
+                },
+                "is_working": {
+                 "type": "boolean",
+                 "description": "A flag to indicate whether this period is considered working time",
+                 "example": true
+                }
+               },
+               "required": [
+                "interval_id",
+                "is_working",
+                "type"
+               ]
+              }
+             }
+            },
+            "required": [
+             "calendar_id",
+             "calendar_intervals",
+             "company_id",
+             "days_per_month",
+             "days_per_week",
+             "hours_per_day",
+             "is_global",
+             "name"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "deprecated": true,
+    "x-deprecated-at": "2026-05-01",
+    "x-sunset": "2027-05-02",
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/calendars',\n  qs: {\n    'filters[calendar_id]': 'SOME_STRING_VALUE',\n    'filters[name]': 'SOME_STRING_VALUE',\n    'filters[is_global]': 'SOME_BOOLEAN_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/calendars?filters%5Bcalendar_id%5D=SOME_STRING_VALUE&filters%5Bname%5D=SOME_STRING_VALUE&filters%5Bis_global%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/calendars?filters%5Bcalendar_id%5D=SOME_STRING_VALUE&filters%5Bname%5D=SOME_STRING_VALUE&filters%5Bis_global%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/calendars?filters%5Bcalendar_id%5D=SOME_STRING_VALUE&filters%5Bname%5D=SOME_STRING_VALUE&filters%5Bis_global%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/calendars/{calendar_id}": {
+   "get": {
+    "tags": [
+     "calendars-controller"
+    ],
+    "summary": "Get Calendar by ID",
+    "description": "Get a single calendar by id. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "getCalendarById_1",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "calendar_id",
+      "in": "path",
+      "description": "Calendar ID",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d+$"
+      },
+      "example": "101"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved calendar",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "calendar_id": {
+             "type": "string",
+             "description": "The unique identifier for the calendar",
+             "example": "101",
+             "pattern": "^\\d+$"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the calendar",
+             "example": 5
+            },
+            "is_global": {
+             "type": "boolean",
+             "description": "Indicates if the calendar is available to all projects in the company",
+             "example": false
+            },
+            "hours_per_day": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The number of working hours in a day",
+             "example": 8
+            },
+            "days_per_week": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The number of working days in a week",
+             "example": 5
+            },
+            "days_per_month": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The number of working days in a month",
+             "example": 20
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            },
+            "calendar_intervals": {
+             "type": "array",
+             "description": "The intervals associated with this calendar",
+             "items": {
+              "type": "object",
+              "properties": {
+               "interval_id": {
+                "type": "string",
+                "description": "The unique identifier for the interval",
+                "example": "1001",
+                "pattern": "^\\d+$"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the interval",
+                "example": "Exception 1"
+               },
+               "recurrent_start_date": {
+                "type": "string",
+                "description": "The start of a recurring interval. The day of week and time values are in project time zone",
+                "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 17:00"
+               },
+               "recurrent_end_date": {
+                "type": "string",
+                "description": "The end of a recurring interval. The day of week and time values are in project time zone",
+                "example": "on Sun, Mon, Tue, Wed, Thu, Fri at 18:00"
+               },
+               "start_date": {
+                "type": "string",
+                "description": "The start date and time of the interval in UTC (ISO 8601 format)",
+                "example": "2024-05-14T08:00:00Z"
+               },
+               "end_date": {
+                "type": "string",
+                "description": "The end date and time of the interval in UTC (ISO 8601 format)",
+                "example": "2024-05-14T17:00:00Z"
+               },
+               "type": {
+                "type": "string",
+                "description": "The type of interval",
+                "example": "working"
+               },
+               "is_working": {
+                "type": "boolean",
+                "description": "A flag to indicate whether this period is considered working time",
+                "example": true
+               }
+              },
+              "required": [
+               "interval_id",
+               "is_working",
+               "type"
+              ]
+             }
+            }
+           },
+           "required": [
+            "calendar_id",
+            "calendar_intervals",
+            "company_id",
+            "days_per_month",
+            "days_per_week",
+            "hours_per_day",
+            "is_global",
+            "name"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "deprecated": true,
+    "x-deprecated-at": "2026-05-01",
+    "x-sunset": "2027-06-05",
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/calendars/101'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/calendars/101\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/calendars/101"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/calendars/101\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,1756 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "BIM Viewpoints",
+  "x-product-category": "Preconstruction",
+  "x-tool-category": "BIM",
+  "x-resource-name": "BIM Viewpoints",
+  "version": "1.0",
+  "x-product-lines": [
+   "Design Coordination"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/bim_viewpoints": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a BIM Viewpoint",
+    "description": "Create a BIM Viewpoint",
+    "tags": [
+     "BIM Viewpoints"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "bim_viewpoint"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 12345
+         },
+         "bim_viewpoint": {
+          "type": "object",
+          "oneOf": [
+           {
+            "type": "object",
+            "required": [
+             "bim_file_id",
+             "camera_data",
+             "upload_uuid"
+            ],
+            "properties": {
+             "bim_file_id": {
+              "type": "integer",
+              "description": "ID of a BIM File to be associated to the viewpoint"
+             },
+             "name": {
+              "type": "string",
+              "description": "Viewpoint name",
+              "example": "Ceiling view"
+             },
+             "view_folder_id": {
+              "type": "integer",
+              "description": "ID of the BIM View Folder the viewpoint belongs to"
+             },
+             "upload_uuid": {
+              "type": "string",
+              "description": "UUID of uploaded snapshot",
+              "example": "1ZE146W9K804SAJJZX19JVAD0R"
+             },
+             "uuid": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique identifier for the Extraction viewpoint",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+             },
+             "camera_data": {
+              "type": "string",
+              "description": "JSON string representation of camera position",
+              "example": "{\"Type\":\"AutodeskCommonCamera\",\"Version\":1,\"UnitsToMetersScaleFactor\":0.3048,\"WorldUpDirection\":[0,0,1],\"WorldFrontDirection\":[0,1,2.2204],\"WorldRightDirection\":[1,0,0],\"Position\":[2.21,1.37,92.64],\"ViewDirection\":[0.51,0.78,-0.35],\"UpDirection\":[0.19,0.29,0.93],\"Projection\":\"Perspective\",\"VerticalExtent\":12.86,\"HorizontalExtent\":18.63,\"TargetDistance\":19.65,\"NearDistance\":0,\"NearDistanceType\":\"Auto\",\"FarDistance\":0,\"FarDistanceType\":\"Auto\",\"UpOffset\":0,\"RightOffset\":0,\"ImageFit\":\"Vertical\",\"HorizontalScale\":1,\"ApertureDiameter\":0,\"ShutterSpeed\":0}"
+             },
+             "redlines_data": {
+              "type": "string",
+              "description": "JSON string representation of markup",
+              "example": "{\"Type\":\"RedlineCollection\",\"Version\":1,\"Values\":[{\"Type\":\"RedlineEllipse\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"MinPoint\":[0.35,0.64],\"MaxPoint\":[-0.15,-0.77]},{\"Type\":\"RedlineText\",\"Version\":1,\"Color\":[0,0,1],\"Origin\":[-0.16,0.034],\"Text\":\"Pipe hitting duct\"},{\"Type\":\"RedlineArrow\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,1],\"Start\":[-4.22,-2.54],\"End\":[-4.59,-2.55]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"Start\":[-0.17,0.39],\"End\":[-0.88,0.42]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":2,\"Color\":[255,122,44],\"Start\":[-0.63,0.42],\"End\":[-0.96,0.17]}]}"
+             },
+             "sections_data": {
+              "type": "string",
+              "description": "JSON string representation of sections applied to a 3d model",
+              "example": "{\"Type\":\"ClipPlaneSet\",\"Version\":1,\"OrientedBox\":{\"Type\":\"OrientedBox3D\",\"Version\":1,\"Box\":[[-14.387,-51.0131,-122.508],[230.107,225.97,11.266]],\"Rotation\":[0,0,0]},\"Enabled\":true,\"Unit\":\"ft\"}"
+             },
+             "render_mode": {
+              "type": "string",
+              "description": "Viewer render mode when viewpoint is applied",
+              "enum": [
+               "shaded",
+               "xray"
+              ]
+             },
+             "visibility": {
+              "type": "object",
+              "description": "Object visibility settings",
+              "properties": {
+               "default_visibility": {
+                "type": "boolean"
+               },
+               "exceptions": {
+                "type": "object",
+                "description": "Group of model objects represented as an array of object ids, or object ranges",
+                "properties": {
+                 "object_ids": {
+                  "type": "array",
+                  "description": "Array of object ids",
+                  "example": [
+                   24861,
+                   46732
+                  ],
+                  "items": {
+                   "type": "integer"
+                  }
+                 },
+                 "object_ranges": {
+                  "type": "array",
+                  "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                  "example": [
+                   [
+                    24862,
+                    24
+                   ]
+                  ],
+                  "items": {
+                   "type": "array",
+                   "items": {
+                    "type": "integer"
+                   },
+                   "minItems": 2,
+                   "maxItems": 2
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           {
+            "type": "object",
+            "required": [
+             "bim_file_id",
+             "camera_data",
+             "upload_uuid"
+            ],
+            "properties": {
+             "bim_file_id": {
+              "type": "integer",
+              "description": "ID of a BIM File to be associated to the viewpoint"
+             },
+             "name": {
+              "type": "string",
+              "description": "Viewpoint name",
+              "example": "Ceiling view"
+             },
+             "view_folder_id": {
+              "type": "integer",
+              "description": "ID of the BIM View Folder the viewpoint belongs to"
+             },
+             "upload_uuid": {
+              "type": "string",
+              "description": "UUID of uploaded snapshot",
+              "example": "1ZE146W9K804SAJJZX19JVAD0R"
+             },
+             "uuid": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique identifier for the Extraction viewpoint",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+             },
+             "camera_data": {
+              "type": "string",
+              "description": "JSON string representation of camera position",
+              "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+             },
+             "redlines_data": {
+              "type": "string",
+              "description": "JSON string representation of markup",
+              "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+             },
+             "sections_data": {
+              "type": "string",
+              "description": "JSON string representation of sections applied to a 3d model as a bounding box",
+              "example": "{\"min_boundary\":{\"x\":6.24,\"y\":12.48,\"z\":24.96},\"max_boundary\":{\"x\":12.48,\"y\":24.96,\"z\":48.12},\"rotation\":{\"x\":1.0,\"y\":0.0,\"z\":2.0}}"
+             },
+             "render_mode": {
+              "type": "string",
+              "description": "Viewer render mode when viewpoint is applied",
+              "enum": [
+               "shaded",
+               "xray"
+              ]
+             },
+             "visibility": {
+              "type": "object",
+              "description": "Object visibility settings",
+              "properties": {
+               "default_visibility": {
+                "type": "boolean"
+               },
+               "exceptions": {
+                "type": "object",
+                "description": "Group of model objects represented as an array of object ids, or object ranges",
+                "properties": {
+                 "object_ids": {
+                  "type": "array",
+                  "description": "Array of object ids",
+                  "example": [
+                   24861,
+                   46732
+                  ],
+                  "items": {
+                   "type": "integer"
+                  }
+                 },
+                 "object_ranges": {
+                  "type": "array",
+                  "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                  "example": [
+                   [
+                    24862,
+                    24
+                   ]
+                  ],
+                  "items": {
+                   "type": "array",
+                   "items": {
+                    "type": "integer"
+                   },
+                   "minItems": 2,
+                   "maxItems": 2
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           {
+            "type": "object",
+            "required": [
+             "bim_file_id",
+             "camera_data",
+             "upload_uuid"
+            ],
+            "properties": {
+             "bim_file_id": {
+              "type": "integer",
+              "description": "ID of a BIM File to be associated to the viewpoint"
+             },
+             "name": {
+              "type": "string",
+              "description": "Viewpoint name",
+              "example": "Ceiling view"
+             },
+             "view_folder_id": {
+              "type": "integer",
+              "description": "ID of the BIM View Folder the viewpoint belongs to"
+             },
+             "upload_uuid": {
+              "type": "string",
+              "description": "UUID of uploaded snapshot",
+              "example": "1ZE146W9K804SAJJZX19JVAD0R"
+             },
+             "uuid": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unique identifier for the Extraction viewpoint",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+             },
+             "camera_data": {
+              "type": "string",
+              "description": "JSON string representation of camera position",
+              "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+             },
+             "redlines_data": {
+              "type": "string",
+              "description": "JSON string representation of markup",
+              "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+             },
+             "sections_data": {
+              "type": "string",
+              "description": "JSON string representation of sections applied to a 3d model as a set of clipping planes",
+              "example": "[{\"location\":{\"x\":0.0,\"y\":0.0,\"z\":28.82},\"direction\":{\"x\":0,\"y\":0,\"z\":-1},\"unit\":\"ft\"},{\"location\":{\"x\":10.0,\"y\":50.0,\"z\":68.82},\"direction\":{\"x\":2,\"y\":4,\"z\":-6}}]"
+             },
+             "render_mode": {
+              "type": "string",
+              "description": "Viewer render mode when viewpoint is applied",
+              "enum": [
+               "shaded",
+               "xray"
+              ]
+             },
+             "visibility": {
+              "type": "object",
+              "description": "Object visibility settings",
+              "properties": {
+               "default_visibility": {
+                "type": "boolean"
+               },
+               "exceptions": {
+                "type": "object",
+                "description": "Group of model objects represented as an array of object ids, or object ranges",
+                "properties": {
+                 "object_ids": {
+                  "type": "array",
+                  "description": "Array of object ids",
+                  "example": [
+                   24861,
+                   46732
+                  ],
+                  "items": {
+                   "type": "integer"
+                  }
+                 },
+                 "object_ranges": {
+                  "type": "array",
+                  "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                  "example": [
+                   [
+                    24862,
+                    24
+                   ]
+                  ],
+                  "items": {
+                   "type": "array",
+                   "items": {
+                    "type": "integer"
+                   },
+                   "minItems": 2,
+                   "maxItems": 2
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "oneOf": [
+          {
+           "type": "object",
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 206
+              },
+              "bim_file_id": {
+               "type": "integer",
+               "description": "ID of associated BIM File",
+               "example": 809
+              },
+              "view_folder_id": {
+               "type": "integer",
+               "nullable": true,
+               "description": "ID of associated BIM View Folder",
+               "example": 316
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Created date",
+               "example": "2018-04-19T09:36:42Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Updated date",
+               "example": "2018-04-20T09:36:42Z"
+              },
+              "snapshot": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Base name of the file without its path",
+                 "example": "filename.ext"
+                },
+                "content_type": {
+                 "type": "string",
+                 "description": "A mime type or a file extension",
+                 "example": "image/png"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                 "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                }
+               }
+              },
+              "name": {
+               "type": "string",
+               "description": "Viewpoint name",
+               "example": "Mechanical Conflict View"
+              },
+              "render_mode": {
+               "type": "string",
+               "description": "Viewer render mode when viewpoint is applied",
+               "enum": [
+                "shaded",
+                "xray"
+               ]
+              },
+              "uuid": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the Extraction viewpoint",
+               "example": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              "visibility": {
+               "type": "object",
+               "nullable": true,
+               "description": "Object Visibility settings",
+               "properties": {
+                "default_visibility": {
+                 "type": "boolean"
+                },
+                "exceptions": {
+                 "type": "object",
+                 "description": "Group of model objects represented as an array of object ids, or object ranges",
+                 "properties": {
+                  "object_ids": {
+                   "type": "array",
+                   "description": "Array of object ids",
+                   "example": [
+                    24861,
+                    46732
+                   ],
+                   "items": {
+                    "type": "integer"
+                   }
+                  },
+                  "object_ranges": {
+                   "type": "array",
+                   "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                   "example": [
+                    [
+                     24862,
+                     24
+                    ]
+                   ],
+                   "items": {
+                    "type": "array",
+                    "items": {
+                     "type": "integer"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "camera_data": {
+               "type": "string",
+               "description": "JSON string representation of camera position",
+               "example": "{\"Type\":\"AutodeskCommonCamera\",\"Version\":1,\"UnitsToMetersScaleFactor\":0.3048,\"WorldUpDirection\":[0,0,1],\"WorldFrontDirection\":[0,1,2.2204],\"WorldRightDirection\":[1,0,0],\"Position\":[2.21,1.37,92.64],\"ViewDirection\":[0.51,0.78,-0.35],\"UpDirection\":[0.19,0.29,0.93],\"Projection\":\"Perspective\",\"VerticalExtent\":12.86,\"HorizontalExtent\":18.63,\"TargetDistance\":19.65,\"NearDistance\":0,\"NearDistanceType\":\"Auto\",\"FarDistance\":0,\"FarDistanceType\":\"Auto\",\"UpOffset\":0,\"RightOffset\":0,\"ImageFit\":\"Vertical\",\"HorizontalScale\":1,\"ApertureDiameter\":0,\"ShutterSpeed\":0}"
+              },
+              "redlines_data": {
+               "type": "string",
+               "description": "JSON string representation of markup",
+               "example": "{\"Type\":\"RedlineCollection\",\"Version\":1,\"Values\":[{\"Type\":\"RedlineEllipse\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"MinPoint\":[0.35,0.64],\"MaxPoint\":[-0.15,-0.77]},{\"Type\":\"RedlineText\",\"Version\":1,\"Color\":[0,0,1],\"Origin\":[-0.16,0.034],\"Text\":\"Pipe hitting duct\"},{\"Type\":\"RedlineArrow\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,1],\"Start\":[-4.22,-2.54],\"End\":[-4.59,-2.55]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"Start\":[-0.17,0.39],\"End\":[-0.88,0.42]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":2,\"Color\":[255,122,44],\"Start\":[-0.63,0.42],\"End\":[-0.96,0.17]}]}"
+              },
+              "sections_data": {
+               "type": "string",
+               "description": "JSON string representation of sections applied to a 3d model",
+               "example": "{\"Type\":\"ClipPlaneSet\",\"Version\":1,\"OrientedBox\":{\"Type\":\"OrientedBox3D\",\"Version\":1,\"Box\":[[-14.387,-51.0131,-122.508],[230.107,225.97,11.266]],\"Rotation\":[0,0,0]},\"Enabled\":true,\"Unit\":\"ft\"}"
+              }
+             }
+            }
+           ]
+          },
+          {
+           "type": "object",
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 206
+              },
+              "bim_file_id": {
+               "type": "integer",
+               "description": "ID of associated BIM File",
+               "example": 809
+              },
+              "view_folder_id": {
+               "type": "integer",
+               "nullable": true,
+               "description": "ID of associated BIM View Folder",
+               "example": 316
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Created date",
+               "example": "2018-04-19T09:36:42Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Updated date",
+               "example": "2018-04-20T09:36:42Z"
+              },
+              "snapshot": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Base name of the file without its path",
+                 "example": "filename.ext"
+                },
+                "content_type": {
+                 "type": "string",
+                 "description": "A mime type or a file extension",
+                 "example": "image/png"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                 "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                }
+               }
+              },
+              "name": {
+               "type": "string",
+               "description": "Viewpoint name",
+               "example": "Mechanical Conflict View"
+              },
+              "render_mode": {
+               "type": "string",
+               "description": "Viewer render mode when viewpoint is applied",
+               "enum": [
+                "shaded",
+                "xray"
+               ]
+              },
+              "uuid": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the Extraction viewpoint",
+               "example": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              "visibility": {
+               "type": "object",
+               "nullable": true,
+               "description": "Object Visibility settings",
+               "properties": {
+                "default_visibility": {
+                 "type": "boolean"
+                },
+                "exceptions": {
+                 "type": "object",
+                 "description": "Group of model objects represented as an array of object ids, or object ranges",
+                 "properties": {
+                  "object_ids": {
+                   "type": "array",
+                   "description": "Array of object ids",
+                   "example": [
+                    24861,
+                    46732
+                   ],
+                   "items": {
+                    "type": "integer"
+                   }
+                  },
+                  "object_ranges": {
+                   "type": "array",
+                   "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                   "example": [
+                    [
+                     24862,
+                     24
+                    ]
+                   ],
+                   "items": {
+                    "type": "array",
+                    "items": {
+                     "type": "integer"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "camera_data": {
+               "type": "string",
+               "description": "JSON string representation of camera position",
+               "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "redlines_data": {
+               "type": "string",
+               "description": "JSON string representation of markup",
+               "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "sections_data": {
+               "type": "string",
+               "description": "JSON string representation of sections applied to a 3d model as a bounding box",
+               "example": "{\"min_boundary\":{\"x\":6.24,\"y\":12.48,\"z\":24.96},\"max_boundary\":{\"x\":12.48,\"y\":24.96,\"z\":48.12},\"rotation\":{\"x\":1.0,\"y\":0.0,\"z\":2.0}}"
+              }
+             }
+            }
+           ]
+          },
+          {
+           "type": "object",
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 206
+              },
+              "bim_file_id": {
+               "type": "integer",
+               "description": "ID of associated BIM File",
+               "example": 809
+              },
+              "view_folder_id": {
+               "type": "integer",
+               "nullable": true,
+               "description": "ID of associated BIM View Folder",
+               "example": 316
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Created date",
+               "example": "2018-04-19T09:36:42Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Updated date",
+               "example": "2018-04-20T09:36:42Z"
+              },
+              "snapshot": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Base name of the file without its path",
+                 "example": "filename.ext"
+                },
+                "content_type": {
+                 "type": "string",
+                 "description": "A mime type or a file extension",
+                 "example": "image/png"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                 "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                }
+               }
+              },
+              "name": {
+               "type": "string",
+               "description": "Viewpoint name",
+               "example": "Mechanical Conflict View"
+              },
+              "render_mode": {
+               "type": "string",
+               "description": "Viewer render mode when viewpoint is applied",
+               "enum": [
+                "shaded",
+                "xray"
+               ]
+              },
+              "uuid": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the Extraction viewpoint",
+               "example": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              "visibility": {
+               "type": "object",
+               "nullable": true,
+               "description": "Object Visibility settings",
+               "properties": {
+                "default_visibility": {
+                 "type": "boolean"
+                },
+                "exceptions": {
+                 "type": "object",
+                 "description": "Group of model objects represented as an array of object ids, or object ranges",
+                 "properties": {
+                  "object_ids": {
+                   "type": "array",
+                   "description": "Array of object ids",
+                   "example": [
+                    24861,
+                    46732
+                   ],
+                   "items": {
+                    "type": "integer"
+                   }
+                  },
+                  "object_ranges": {
+                   "type": "array",
+                   "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                   "example": [
+                    [
+                     24862,
+                     24
+                    ]
+                   ],
+                   "items": {
+                    "type": "array",
+                    "items": {
+                     "type": "integer"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "camera_data": {
+               "type": "string",
+               "description": "JSON string representation of camera position",
+               "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "redlines_data": {
+               "type": "string",
+               "description": "JSON string representation of markup",
+               "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "sections_data": {
+               "type": "string",
+               "description": "JSON string representation of sections applied to a 3d model as a set of clipping planes",
+               "example": "[{\"location\":{\"x\":0.0,\"y\":0.0,\"z\":28.82},\"direction\":{\"x\":0,\"y\":0,\"z\":-1},\"unit\":\"ft\"},{\"location\":{\"x\":10.0,\"y\":50.0,\"z\":68.82},\"direction\":{\"x\":2,\"y\":4,\"z\":-6}}]"
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/bim_viewpoints',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 12345,\n    bim_viewpoint: {\n      bim_file_id: 0,\n      name: 'Ceiling view',\n      view_folder_id: 0,\n      upload_uuid: '1ZE146W9K804SAJJZX19JVAD0R',\n      uuid: '123e4567-e89b-12d3-a456-426614174000',\n      camera_data: '{\"Type\":\"AutodeskCommonCamera\",\"Version\":1,\"UnitsToMetersScaleFactor\":0.3048,\"WorldUpDirection\":[0,0,1],\"WorldFrontDirection\":[0,1,2.2204],\"WorldRightDirection\":[1,0,0],\"Position\":[2.21,1.37,92.64],\"ViewDirection\":[0.51,0.78,-0.35],\"UpDirection\":[0.19,0.29,0.93],\"Projection\":\"Perspective\",\"VerticalExtent\":12.86,\"HorizontalExtent\":18.63,\"TargetDistance\":19.65,\"NearDistance\":0,\"NearDistanceType\":\"Auto\",\"FarDistance\":0,\"FarDistanceType\":\"Auto\",\"UpOffset\":0,\"RightOffset\":0,\"ImageFit\":\"Vertical\",\"HorizontalScale\":1,\"ApertureDiameter\":0,\"ShutterSpeed\":0}',\n      redlines_data: '{\"Type\":\"RedlineCollection\",\"Version\":1,\"Values\":[{\"Type\":\"RedlineEllipse\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"MinPoint\":[0.35,0.64],\"MaxPoint\":[-0.15,-0.77]},{\"Type\":\"RedlineText\",\"Version\":1,\"Color\":[0,0,1],\"Origin\":[-0.16,0.034],\"Text\":\"Pipe hitting duct\"},{\"Type\":\"RedlineArrow\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,1],\"Start\":[-4.22,-2.54],\"End\":[-4.59,-2.55]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"Start\":[-0.17,0.39],\"End\":[-0.88,0.42]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":2,\"Color\":[255,122,44],\"Start\":[-0.63,0.42],\"End\":[-0.96,0.17]}]}',\n      sections_data: '{\"Type\":\"ClipPlaneSet\",\"Version\":1,\"OrientedBox\":{\"Type\":\"OrientedBox3D\",\"Version\":1,\"Box\":[[-14.387,-51.0131,-122.508],[230.107,225.97,11.266]],\"Rotation\":[0,0,0]},\"Enabled\":true,\"Unit\":\"ft\"}',\n      render_mode: 'shaded',\n      visibility: {\n        default_visibility: true,\n        exceptions: {object_ids: [24861, 46732], object_ranges: [[24862, 24]]}\n      }\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"bim_viewpoint\\\":{\\\"bim_file_id\\\":0,\\\"name\\\":\\\"Ceiling view\\\",\\\"view_folder_id\\\":0,\\\"upload_uuid\\\":\\\"1ZE146W9K804SAJJZX19JVAD0R\\\",\\\"uuid\\\":\\\"123e4567-e89b-12d3-a456-426614174000\\\",\\\"camera_data\\\":\\\"{\\\\\\\"Type\\\\\\\":\\\\\\\"AutodeskCommonCamera\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"UnitsToMetersScaleFactor\\\\\\\":0.3048,\\\\\\\"WorldUpDirection\\\\\\\":[0,0,1],\\\\\\\"WorldFrontDirection\\\\\\\":[0,1,2.2204],\\\\\\\"WorldRightDirection\\\\\\\":[1,0,0],\\\\\\\"Position\\\\\\\":[2.21,1.37,92.64],\\\\\\\"ViewDirection\\\\\\\":[0.51,0.78,-0.35],\\\\\\\"UpDirection\\\\\\\":[0.19,0.29,0.93],\\\\\\\"Projection\\\\\\\":\\\\\\\"Perspective\\\\\\\",\\\\\\\"VerticalExtent\\\\\\\":12.86,\\\\\\\"HorizontalExtent\\\\\\\":18.63,\\\\\\\"TargetDistance\\\\\\\":19.65,\\\\\\\"NearDistance\\\\\\\":0,\\\\\\\"NearDistanceType\\\\\\\":\\\\\\\"Auto\\\\\\\",\\\\\\\"FarDistance\\\\\\\":0,\\\\\\\"FarDistanceType\\\\\\\":\\\\\\\"Auto\\\\\\\",\\\\\\\"UpOffset\\\\\\\":0,\\\\\\\"RightOffset\\\\\\\":0,\\\\\\\"ImageFit\\\\\\\":\\\\\\\"Vertical\\\\\\\",\\\\\\\"HorizontalScale\\\\\\\":1,\\\\\\\"ApertureDiameter\\\\\\\":0,\\\\\\\"ShutterSpeed\\\\\\\":0}\\\",\\\"redlines_data\\\":\\\"{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineCollection\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Values\\\\\\\":[{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineEllipse\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":3,\\\\\\\"Color\\\\\\\":[1,0,0],\\\\\\\"MinPoint\\\\\\\":[0.35,0.64],\\\\\\\"MaxPoint\\\\\\\":[-0.15,-0.77]},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineText\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Color\\\\\\\":[0,0,1],\\\\\\\"Origin\\\\\\\":[-0.16,0.034],\\\\\\\"Text\\\\\\\":\\\\\\\"Pipe hitting duct\\\\\\\"},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineArrow\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":3,\\\\\\\"Color\\\\\\\":[1,0,1],\\\\\\\"Start\\\\\\\":[-4.22,-2.54],\\\\\\\"End\\\\\\\":[-4.59,-2.55]},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineLine\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":3,\\\\\\\"Color\\\\\\\":[1,0,0],\\\\\\\"Start\\\\\\\":[-0.17,0.39],\\\\\\\"End\\\\\\\":[-0.88,0.42]},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineLine\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":2,\\\\\\\"Color\\\\\\\":[255,122,44],\\\\\\\"Start\\\\\\\":[-0.63,0.42],\\\\\\\"End\\\\\\\":[-0.96,0.17]}]}\\\",\\\"sections_data\\\":\\\"{\\\\\\\"Type\\\\\\\":\\\\\\\"ClipPlaneSet\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"OrientedBox\\\\\\\":{\\\\\\\"Type\\\\\\\":\\\\\\\"OrientedBox3D\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Box\\\\\\\":[[-14.387,-51.0131,-122.508],[230.107,225.97,11.266]],\\\\\\\"Rotation\\\\\\\":[0,0,0]},\\\\\\\"Enabled\\\\\\\":true,\\\\\\\"Unit\\\\\\\":\\\\\\\"ft\\\\\\\"}\\\",\\\"render_mode\\\":\\\"shaded\\\",\\\"visibility\\\":{\\\"default_visibility\\\":true,\\\"exceptions\\\":{\\\"object_ids\\\":[24861,46732],\\\"object_ranges\\\":[[24862,24]]}}}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/bim_viewpoints\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/bim_viewpoints \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"bim_viewpoint\":{\"bim_file_id\":0,\"name\":\"Ceiling view\",\"view_folder_id\":0,\"upload_uuid\":\"1ZE146W9K804SAJJZX19JVAD0R\",\"uuid\":\"123e4567-e89b-12d3-a456-426614174000\",\"camera_data\":\"{\\\"Type\\\":\\\"AutodeskCommonCamera\\\",\\\"Version\\\":1,\\\"UnitsToMetersScaleFactor\\\":0.3048,\\\"WorldUpDirection\\\":[0,0,1],\\\"WorldFrontDirection\\\":[0,1,2.2204],\\\"WorldRightDirection\\\":[1,0,0],\\\"Position\\\":[2.21,1.37,92.64],\\\"ViewDirection\\\":[0.51,0.78,-0.35],\\\"UpDirection\\\":[0.19,0.29,0.93],\\\"Projection\\\":\\\"Perspective\\\",\\\"VerticalExtent\\\":12.86,\\\"HorizontalExtent\\\":18.63,\\\"TargetDistance\\\":19.65,\\\"NearDistance\\\":0,\\\"NearDistanceType\\\":\\\"Auto\\\",\\\"FarDistance\\\":0,\\\"FarDistanceType\\\":\\\"Auto\\\",\\\"UpOffset\\\":0,\\\"RightOffset\\\":0,\\\"ImageFit\\\":\\\"Vertical\\\",\\\"HorizontalScale\\\":1,\\\"ApertureDiameter\\\":0,\\\"ShutterSpeed\\\":0}\",\"redlines_data\":\"{\\\"Type\\\":\\\"RedlineCollection\\\",\\\"Version\\\":1,\\\"Values\\\":[{\\\"Type\\\":\\\"RedlineEllipse\\\",\\\"Version\\\":1,\\\"Thickness\\\":3,\\\"Color\\\":[1,0,0],\\\"MinPoint\\\":[0.35,0.64],\\\"MaxPoint\\\":[-0.15,-0.77]},{\\\"Type\\\":\\\"RedlineText\\\",\\\"Version\\\":1,\\\"Color\\\":[0,0,1],\\\"Origin\\\":[-0.16,0.034],\\\"Text\\\":\\\"Pipe hitting duct\\\"},{\\\"Type\\\":\\\"RedlineArrow\\\",\\\"Version\\\":1,\\\"Thickness\\\":3,\\\"Color\\\":[1,0,1],\\\"Start\\\":[-4.22,-2.54],\\\"End\\\":[-4.59,-2.55]},{\\\"Type\\\":\\\"RedlineLine\\\",\\\"Version\\\":1,\\\"Thickness\\\":3,\\\"Color\\\":[1,0,0],\\\"Start\\\":[-0.17,0.39],\\\"End\\\":[-0.88,0.42]},{\\\"Type\\\":\\\"RedlineLine\\\",\\\"Version\\\":1,\\\"Thickness\\\":2,\\\"Color\\\":[255,122,44],\\\"Start\\\":[-0.63,0.42],\\\"End\\\":[-0.96,0.17]}]}\",\"sections_data\":\"{\\\"Type\\\":\\\"ClipPlaneSet\\\",\\\"Version\\\":1,\\\"OrientedBox\\\":{\\\"Type\\\":\\\"OrientedBox3D\\\",\\\"Version\\\":1,\\\"Box\\\":[[-14.387,-51.0131,-122.508],[230.107,225.97,11.266]],\\\"Rotation\\\":[0,0,0]},\\\"Enabled\\\":true,\\\"Unit\\\":\\\"ft\\\"}\",\"render_mode\":\"shaded\",\"visibility\":{\"default_visibility\":true,\"exceptions\":{\"object_ids\":[24861,46732],\"object_ranges\":[[24862,24]]}}}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/bim_viewpoints\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"bim_viewpoint\\\":{\\\"bim_file_id\\\":0,\\\"name\\\":\\\"Ceiling view\\\",\\\"view_folder_id\\\":0,\\\"upload_uuid\\\":\\\"1ZE146W9K804SAJJZX19JVAD0R\\\",\\\"uuid\\\":\\\"123e4567-e89b-12d3-a456-426614174000\\\",\\\"camera_data\\\":\\\"{\\\\\\\"Type\\\\\\\":\\\\\\\"AutodeskCommonCamera\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"UnitsToMetersScaleFactor\\\\\\\":0.3048,\\\\\\\"WorldUpDirection\\\\\\\":[0,0,1],\\\\\\\"WorldFrontDirection\\\\\\\":[0,1,2.2204],\\\\\\\"WorldRightDirection\\\\\\\":[1,0,0],\\\\\\\"Position\\\\\\\":[2.21,1.37,92.64],\\\\\\\"ViewDirection\\\\\\\":[0.51,0.78,-0.35],\\\\\\\"UpDirection\\\\\\\":[0.19,0.29,0.93],\\\\\\\"Projection\\\\\\\":\\\\\\\"Perspective\\\\\\\",\\\\\\\"VerticalExtent\\\\\\\":12.86,\\\\\\\"HorizontalExtent\\\\\\\":18.63,\\\\\\\"TargetDistance\\\\\\\":19.65,\\\\\\\"NearDistance\\\\\\\":0,\\\\\\\"NearDistanceType\\\\\\\":\\\\\\\"Auto\\\\\\\",\\\\\\\"FarDistance\\\\\\\":0,\\\\\\\"FarDistanceType\\\\\\\":\\\\\\\"Auto\\\\\\\",\\\\\\\"UpOffset\\\\\\\":0,\\\\\\\"RightOffset\\\\\\\":0,\\\\\\\"ImageFit\\\\\\\":\\\\\\\"Vertical\\\\\\\",\\\\\\\"HorizontalScale\\\\\\\":1,\\\\\\\"ApertureDiameter\\\\\\\":0,\\\\\\\"ShutterSpeed\\\\\\\":0}\\\",\\\"redlines_data\\\":\\\"{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineCollection\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Values\\\\\\\":[{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineEllipse\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":3,\\\\\\\"Color\\\\\\\":[1,0,0],\\\\\\\"MinPoint\\\\\\\":[0.35,0.64],\\\\\\\"MaxPoint\\\\\\\":[-0.15,-0.77]},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineText\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Color\\\\\\\":[0,0,1],\\\\\\\"Origin\\\\\\\":[-0.16,0.034],\\\\\\\"Text\\\\\\\":\\\\\\\"Pipe hitting duct\\\\\\\"},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineArrow\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":3,\\\\\\\"Color\\\\\\\":[1,0,1],\\\\\\\"Start\\\\\\\":[-4.22,-2.54],\\\\\\\"End\\\\\\\":[-4.59,-2.55]},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineLine\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":3,\\\\\\\"Color\\\\\\\":[1,0,0],\\\\\\\"Start\\\\\\\":[-0.17,0.39],\\\\\\\"End\\\\\\\":[-0.88,0.42]},{\\\\\\\"Type\\\\\\\":\\\\\\\"RedlineLine\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Thickness\\\\\\\":2,\\\\\\\"Color\\\\\\\":[255,122,44],\\\\\\\"Start\\\\\\\":[-0.63,0.42],\\\\\\\"End\\\\\\\":[-0.96,0.17]}]}\\\",\\\"sections_data\\\":\\\"{\\\\\\\"Type\\\\\\\":\\\\\\\"ClipPlaneSet\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"OrientedBox\\\\\\\":{\\\\\\\"Type\\\\\\\":\\\\\\\"OrientedBox3D\\\\\\\",\\\\\\\"Version\\\\\\\":1,\\\\\\\"Box\\\\\\\":[[-14.387,-51.0131,-122.508],[230.107,225.97,11.266]],\\\\\\\"Rotation\\\\\\\":[0,0,0]},\\\\\\\"Enabled\\\\\\\":true,\\\\\\\"Unit\\\\\\\":\\\\\\\"ft\\\\\\\"}\\\",\\\"render_mode\\\":\\\"shaded\\\",\\\"visibility\\\":{\\\"default_visibility\\\":true,\\\"exceptions\\\":{\\\"object_ids\\\":[24861,46732],\\\"object_ranges\\\":[[24862,24]]}}}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new payload parameters",
+      "description": "Added new payload parameters render_mode and components.",
+      "endpoint": "POST /bim_viewpoints",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-12-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoints?version=1.0#create-a-bim-viewpoint"
+     },
+     {
+      "summary": "Added new payload parameter visibility",
+      "description": "Added new payload parameter visibility",
+      "endpoint": "POST /bim_viewpoints",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-04-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoints?version=1.0#create-a-bim-viewpoint"
+     },
+     {
+      "summary": "Modified the viewpoints create API to make upload_uuid an optional parameter",
+      "description": "Modified the viewpoints create API to make upload_uuid optional. Viewpoints created without\na snapshot upload will contain a blank snapshot object",
+      "endpoint": "POST /bim_viewpoints",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-10-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoints?version=1.0#create-a-bim-viewpoint"
+     },
+     {
+      "summary": "Added new payload parameter uuid",
+      "description": "Added new payload parameter uuid",
+      "endpoint": "POST /bim_viewpoints",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoints?version=1.0#create-a-bim-viewpoint"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/bim_viewpoints/{id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show BIM Viewpoint",
+    "description": "Return a single BIM Viewpoint",
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "description": "ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "oneOf": [
+          {
+           "type": "object",
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 206
+              },
+              "bim_file_id": {
+               "type": "integer",
+               "description": "ID of associated BIM File",
+               "example": 809
+              },
+              "view_folder_id": {
+               "type": "integer",
+               "nullable": true,
+               "description": "ID of associated BIM View Folder",
+               "example": 316
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Created date",
+               "example": "2018-04-19T09:36:42Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Updated date",
+               "example": "2018-04-20T09:36:42Z"
+              },
+              "snapshot": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Base name of the file without its path",
+                 "example": "filename.ext"
+                },
+                "content_type": {
+                 "type": "string",
+                 "description": "A mime type or a file extension",
+                 "example": "image/png"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                 "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                }
+               }
+              },
+              "name": {
+               "type": "string",
+               "description": "Viewpoint name",
+               "example": "Mechanical Conflict View"
+              },
+              "render_mode": {
+               "type": "string",
+               "description": "Viewer render mode when viewpoint is applied",
+               "enum": [
+                "shaded",
+                "xray"
+               ]
+              },
+              "uuid": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the Extraction viewpoint",
+               "example": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              "visibility": {
+               "type": "object",
+               "nullable": true,
+               "description": "Object Visibility settings",
+               "properties": {
+                "default_visibility": {
+                 "type": "boolean"
+                },
+                "exceptions": {
+                 "type": "object",
+                 "description": "Group of model objects represented as an array of object ids, or object ranges",
+                 "properties": {
+                  "object_ids": {
+                   "type": "array",
+                   "description": "Array of object ids",
+                   "example": [
+                    24861,
+                    46732
+                   ],
+                   "items": {
+                    "type": "integer"
+                   }
+                  },
+                  "object_ranges": {
+                   "type": "array",
+                   "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                   "example": [
+                    [
+                     24862,
+                     24
+                    ]
+                   ],
+                   "items": {
+                    "type": "array",
+                    "items": {
+                     "type": "integer"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "camera_data": {
+               "type": "string",
+               "description": "JSON string representation of camera position",
+               "example": "{\"Type\":\"AutodeskCommonCamera\",\"Version\":1,\"UnitsToMetersScaleFactor\":0.3048,\"WorldUpDirection\":[0,0,1],\"WorldFrontDirection\":[0,1,2.2204],\"WorldRightDirection\":[1,0,0],\"Position\":[2.21,1.37,92.64],\"ViewDirection\":[0.51,0.78,-0.35],\"UpDirection\":[0.19,0.29,0.93],\"Projection\":\"Perspective\",\"VerticalExtent\":12.86,\"HorizontalExtent\":18.63,\"TargetDistance\":19.65,\"NearDistance\":0,\"NearDistanceType\":\"Auto\",\"FarDistance\":0,\"FarDistanceType\":\"Auto\",\"UpOffset\":0,\"RightOffset\":0,\"ImageFit\":\"Vertical\",\"HorizontalScale\":1,\"ApertureDiameter\":0,\"ShutterSpeed\":0}"
+              },
+              "redlines_data": {
+               "type": "string",
+               "description": "JSON string representation of markup",
+               "example": "{\"Type\":\"RedlineCollection\",\"Version\":1,\"Values\":[{\"Type\":\"RedlineEllipse\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"MinPoint\":[0.35,0.64],\"MaxPoint\":[-0.15,-0.77]},{\"Type\":\"RedlineText\",\"Version\":1,\"Color\":[0,0,1],\"Origin\":[-0.16,0.034],\"Text\":\"Pipe hitting duct\"},{\"Type\":\"RedlineArrow\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,1],\"Start\":[-4.22,-2.54],\"End\":[-4.59,-2.55]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":3,\"Color\":[1,0,0],\"Start\":[-0.17,0.39],\"End\":[-0.88,0.42]},{\"Type\":\"RedlineLine\",\"Version\":1,\"Thickness\":2,\"Color\":[255,122,44],\"Start\":[-0.63,0.42],\"End\":[-0.96,0.17]}]}"
+              },
+              "sections_data": {
+               "type": "string",
+               "description": "JSON string representation of sections applied to a 3d model",
+               "example": "{\"Type\":\"ClipPlaneSet\",\"Version\":1,\"OrientedBox\":{\"Type\":\"OrientedBox3D\",\"Version\":1,\"Box\":[[-14.387,-51.0131,-122.508],[230.107,225.97,11.266]],\"Rotation\":[0,0,0]},\"Enabled\":true,\"Unit\":\"ft\"}"
+              }
+             }
+            }
+           ]
+          },
+          {
+           "type": "object",
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 206
+              },
+              "bim_file_id": {
+               "type": "integer",
+               "description": "ID of associated BIM File",
+               "example": 809
+              },
+              "view_folder_id": {
+               "type": "integer",
+               "nullable": true,
+               "description": "ID of associated BIM View Folder",
+               "example": 316
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Created date",
+               "example": "2018-04-19T09:36:42Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Updated date",
+               "example": "2018-04-20T09:36:42Z"
+              },
+              "snapshot": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Base name of the file without its path",
+                 "example": "filename.ext"
+                },
+                "content_type": {
+                 "type": "string",
+                 "description": "A mime type or a file extension",
+                 "example": "image/png"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                 "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                }
+               }
+              },
+              "name": {
+               "type": "string",
+               "description": "Viewpoint name",
+               "example": "Mechanical Conflict View"
+              },
+              "render_mode": {
+               "type": "string",
+               "description": "Viewer render mode when viewpoint is applied",
+               "enum": [
+                "shaded",
+                "xray"
+               ]
+              },
+              "uuid": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the Extraction viewpoint",
+               "example": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              "visibility": {
+               "type": "object",
+               "nullable": true,
+               "description": "Object Visibility settings",
+               "properties": {
+                "default_visibility": {
+                 "type": "boolean"
+                },
+                "exceptions": {
+                 "type": "object",
+                 "description": "Group of model objects represented as an array of object ids, or object ranges",
+                 "properties": {
+                  "object_ids": {
+                   "type": "array",
+                   "description": "Array of object ids",
+                   "example": [
+                    24861,
+                    46732
+                   ],
+                   "items": {
+                    "type": "integer"
+                   }
+                  },
+                  "object_ranges": {
+                   "type": "array",
+                   "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                   "example": [
+                    [
+                     24862,
+                     24
+                    ]
+                   ],
+                   "items": {
+                    "type": "array",
+                    "items": {
+                     "type": "integer"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "camera_data": {
+               "type": "string",
+               "description": "JSON string representation of camera position",
+               "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "redlines_data": {
+               "type": "string",
+               "description": "JSON string representation of markup",
+               "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "sections_data": {
+               "type": "string",
+               "description": "JSON string representation of sections applied to a 3d model as a bounding box",
+               "example": "{\"min_boundary\":{\"x\":6.24,\"y\":12.48,\"z\":24.96},\"max_boundary\":{\"x\":12.48,\"y\":24.96,\"z\":48.12},\"rotation\":{\"x\":1.0,\"y\":0.0,\"z\":2.0}}"
+              }
+             }
+            }
+           ]
+          },
+          {
+           "type": "object",
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 206
+              },
+              "bim_file_id": {
+               "type": "integer",
+               "description": "ID of associated BIM File",
+               "example": 809
+              },
+              "view_folder_id": {
+               "type": "integer",
+               "nullable": true,
+               "description": "ID of associated BIM View Folder",
+               "example": 316
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Created date",
+               "example": "2018-04-19T09:36:42Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Updated date",
+               "example": "2018-04-20T09:36:42Z"
+              },
+              "snapshot": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Base name of the file without its path",
+                 "example": "filename.ext"
+                },
+                "content_type": {
+                 "type": "string",
+                 "description": "A mime type or a file extension",
+                 "example": "image/png"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                 "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                }
+               }
+              },
+              "name": {
+               "type": "string",
+               "description": "Viewpoint name",
+               "example": "Mechanical Conflict View"
+              },
+              "render_mode": {
+               "type": "string",
+               "description": "Viewer render mode when viewpoint is applied",
+               "enum": [
+                "shaded",
+                "xray"
+               ]
+              },
+              "uuid": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the Extraction viewpoint",
+               "example": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              "visibility": {
+               "type": "object",
+               "nullable": true,
+               "description": "Object Visibility settings",
+               "properties": {
+                "default_visibility": {
+                 "type": "boolean"
+                },
+                "exceptions": {
+                 "type": "object",
+                 "description": "Group of model objects represented as an array of object ids, or object ranges",
+                 "properties": {
+                  "object_ids": {
+                   "type": "array",
+                   "description": "Array of object ids",
+                   "example": [
+                    24861,
+                    46732
+                   ],
+                   "items": {
+                    "type": "integer"
+                   }
+                  },
+                  "object_ranges": {
+                   "type": "array",
+                   "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                   "example": [
+                    [
+                     24862,
+                     24
+                    ]
+                   ],
+                   "items": {
+                    "type": "array",
+                    "items": {
+                     "type": "integer"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "camera_data": {
+               "type": "string",
+               "description": "JSON string representation of camera position",
+               "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "redlines_data": {
+               "type": "string",
+               "description": "JSON string representation of markup",
+               "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "sections_data": {
+               "type": "string",
+               "description": "JSON string representation of sections applied to a 3d model as a set of clipping planes",
+               "example": "[{\"location\":{\"x\":0.0,\"y\":0.0,\"z\":28.82},\"direction\":{\"x\":0,\"y\":0,\"z\":-1},\"unit\":\"ft\"},{\"location\":{\"x\":10.0,\"y\":50.0,\"z\":68.82},\"direction\":{\"x\":2,\"y\":4,\"z\":-6}}]"
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/bim_viewpoints/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/bim_viewpoints/%7Bid%7D?project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/bim_viewpoints/%7Bid%7D?project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/bim_viewpoints/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new response parameter uuid",
+      "description": "Added new response parameter uuid",
+      "endpoint": "GET /bim_viewpoints/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoints?version=1.0#show-bim-viewpoint"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,1063 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Project Observation Types",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Observations",
+  "x-resource-name": "Project Observation Types",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/observation_types": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Project Observation Types",
+    "description": "Returns the Observation Types available on this Project \u2014 both project-specific types and Company types activated for the Project.\n\nOnly active types are returned unless you pass `filters[active]` explicitly.",
+    "tags": [
+     "Project Observation Types"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[active]",
+      "in": "query",
+      "description": "Return only types matching the given active state. Defaults to `true` when omitted \u2014 pass `false` to list deactivated types, or set it explicitly to control the filter.",
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Project Observation Types",
+         "items": {
+          "type": "object",
+          "title": "Project Observation Type",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this Project Observation Type. Pass as the `{id}` path parameter to `PATCH /rest/v1.0/projects/{project_id}/observation_types/{id}`, as `observation[type_id]` when creating an Observation Item, or as `filters[type_id]` when listing Observation Items.",
+            "example": 2020
+           },
+           "name": {
+            "type": "string",
+            "description": "Display name of the Observation Type, localized to the requesting user's locale when a translation exists.",
+            "example": "No Type"
+           },
+           "localized_name": {
+            "type": "string",
+            "description": "Type name resolved for the locale of the request, falling back to the Company default and then the stored name. Display this to end users rather than reimplementing the fallback chain.",
+            "example": "No Type"
+           },
+           "category": {
+            "type": "string",
+            "description": "Localized display name of the type's Observations Category. Procore ships six built-in categories (Quality, Safety, Commissioning, Warranty, Work to Complete, Environmental), but companies can define additional categories, so treat this as free-form text. Use `category_key` for programmatic comparisons.",
+            "example": "Quality"
+           },
+           "category_key": {
+            "type": "string",
+            "description": "Stable, unlocalized key of the type's Observations Category. Prefer this over `category` when branching on category in code.",
+            "example": "quality"
+           },
+           "category_id": {
+            "type": "integer",
+            "description": "ID of the Observations Category this type belongs to. Corresponds to the `id` returned by `GET /rest/v2.0/companies/{company_id}/observations/categories`, and to the `observations_category_id` accepted on create.",
+            "example": 13
+           },
+           "name_translations": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {
+             "type": "string"
+            },
+            "description": "Company-authored translations of the type name, keyed by locale code (for example `en`, `es`, `fr-CA`). Null when the Company has not configured custom translations for this type.",
+            "example": {
+             "en": "No Type",
+             "es": "Sin tipo"
+            }
+           },
+           "active": {
+            "type": "boolean",
+            "description": "Whether the type can be selected on new Observations in this Project. For a company-level type this reflects the project-level activation. Filter the collection with `filters[active]`.",
+            "example": true
+           },
+           "company_active": {
+            "type": "boolean",
+            "description": "Whether the type is active at the Company level, ignoring any project-level override. Compare with `active` to detect a type enabled company-wide but switched off for this Project.",
+            "example": true
+           },
+           "parent_inactive": {
+            "type": "boolean",
+            "description": "True when this project-level type's parent company-level type has been deactivated. Such a type cannot be used on new Observations even if `active` is true.",
+            "example": false
+           },
+           "in_use": {
+            "type": "boolean",
+            "description": "Whether at least one Observation Item currently references this type. Use to warn before deactivating or deleting a type.",
+            "example": false
+           },
+           "kind": {
+            "type": "string",
+            "description": "Whether the type is owned by the Company or defined on this Project only. Project-level types are selectable only within their own Project.",
+            "enum": [
+             "company",
+             "project"
+            ],
+            "example": "project"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[active]': 'SOME_BOOLEAN_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/observation_types?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bactive%5D=SOME_BOOLEAN_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bactive%5D=SOME_BOOLEAN_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bactive%5D=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Observation Types list endpoint",
+      "description": "Get a list of Project Observation Types for a given project id.",
+      "endpoint": "GET /projects/{project_id}/observation_types",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-04-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-observation-types?version=1.0#list-project-observation-types"
+     },
+     {
+      "summary": "Return I18n localized name",
+      "description": "The index endpoint is now able to leverage the `Accept-Language` header to return its closest language match for `name` & `category` in the response.\nTo localize, using header `HTTP_ACCEPT_LANGUAGE='fr'`, `HTTP_ACCEPT_LANGUAGE='fr-ca'`, `HTTP_ACCEPT_LANGUAGE='fr-CA'`.",
+      "endpoint": "GET /projects/{project_id}/observation_types",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-12-21",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-observation-types?version=1.0#list-project-observation-types"
+     },
+     {
+      "summary": "Add Observation Category ID",
+      "description": "Adds observation category ID to be used in place of category to set and return custom observation categories associated with a type.",
+      "endpoint": "GET /projects/{project_id}/observation_types",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-09-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-observation-types?version=1.0#list-project-observation-types"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Project Observation Type",
+    "description": "Creates an Observation Type scoped to this Project. Project types are selectable only within their own Project; to create a type available across all Projects, use the Company Observation Types endpoint instead.",
+    "tags": [
+     "Project Observation Types"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "ProjectObservationTypeCreateBody",
+        "type": "object",
+        "required": [
+         "observation_type"
+        ],
+        "properties": {
+         "observation_type": {
+          "type": "object",
+          "title": "Project Observation Type",
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "Display name of the Observation Type, shown in the type picker when creating an Observation.",
+            "example": "Air Quality"
+           },
+           "category": {
+            "type": "string",
+            "description": "Legacy category key. Prefer `observations_category_id`, which references a Company-managed Observations Category.",
+            "example": "quality"
+           },
+           "observations_category_id": {
+            "type": "integer",
+            "description": "ID of the Observations Category to file this type under. Determines which Configurable Field Set applies to Observations of this type. See `GET /rest/v2.0/companies/{company_id}/observations/categories`.",
+            "example": 12
+           },
+           "active": {
+            "type": "boolean",
+            "description": "Whether the type can be selected on new Observations. Defaults to active.",
+            "example": true
+           },
+           "parent_id": {
+            "type": "integer",
+            "description": "ID of the Company Observation Type this project type is derived from. Leave unset to create a standalone project-level type."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "Project Observation Type",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this Project Observation Type. Pass as the `{id}` path parameter to `PATCH /rest/v1.0/projects/{project_id}/observation_types/{id}`, as `observation[type_id]` when creating an Observation Item, or as `filters[type_id]` when listing Observation Items.",
+           "example": 2020
+          },
+          "name": {
+           "type": "string",
+           "description": "Display name of the Observation Type, localized to the requesting user's locale when a translation exists.",
+           "example": "No Type"
+          },
+          "localized_name": {
+           "type": "string",
+           "description": "Type name resolved for the locale of the request, falling back to the Company default and then the stored name. Display this to end users rather than reimplementing the fallback chain.",
+           "example": "No Type"
+          },
+          "category": {
+           "type": "string",
+           "description": "Localized display name of the type's Observations Category. Procore ships six built-in categories (Quality, Safety, Commissioning, Warranty, Work to Complete, Environmental), but companies can define additional categories, so treat this as free-form text. Use `category_key` for programmatic comparisons.",
+           "example": "Quality"
+          },
+          "category_key": {
+           "type": "string",
+           "description": "Stable, unlocalized key of the type's Observations Category. Prefer this over `category` when branching on category in code.",
+           "example": "quality"
+          },
+          "category_id": {
+           "type": "integer",
+           "description": "ID of the Observations Category this type belongs to. Corresponds to the `id` returned by `GET /rest/v2.0/companies/{company_id}/observations/categories`, and to the `observations_category_id` accepted on create.",
+           "example": 13
+          },
+          "name_translations": {
+           "type": "object",
+           "nullable": true,
+           "additionalProperties": {
+            "type": "string"
+           },
+           "description": "Company-authored translations of the type name, keyed by locale code (for example `en`, `es`, `fr-CA`). Null when the Company has not configured custom translations for this type.",
+           "example": {
+            "en": "No Type",
+            "es": "Sin tipo"
+           }
+          },
+          "active": {
+           "type": "boolean",
+           "description": "Whether the type can be selected on new Observations in this Project. For a company-level type this reflects the project-level activation. Filter the collection with `filters[active]`.",
+           "example": true
+          },
+          "company_active": {
+           "type": "boolean",
+           "description": "Whether the type is active at the Company level, ignoring any project-level override. Compare with `active` to detect a type enabled company-wide but switched off for this Project.",
+           "example": true
+          },
+          "parent_inactive": {
+           "type": "boolean",
+           "description": "True when this project-level type's parent company-level type has been deactivated. Such a type cannot be used on new Observations even if `active` is true.",
+           "example": false
+          },
+          "in_use": {
+           "type": "boolean",
+           "description": "Whether at least one Observation Item currently references this type. Use to warn before deactivating or deleting a type.",
+           "example": false
+          },
+          "kind": {
+           "type": "string",
+           "description": "Whether the type is owned by the Company or defined on this Project only. Project-level types are selectable only within their own Project.",
+           "enum": [
+            "company",
+            "project"
+           ],
+           "example": "project"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    observation_type: {\n      name: 'Air Quality',\n      category: 'quality',\n      observations_category_id: 12,\n      active: true,\n      parent_id: 0\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"observation_type\\\":{\\\"name\\\":\\\"Air Quality\\\",\\\"category\\\":\\\"quality\\\",\\\"observations_category_id\\\":12,\\\"active\\\":true,\\\"parent_id\\\":0}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/observation_types\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"observation_type\":{\"name\":\"Air Quality\",\"category\":\"quality\",\"observations_category_id\":12,\"active\":true,\"parent_id\":0}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"observation_type\\\":{\\\"name\\\":\\\"Air Quality\\\",\\\"category\\\":\\\"quality\\\",\\\"observations_category_id\\\":12,\\\"active\\\":true,\\\"parent_id\\\":0}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Observation Types create endpoint",
+      "description": "Create a Project Observation Type for a given project id.",
+      "endpoint": "POST /projects/{project_id}/observation_types",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-04-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-observation-types?version=1.0#create-project-observation-type"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/observation_types/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the Project Observation Type, as returned in `id` by the list endpoint.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Project Observation Type",
+    "description": "Updates a Project Observation Type. Only the attributes you send are changed. Setting `active` to false hides the type from the picker without affecting Observations that already use it.",
+    "tags": [
+     "Project Observation Types"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "ProjectObservationTypeCreateBody",
+        "type": "object",
+        "required": [
+         "observation_type"
+        ],
+        "properties": {
+         "observation_type": {
+          "type": "object",
+          "title": "Project Observation Type",
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "Display name of the Observation Type, shown in the type picker when creating an Observation."
+           },
+           "category": {
+            "type": "string",
+            "description": "Legacy category key. Prefer `observations_category_id`, which references a Company-managed Observations Category."
+           },
+           "observations_category_id": {
+            "type": "integer",
+            "description": "ID of the Observations Category to file this type under. Determines which Configurable Field Set applies to Observations of this type.",
+            "example": 12
+           },
+           "active": {
+            "type": "boolean",
+            "description": "Whether the type can be selected on new Observations. Deactivating a type leaves existing Observations untouched."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "Project Observation Type",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this Project Observation Type. Pass as the `{id}` path parameter to `PATCH /rest/v1.0/projects/{project_id}/observation_types/{id}`, as `observation[type_id]` when creating an Observation Item, or as `filters[type_id]` when listing Observation Items.",
+           "example": 2020
+          },
+          "name": {
+           "type": "string",
+           "description": "Display name of the Observation Type, localized to the requesting user's locale when a translation exists.",
+           "example": "No Type"
+          },
+          "localized_name": {
+           "type": "string",
+           "description": "Type name resolved for the locale of the request, falling back to the Company default and then the stored name. Display this to end users rather than reimplementing the fallback chain.",
+           "example": "No Type"
+          },
+          "category": {
+           "type": "string",
+           "description": "Localized display name of the type's Observations Category. Procore ships six built-in categories (Quality, Safety, Commissioning, Warranty, Work to Complete, Environmental), but companies can define additional categories, so treat this as free-form text. Use `category_key` for programmatic comparisons.",
+           "example": "Quality"
+          },
+          "category_key": {
+           "type": "string",
+           "description": "Stable, unlocalized key of the type's Observations Category. Prefer this over `category` when branching on category in code.",
+           "example": "quality"
+          },
+          "category_id": {
+           "type": "integer",
+           "description": "ID of the Observations Category this type belongs to. Corresponds to the `id` returned by `GET /rest/v2.0/companies/{company_id}/observations/categories`, and to the `observations_category_id` accepted on create.",
+           "example": 13
+          },
+          "name_translations": {
+           "type": "object",
+           "nullable": true,
+           "additionalProperties": {
+            "type": "string"
+           },
+           "description": "Company-authored translations of the type name, keyed by locale code (for example `en`, `es`, `fr-CA`). Null when the Company has not configured custom translations for this type.",
+           "example": {
+            "en": "No Type",
+            "es": "Sin tipo"
+           }
+          },
+          "active": {
+           "type": "boolean",
+           "description": "Whether the type can be selected on new Observations in this Project. For a company-level type this reflects the project-level activation. Filter the collection with `filters[active]`.",
+           "example": true
+          },
+          "company_active": {
+           "type": "boolean",
+           "description": "Whether the type is active at the Company level, ignoring any project-level override. Compare with `active` to detect a type enabled company-wide but switched off for this Project.",
+           "example": true
+          },
+          "parent_inactive": {
+           "type": "boolean",
+           "description": "True when this project-level type's parent company-level type has been deactivated. Such a type cannot be used on new Observations even if `active` is true.",
+           "example": false
+          },
+          "in_use": {
+           "type": "boolean",
+           "description": "Whether at least one Observation Item currently references this type. Use to warn before deactivating or deleting a type.",
+           "example": false
+          },
+          "kind": {
+           "type": "string",
+           "description": "Whether the type is owned by the Company or defined on this Project only. Project-level types are selectable only within their own Project.",
+           "enum": [
+            "company",
+            "project"
+           ],
+           "example": "project"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    observation_type: {name: 'string', category: 'string', observations_category_id: 12, active: true}\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"observation_type\\\":{\\\"name\\\":\\\"string\\\",\\\"category\\\":\\\"string\\\",\\\"observations_category_id\\\":12,\\\"active\\\":true}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"observation_type\":{\"name\":\"string\",\"category\":\"string\",\"observations_category_id\":12,\"active\":true}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"observation_type\\\":{\\\"name\\\":\\\"string\\\",\\\"category\\\":\\\"string\\\",\\\"observations_category_id\\\":12,\\\"active\\\":true}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Observation Types update endpoint",
+      "description": "Update a Project Observation Type for a given project id.",
+      "endpoint": "PATCH /projects/{project_id}/observation_types/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-04-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-observation-types?version=1.0#update-project-observation-type"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Project Observation Type",
+    "description": "Deletes a Project Observation Type. Check the type's `in_use` flag first \u2014 deleting a type that Observations still reference is rejected.",
+    "tags": [
+     "Project Observation Types"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_types/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Observation Types delete endpoint",
+      "description": "Delete a Project Observation Type for a given project id.",
+      "endpoint": "DELETE /projects/{project_id}/observation_types/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-04-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-observation-types?version=1.0#delete-project-observation-type"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,2016 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Assignments",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Assignments",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/assignments": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Company Assignments",
+    "description": "Returns all of the Resource Planning Assignment data for the given company",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "created_after",
+      "in": "query",
+      "description": "Filters items created on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_at",
+      "in": "query",
+      "description": "Filters items based on their creation timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_before",
+      "in": "query",
+      "description": "Filters items created on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "dayRange",
+      "in": "query",
+      "description": "A value specifying how many days forward you would like to get assignments for from the specified startDay. Assignments whose start_day falls within the given range will be returned in the response.\nThe startDay parameter in conjunction with the dayRange parameter will create a range of dates that will filter each assignment based on its start_day field.\nFor example, passing in a startDay of 2024-01-01 and a dayRange of 1 will return all assignments that begin on either the 1st or 2nd of January.\nIf we pass in the same startDay, but with a dayRange of 15, the results will include all assignments whose start_day exists between the dates of 2024-01-01 and 2024-01-15.\nMax value is 365.\n",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "minimum": 1,
+       "maximum": 365,
+       "example": 15
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     },
+     {
+      "name": "start_day",
+      "in": "query",
+      "description": "The starting day to filter assignments by.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "example": "2024-01-01"
+      }
+     },
+     {
+      "name": "updated_after",
+      "in": "query",
+      "description": "Filters items updated on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_at",
+      "in": "query",
+      "description": "Filters items based on their last updated timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_before",
+      "in": "query",
+      "description": "Filters items updated on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for company assignments",
+          "properties": {
+           "possible_pages": {
+            "type": "integer",
+            "description": "Total number of pages available based on the query parameters",
+            "example": 3
+           },
+           "current_page": {
+            "type": "integer",
+            "description": "The current 0-based page index of the returned data",
+            "example": 0
+           },
+           "data": {
+            "type": "array",
+            "description": "List of people and their assignments",
+            "items": {
+             "type": "object",
+             "properties": {
+              "person_id": {
+               "type": "string",
+               "description": "Unique identifier for the person",
+               "example": "ce7da5a6-c908-4506-a251-16fcbf5e96d7"
+              },
+              "person_name": {
+               "type": "string",
+               "description": "Full name of the person",
+               "example": "Aaron Kelly"
+              },
+              "employee_number": {
+               "type": "string",
+               "description": "Employee number assigned to the person",
+               "example": "123-a234s-456"
+              },
+              "job_title_name": {
+               "type": "string",
+               "description": "The job title associated with the person",
+               "example": "Apprentice-4"
+              },
+              "job_title_id": {
+               "type": "string",
+               "description": "Unique identifier for the job title",
+               "example": "abe0afa9-c5be-4cee-8805-1adc88880d09"
+              },
+              "job_title_color": {
+               "type": "string",
+               "description": "The color associated with the job title",
+               "example": "#5bd043"
+              },
+              "assignments": {
+               "type": "array",
+               "description": "List of assignments associated with the person",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "assignment_status": {
+                  "type": "object",
+                  "description": "Status of the assignment",
+                  "properties": {
+                   "abbreviation": {
+                    "type": "string",
+                    "description": "Abbreviated status",
+                    "example": "COMP"
+                   },
+                   "color": {
+                    "type": "string",
+                    "description": "Status color code",
+                    "example": "#FFFB23"
+                   },
+                   "id": {
+                    "type": "string",
+                    "description": "Unique identifier for the assignment status",
+                    "example": "c80148f1-1f29-4595-b552-08fbf16fdb30"
+                   },
+                   "name": {
+                    "type": "string",
+                    "description": "Full name of the status",
+                    "example": "Complete"
+                   }
+                  }
+                 },
+                 "start_day": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Start date of the assignment (string format)",
+                  "example": "06/25/18"
+                 },
+                 "end_day": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "End date of the assignment (string format)",
+                  "example": "06/29/18"
+                 },
+                 "project_name": {
+                  "type": "string",
+                  "description": "Name of the project assigned to",
+                  "example": "Airport Concourse"
+                 },
+                 "project_number": {
+                  "type": "string",
+                  "description": "Project number",
+                  "example": "112233"
+                 },
+                 "project_id": {
+                  "type": "string",
+                  "description": "Unique identifier for the project",
+                  "example": "446e7813-02f0-4629-b2b7-81dd942a8941"
+                 },
+                 "procore_project_id": {
+                  "type": "integer",
+                  "description": "Procore-specific project identifier",
+                  "example": 12345
+                 },
+                 "category_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Name of the assignment category (if applicable)",
+                  "example": null
+                 },
+                 "category_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Unique identifier for the assignment category (if applicable)",
+                  "example": null
+                 },
+                 "subcategory_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Name of the assignment subcategory (if applicable)",
+                  "example": null
+                 },
+                 "subcategory_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Unique identifier for the assignment subcategory (if applicable)",
+                  "example": null
+                 },
+                 "start_time": {
+                  "type": "string",
+                  "description": "Start time of the assignment",
+                  "example": "7:30 AM"
+                 },
+                 "end_time": {
+                  "type": "string",
+                  "description": "End time of the assignment",
+                  "example": "3:30 PM"
+                 },
+                 "work_days": {
+                  "type": "object",
+                  "description": "Workdays for the assignment, where 0 represents Sunday and 6 represents Saturday",
+                  "properties": {
+                   "0": {
+                    "type": "boolean",
+                    "example": false
+                   },
+                   "1": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "2": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "3": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "4": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "5": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "6": {
+                    "type": "boolean",
+                    "example": false
+                   }
+                  }
+                 },
+                 "id": {
+                  "type": "string",
+                  "description": "Unique identifier for the assignment",
+                  "example": "6bf79bbe-2038-423f-8fee-f890abcbd929"
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "description": "Timestamp of when the assignment was created (string format)",
+                  "example": "06/24/18"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Timestamp of when the assignment was last updated (string format)",
+                  "example": null
+                 }
+                }
+               }
+              },
+              "timeoff": {
+               "type": "array",
+               "description": "List of time-off records for the person",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "reason": {
+                  "type": "string",
+                  "description": "Reason for the time off",
+                  "example": "family"
+                 },
+                 "is_paid": {
+                  "type": "boolean",
+                  "description": "Indicates whether the time off is paid",
+                  "example": true
+                 },
+                 "repeat": {
+                  "type": "string",
+                  "description": "Recurrence pattern of the time off",
+                  "example": "never"
+                 },
+                 "start_time": {
+                  "type": "string",
+                  "description": "Start time of the time-off period",
+                  "example": "7:00 AM"
+                 },
+                 "end_time": {
+                  "type": "string",
+                  "description": "End time of the time-off period",
+                  "example": "3:30 PM"
+                 },
+                 "start_day": {
+                  "type": "string",
+                  "description": "Start date of the time-off period (string format)",
+                  "example": "07/09/18"
+                 },
+                 "end_day": {
+                  "type": "string",
+                  "description": "End date of the time-off period (string format)",
+                  "example": "07/13/18"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All Assignments endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/assignments",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "assignments?version=1.0#get-company-assignments"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/assignments/current": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Current Company Assignments",
+    "description": "Returns all of the current Resource Planning Assignment data for the given company",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for company assignments",
+          "properties": {
+           "possible_pages": {
+            "type": "integer",
+            "description": "Total number of pages available based on the query parameters",
+            "example": 3
+           },
+           "current_page": {
+            "type": "integer",
+            "description": "The current 0-based page index of the returned data",
+            "example": 0
+           },
+           "data": {
+            "type": "array",
+            "description": "List of people and their assignments",
+            "items": {
+             "type": "object",
+             "properties": {
+              "person_id": {
+               "type": "string",
+               "description": "Unique identifier for the person",
+               "example": "ce7da5a6-c908-4506-a251-16fcbf5e96d7"
+              },
+              "person_name": {
+               "type": "string",
+               "description": "Full name of the person",
+               "example": "Aaron Kelly"
+              },
+              "employee_number": {
+               "type": "string",
+               "description": "Employee number assigned to the person",
+               "example": "123-a234s-456"
+              },
+              "job_title_name": {
+               "type": "string",
+               "description": "The job title associated with the person",
+               "example": "Apprentice-4"
+              },
+              "job_title_id": {
+               "type": "string",
+               "description": "Unique identifier for the job title",
+               "example": "abe0afa9-c5be-4cee-8805-1adc88880d09"
+              },
+              "job_title_color": {
+               "type": "string",
+               "description": "The color associated with the job title",
+               "example": "#5bd043"
+              },
+              "assignments": {
+               "type": "array",
+               "description": "List of assignments associated with the person",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "assignment_status": {
+                  "type": "object",
+                  "description": "Status of the assignment",
+                  "properties": {
+                   "abbreviation": {
+                    "type": "string",
+                    "description": "Abbreviated status",
+                    "example": "COMP"
+                   },
+                   "color": {
+                    "type": "string",
+                    "description": "Status color code",
+                    "example": "#FFFB23"
+                   },
+                   "id": {
+                    "type": "string",
+                    "description": "Unique identifier for the assignment status",
+                    "example": "c80148f1-1f29-4595-b552-08fbf16fdb30"
+                   },
+                   "name": {
+                    "type": "string",
+                    "description": "Full name of the status",
+                    "example": "Complete"
+                   }
+                  }
+                 },
+                 "start_day": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Start date of the assignment (string format)",
+                  "example": "06/25/18"
+                 },
+                 "end_day": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "End date of the assignment (string format)",
+                  "example": "06/29/18"
+                 },
+                 "project_name": {
+                  "type": "string",
+                  "description": "Name of the project assigned to",
+                  "example": "Airport Concourse"
+                 },
+                 "project_number": {
+                  "type": "string",
+                  "description": "Project number",
+                  "example": "112233"
+                 },
+                 "project_id": {
+                  "type": "string",
+                  "description": "Unique identifier for the project",
+                  "example": "446e7813-02f0-4629-b2b7-81dd942a8941"
+                 },
+                 "procore_project_id": {
+                  "type": "integer",
+                  "description": "Procore-specific project identifier",
+                  "example": 12345
+                 },
+                 "category_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Name of the assignment category (if applicable)",
+                  "example": null
+                 },
+                 "category_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Unique identifier for the assignment category (if applicable)",
+                  "example": null
+                 },
+                 "subcategory_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Name of the assignment subcategory (if applicable)",
+                  "example": null
+                 },
+                 "subcategory_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Unique identifier for the assignment subcategory (if applicable)",
+                  "example": null
+                 },
+                 "start_time": {
+                  "type": "string",
+                  "description": "Start time of the assignment",
+                  "example": "7:30 AM"
+                 },
+                 "end_time": {
+                  "type": "string",
+                  "description": "End time of the assignment",
+                  "example": "3:30 PM"
+                 },
+                 "work_days": {
+                  "type": "object",
+                  "description": "Workdays for the assignment, where 0 represents Sunday and 6 represents Saturday",
+                  "properties": {
+                   "0": {
+                    "type": "boolean",
+                    "example": false
+                   },
+                   "1": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "2": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "3": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "4": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "5": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "6": {
+                    "type": "boolean",
+                    "example": false
+                   }
+                  }
+                 },
+                 "id": {
+                  "type": "string",
+                  "description": "Unique identifier for the assignment",
+                  "example": "6bf79bbe-2038-423f-8fee-f890abcbd929"
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "description": "Timestamp of when the assignment was created (string format)",
+                  "example": "06/24/18"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Timestamp of when the assignment was last updated (string format)",
+                  "example": null
+                 }
+                }
+               }
+              },
+              "timeoff": {
+               "type": "array",
+               "description": "List of time-off records for the person",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "reason": {
+                  "type": "string",
+                  "description": "Reason for the time off",
+                  "example": "family"
+                 },
+                 "is_paid": {
+                  "type": "boolean",
+                  "description": "Indicates whether the time off is paid",
+                  "example": true
+                 },
+                 "repeat": {
+                  "type": "string",
+                  "description": "Recurrence pattern of the time off",
+                  "example": "never"
+                 },
+                 "start_time": {
+                  "type": "string",
+                  "description": "Start time of the time-off period",
+                  "example": "7:00 AM"
+                 },
+                 "end_time": {
+                  "type": "string",
+                  "description": "End time of the time-off period",
+                  "example": "3:30 PM"
+                 },
+                 "start_day": {
+                  "type": "string",
+                  "description": "Start date of the time-off period (string format)",
+                  "example": "07/09/18"
+                 },
+                 "end_day": {
+                  "type": "string",
+                  "description": "End date of the time-off period (string format)",
+                  "example": "07/13/18"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Current Assignments endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/assignments/current",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "assignments?version=1.0#get-current-company-assignments"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/assignments": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Group Assignments",
+    "description": "Returns the Resource Planning Assignment data for the given company and group",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     },
+     {
+      "name": "dayRange",
+      "in": "query",
+      "description": "A value specifying how many days forward you would like to get assignments for from the specified startDay. Assignments whose start_day falls within the given range will be returned in the response.\nThe startDay parameter in conjunction with the dayRange parameter will create a range of dates that will filter each assignment based on its start_day field.\nFor example, passing in a startDay of 2024-01-01 and a dayRange of 1 will return all assignments that begin on either the 1st or 2nd of January.\nIf we pass in the same startDay, but with a dayRange of 15, the results will include all assignments whose start_day exists between the dates of 2024-01-01 and 2024-01-15.\nMax value is 365.\n",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "minimum": 1,
+       "maximum": 365,
+       "example": 15
+      }
+     },
+     {
+      "name": "start_day",
+      "in": "query",
+      "description": "The starting day to filter assignments by.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "example": "2024-01-01"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for company assignments",
+          "properties": {
+           "possible_pages": {
+            "type": "integer",
+            "description": "Total number of pages available based on the query parameters",
+            "example": 3
+           },
+           "current_page": {
+            "type": "integer",
+            "description": "The current 0-based page index of the returned data",
+            "example": 0
+           },
+           "data": {
+            "type": "array",
+            "description": "List of people and their assignments",
+            "items": {
+             "type": "object",
+             "properties": {
+              "person_id": {
+               "type": "string",
+               "description": "Unique identifier for the person",
+               "example": "ce7da5a6-c908-4506-a251-16fcbf5e96d7"
+              },
+              "person_name": {
+               "type": "string",
+               "description": "Full name of the person",
+               "example": "Aaron Kelly"
+              },
+              "employee_number": {
+               "type": "string",
+               "description": "Employee number assigned to the person",
+               "example": "123-a234s-456"
+              },
+              "job_title_name": {
+               "type": "string",
+               "description": "The job title associated with the person",
+               "example": "Apprentice-4"
+              },
+              "job_title_id": {
+               "type": "string",
+               "description": "Unique identifier for the job title",
+               "example": "abe0afa9-c5be-4cee-8805-1adc88880d09"
+              },
+              "job_title_color": {
+               "type": "string",
+               "description": "The color associated with the job title",
+               "example": "#5bd043"
+              },
+              "assignments": {
+               "type": "array",
+               "description": "List of assignments associated with the person",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "assignment_status": {
+                  "type": "object",
+                  "description": "Status of the assignment",
+                  "properties": {
+                   "abbreviation": {
+                    "type": "string",
+                    "description": "Abbreviated status",
+                    "example": "COMP"
+                   },
+                   "color": {
+                    "type": "string",
+                    "description": "Status color code",
+                    "example": "#FFFB23"
+                   },
+                   "id": {
+                    "type": "string",
+                    "description": "Unique identifier for the assignment status",
+                    "example": "c80148f1-1f29-4595-b552-08fbf16fdb30"
+                   },
+                   "name": {
+                    "type": "string",
+                    "description": "Full name of the status",
+                    "example": "Complete"
+                   }
+                  }
+                 },
+                 "start_day": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Start date of the assignment (string format)",
+                  "example": "06/25/18"
+                 },
+                 "end_day": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "End date of the assignment (string format)",
+                  "example": "06/29/18"
+                 },
+                 "project_name": {
+                  "type": "string",
+                  "description": "Name of the project assigned to",
+                  "example": "Airport Concourse"
+                 },
+                 "project_number": {
+                  "type": "string",
+                  "description": "Project number",
+                  "example": "112233"
+                 },
+                 "project_id": {
+                  "type": "string",
+                  "description": "Unique identifier for the project",
+                  "example": "446e7813-02f0-4629-b2b7-81dd942a8941"
+                 },
+                 "procore_project_id": {
+                  "type": "integer",
+                  "description": "Procore-specific project identifier",
+                  "example": 12345
+                 },
+                 "category_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Name of the assignment category (if applicable)",
+                  "example": null
+                 },
+                 "category_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Unique identifier for the assignment category (if applicable)",
+                  "example": null
+                 },
+                 "subcategory_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Name of the assignment subcategory (if applicable)",
+                  "example": null
+                 },
+                 "subcategory_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Unique identifier for the assignment subcategory (if applicable)",
+                  "example": null
+                 },
+                 "start_time": {
+                  "type": "string",
+                  "description": "Start time of the assignment",
+                  "example": "7:30 AM"
+                 },
+                 "end_time": {
+                  "type": "string",
+                  "description": "End time of the assignment",
+                  "example": "3:30 PM"
+                 },
+                 "work_days": {
+                  "type": "object",
+                  "description": "Workdays for the assignment, where 0 represents Sunday and 6 represents Saturday",
+                  "properties": {
+                   "0": {
+                    "type": "boolean",
+                    "example": false
+                   },
+                   "1": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "2": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "3": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "4": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "5": {
+                    "type": "boolean",
+                    "example": true
+                   },
+                   "6": {
+                    "type": "boolean",
+                    "example": false
+                   }
+                  }
+                 },
+                 "id": {
+                  "type": "string",
+                  "description": "Unique identifier for the assignment",
+                  "example": "6bf79bbe-2038-423f-8fee-f890abcbd929"
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "description": "Timestamp of when the assignment was created (string format)",
+                  "example": "06/24/18"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Timestamp of when the assignment was last updated (string format)",
+                  "example": null
+                 }
+                }
+               }
+              },
+              "timeoff": {
+               "type": "array",
+               "description": "List of time-off records for the person",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "reason": {
+                  "type": "string",
+                  "description": "Reason for the time off",
+                  "example": "family"
+                 },
+                 "is_paid": {
+                  "type": "boolean",
+                  "description": "Indicates whether the time off is paid",
+                  "example": true
+                 },
+                 "repeat": {
+                  "type": "string",
+                  "description": "Recurrence pattern of the time off",
+                  "example": "never"
+                 },
+                 "start_time": {
+                  "type": "string",
+                  "description": "Start time of the time-off period",
+                  "example": "7:00 AM"
+                 },
+                 "end_time": {
+                  "type": "string",
+                  "description": "End time of the time-off period",
+                  "example": "3:30 PM"
+                 },
+                 "start_day": {
+                  "type": "string",
+                  "description": "Start date of the time-off period (string format)",
+                  "example": "07/09/18"
+                 },
+                 "end_day": {
+                  "type": "string",
+                  "description": "End date of the time-off period (string format)",
+                  "example": "07/13/18"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get group assignments",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/assignments",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "assignments?version=1.0#get-group-assignments"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/assignments": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Project Assignments",
+    "description": "Returns the Resource Planning Assignment data for the given company and project",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "dayRange",
+      "in": "query",
+      "description": "A value specifying how many days forward you would like to get assignments for from the specified startDay. Assignments whose start_day falls within the given range will be returned in the response.\nThe startDay parameter in conjunction with the dayRange parameter will create a range of dates that will filter each assignment based on its start_day field.\nFor example, passing in a startDay of 2024-01-01 and a dayRange of 1 will return all assignments that begin on either the 1st or 2nd of January.\nIf we pass in the same startDay, but with a dayRange of 15, the results will include all assignments whose start_day exists between the dates of 2024-01-01 and 2024-01-15.\nMax value is 365.\n",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "minimum": 1,
+       "maximum": 365,
+       "example": 15
+      }
+     },
+     {
+      "name": "start_day",
+      "in": "query",
+      "description": "The starting day to filter assignments by.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "example": "2024-01-01"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for company assignments",
+          "properties": {
+           "data": {
+            "type": "array",
+            "description": "List of assignments",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the assignment",
+               "example": "1a52e827-3b4e-4dff-903d-a321b378eb6c"
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of when the assignment was created (string format)",
+               "example": "06/20/18"
+              },
+              "start_day": {
+               "type": "string",
+               "description": "Start date of the assignment (string format)",
+               "example": "06/25/18"
+              },
+              "start_time": {
+               "type": "string",
+               "description": "Start time of the assignment",
+               "example": "7:30 AM"
+              },
+              "end_day": {
+               "type": "string",
+               "description": "End date of the assignment (string format)",
+               "example": "06/29/18"
+              },
+              "end_time": {
+               "type": "string",
+               "description": "End time of the assignment",
+               "example": "3:30 PM"
+              },
+              "updated_at": {
+               "type": "string",
+               "nullable": true,
+               "description": "Timestamp of when the assignment was last updated (string format)",
+               "example": null
+              },
+              "state": {
+               "type": "string",
+               "nullable": true,
+               "description": "The current state of the assignment",
+               "example": null
+              },
+              "person_id": {
+               "type": "string",
+               "description": "Unique identifier for the person assigned",
+               "example": "f6470e8b-013d-4145-b1b0-df05bceddad5"
+              },
+              "person_name": {
+               "type": "string",
+               "description": "Full name of the assigned person",
+               "example": "Hunter Gray"
+              },
+              "project_id": {
+               "type": "string",
+               "description": "Unique identifier for the project",
+               "example": "c805906e-8fe2-45ee-8525-72f1b4b58e58"
+              },
+              "project_name": {
+               "type": "string",
+               "description": "Name of the project",
+               "example": "Children\u2019s Mercy Hospital - Labor & Delivery Unit"
+              },
+              "project_number": {
+               "type": "string",
+               "description": "Project number",
+               "example": "8203824"
+              },
+              "category_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the assignment category (if applicable)",
+               "example": "Apprentice"
+              },
+              "category_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the assignment category (if applicable)",
+               "example": "0c29fe4a-c183-4bec-a509-f8b7c694804c"
+              },
+              "subcategory_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the assignment subcategory (if applicable)",
+               "example": "North Lot"
+              },
+              "subcategory_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the assignment subcategory (if applicable)",
+               "example": "f87cbeb6-84e0-428d-b231-139e8e7180f4"
+              },
+              "work_days": {
+               "type": "object",
+               "description": "Workdays for the assignment, where 0 represents Sunday and 6 represents Saturday",
+               "properties": {
+                "0": {
+                 "type": "boolean",
+                 "example": false
+                },
+                "1": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "2": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "3": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "4": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "5": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "6": {
+                 "type": "boolean",
+                 "example": false
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Project Assignments endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/projects/{project_id}/assignments",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "assignments?version=1.0#get-project-assignments"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/assignments": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Person Assignments",
+    "description": "Returns the Resource Planning Assignment data for the given company and person",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "dayRange",
+      "in": "query",
+      "description": "A value specifying how many days forward you would like to get assignments for from the specified startDay. Assignments whose start_day falls within the given range will be returned in the response.\nThe startDay parameter in conjunction with the dayRange parameter will create a range of dates that will filter each assignment based on its start_day field.\nFor example, passing in a startDay of 2024-01-01 and a dayRange of 1 will return all assignments that begin on either the 1st or 2nd of January.\nIf we pass in the same startDay, but with a dayRange of 15, the results will include all assignments whose start_day exists between the dates of 2024-01-01 and 2024-01-15.\nMax value is 365.\n",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "minimum": 1,
+       "maximum": 365,
+       "example": 15
+      }
+     },
+     {
+      "name": "start_day",
+      "in": "query",
+      "description": "The starting day to filter assignments by.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "example": "2024-01-01"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for assignments",
+          "properties": {
+           "data": {
+            "type": "array",
+            "description": "List of assignments",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier for the assignment",
+               "example": "6bf79bbe-2038-423f-8fee-f890abcbd929"
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of when the assignment was created (string format)",
+               "example": "06/24/18"
+              },
+              "start_day": {
+               "type": "string",
+               "description": "Start date of the assignment (string format)",
+               "example": "06/25/18"
+              },
+              "start_time": {
+               "type": "string",
+               "description": "Start time of the assignment",
+               "example": "7:30 AM"
+              },
+              "end_day": {
+               "type": "string",
+               "description": "End date of the assignment (string format)",
+               "example": "06/29/18"
+              },
+              "end_time": {
+               "type": "string",
+               "description": "End time of the assignment",
+               "example": "3:30 PM"
+              },
+              "updated_at": {
+               "type": "string",
+               "nullable": true,
+               "description": "Timestamp of when the assignment was last updated (string format)",
+               "example": null
+              },
+              "state": {
+               "type": "object",
+               "nullable": true,
+               "description": "Status of the assignment",
+               "properties": {
+                "abbreviation": {
+                 "type": "string",
+                 "description": "Abbreviated state of the assignment",
+                 "example": "COMP"
+                },
+                "color": {
+                 "type": "string",
+                 "description": "Status color code",
+                 "example": "#FFFB23"
+                },
+                "id": {
+                 "type": "string",
+                 "description": "Unique identifier for the state",
+                 "example": "c80148f1-1f29-4595-b552-08fbf16fdb30"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Full name of the state",
+                 "example": "Complete"
+                }
+               }
+              },
+              "person_id": {
+               "type": "string",
+               "description": "Unique identifier for the person assigned",
+               "example": "ce7da5a6-c908-4506-a251-16fcbf5e96d7"
+              },
+              "person_name": {
+               "type": "string",
+               "description": "Full name of the assigned person",
+               "example": "Aaron Kelly"
+              },
+              "project_id": {
+               "type": "string",
+               "description": "Unique identifier for the project",
+               "example": "446e7813-02f0-4629-b2b7-81dd942a8941"
+              },
+              "project_name": {
+               "type": "string",
+               "description": "Name of the project",
+               "example": "Airport Concourse"
+              },
+              "project_color": {
+               "type": "string",
+               "description": "The color associated with the project",
+               "example": "#53A9FF"
+              },
+              "job_number": {
+               "type": "string",
+               "description": "Job number associated with the project",
+               "example": "112233"
+              },
+              "category_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the assignment category (if applicable)",
+               "example": null
+              },
+              "category_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the assignment category (if applicable)",
+               "example": null
+              },
+              "subcategory_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the assignment subcategory (if applicable)",
+               "example": null
+              },
+              "subcategory_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Unique identifier for the assignment subcategory (if applicable)",
+               "example": null
+              },
+              "work_days": {
+               "type": "object",
+               "description": "Workdays for the assignment, where 0 represents Sunday and 6 represents Saturday",
+               "properties": {
+                "0": {
+                 "type": "boolean",
+                 "example": false
+                },
+                "1": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "2": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "3": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "4": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "5": {
+                 "type": "boolean",
+                 "example": true
+                },
+                "6": {
+                 "type": "boolean",
+                 "example": false
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Person Assignments endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/people/{person_id}/assignments",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "assignments?version=1.0#get-person-assignments"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

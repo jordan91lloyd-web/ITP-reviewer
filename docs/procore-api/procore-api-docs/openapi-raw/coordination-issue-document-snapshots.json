@@ -1,0 +1,1441 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Coordination Issue Document Snapshots (REST v2.0)",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Coordination Issues",
+  "x-resource-name": "Coordination Issue Document Snapshots",
+  "version": "2.0",
+  "x-product-lines": [
+   "Design Coordination"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/coordination_issues/{coordination_issue_id}/document_snapshots": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "coordination_issue_id",
+     "in": "path",
+     "required": true,
+     "description": "Coordination Issue ID (numeric)",
+     "schema": {
+      "type": "string",
+      "pattern": "^\\d+$"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "operationId": "listCoordinationIssueDocumentSnapshots",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "summary": "List document snapshots for a coordination issue (REST v2.0)",
+    "description": "Returns all document snapshots associated with the coordination issue. Each snapshot\nrepresents a point-in-time capture of a document revision linked to the issue.\n\nThe response includes the snapshot metadata (`document_container_id`,\n`document_revision_id`, `document_revision_version_id`, `created_at`) and the nested\n`prostore_file` object with file URL, name, content type, and viewable status.\n\nNo pagination \u2014 all snapshots for the issue are returned in a single response.\n",
+    "responses": {
+     "200": {
+      "description": "OK \u2014 all document snapshots for the coordination issue",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Rendered by `CoordinationIssueDocumentSnapshotBlueprint` view `:normal`. Represents a point-in-time\nsnapshot image of a document revision linked to a coordination issue. The `prostore_file` nested object\nprovides the file URL, name, content type, and viewable status.\n",
+            "required": [
+             "id"
+            ],
+            "additionalProperties": true,
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Document snapshot record id.",
+              "example": "42"
+             },
+             "document_container_id": {
+              "type": "string",
+              "description": "The document container (folder) the source document belongs to.",
+              "example": "1001"
+             },
+             "document_name": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "Human-readable name of the source document. Surfaced as the coordination issue's\nsource file for outside-workflow (document snapshot) issues. May be null for snapshots\ncreated before this field existed.\n",
+              "example": "Floor Plan.pdf"
+             },
+             "document_revision_id": {
+              "type": "string",
+              "description": "The document revision id from which the snapshot was taken.",
+              "example": "2001"
+             },
+             "document_revision_version_id": {
+              "type": "string",
+              "description": "The specific document revision version id for this snapshot.",
+              "example": "3001"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the snapshot was created.",
+              "example": "2026-03-30T12:00:00Z"
+             },
+             "prostore_file": {
+              "type": "object",
+              "description": "Prostore file object (`ProstoreFileBlueprint` view `:normal_with_viewable`). Contains the snapshot\nimage file details including a signed URL, content type, and whether the file is viewable.\n",
+              "additionalProperties": true,
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Prostore file id.",
+                "example": "5001"
+               },
+               "name": {
+                "type": "string",
+                "description": "File name.",
+                "example": "snapshot.png"
+               },
+               "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Signed download URL for the snapshot file.",
+                "example": "https://api.procore.com/fas/..."
+               },
+               "content_type": {
+                "type": "string",
+                "description": "MIME content type.",
+                "example": "image/png"
+               },
+               "viewable": {
+                "type": "boolean",
+                "description": "Whether this file has a viewable document representation.",
+                "example": true
+               }
+              }
+             }
+            }
+           }
+          }
+         },
+         "additionalProperties": true
+        },
+        "example": {
+         "data": [
+          {
+           "id": "42",
+           "document_container_id": "1001",
+           "document_revision_id": "2001",
+           "document_revision_version_id": "3001",
+           "created_at": "2026-03-30T12:00:00Z",
+           "prostore_file": {
+            "id": "5001",
+            "name": "snapshot.png",
+            "url": "https://api.procore.com/fas/...",
+            "content_type": "image/png",
+            "viewable": true
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Coordination issue not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots',\n  headers: {'Procore-Company-Id': 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_STRING_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots \\\n  --header 'Procore-Company-Id: SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "operationId": "createCoordinationIssueDocumentSnapshot",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "summary": "Create a document snapshot on a coordination issue (REST v2.0)",
+    "description": "Creates a new document snapshot linked to the coordination issue. The `snapshot_upload_uuid`\nmust reference a previously uploaded file (via the Procore upload flow).\n\nThe `DocumentSnapshotCreator` service creates a `ProstoreFile` from the upload UUID\nusing `ProstoreFileCreator`. The snapshot record is then created with the resolved\nfile and the provided document container/revision identifiers.\n\nA uniqueness constraint prevents duplicate snapshots for the same `prostore_file` on the\nsame coordination issue (scoped to non-deleted records).\n",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Flat request body for creating a document snapshot on a coordination issue. The\n`snapshot_upload_uuid` identifies a previously uploaded file (via Procore's upload flow).\nThe service creates a `ProstoreFile` from the upload UUID using `ProstoreFileCreator`\nand links it to the new snapshot record.\n",
+        "required": [
+         "snapshot_upload_uuid",
+         "document_container_id",
+         "document_revision_id"
+        ],
+        "properties": {
+         "snapshot_upload_uuid": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the previously uploaded snapshot file. The server creates the corresponding\n`ProstoreFile` using `ProstoreFileCreator`.\n",
+          "example": "7b3c8752-e03e-417f-bb57-46bb5aca1139"
+         },
+         "document_container_id": {
+          "type": "string",
+          "description": "The document container (folder) the source document belongs to.",
+          "example": "1001"
+         },
+         "document_name": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Human-readable name of the source document. Surfaced as the coordination issue's\nsource file for outside-workflow (document snapshot) issues. Optional; limited to\n255 characters by a database check constraint.\n",
+          "example": "Floor Plan.pdf"
+         },
+         "document_revision_id": {
+          "type": "string",
+          "description": "The document revision id from which the snapshot was taken.",
+          "example": "2001"
+         },
+         "document_revision_version_id": {
+          "type": "string",
+          "description": "The specific document revision version id for this snapshot (optional).",
+          "example": "3001"
+         }
+        },
+        "additionalProperties": true
+       },
+       "example": {
+        "snapshot_upload_uuid": "7b3c8752-e03e-417f-bb57-46bb5aca1139",
+        "document_container_id": "1001",
+        "document_revision_id": "2001",
+        "document_revision_version_id": "3001"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created \u2014 the new document snapshot",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Rendered by `CoordinationIssueDocumentSnapshotBlueprint` view `:normal`. Represents a point-in-time\nsnapshot image of a document revision linked to a coordination issue. The `prostore_file` nested object\nprovides the file URL, name, content type, and viewable status.\n",
+           "required": [
+            "id"
+           ],
+           "additionalProperties": true,
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Document snapshot record id.",
+             "example": "42"
+            },
+            "document_container_id": {
+             "type": "string",
+             "description": "The document container (folder) the source document belongs to.",
+             "example": "1001"
+            },
+            "document_name": {
+             "type": "string",
+             "maxLength": 255,
+             "description": "Human-readable name of the source document. Surfaced as the coordination issue's\nsource file for outside-workflow (document snapshot) issues. May be null for snapshots\ncreated before this field existed.\n",
+             "example": "Floor Plan.pdf"
+            },
+            "document_revision_id": {
+             "type": "string",
+             "description": "The document revision id from which the snapshot was taken.",
+             "example": "2001"
+            },
+            "document_revision_version_id": {
+             "type": "string",
+             "description": "The specific document revision version id for this snapshot.",
+             "example": "3001"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the snapshot was created.",
+             "example": "2026-03-30T12:00:00Z"
+            },
+            "prostore_file": {
+             "type": "object",
+             "description": "Prostore file object (`ProstoreFileBlueprint` view `:normal_with_viewable`). Contains the snapshot\nimage file details including a signed URL, content type, and whether the file is viewable.\n",
+             "additionalProperties": true,
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Prostore file id.",
+               "example": "5001"
+              },
+              "name": {
+               "type": "string",
+               "description": "File name.",
+               "example": "snapshot.png"
+              },
+              "url": {
+               "type": "string",
+               "format": "uri",
+               "description": "Signed download URL for the snapshot file.",
+               "example": "https://api.procore.com/fas/..."
+              },
+              "content_type": {
+               "type": "string",
+               "description": "MIME content type.",
+               "example": "image/png"
+              },
+              "viewable": {
+               "type": "boolean",
+               "description": "Whether this file has a viewable document representation.",
+               "example": true
+              }
+             }
+            }
+           }
+          }
+         },
+         "additionalProperties": true
+        },
+        "example": {
+         "data": {
+          "id": "43",
+          "document_container_id": "1001",
+          "document_revision_id": "2001",
+          "document_revision_version_id": "3001",
+          "created_at": "2026-03-30T12:05:00Z",
+          "prostore_file": {
+           "id": "5002",
+           "name": "snapshot.png",
+           "url": "https://api.procore.com/fas/...",
+           "content_type": "image/png",
+           "viewable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Coordination issue not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation error \u2014 missing required fields, duplicate prostore file for the same\ncoordination issue, or upload UUID could not be resolved.\n",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots',\n  headers: {'Procore-Company-Id': 'SOME_STRING_VALUE', 'content-type': 'application/json'},\n  body: {\n    snapshot_upload_uuid: '7b3c8752-e03e-417f-bb57-46bb5aca1139',\n    document_container_id: '1001',\n    document_name: 'Floor Plan.pdf',\n    document_revision_id: '2001',\n    document_revision_version_id: '3001'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"snapshot_upload_uuid\\\":\\\"7b3c8752-e03e-417f-bb57-46bb5aca1139\\\",\\\"document_container_id\\\":\\\"1001\\\",\\\"document_name\\\":\\\"Floor Plan.pdf\\\",\\\"document_revision_id\\\":\\\"2001\\\",\\\"document_revision_version_id\\\":\\\"3001\\\"}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_STRING_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots \\\n  --header 'Procore-Company-Id: SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"snapshot_upload_uuid\":\"7b3c8752-e03e-417f-bb57-46bb5aca1139\",\"document_container_id\":\"1001\",\"document_name\":\"Floor Plan.pdf\",\"document_revision_id\":\"2001\",\"document_revision_version_id\":\"3001\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_STRING_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"snapshot_upload_uuid\\\":\\\"7b3c8752-e03e-417f-bb57-46bb5aca1139\\\",\\\"document_container_id\\\":\\\"1001\\\",\\\"document_name\\\":\\\"Floor Plan.pdf\\\",\\\"document_revision_id\\\":\\\"2001\\\",\\\"document_revision_version_id\\\":\\\"3001\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/coordination_issues/{coordination_issue_id}/document_snapshots/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "coordination_issue_id",
+     "in": "path",
+     "required": true,
+     "description": "Coordination Issue ID (numeric)",
+     "schema": {
+      "type": "string",
+      "pattern": "^\\d+$"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Document Snapshot ID (numeric)",
+     "schema": {
+      "type": "string",
+      "pattern": "^\\d+$"
+     }
+    }
+   ],
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "operationId": "destroyCoordinationIssueDocumentSnapshot",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "summary": "Delete a document snapshot from a coordination issue (REST v2.0)",
+    "description": "Soft-deletes the document snapshot (`acts_as_paranoid` \u2014 sets `deleted_at`). The snapshot\nmust belong to the specified coordination issue.\n\n**Success response**: `head :ok` \u2014 **HTTP 200** with **no response body**.\n",
+    "responses": {
+     "200": {
+      "description": "OK \u2014 empty body (Content-Length 0)"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Document snapshot or coordination issue not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D',\n  headers: {'Procore-Company-Id': 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_STRING_VALUE\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D \\\n  --header 'Procore-Company-Id: SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "operationId": "updateCoordinationIssueDocumentSnapshot",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "summary": "Update a document snapshot on a coordination issue (REST v2.0)",
+    "description": "Updates the document snapshot by replacing the existing `ProstoreFile` with a new one\ncreated from the provided `snapshot_upload_uuid`. The old `ProstoreFile` is destroyed\nafter the snapshot is updated.\n\nThe `DocumentSnapshotUpdater` service validates the upload UUID, creates a new\n`ProstoreFile` using `ProstoreFileCreator`, updates the snapshot record, and then\ndestroys the old file.\n",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Flat request body for updating a document snapshot on a coordination issue. The\n`snapshot_upload_uuid` identifies a previously uploaded file (via Procore's upload flow).\nThe service creates a new `ProstoreFile` from the upload UUID, updates the snapshot\nrecord, and destroys the old `ProstoreFile`.\n",
+        "required": [
+         "snapshot_upload_uuid"
+        ],
+        "properties": {
+         "snapshot_upload_uuid": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the new uploaded snapshot file. The server creates a new `ProstoreFile`\nfrom this upload, replaces the existing file on the snapshot, and destroys the\nold `ProstoreFile`.\n",
+          "example": "8c4d9863-f14f-528a-cc68-57cc6bdb2240"
+         },
+         "document_name": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Human-readable name of the source document. Optional; when provided it updates the\nsnapshot's stored name. Limited to 255 characters by a database check constraint.\n",
+          "example": "Updated Plan.pdf"
+         }
+        },
+        "additionalProperties": false
+       },
+       "example": {
+        "snapshot_upload_uuid": "8c4d9863-f14f-528a-cc68-57cc6bdb2240"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK \u2014 the updated document snapshot",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Rendered by `CoordinationIssueDocumentSnapshotBlueprint` view `:normal`. Represents a point-in-time\nsnapshot image of a document revision linked to a coordination issue. The `prostore_file` nested object\nprovides the file URL, name, content type, and viewable status.\n",
+           "required": [
+            "id"
+           ],
+           "additionalProperties": true,
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Document snapshot record id.",
+             "example": "42"
+            },
+            "document_container_id": {
+             "type": "string",
+             "description": "The document container (folder) the source document belongs to.",
+             "example": "1001"
+            },
+            "document_name": {
+             "type": "string",
+             "maxLength": 255,
+             "description": "Human-readable name of the source document. Surfaced as the coordination issue's\nsource file for outside-workflow (document snapshot) issues. May be null for snapshots\ncreated before this field existed.\n",
+             "example": "Floor Plan.pdf"
+            },
+            "document_revision_id": {
+             "type": "string",
+             "description": "The document revision id from which the snapshot was taken.",
+             "example": "2001"
+            },
+            "document_revision_version_id": {
+             "type": "string",
+             "description": "The specific document revision version id for this snapshot.",
+             "example": "3001"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the snapshot was created.",
+             "example": "2026-03-30T12:00:00Z"
+            },
+            "prostore_file": {
+             "type": "object",
+             "description": "Prostore file object (`ProstoreFileBlueprint` view `:normal_with_viewable`). Contains the snapshot\nimage file details including a signed URL, content type, and whether the file is viewable.\n",
+             "additionalProperties": true,
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Prostore file id.",
+               "example": "5001"
+              },
+              "name": {
+               "type": "string",
+               "description": "File name.",
+               "example": "snapshot.png"
+              },
+              "url": {
+               "type": "string",
+               "format": "uri",
+               "description": "Signed download URL for the snapshot file.",
+               "example": "https://api.procore.com/fas/..."
+              },
+              "content_type": {
+               "type": "string",
+               "description": "MIME content type.",
+               "example": "image/png"
+              },
+              "viewable": {
+               "type": "boolean",
+               "description": "Whether this file has a viewable document representation.",
+               "example": true
+              }
+             }
+            }
+           }
+          }
+         },
+         "additionalProperties": true
+        },
+        "example": {
+         "data": {
+          "id": "42",
+          "document_container_id": "1001",
+          "document_revision_id": "2001",
+          "document_revision_version_id": "3001",
+          "created_at": "2026-03-30T12:00:00Z",
+          "prostore_file": {
+           "id": "5003",
+           "name": "Document Snapshot 42",
+           "url": "https://api.procore.com/fas/...",
+           "content_type": "image/png",
+           "viewable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Document snapshot or coordination issue not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation error \u2014 upload UUID could not be resolved or file creation failed.\n",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D',\n  headers: {'Procore-Company-Id': 'SOME_STRING_VALUE', 'content-type': 'application/json'},\n  body: {\n    snapshot_upload_uuid: '8c4d9863-f14f-528a-cc68-57cc6bdb2240',\n    document_name: 'Updated Plan.pdf'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"snapshot_upload_uuid\\\":\\\"8c4d9863-f14f-528a-cc68-57cc6bdb2240\\\",\\\"document_name\\\":\\\"Updated Plan.pdf\\\"}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_STRING_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D \\\n  --header 'Procore-Company-Id: SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"snapshot_upload_uuid\":\"8c4d9863-f14f-528a-cc68-57cc6bdb2240\",\"document_name\":\"Updated Plan.pdf\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/coordination_issues/%7Bcoordination_issue_id%7D/document_snapshots/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_STRING_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"snapshot_upload_uuid\\\":\\\"8c4d9863-f14f-528a-cc68-57cc6bdb2240\\\",\\\"document_name\\\":\\\"Updated Plan.pdf\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

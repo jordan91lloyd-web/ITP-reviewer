@@ -1,0 +1,1358 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Job Titles",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Job Titles",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/job-titles": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get all Job Titles in the Company",
+    "description": "Returns an array of all Job Titles within the specified company.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns an array of Job Title objects.",
+         "items": {
+          "type": "object",
+          "description": "Schema representing a single Job Title.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Job Title.",
+            "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+           },
+           "name": {
+            "type": "string",
+            "description": "Name of the Job Title.",
+            "example": "Foreman"
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "List of Group UUIDs where this Job Title is available.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+             "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+            ]
+           },
+           "globally_accessible": {
+            "type": "boolean",
+            "description": "Controls whether the Job Title is globally available to all current and future Groups.",
+            "example": true
+           },
+           "color": {
+            "type": "string",
+            "description": "Hexadecimal color code for the Job Title. Helps with categorization and visual distinction.\n",
+            "pattern": "^#([A-Fa-f0-9]{6})$",
+            "example": "#53A9FF"
+           },
+           "type": {
+            "type": "string",
+            "enum": [
+             "hourly",
+             "salaried"
+            ],
+            "description": "Specifies the Job Title type. - `hourly` - Hourly wage-based job title. - `salaried` - Fixed salary job title.\n",
+            "example": "hourly"
+           },
+           "hourly_rate": {
+            "type": "number",
+            "description": "Hourly wage rate for the Job Title. Required if type is `hourly`.",
+            "example": 45
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All Job Titles endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/job-titles",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#get-all-job-titles-in-the-company"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Job Title",
+    "description": "Creates a new Job Title in the specified company.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for creating a new Job Title.",
+        "required": [
+         "name",
+         "group_ids",
+         "globally_accessible"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the Job Title.",
+          "example": "Foreman"
+         },
+         "group_ids": {
+          "type": "array",
+          "description": "Array of UUIDs for which Groups this Job Title should be available to. If `globally_accessible` is set to `true`, this value can be an empty array.",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "example": [
+           "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+           "2d2ad78e-c6de-467e-8413-c616b55294a5"
+          ]
+         },
+         "globally_accessible": {
+          "type": "boolean",
+          "description": "Controls whether the Job Title should be globally available to all current and future Groups.",
+          "example": true
+         },
+         "color": {
+          "type": "string",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "description": "Hexadecimal color code for the Job Title. Helps with categorization and visual distinction.\n",
+          "example": "#53A9FF"
+         },
+         "type": {
+          "type": "string",
+          "enum": [
+           "salaried",
+           "hourly"
+          ],
+          "description": "Indicates whether the Job Title is salaried or hourly.",
+          "example": "hourly"
+         },
+         "hourly_rate": {
+          "type": "number",
+          "nullable": true,
+          "description": "The rate value that will be factored into cost calculations for any person who has this job title applied and doesn't already have a standalone hourly wage value. This is also handy for costing manpower requests when job titles are specified.\n",
+          "example": 45
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema for a Job Title ID response.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "The unique identifier of the Job Title.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Job Title endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/job-titles",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#create-a-job-title"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/job-titles/{job_title_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a Single Job Title",
+    "description": "Returns details for a specific Job Title in a given company.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "job_title_id",
+      "in": "path",
+      "description": "Unique identifier for the Job Title.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema representing a single Job Title.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Job Title.",
+           "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+          },
+          "name": {
+           "type": "string",
+           "description": "Name of the Job Title.",
+           "example": "Foreman"
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "List of Group UUIDs where this Job Title is available.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+           ]
+          },
+          "globally_accessible": {
+           "type": "boolean",
+           "description": "Controls whether the Job Title is globally available to all current and future Groups.",
+           "example": true
+          },
+          "color": {
+           "type": "string",
+           "description": "Hexadecimal color code for the Job Title. Helps with categorization and visual distinction.\n",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "example": "#53A9FF"
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "hourly",
+            "salaried"
+           ],
+           "description": "Specifies the Job Title type. - `hourly` - Hourly wage-based job title. - `salaried` - Fixed salary job title.\n",
+           "example": "hourly"
+          },
+          "hourly_rate": {
+           "type": "number",
+           "description": "Hourly wage rate for the Job Title. Required if type is `hourly`.",
+           "example": 45
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Single Job Title endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/job-titles/{job_title_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#get-a-single-job-title"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a Job Title",
+    "description": "Updates a Job Title given a company ID and job title ID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "job_title_id",
+      "in": "path",
+      "description": "Unique identifier for the Job Title.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for updating a Job Title.",
+        "required": [
+         "name",
+         "type"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Name of the Job Title.",
+          "example": "Foreman"
+         },
+         "globally_accessible": {
+          "type": "boolean",
+          "description": "Controls whether the Job Title is globally available to all current and future Groups.",
+          "example": true
+         },
+         "color": {
+          "type": "string",
+          "description": "Hexadecimal color code for the Job Title. Helps with categorization and visual distinction.\n",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "example": "#53A9FF"
+         },
+         "type": {
+          "type": "string",
+          "enum": [
+           "hourly",
+           "salaried"
+          ],
+          "description": "Specifies the Job Title type. - `hourly` - Hourly wage-based job title. - `salaried` - Fixed salary job title.\n",
+          "example": "hourly"
+         },
+         "hourly_rate": {
+          "type": "number",
+          "description": "Hourly wage rate for the Job Title. Required if type is `hourly`.",
+          "example": 45
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema representing a single Job Title.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Job Title.",
+           "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+          },
+          "name": {
+           "type": "string",
+           "description": "Name of the Job Title.",
+           "example": "Foreman"
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "List of Group UUIDs where this Job Title is available.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+           ]
+          },
+          "globally_accessible": {
+           "type": "boolean",
+           "description": "Controls whether the Job Title is globally available to all current and future Groups.",
+           "example": true
+          },
+          "color": {
+           "type": "string",
+           "description": "Hexadecimal color code for the Job Title. Helps with categorization and visual distinction.\n",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "example": "#53A9FF"
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "hourly",
+            "salaried"
+           ],
+           "description": "Specifies the Job Title type. - `hourly` - Hourly wage-based job title. - `salaried` - Fixed salary job title.\n",
+           "example": "hourly"
+          },
+          "hourly_rate": {
+           "type": "number",
+           "description": "Hourly wage rate for the Job Title. Required if type is `hourly`.",
+           "example": 45
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Job Title endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/job-titles/{job_title_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#update-a-job-title"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Job Title",
+    "description": "Deletes a Job Title given a company ID and job title ID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "job_title_id",
+      "in": "path",
+      "description": "Unique identifier for the Job Title.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema for a Job Title ID response.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "The unique identifier of the Job Title.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Job Title endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/job-titles/{job_title_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#delete-a-job-title"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/job-titles": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get all Job Titles belonging to a Group",
+    "description": "Returns an array of Job Titles assigned to a specific Group.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns an array of Job Title objects.",
+         "items": {
+          "type": "object",
+          "description": "Schema representing a single Job Title.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Job Title.",
+            "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+           },
+           "name": {
+            "type": "string",
+            "description": "Name of the Job Title.",
+            "example": "Foreman"
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "List of Group UUIDs where this Job Title is available.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+             "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+            ]
+           },
+           "globally_accessible": {
+            "type": "boolean",
+            "description": "Controls whether the Job Title is globally available to all current and future Groups.",
+            "example": true
+           },
+           "color": {
+            "type": "string",
+            "description": "Hexadecimal color code for the Job Title. Helps with categorization and visual distinction.\n",
+            "pattern": "^#([A-Fa-f0-9]{6})$",
+            "example": "#53A9FF"
+           },
+           "type": {
+            "type": "string",
+            "enum": [
+             "hourly",
+             "salaried"
+            ],
+            "description": "Specifies the Job Title type. - `hourly` - Hourly wage-based job title. - `salaried` - Fixed salary job title.\n",
+            "example": "hourly"
+           },
+           "hourly_rate": {
+            "type": "number",
+            "description": "Hourly wage rate for the Job Title. Required if type is `hourly`.",
+            "example": 45
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get group job titles",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/job-titles",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#get-all-job-titles-belonging-to-a-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/job-titles/{job_title_id}/groups": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Make Job Title available to Group",
+    "description": "Makes a Job Title available to a Group it was not previously available to.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "job_title_id",
+      "in": "path",
+      "description": "Unique identifier for the Job Title.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body for adding or removing a Job Title from a Group.",
+        "required": [
+         "group_id"
+        ],
+        "properties": {
+         "group_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Group the Job Title is being added to or removed from.",
+          "example": "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a list of Group IDs.",
+         "properties": {
+          "group_ids": {
+           "type": "array",
+           "description": "Array of unique identifiers for Groups.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+            "2d2ad78e-c6de-467e-8413-c616b55294a5",
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Add Job Title to Group endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/job-titles/{job_title_id}/groups",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#make-job-title-available-to-group"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove Job Title from being available to Group",
+    "description": "Removes a Job Title from a Group it was previously assigned to.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "job_title_id",
+      "in": "path",
+      "description": "Unique identifier for the Job Title.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body for adding or removing a Job Title from a Group.",
+        "required": [
+         "group_id"
+        ],
+        "properties": {
+         "group_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Group the Job Title is being added to or removed from.",
+          "example": "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a list of Group IDs.",
+         "properties": {
+          "group_ids": {
+           "type": "array",
+           "description": "Array of unique identifiers for Groups.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+            "2d2ad78e-c6de-467e-8413-c616b55294a5",
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Remove Job Title from Group endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/job-titles/{job_title_id}/groups",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "job-titles?version=1.0#remove-job-title-from-being-available-to-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

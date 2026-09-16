@@ -1,0 +1,1183 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Reports",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Resource Planning Reports",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/reports/look-ahead": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Look Ahead Data",
+    "description": "Fetches the Look Ahead report which provides future assignments and availability details for People within a specified Group. To span all Groups in the company, use `\"all\"` in place of `{group_id}`.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "jobTitleIds",
+      "in": "query",
+      "description": "An array of UUIDs representing the Job Titles to include in the report. People with Job Titles not in this list will be excluded.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "format": "uuid"
+       }
+      },
+      "example": [
+       "e70d45dd-27dc-43ad-ab1a-abd4c54bbe3a",
+       "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+      ]
+     },
+     {
+      "name": "assignmentCount",
+      "in": "query",
+      "description": "The number of future assignments to return per person.",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "enum": [
+        1,
+        2,
+        3
+       ],
+       "default": 3
+      },
+      "example": 3
+     },
+     {
+      "name": "projectName",
+      "in": "query",
+      "description": "Whether to include the project name for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "project_number",
+      "in": "query",
+      "description": "Filters items by their exact project number. The query performs an exact match. Example usage: `/v2/companies/{company_id}/...?project_number=BR-2024`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "BR-2024"
+     },
+     {
+      "name": "assignmentStart",
+      "in": "query",
+      "description": "Whether to include the assignment start date.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "assignmentEnd",
+      "in": "query",
+      "description": "Whether to include the assignment end date.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "availableAfterDate",
+      "in": "query",
+      "description": "Whether to include the last day a person is assigned in the future.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "employee_number",
+      "in": "query",
+      "description": "Filter results by the exact employee number of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "12345"
+     },
+     {
+      "name": "jobTitle",
+      "in": "query",
+      "description": "Whether to include the person's Job Title.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "assignmentDuration",
+      "in": "query",
+      "description": "Whether to include a calculated duration for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns an array of Look Ahead report objects.",
+         "items": {
+          "type": "object",
+          "description": "Represents a single Person's Look Ahead report data, including assignments and availability.",
+          "properties": {
+           "available_after": {
+            "type": "string",
+            "description": "The last day in the future that this person is assigned.",
+            "example": "11/12/2017"
+           },
+           "employee_number": {
+            "type": "string",
+            "description": "The employee number of the person.",
+            "example": "123-a234s-456"
+           },
+           "name": {
+            "type": "object",
+            "description": "The first and last name of the person.",
+            "properties": {
+             "first": {
+              "type": "string",
+              "example": "Joseph"
+             },
+             "last": {
+              "type": "string",
+              "example": "Lopez"
+             }
+            }
+           },
+           "job_title_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The UUID of the Job Title assigned to this person.",
+            "example": "e70d45dd-27dc-43ad-ab1a-abd4c54bbe3a"
+           },
+           "job_title_name": {
+            "type": "string",
+            "description": "The name of the Job Title assigned to this person.",
+            "example": "Journeyman"
+           },
+           "assignments": {
+            "type": "array",
+            "description": "List of upcoming assignments for this person.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "project_name": {
+               "type": "string",
+               "description": "The name of the assigned project.",
+               "example": "Main St. Bridge"
+              },
+              "project_number": {
+               "type": "string",
+               "description": "The number of the assigned project.",
+               "example": "2039"
+              },
+              "start_day": {
+               "type": "string",
+               "description": "The start date of the assignment.",
+               "example": "10/01/2017"
+              },
+              "end_day": {
+               "type": "string",
+               "description": "The end date of the assignment.",
+               "example": "11/02/2017"
+              },
+              "duration": {
+               "type": "string",
+               "description": "The duration of the assignment in a readable format.",
+               "example": "4W 5D"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get group look-ahead reports",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/reports/look-ahead",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-reports?version=1.0#get-look-ahead-data"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/reports/assignment-history": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Project's Assignment History Data",
+    "description": "Fetches the assignment history for a specific Project, returning records of all assignments linked to it.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "employeeName",
+      "in": "query",
+      "description": "Determines whether the employee's name should be included in the response. If set to `true`, the response will include the person's first and last name. Default is `true`.\n",
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "employee_number",
+      "in": "query",
+      "description": "Filter results by the exact employee number of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "12345"
+     },
+     {
+      "name": "jobTitle",
+      "in": "query",
+      "description": "Whether to include the person's Job Title.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "assignmentStart",
+      "in": "query",
+      "description": "Whether to include the assignment start date.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "assignmentEnd",
+      "in": "query",
+      "description": "Whether to include the assignment end date.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "start_time",
+      "in": "query",
+      "description": "Will return the daily start time for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "end_time",
+      "in": "query",
+      "description": "Will return the daily end time for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "cost_code",
+      "in": "query",
+      "description": "Will return the name and UUID of the Cost Code for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "labels",
+      "in": "query",
+      "description": "Will return the name and UUID of the Label for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "duration",
+      "in": "query",
+      "description": "Will return a calculated duration for each listed assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns an array of Assignment History report objects.",
+         "items": {
+          "type": "object",
+          "description": "Represents a single Assignment History report entry.",
+          "properties": {
+           "person_name": {
+            "type": "object",
+            "description": "The first and last name of the Person (Project request only).",
+            "properties": {
+             "first": {
+              "type": "string",
+              "example": "Joseph"
+             },
+             "last": {
+              "type": "string",
+              "example": "Lopez"
+             }
+            }
+           },
+           "employee_number": {
+            "type": "string",
+            "description": "The employee number of the assigned person (Project request only).",
+            "example": "123-a234s-456"
+           },
+           "job_title": {
+            "type": "string",
+            "description": "The job title of the assigned person (Project request only).",
+            "example": "Journeyman"
+           },
+           "project_name": {
+            "type": "string",
+            "description": "The name of the Project (Person request only).",
+            "example": "Hospital Job"
+           },
+           "project_number": {
+            "type": "string",
+            "description": "The number of the Project (Person request only).",
+            "example": "123abc"
+           },
+           "start_day": {
+            "type": "string",
+            "description": "The start date of the assignment.",
+            "example": "10/01/2017"
+           },
+           "end_day": {
+            "type": "string",
+            "description": "The end date of the assignment.",
+            "example": "11/02/2017"
+           },
+           "start_time": {
+            "type": "string",
+            "description": "The daily start time of the assignment.",
+            "example": "7:30 am"
+           },
+           "end_time": {
+            "type": "string",
+            "description": "The daily end time of the assignment.",
+            "example": "3:30 pm"
+           },
+           "cost_code_name": {
+            "type": "string",
+            "description": "The name of the Cost Code for the assignment.",
+            "example": "Phase 1"
+           },
+           "cost_code_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The UUID of the Cost Code for the assignment.",
+            "example": "e70d45dd-27dc-43ad-ab1a-abd4c54bbe3a"
+           },
+           "label_name": {
+            "type": "string",
+            "description": "The name of the Label for the assignment.",
+            "example": "Temp Work"
+           },
+           "label_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The UUID of the Label for the assignment.",
+            "example": "25202254-f832-403f-9a96-2df2ceb8faf1"
+           },
+           "duration": {
+            "type": "string",
+            "description": "The calculated duration of the assignment.",
+            "example": "4W 5D"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Project Assignment History Report endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/projects/{project_id}/reports/assignment-history",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-reports?version=1.0#get-projects-assignment-history-data"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/reports/assignment-history": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Person's Assignment History Data",
+    "description": "Fetches the assignment history for a specific Person, returning records of all assignments linked to them.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "projectName",
+      "in": "query",
+      "description": "Whether to include the project name for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "project_number",
+      "in": "query",
+      "description": "Filters items by their exact project number. The query performs an exact match. Example usage: `/v2/companies/{company_id}/...?project_number=BR-2024`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "BR-2024"
+     },
+     {
+      "name": "assignmentStart",
+      "in": "query",
+      "description": "Whether to include the assignment start date.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "assignmentEnd",
+      "in": "query",
+      "description": "Whether to include the assignment end date.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "start_time",
+      "in": "query",
+      "description": "Will return the daily start time for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "end_time",
+      "in": "query",
+      "description": "Will return the daily end time for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "cost_code",
+      "in": "query",
+      "description": "Will return the name and UUID of the Cost Code for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "labels",
+      "in": "query",
+      "description": "Will return the name and UUID of the Label for each assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     },
+     {
+      "name": "duration",
+      "in": "query",
+      "description": "Will return a calculated duration for each listed assignment.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns an array of Assignment History report objects.",
+         "items": {
+          "type": "object",
+          "description": "Represents a single Assignment History report entry.",
+          "properties": {
+           "person_name": {
+            "type": "object",
+            "description": "The first and last name of the Person (Project request only).",
+            "properties": {
+             "first": {
+              "type": "string",
+              "example": "Joseph"
+             },
+             "last": {
+              "type": "string",
+              "example": "Lopez"
+             }
+            }
+           },
+           "employee_number": {
+            "type": "string",
+            "description": "The employee number of the assigned person (Project request only).",
+            "example": "123-a234s-456"
+           },
+           "job_title": {
+            "type": "string",
+            "description": "The job title of the assigned person (Project request only).",
+            "example": "Journeyman"
+           },
+           "project_name": {
+            "type": "string",
+            "description": "The name of the Project (Person request only).",
+            "example": "Hospital Job"
+           },
+           "project_number": {
+            "type": "string",
+            "description": "The number of the Project (Person request only).",
+            "example": "123abc"
+           },
+           "start_day": {
+            "type": "string",
+            "description": "The start date of the assignment.",
+            "example": "10/01/2017"
+           },
+           "end_day": {
+            "type": "string",
+            "description": "The end date of the assignment.",
+            "example": "11/02/2017"
+           },
+           "start_time": {
+            "type": "string",
+            "description": "The daily start time of the assignment.",
+            "example": "7:30 am"
+           },
+           "end_time": {
+            "type": "string",
+            "description": "The daily end time of the assignment.",
+            "example": "3:30 pm"
+           },
+           "cost_code_name": {
+            "type": "string",
+            "description": "The name of the Cost Code for the assignment.",
+            "example": "Phase 1"
+           },
+           "cost_code_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The UUID of the Cost Code for the assignment.",
+            "example": "e70d45dd-27dc-43ad-ab1a-abd4c54bbe3a"
+           },
+           "label_name": {
+            "type": "string",
+            "description": "The name of the Label for the assignment.",
+            "example": "Temp Work"
+           },
+           "label_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The UUID of the Label for the assignment.",
+            "example": "25202254-f832-403f-9a96-2df2ceb8faf1"
+           },
+           "duration": {
+            "type": "string",
+            "description": "The calculated duration of the assignment.",
+            "example": "4W 5D"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Person Assignment History Report endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/people/{person_id}/reports/assignment-history",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-reports?version=1.0#get-persons-assignment-history-data"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/reports/tag-action": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Tags Requiring Action Report",
+    "description": "Retrieves a list of People who have Tags that are either expired or within their expiration warning period. This report is executed under the context of the specified Group ID. If you want to fetch data for all groups in a company, use `all` in place of `{group_id}`.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "tagIds",
+      "in": "query",
+      "description": "Array of UUIDs representing the Tags you want to filter the report by. If not provided, the report includes all Tags available to the Group.\n",
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "format": "uuid"
+       }
+      },
+      "example": [
+       "2d2ad78e-c6de-467e-8413-c616b55294a5",
+       "94186279-fa66-42c6-a2ca-f44dde84f584"
+      ]
+     },
+     {
+      "name": "warningTags",
+      "in": "query",
+      "description": "Determines whether Tags within their expiration warning period should be included in the report. If set to `false`, only expired Tags will be included.\n",
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     },
+     {
+      "name": "employee_number",
+      "in": "query",
+      "description": "Filter results by the exact employee number of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "12345"
+     },
+     {
+      "name": "jobTitle",
+      "in": "query",
+      "description": "Whether to include the person's Job Title.",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true
+      },
+      "example": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns an array of People with Tags requiring action.",
+         "items": {
+          "type": "object",
+          "description": "Object representing a Person with a Tag requiring action.",
+          "properties": {
+           "person_name": {
+            "type": "object",
+            "properties": {
+             "first": {
+              "type": "string",
+              "description": "The first name of the Person.",
+              "example": "Joseph"
+             },
+             "last": {
+              "type": "string",
+              "description": "The last name of the Person.",
+              "example": "Lopez"
+             }
+            }
+           },
+           "employee_number": {
+            "type": "string",
+            "description": "The employee number of the Person.",
+            "example": "123-a234s-456"
+           },
+           "job_title": {
+            "type": "string",
+            "description": "The Job Title of the Person.",
+            "example": "Journeyman"
+           },
+           "tag": {
+            "type": "object",
+            "description": "Details about the Tag requiring action.",
+            "properties": {
+             "name": {
+              "type": "string",
+              "description": "Name of the Tag.",
+              "example": "Google Cert"
+             },
+             "abbreviation": {
+              "type": "string",
+              "description": "Shortened identifier for the Tag.",
+              "example": "Goog"
+             },
+             "expr_date": {
+              "type": "integer",
+              "description": "Expiration date of the Tag in Unix timestamp format.",
+              "example": 1511223730847
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get group tag action reports",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/reports/tag-action",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-reports?version=1.0#get-tags-requiring-action-report"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

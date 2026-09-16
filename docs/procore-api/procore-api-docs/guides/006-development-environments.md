@@ -1,0 +1,142 @@
+# Procore Sandboxes
+
+_Build, test, and demo your Procore integration across three sandboxes — including the new On-Demand Sandbox._
+
+Source: https://developers.procore.com/documentation/development-environments
+
+---
+
+## Overview
+
+Procore offers three sandboxes that serve two distinct purposes:
+
+- **For building** — the Developer Sandbox, where developers build and test the integration.
+- **For customer trial and testing** — On-Demand Sandbox and Monthly Sandbox, where Procore customers trial or test the integration inside their own Procore accounts.
+
+This page explains how each sandbox works and when to use it.
+
+> **Any developer can use a Developer Sandbox, but only Procore customers can enable On-Demand or Monthly Sandboxes.** If you're a customer building your own integration, use both — a Developer Sandbox to build, and your company's On-Demand or Monthly Sandbox to test on real data.
+
+***
+
+## Compare the Sandboxes
+
+| Sandbox | Primary user | Set up by | Refresh model | Multi-sandbox | Best for |
+| --- | --- | --- | --- | --- | --- |
+| Developer Sandbox | App developer | Auto-created when an app is registered in the Developer Portal | Never — register a new app to start fresh | Yes — one per app | Building and testing the integration |
+| On-Demand Sandbox | A Procore customer's Company Admin | Self-enabled in [Procore Explore](https://v2.support.procore.com/product-manuals/admin-company/tutorials/manage-features-with-procore-explore) | Customer-controlled — no automatic refresh | Yes — multiple parallel sandboxes | Trialing the integration on real customer data, with full control |
+| Monthly Sandbox | A Procore customer's Company Admin | Enabled in company General Settings | Automatic monthly refresh from Production | No — one shared per company | Trialing the integration against a recent production snapshot |
+
+***
+
+## Developer Sandbox: For App Building
+
+The Developer Sandbox is the primary environment for building and testing an integration. It's separate from Production, comes pre-loaded with seed data, and uses its own OAuth credentials.
+
+### What's included
+
+When you register a new app in the Developer Portal, a Developer Sandbox is generated within a few minutes. You'll receive an email to set your sandbox password.
+
+Each Developer Sandbox includes:
+
+- A minimum set of users in the Company Directory: Test Architect, Test Subcontractor, and API Support, each with example email addresses (for example, `sandbox+arch@example.com`). To add more, see [Add a User Account to the Company Directory](https://v2.support.procore.com/product-manuals/directory-company/tutorials/add-a-user-account-to-the-company-directory).
+- A starter project named **1234 – Sandbox Test Project** with seed data: three project users, eight Schedule Tasks, a basic folder structure, one Photo, a Drawing Set, one RFI, and one Submittal.
+
+### Endpoints
+
+| Resource | URL |
+| --- | --- |
+| Authentication base URL | `https://login-sandbox.procore.com` |
+| API and browser base URL | `https://sandbox.procore.com` |
+
+Use the **Sandbox OAuth credentials** (Client ID and Client Secret) from your app's configuration page in the Developer Portal.
+
+### Working with the Developer Sandbox
+
+Once your sandbox is ready, you can:
+
+- Retrieve your `client_id` and `client_secret` from the **Sandbox OAuth Credentials** section of your app's configuration.
+- Request an access token using OAuth, then make API requests to `https://sandbox.procore.com` (for example, `https://sandbox.procore.com/rest/v1.0/me`).
+- Sign in to the Procore web UI with the credentials you set after receiving the sandbox welcome email, and add or modify data through the Procore tools.
+
+**Next:** [Choose your OAuth grant type](014-oauth-choose-grant-type.md) and walk through the [Quick Start Guide](003-quick-start-guide.md) to make your first API call.
+
+### Important considerations
+
+- Developer Sandboxes can't be refreshed or deleted, but you can have many of them. To start with a clean environment, register a new app to get a fresh Developer Sandbox, then migrate your app setup. Each new Developer Sandbox has its own `company_id`, so update your app's connection to point to the new sandbox.
+
+***
+## On-Demand and Monthly Sandboxes
+
+> **A Company Admin must enable Monthly Sandbox or On-Demand Sandbox** in a Procore customer's account before the integration can be tested in either one.
+
+On-Demand and Monthly Sandboxes are both enabled by a Company Admin. **Install the app using your Production App Version Key** — the same key used for Production installs; despite the "Sandbox" name, the Sandbox App Version Key works only in the Developer Sandbox. 
+
+Once installed, the integration authenticates with your **Production OAuth credentials** (Client ID and Client Secret) — the same credentials used in Production. Each new sandbox needs the integration installed separately, and the OAuth connection should be verified after each install.
+
+### On-Demand Sandbox
+
+**When to use it:** A Procore customer wants to trial or test the integration on their own data, on their own schedule, with the option to spin up multiple parallel sandboxes. This is Procore's recommended sandbox for most testing scenarios.
+
+**How it's enabled:** A Company Admin self-enables On-Demand Sandbox in [Procore Explore](https://v2.support.procore.com/product-manuals/admin-company/tutorials/manage-features-with-procore-explore). See the customer guide (for Procore customers): [Create and Manage an On-Demand Sandbox](https://v2.support.procore.com/product-manuals/admin-company/tutorials/create-and-manage-an-on-demand-sandbox).
+
+**Setup notes:** Each new On-Demand Sandbox needs the integration installed separately. After installation, verify the OAuth connection succeeds.
+
+**What you need to know:**
+
+- On-Demand Sandbox runs on Production infrastructure with the same Production endpoints (`https://api.procore.com`, `https://login.procore.com`) and Production OAuth credentials.
+- **Each On-Demand Sandbox is independent** and has its own `company_id` — to your app, every sandbox looks like a separate customer company. A Company Admin must install the app separately in each one. Plan for this if multiple sandboxes are in use.
+- Sandboxes are managed on the customer's schedule (create and use as needed), and data is not wiped on a fixed cadence.
+
+### Monthly Sandbox
+
+**When to use it:** A Procore customer wants to trial or test the integration against a full-database snapshot of their Production account, doesn't need multiple parallel sandboxes, and is comfortable with a monthly refresh that wipes all sandbox-only changes.
+
+**How it's enabled:** A Company Admin enables **Access to the Monthly Sandbox Environment** in the company's General Settings.
+
+**Setup notes:** Plan the Production install with the next monthly refresh in mind. After the refresh, verify the OAuth connection succeeds.
+
+**What you need to know:**
+
+- Monthly Sandbox runs on a separate environment with its own URLs (see [Connection Details](#connection-details)). It uses Production OAuth credentials.
+- Refresh schedule: Monthly Sandbox is overwritten with a fresh copy from Production on the first working day of each month, typically morning to mid-afternoon ET. The snapshot reflects production data from approximately 24 hours before the refresh. To include recent changes, they must be made in Production by the end of the previous month's last working day.
+- **Apps installed in Production appear in the Monthly Sandbox only after the next monthly refresh.** Account for this lag when planning installation.
+
+***
+## Connection Details
+
+Use the **App Version Key** at install time. Use the **OAuth credentials** at runtime. Both come from the same app version in the Developer Portal.
+
+| Sandbox | Authentication URL | API URL | App Version Key | OAuth credentials |
+| --- | --- | --- | --- | --- |
+| Developer Sandbox | `https://login-sandbox.procore.com` | `https://sandbox.procore.com` | Sandbox App Version Key | Sandbox OAuth credentials. Browser access at `https://sandbox.procore.com`. |
+| On-Demand Sandbox | `https://login.procore.com` | `https://api.procore.com` | **Production** App Version Key | Production OAuth credentials. Same endpoints as Production; scope by `company_id`. |
+| Monthly Sandbox | `https://login-sandbox-monthly.procore.com` | `https://api-monthly.procore.com` | **Production** App Version Key | Production OAuth credentials. Browser access at `https://api-sandbox-monthly.procore.com`. |
+
+***
+## Projected Monthly Sandbox Refresh Dates
+
+Projected dates are provided for planning. Exact timing can vary based on maintenance and operational needs.
+
+| Month | Date | Day |
+| --- | --- | --- |
+| September 2026 | 09/01/2026 | Tuesday |
+| October 2026 | 10/01/2026 | Thursday |
+| November 2026 | 11/03/2026 | Tuesday |
+| December 2026 | 12/01/2026 | Tuesday |
+
+***
+## Considerations Across Sandboxes
+
+- Each sandbox is independent. Data created in a sandbox does not affect Production, and credentials and tokens are not interchangeable across environments.
+- Federal Zone customers do not have access to these sandboxes. See [Procore Federal Environment Overview](009-federal-zone-overview.md) for testing recommendations in the Federal Zone.
+
+***
+## See Also
+
+- [Choose Your OAuth Grant Type](014-oauth-choose-grant-type.md)
+- [Quick Start Guide](003-quick-start-guide.md)
+- [Install a Version in Your Developer Sandbox](022-install-version-sandbox.md)
+- [App Installation Overview](007-building-apps-install-arch.md)
+- [Create and Manage an On-Demand Sandbox](https://v2.support.procore.com/product-manuals/admin-company/tutorials/create-and-manage-an-on-demand-sandbox) (for Procore customers)
+- [What is the Monthly Sandbox Environment?](https://support.procore.com/faq/what-is-the-monthly-sandbox-environment) (for Procore customers)

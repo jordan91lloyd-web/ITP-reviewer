@@ -1,0 +1,555 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Distributed Submittals",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Submittals",
+  "x-resource-name": "Distributed Submittals",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/submittal_logs/{id}/close_and_distribute": {
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Close and Distribute a Submittal Log",
+    "description": "Closes the specified Submittal Log (transitioning it to the Closed status supplied in the request body) and distributes the selected approver responses and attachments to the chosen recipients. Returns the created distributed submittal record.",
+    "tags": [
+     "submittal_logs"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "id",
+      "in": "path",
+      "description": "Submittal ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "submittal_log_status_id": {
+          "type": "integer",
+          "description": "The ID of a Submittal Status (from `GET /rest/v1.0/companies/{company_id}/submittal_statuses`) whose `status` is `Closed`. The Submittal Log will be transitioned to this status as part of the call.",
+          "example": 1
+         },
+         "submittal_description": {
+          "type": "string",
+          "example": "Submittal Description"
+         },
+         "message": {
+          "type": "string",
+          "example": "Message Content"
+         },
+         "prostore_file_ids": {
+          "type": "array",
+          "description": "Prostore File IDs to attach directly to the distribution (e.g., new files uploaded as part of the distribution message).",
+          "items": {
+           "type": "integer",
+           "example": 1
+          }
+         },
+         "submittal_attachment_ids": {
+          "type": "array",
+          "description": "SubmittalAssociatedAttachment IDs to include in the distribution. IDs are resolved by `SubmittalAssociatedAttachment.id`. Available from `GET /rest/v1.0/projects/{project_id}/submittal_logs/{id}`.",
+          "items": {
+           "type": "integer",
+           "example": 300
+          }
+         },
+         "recipient_ids": {
+          "type": "array",
+          "description": "LoginInformation IDs of users to be notified of the distribution. Available from `GET /rest/v1.0/projects/{project_id}/users`.",
+          "items": {
+           "type": "integer",
+           "example": 1
+          }
+         },
+         "selected_approvers": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "SubmittalLogApprover ID belonging to this Submittal Log. Available from the `approvers` array on `GET /rest/v1.0/projects/{project_id}/submittal_logs/{id}`.",
+             "example": 100
+            },
+            "include_comment": {
+             "type": "boolean",
+             "example": true
+            },
+            "attachment_ids": {
+             "type": "array",
+             "description": "SubmittalAssociatedAttachment IDs (NOT Prostore File IDs) to include for this approver. IDs are resolved by `SubmittalAssociatedAttachment.id`. Available from `GET /rest/v1.0/projects/{project_id}/submittal_logs/{id}`.",
+             "items": {
+              "type": "integer",
+              "example": 200
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "example": 122765
+          },
+          "message": {
+           "type": "string",
+           "example": ""
+          },
+          "submittal_description": {
+           "type": "string",
+           "example": ""
+          },
+          "sent_at": {
+           "type": "string",
+           "format": "date-time",
+           "example": "2014-04-20T20:08:09Z"
+          },
+          "distributed_by": {
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "carl.contractor@example.com"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Login Information ID of the User",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "Carl the Contractor"
+              }
+             }
+            }
+           ]
+          },
+          "distributed_to": {
+           "type": "array",
+           "items": {
+            "allOf": [
+             {
+              "type": "object",
+              "properties": {
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "carl.contractor@example.com"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Login Information ID of the User",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "example": "Carl the Contractor"
+               }
+              }
+             }
+            ]
+           }
+          },
+          "distributed_attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             }
+            }
+           }
+          },
+          "download_all_attachments_url": {
+           "type": "string",
+           "example": "url-to-download"
+          },
+          "submittal_distributed_attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             }
+            }
+           }
+          },
+          "download_all_submittal_distributed_attachments_url": {
+           "type": "string",
+           "example": "url-to-download"
+          },
+          "message_distributed_attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             }
+            }
+           }
+          },
+          "download_all_message_distributed_attachments_url": {
+           "type": "string",
+           "example": "url-to-download"
+          },
+          "distributed_responses": {
+           "type": "array",
+           "description": "List of submittal responses selected to be distributed",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 161072
+             },
+             "comment": {
+              "type": "string",
+              "example": "I approve this"
+             },
+             "distributed_attachments": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "ID",
+                 "example": 5324
+                },
+                "url": {
+                 "type": "string",
+                 "description": "URL",
+                 "example": "http://www.example.com/"
+                },
+                "filename": {
+                 "type": "string",
+                 "description": "Filename",
+                 "example": "january_receipt_copy.jpg"
+                }
+               }
+              }
+             },
+             "response_name": {
+              "type": "string",
+              "example": "Approved"
+             },
+             "submittal_response": {
+              "allOf": [
+               {
+                "type": "object",
+                "properties": {
+                 "name": {
+                  "type": "string",
+                  "description": "Name of Submittal Response",
+                  "example": "Pending"
+                 },
+                 "considered": {
+                  "type": "string",
+                  "description": "Mapping of the Submittal Response",
+                  "example": "pending"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "ID",
+                  "example": 161789
+                 }
+                }
+               }
+              ]
+             },
+             "submittal_response_id": {
+              "type": "integer",
+              "example": 161072
+             },
+             "submittal_approver_id": {
+              "type": "integer",
+              "example": 161072
+             },
+             "user_id": {
+              "type": "integer",
+              "example": 161072
+             },
+             "user": {
+              "allOf": [
+               {
+                "type": "object",
+                "properties": {
+                 "login": {
+                  "type": "string",
+                  "description": "Email",
+                  "example": "carl.contractor@example.com"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Login Information ID of the User",
+                  "example": 161072
+                 },
+                 "name": {
+                  "type": "string",
+                  "example": "Carl the Contractor"
+                 }
+                }
+               }
+              ]
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/submittal_logs/%7Bid%7D/close_and_distribute',\n  headers: {'content-type': 'application/json'},\n  body: {\n    submittal_log_status_id: 1,\n    submittal_description: 'Submittal Description',\n    message: 'Message Content',\n    prostore_file_ids: [1],\n    submittal_attachment_ids: [300],\n    recipient_ids: [1],\n    selected_approvers: [{id: 100, include_comment: true, attachment_ids: [200]}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"submittal_log_status_id\\\":1,\\\"submittal_description\\\":\\\"Submittal Description\\\",\\\"message\\\":\\\"Message Content\\\",\\\"prostore_file_ids\\\":[1],\\\"submittal_attachment_ids\\\":[300],\\\"recipient_ids\\\":[1],\\\"selected_approvers\\\":[{\\\"id\\\":100,\\\"include_comment\\\":true,\\\"attachment_ids\\\":[200]}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/submittal_logs/%7Bid%7D/close_and_distribute\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/submittal_logs/%7Bid%7D/close_and_distribute \\\n  --header 'content-type: application/json' \\\n  --data '{\"submittal_log_status_id\":1,\"submittal_description\":\"Submittal Description\",\"message\":\"Message Content\",\"prostore_file_ids\":[1],\"submittal_attachment_ids\":[300],\"recipient_ids\":[1],\"selected_approvers\":[{\"id\":100,\"include_comment\":true,\"attachment_ids\":[200]}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/submittal_logs/%7Bid%7D/close_and_distribute\"),\n    Content = new StringContent(\"{\\\"submittal_log_status_id\\\":1,\\\"submittal_description\\\":\\\"Submittal Description\\\",\\\"message\\\":\\\"Message Content\\\",\\\"prostore_file_ids\\\":[1],\\\"submittal_attachment_ids\\\":[300],\\\"recipient_ids\\\":[1],\\\"selected_approvers\\\":[{\\\"id\\\":100,\\\"include_comment\\\":true,\\\"attachment_ids\\\":[200]}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Close and Distribute Submittal v1.0 endpoint",
+      "description": "Close and Distribute Submittal",
+      "endpoint": "PATCH /projects/{project_id}/submittal_logs/{id}/close_and_distribute",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-07-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distributed-submittals?version=1.0#close-and-distribute-a-submittal-log"
+     },
+     {
+      "summary": "Adding flexibility to the Close and Distribute Submittal v1.0 endpoint.",
+      "description": "Allows users to select Submittal attachments, responses, and specific attachments from responses to be distributed.",
+      "endpoint": "PATCH /projects/{project_id}/submittal_logs/{id}/close_and_distribute",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-08-24",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distributed-submittals?version=1.0#close-and-distribute-a-submittal-log"
+     },
+     {
+      "summary": "Adding ability to include Submittal Description when distributing a Submittal.",
+      "description": "Allows users to select Submittal Description to be distributed or not.",
+      "endpoint": "PATCH /projects/{project_id}/submittal_logs/{id}/close_and_distribute",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-08-31",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distributed-submittals?version=1.0#close-and-distribute-a-submittal-log"
+     },
+     {
+      "summary": "Added new fields to the close_and_distribute response",
+      "description": "Return additional fields like submittal_distribution_attachments, download_all_submittal_distributed_attachments_url,\nmessage_distribution_attachments and download_all_message_distributed_attachments_url.",
+      "endpoint": "PATCH /projects/{project_id}/submittal_logs/{id}/close_and_distribute",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-03-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "distributed-submittals?version=1.0#close-and-distribute-a-submittal-log"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

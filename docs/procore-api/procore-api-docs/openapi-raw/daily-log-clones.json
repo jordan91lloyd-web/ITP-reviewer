@@ -1,0 +1,393 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Daily Log Clones",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Daily Log",
+  "x-resource-name": "Daily Log Clones",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/daily_logs/clones": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "Idempotency-Token",
+     "in": "header",
+     "description": "Unique idempotent token",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Clones Daily Logs from one Date to another Date",
+    "description": "Clones Daily Logs of the given log_types from the from_date to the to_date.\n",
+    "tags": [
+     "Daily Logs",
+     "Clones"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "from_date",
+         "to_date",
+         "log_types"
+        ],
+        "properties": {
+         "from_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date to copy logs from in YYYY-MM-DD format",
+          "example": "2020-11-12"
+         },
+         "to_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date to copy logs to in YYYY-MM-DD format",
+          "example": "2020-11-12"
+         },
+         "log_types": {
+          "type": "array",
+          "description": "Log types to copy. More than one log type can be provided.\n",
+          "items": {
+           "type": "string",
+           "example": "notes_log",
+           "enum": [
+            "accident_log",
+            "call_log",
+            "delay_log",
+            "delivery_log",
+            "dumpster_log",
+            "equipment_log",
+            "inspection_log",
+            "manpower_log",
+            "daily_construction_report_log",
+            "notes_log",
+            "plan_revision_log",
+            "productivity_log",
+            "quantity_log",
+            "safety_violation_log",
+            "timecard_entry",
+            "visitor_log",
+            "waste_log",
+            "weather",
+            "work_log"
+           ]
+          }
+         },
+         "daily_log_segment_id": {
+          "type": "integer",
+          "description": "Optional. The ID of the daily log area to filter logs by. \nOnly logs belonging to the specified area will be copied.\nIf the area has associated log types, only those log types will be allowed.\n",
+          "example": 140,
+          "nullable": true
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK (Duplicate Idempotency-token header)"
+     },
+     "201": {
+      "description": "The copy succeeded.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "An object where keys represent the copied log types, and their\nvalues are arrays of the newly-copied logs. The object will be\nempty if no logs are copied, such as when the to_date is\nalready completed.\n",
+         "properties": {
+          "notes_log": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "number",
+             "example": 9
+            },
+            "comment": {
+             "type": "string",
+             "example": 123
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "example": "2021-01-07T21:37:43Z"
+            },
+            "created_by_collaborator": {
+             "type": "boolean"
+            },
+            "custom_fields": {
+             "type": "object"
+            },
+            "date": {
+             "type": "string",
+             "format": "date",
+             "example": "2021-01-07"
+            },
+            "datetime": {
+             "type": "string",
+             "format": "date-time",
+             "example": "2021-01-07T20:00:00Z"
+            },
+            "daily_log_header_id": {
+             "type": "number",
+             "example": 4
+            },
+            "deleted_at": {
+             "type": "string",
+             "nullable": true
+            },
+            "is_issue_day": {
+             "type": "string",
+             "nullable": true
+            },
+            "permissions": {
+             "type": "object",
+             "properties": {
+              "can_update": {
+               "type": "boolean",
+               "nullable": true
+              },
+              "can_delete": {
+               "type": "boolean",
+               "nullable": true
+              }
+             }
+            },
+            "position": {
+             "type": "number",
+             "example": 9
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "example": "2021-01-07T21:37:43Z"
+            },
+            "status": {
+             "type": "string",
+             "example": "approved"
+            },
+            "attachments": {
+             "type": "array",
+             "items": {
+              "type": "object"
+             }
+            },
+            "created_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "number",
+               "example": 3
+              },
+              "login": {
+               "type": "string",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "nullable": true
+              }
+             }
+            },
+            "location": {
+             "type": "string",
+             "nullable": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Request is invalid. The dates may be out-of-order or in the future,\nthe log types might be invalid, or the specified log types may not\nbelong to the provided daily_log_segment_id.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/clones',\n  headers: {'Idempotency-Token': 'SOME_STRING_VALUE', 'content-type': 'application/json'},\n  body: {\n    from_date: '2020-11-12',\n    to_date: '2020-11-12',\n    log_types: ['notes_log'],\n    daily_log_segment_id: 140\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"from_date\\\":\\\"2020-11-12\\\",\\\"to_date\\\":\\\"2020-11-12\\\",\\\"log_types\\\":[\\\"notes_log\\\"],\\\"daily_log_segment_id\\\":140}\"\n\nheaders = {\n    'Idempotency-Token': \"SOME_STRING_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/clones\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/clones \\\n  --header 'Idempotency-Token: SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"from_date\":\"2020-11-12\",\"to_date\":\"2020-11-12\",\"log_types\":[\"notes_log\"],\"daily_log_segment_id\":140}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/clones\"),\n    Headers =\n    {\n        { \"Idempotency-Token\", \"SOME_STRING_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"from_date\\\":\\\"2020-11-12\\\",\\\"to_date\\\":\\\"2020-11-12\\\",\\\"log_types\\\":[\\\"notes_log\\\"],\\\"daily_log_segment_id\\\":140}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Adds daily_log_segment_id parameter",
+      "description": "Adds optional daily_log_segment_id parameter to filter cloned logs by area.\nWhen provided, only logs belonging to the specified area will be copied.\nIf the area has associated log types, the request will validate that all\nrequested log types belong to that area.",
+      "endpoint": "POST /projects/{project_id}/daily_logs/clones",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "daily-log-clones?version=1.0#clones-daily-logs-from-one-date-to-another-date"
+     },
+     {
+      "summary": "Responds with cloned logs",
+      "description": "Provides a response body containing the logs that have been cloned.\nFor more information see the [Daily Log Clones](/reference/rest/v1/daily-log-clones) documentation.",
+      "endpoint": "POST /projects/{project_id}/daily_logs/clones",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-01-07",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "daily-log-clones?version=1.0#clones-daily-logs-from-one-date-to-another-date"
+     },
+     {
+      "summary": "Adds Idempotent token",
+      "description": "Supports idempotency token in request header to uniquely identify request.",
+      "endpoint": "POST /projects/{project_id}/daily_logs/clones",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-04-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "daily-log-clones?version=1.0#clones-daily-logs-from-one-date-to-another-date"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

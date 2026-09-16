@@ -1,0 +1,2086 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Company Grouped Field Rules",
+  "version": "2.0",
+  "x-product-category": "Core",
+  "x-resource-name": "Company Grouped Field Rules",
+  "x-tool-category": "Assets",
+  "x-product-lines": [
+   "asset-register"
+  ]
+ },
+ "servers": [
+  {
+   "url": "http://localhost:8080",
+   "description": "Generated server url"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/assets/settings/field_rules/grouped/{rule_group_id}": {
+   "put": {
+    "tags": [
+     "field-rule-controller"
+    ],
+    "summary": "Update Grouped Conditional Rule",
+    "description": "Reconciles a grouped conditional-validation rule against the desired asset_type_ids x trigger_fields set (adds new rows, removes dropped rows, re-validates retained rows). Atomic: any conflict/validation failure rejects the whole update.",
+    "operationId": "updateGroupedFieldRule",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "rule_group_id",
+      "in": "path",
+      "description": "Group id of the rule to update.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "description": "Update a grouped conditional-validation rule (reconciles granular rows)",
+        "properties": {
+         "rule_type": {
+          "type": "string",
+          "description": "Rule type; when provided must match the existing group's type (type is immutable)",
+          "enum": [
+           "NAMING",
+           "FIELD_DEFAULTS",
+           "VALIDATION",
+           "CROSS_FIELD",
+           "MANDATORY",
+           "WARNING"
+          ]
+         },
+         "asset_type_ids": {
+          "type": "array",
+          "description": "Desired asset type ids; a single null entry means 'all asset types'. Maximum 100 entries.",
+          "items": {
+           "type": "string",
+           "description": "Desired asset type ids; a single null entry means 'all asset types'. Maximum 100 entries."
+          },
+          "maxItems": 100,
+          "minItems": 0
+         },
+         "trigger_fields": {
+          "type": "array",
+          "description": "Desired trigger fields. Maximum 100 entries.",
+          "items": {
+           "type": "string",
+           "description": "Desired trigger fields. Maximum 100 entries."
+          },
+          "maxItems": 100,
+          "minItems": 0
+         },
+         "conditions": {
+          "description": "Conditions AST for a conditional-validation rule",
+          "properties": {
+           "schema_version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Version of the conditions schema"
+           },
+           "root": {
+            "type": "object",
+            "description": "Root node of the recursive conditions tree"
+           }
+          },
+          "required": [
+           "root",
+           "schema_version"
+          ]
+         },
+         "is_active": {
+          "type": "boolean",
+          "description": "Whether the group's rules are active"
+         },
+         "message": {
+          "type": "string",
+          "description": "Optional custom message shown when the rule fires; also used as the rule description",
+          "maxLength": 512,
+          "minLength": 0
+         }
+        },
+        "required": [
+         "asset_type_ids",
+         "trigger_fields"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Grouped conditional-validation rule (aggregates granular rows sharing a rule_group_id)",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Representative granular rule id (the first row in the group)"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Company this group belongs to"
+            },
+            "project_id": {
+             "type": "integer",
+             "format": "int64",
+             "description": "Project this group applies to; null for company-level rules"
+            },
+            "rule_group_id": {
+             "type": "string",
+             "description": "Group id linking the granular rules; null for an ungrouped singleton"
+            },
+            "rule_type": {
+             "type": "string",
+             "description": "Rule type shared by every rule in the group",
+             "enum": [
+              "NAMING",
+              "FIELD_DEFAULTS",
+              "VALIDATION",
+              "CROSS_FIELD",
+              "MANDATORY",
+              "WARNING"
+             ]
+            },
+            "asset_type_ids": {
+             "type": "array",
+             "description": "Asset type ids in the group; a single null entry means 'all asset types'",
+             "items": {
+              "type": "string",
+              "description": "Asset type ids in the group; a single null entry means 'all asset types'"
+             }
+            },
+            "trigger_field_ids": {
+             "type": "array",
+             "description": "Trigger field ids in the group",
+             "items": {
+              "type": "string",
+              "description": "Trigger field ids in the group"
+             }
+            },
+            "rule_name": {
+             "type": "string",
+             "description": "Representative rule name"
+            },
+            "description": {
+             "type": "string",
+             "description": "Shared description"
+            },
+            "conditions": {
+             "description": "Conditions AST for a conditional-validation rule",
+             "properties": {
+              "schema_version": {
+               "type": "integer",
+               "format": "int32",
+               "description": "Version of the conditions schema"
+              },
+              "root": {
+               "type": "object",
+               "description": "Root node of the recursive conditions tree"
+              }
+             },
+             "required": [
+              "root",
+              "schema_version"
+             ]
+            },
+            "definition": {
+             "description": "Structured rule definition. Shape depends on ruleType: FieldRuleDefinitionDTO for NAMING, FieldDefaultsDefinitionDTO for FIELD_DEFAULTS, ConditionalValidationDefinitionDTO for MANDATORY/WARNING.",
+             "oneOf": [
+              {
+               "type": "object",
+               "description": "Rule definition containing expression segments",
+               "properties": {
+                "expression_fields": {
+                 "type": "array",
+                 "description": "Ordered list of expression segments",
+                 "items": {
+                  "type": "object",
+                  "description": "Expression segment for naming rule",
+                  "properties": {
+                   "type": {
+                    "type": "string",
+                    "enum": [
+                     "LITERAL",
+                     "REF",
+                     "DELIMITER",
+                     "SEQ"
+                    ]
+                   },
+                   "order": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "Display order of the segment",
+                    "minimum": 1
+                   },
+                   "value": {
+                    "type": "string",
+                    "description": "For LITERAL: static text value"
+                   },
+                   "field": {
+                    "type": "string",
+                    "description": "For REF: field identifier from Constants.NAMING_FIELDS (e.g. project, asset_type_id)"
+                   },
+                   "fallback": {
+                    "type": "string",
+                    "description": "For REF: fallback when field value is null or empty"
+                   },
+                   "skip_if_empty": {
+                    "type": "boolean",
+                    "description": "For REF: when true, omit this segment (and collapse delimiters) if the resolved value is empty instead of using fallback. Mutually exclusive with fallback. Default false."
+                   },
+                   "digits": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "For SEQ: number of digits for padding (e.g. 3 -> 001)"
+                   },
+                   "start_value": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "For SEQ: optional starting sequence number"
+                   },
+                   "char": {
+                    "type": "string",
+                    "description": "For DELIMITER: single character (e.g. \"-\", \"_\")"
+                   }
+                  },
+                  "required": [
+                   "order",
+                   "type"
+                  ]
+                 },
+                 "maxItems": 2147483647,
+                 "minItems": 1
+                }
+               },
+               "required": [
+                "expression_fields"
+               ]
+              },
+              {
+               "type": "object",
+               "description": "Rule definition for FIELD_DEFAULTS rules (actions-based)",
+               "properties": {
+                "actions": {
+                 "type": "array",
+                 "description": "Non-empty list of actions to apply. Must include exactly one SET_DEFAULT; SET_READ_ONLY is optional and appears at most once.",
+                 "items": {
+                  "type": "object",
+                  "description": "A single action inside a field rule definition",
+                  "properties": {
+                   "type": {
+                    "type": "string",
+                    "description": "Action type (SET_DEFAULT, SET_READ_ONLY)",
+                    "enum": [
+                     "SET_DEFAULT",
+                     "SET_READ_ONLY"
+                    ]
+                   },
+                   "value": {
+                    "type": "object",
+                    "description": "Action value. For SET_DEFAULT: matches the Asset custom_fields storage format (String/Number/Boolean for primitives, {id, name} for reference types). For SET_READ_ONLY: Boolean true/false."
+                   },
+                   "data_type": {
+                    "type": "string",
+                    "description": "FieldType key (required for SET_DEFAULT; null for SET_READ_ONLY)",
+                    "enum": [
+                     "boolean",
+                     "cost_code",
+                     "datetime",
+                     "datetime/time",
+                     "datetime/mm_yyyy",
+                     "datetime/yyyy",
+                     "decimal",
+                     "decimal/currency",
+                     "location",
+                     "login_information",
+                     "login_information/project_directory",
+                     "login_informations",
+                     "lov_entries",
+                     "lov_entry",
+                     "lov_entry/radio_button",
+                     "lov_entry/with_code",
+                     "prequal_file_uploads",
+                     "prostore_files",
+                     "rich_text",
+                     "rich_text/read_only",
+                     "string",
+                     "string/phone_number",
+                     "vendor"
+                    ]
+                   },
+                   "message": {
+                    "type": "string",
+                    "description": "Optional message (reserved for future action types like SET_REQUIRED)"
+                   }
+                  },
+                  "required": [
+                   "type"
+                  ]
+                 },
+                 "maxItems": 2147483647,
+                 "minItems": 1
+                }
+               },
+               "required": [
+                "actions"
+               ]
+              },
+              {
+               "type": "object",
+               "description": "Rule definition for MANDATORY/WARNING rules (optional custom message)",
+               "properties": {
+                "message": {
+                 "type": "string",
+                 "description": "Optional custom validation message shown when the rule fires",
+                 "maxLength": 512,
+                 "minLength": 0
+                }
+               }
+              }
+             ]
+            },
+            "expression": {
+             "type": "string",
+             "description": "Derived expression string"
+            },
+            "is_active": {
+             "type": "boolean",
+             "description": "Whether the group's rules are active"
+            },
+            "granular_rule_count": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Number of granular rules in the group"
+            },
+            "validation_errors": {
+             "type": "array",
+             "description": "Optional read-time health findings for this grouped rule.",
+             "items": {
+              "type": "object",
+              "description": "Validation issue detected on a field rule at read time.",
+              "properties": {
+               "code": {
+                "type": "string",
+                "description": "Code identifying the class of issue.",
+                "enum": [
+                 "FIELDSET_NOT_FOUND",
+                 "FIELDSET_NOT_MAPPED",
+                 "FIELD_NOT_FOUND",
+                 "LOV_ENTRY_NOT_FOUND",
+                 "VENDOR_NOT_FOUND",
+                 "STATUS_NOT_FOUND",
+                 "STATUS_GROUP_MISMATCH",
+                 "CONDITIONAL_TARGET_FIELD_INELIGIBLE",
+                 "CONDITIONAL_TARGET_FIELD_ALWAYS_REQUIRED",
+                 "ASSET_TYPE_NOT_FOUND",
+                 "TRADE_NOT_FOUND",
+                 "ASSET_TYPE_HIDDEN_AT_PROJECT",
+                 "FIELDSET_VALIDATION_UNAVAILABLE",
+                 "REFERENCE_VALIDATION_UNAVAILABLE"
+                ]
+               },
+               "severity": {
+                "type": "string",
+                "description": "Severity of the issue (\"error\" or \"warning\")."
+               },
+               "cause": {
+                "type": "string",
+                "description": "Description of what went wrong."
+               },
+               "effect": {
+                "type": "string",
+                "description": "Description of the impact of this issue."
+               },
+               "remedy": {
+                "type": "string",
+                "description": "Guidance on how an admin can resolve the issue."
+               }
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "modified_at": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "created_by": {
+             "description": "Contact Information",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "User ID",
+               "example": "12345"
+              },
+              "name": {
+               "type": "string",
+               "description": "User's full name",
+               "example": "John Doe"
+              },
+              "email": {
+               "type": "string",
+               "description": "User's email address",
+               "example": "user@example.com"
+              }
+             }
+            },
+            "modified_by": {
+             "description": "Contact Information",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "User ID",
+               "example": "12345"
+              },
+              "name": {
+               "type": "string",
+               "description": "User's full name",
+               "example": "John Doe"
+              },
+              "email": {
+               "type": "string",
+               "description": "User's email address",
+               "example": "user@example.com"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PUT',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D',\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE',\n    'content-type': 'application/json'\n  },\n  body: {\n    rule_type: 'NAMING',\n    asset_type_ids: ['string'],\n    trigger_fields: ['string'],\n    conditions: {schema_version: 0, root: {}},\n    is_active: true,\n    message: 'string'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\npayload = \"{\\\"rule_type\\\":\\\"NAMING\\\",\\\"asset_type_ids\\\":[\\\"string\\\"],\\\"trigger_fields\\\":[\\\"string\\\"],\\\"conditions\\\":{\\\"schema_version\\\":0,\\\"root\\\":{}},\\\"is_active\\\":true,\\\"message\\\":\\\"string\\\"}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PUT\", \"/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PUT \\\n  --url http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"rule_type\":\"NAMING\",\"asset_type_ids\":[\"string\"],\"trigger_fields\":[\"string\"],\"conditions\":{\"schema_version\":0,\"root\":{}},\"is_active\":true,\"message\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Put,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"rule_type\\\":\\\"NAMING\\\",\\\"asset_type_ids\\\":[\\\"string\\\"],\\\"trigger_fields\\\":[\\\"string\\\"],\\\"conditions\\\":{\\\"schema_version\\\":0,\\\"root\\\":{}},\\\"is_active\\\":true,\\\"message\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "tags": [
+     "field-rule-controller"
+    ],
+    "summary": "Delete Grouped Conditional Rule",
+    "description": "Deletes all granular rules that share the given rule_group_id.",
+    "operationId": "deleteGroupedFieldRule",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "rule_group_id",
+      "in": "path",
+      "description": "Group id of the rule to delete.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D',\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\"\n    }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/assets/settings/field_rules/grouped": {
+   "get": {
+    "tags": [
+     "field-rule-controller"
+    ],
+    "summary": "List Grouped Conditional Rules",
+    "description": "Lists conditional-validation rules (MANDATORY / WARNING) grouped by rule_group_id. Optionally filter by repeated rule_type, asset_type_id, and trigger_field. A conditional rule without a group id is returned as a singleton group.",
+    "operationId": "listGroupedFieldRules",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "rule_type",
+      "in": "query",
+      "description": "Optional repeatable rule-type filter (MANDATORY/WARNING)",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "NAMING",
+         "FIELD_DEFAULTS",
+         "VALIDATION",
+         "CROSS_FIELD",
+         "MANDATORY",
+         "WARNING"
+        ]
+       }
+      }
+     },
+     {
+      "name": "asset_type_id",
+      "in": "query",
+      "description": "Optional asset type id filter",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "trigger_field",
+      "in": "query",
+      "description": "Optional trigger field filter",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Grouped conditional-validation rule (aggregates granular rows sharing a rule_group_id)",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Representative granular rule id (the first row in the group)"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Company this group belongs to"
+             },
+             "project_id": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Project this group applies to; null for company-level rules"
+             },
+             "rule_group_id": {
+              "type": "string",
+              "description": "Group id linking the granular rules; null for an ungrouped singleton"
+             },
+             "rule_type": {
+              "type": "string",
+              "description": "Rule type shared by every rule in the group",
+              "enum": [
+               "NAMING",
+               "FIELD_DEFAULTS",
+               "VALIDATION",
+               "CROSS_FIELD",
+               "MANDATORY",
+               "WARNING"
+              ]
+             },
+             "asset_type_ids": {
+              "type": "array",
+              "description": "Asset type ids in the group; a single null entry means 'all asset types'",
+              "items": {
+               "type": "string",
+               "description": "Asset type ids in the group; a single null entry means 'all asset types'"
+              }
+             },
+             "trigger_field_ids": {
+              "type": "array",
+              "description": "Trigger field ids in the group",
+              "items": {
+               "type": "string",
+               "description": "Trigger field ids in the group"
+              }
+             },
+             "rule_name": {
+              "type": "string",
+              "description": "Representative rule name"
+             },
+             "description": {
+              "type": "string",
+              "description": "Shared description"
+             },
+             "conditions": {
+              "description": "Conditions AST for a conditional-validation rule",
+              "properties": {
+               "schema_version": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Version of the conditions schema"
+               },
+               "root": {
+                "type": "object",
+                "description": "Root node of the recursive conditions tree"
+               }
+              },
+              "required": [
+               "root",
+               "schema_version"
+              ]
+             },
+             "definition": {
+              "description": "Structured rule definition. Shape depends on ruleType: FieldRuleDefinitionDTO for NAMING, FieldDefaultsDefinitionDTO for FIELD_DEFAULTS, ConditionalValidationDefinitionDTO for MANDATORY/WARNING.",
+              "oneOf": [
+               {
+                "type": "object",
+                "description": "Rule definition containing expression segments",
+                "properties": {
+                 "expression_fields": {
+                  "type": "array",
+                  "description": "Ordered list of expression segments",
+                  "items": {
+                   "type": "object",
+                   "description": "Expression segment for naming rule",
+                   "properties": {
+                    "type": {
+                     "type": "string",
+                     "enum": [
+                      "LITERAL",
+                      "REF",
+                      "DELIMITER",
+                      "SEQ"
+                     ]
+                    },
+                    "order": {
+                     "type": "integer",
+                     "format": "int32",
+                     "description": "Display order of the segment",
+                     "minimum": 1
+                    },
+                    "value": {
+                     "type": "string",
+                     "description": "For LITERAL: static text value"
+                    },
+                    "field": {
+                     "type": "string",
+                     "description": "For REF: field identifier from Constants.NAMING_FIELDS (e.g. project, asset_type_id)"
+                    },
+                    "fallback": {
+                     "type": "string",
+                     "description": "For REF: fallback when field value is null or empty"
+                    },
+                    "skip_if_empty": {
+                     "type": "boolean",
+                     "description": "For REF: when true, omit this segment (and collapse delimiters) if the resolved value is empty instead of using fallback. Mutually exclusive with fallback. Default false."
+                    },
+                    "digits": {
+                     "type": "integer",
+                     "format": "int32",
+                     "description": "For SEQ: number of digits for padding (e.g. 3 -> 001)"
+                    },
+                    "start_value": {
+                     "type": "integer",
+                     "format": "int64",
+                     "description": "For SEQ: optional starting sequence number"
+                    },
+                    "char": {
+                     "type": "string",
+                     "description": "For DELIMITER: single character (e.g. \"-\", \"_\")"
+                    }
+                   },
+                   "required": [
+                    "order",
+                    "type"
+                   ]
+                  },
+                  "maxItems": 2147483647,
+                  "minItems": 1
+                 }
+                },
+                "required": [
+                 "expression_fields"
+                ]
+               },
+               {
+                "type": "object",
+                "description": "Rule definition for FIELD_DEFAULTS rules (actions-based)",
+                "properties": {
+                 "actions": {
+                  "type": "array",
+                  "description": "Non-empty list of actions to apply. Must include exactly one SET_DEFAULT; SET_READ_ONLY is optional and appears at most once.",
+                  "items": {
+                   "type": "object",
+                   "description": "A single action inside a field rule definition",
+                   "properties": {
+                    "type": {
+                     "type": "string",
+                     "description": "Action type (SET_DEFAULT, SET_READ_ONLY)",
+                     "enum": [
+                      "SET_DEFAULT",
+                      "SET_READ_ONLY"
+                     ]
+                    },
+                    "value": {
+                     "type": "object",
+                     "description": "Action value. For SET_DEFAULT: matches the Asset custom_fields storage format (String/Number/Boolean for primitives, {id, name} for reference types). For SET_READ_ONLY: Boolean true/false."
+                    },
+                    "data_type": {
+                     "type": "string",
+                     "description": "FieldType key (required for SET_DEFAULT; null for SET_READ_ONLY)",
+                     "enum": [
+                      "boolean",
+                      "cost_code",
+                      "datetime",
+                      "datetime/time",
+                      "datetime/mm_yyyy",
+                      "datetime/yyyy",
+                      "decimal",
+                      "decimal/currency",
+                      "location",
+                      "login_information",
+                      "login_information/project_directory",
+                      "login_informations",
+                      "lov_entries",
+                      "lov_entry",
+                      "lov_entry/radio_button",
+                      "lov_entry/with_code",
+                      "prequal_file_uploads",
+                      "prostore_files",
+                      "rich_text",
+                      "rich_text/read_only",
+                      "string",
+                      "string/phone_number",
+                      "vendor"
+                     ]
+                    },
+                    "message": {
+                     "type": "string",
+                     "description": "Optional message (reserved for future action types like SET_REQUIRED)"
+                    }
+                   },
+                   "required": [
+                    "type"
+                   ]
+                  },
+                  "maxItems": 2147483647,
+                  "minItems": 1
+                 }
+                },
+                "required": [
+                 "actions"
+                ]
+               },
+               {
+                "type": "object",
+                "description": "Rule definition for MANDATORY/WARNING rules (optional custom message)",
+                "properties": {
+                 "message": {
+                  "type": "string",
+                  "description": "Optional custom validation message shown when the rule fires",
+                  "maxLength": 512,
+                  "minLength": 0
+                 }
+                }
+               }
+              ]
+             },
+             "expression": {
+              "type": "string",
+              "description": "Derived expression string"
+             },
+             "is_active": {
+              "type": "boolean",
+              "description": "Whether the group's rules are active"
+             },
+             "granular_rule_count": {
+              "type": "integer",
+              "format": "int32",
+              "description": "Number of granular rules in the group"
+             },
+             "validation_errors": {
+              "type": "array",
+              "description": "Optional read-time health findings for this grouped rule.",
+              "items": {
+               "type": "object",
+               "description": "Validation issue detected on a field rule at read time.",
+               "properties": {
+                "code": {
+                 "type": "string",
+                 "description": "Code identifying the class of issue.",
+                 "enum": [
+                  "FIELDSET_NOT_FOUND",
+                  "FIELDSET_NOT_MAPPED",
+                  "FIELD_NOT_FOUND",
+                  "LOV_ENTRY_NOT_FOUND",
+                  "VENDOR_NOT_FOUND",
+                  "STATUS_NOT_FOUND",
+                  "STATUS_GROUP_MISMATCH",
+                  "CONDITIONAL_TARGET_FIELD_INELIGIBLE",
+                  "CONDITIONAL_TARGET_FIELD_ALWAYS_REQUIRED",
+                  "ASSET_TYPE_NOT_FOUND",
+                  "TRADE_NOT_FOUND",
+                  "ASSET_TYPE_HIDDEN_AT_PROJECT",
+                  "FIELDSET_VALIDATION_UNAVAILABLE",
+                  "REFERENCE_VALIDATION_UNAVAILABLE"
+                 ]
+                },
+                "severity": {
+                 "type": "string",
+                 "description": "Severity of the issue (\"error\" or \"warning\")."
+                },
+                "cause": {
+                 "type": "string",
+                 "description": "Description of what went wrong."
+                },
+                "effect": {
+                 "type": "string",
+                 "description": "Description of the impact of this issue."
+                },
+                "remedy": {
+                 "type": "string",
+                 "description": "Guidance on how an admin can resolve the issue."
+                }
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time"
+             },
+             "modified_at": {
+              "type": "string",
+              "format": "date-time"
+             },
+             "created_by": {
+              "description": "Contact Information",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "User ID",
+                "example": "12345"
+               },
+               "name": {
+                "type": "string",
+                "description": "User's full name",
+                "example": "John Doe"
+               },
+               "email": {
+                "type": "string",
+                "description": "User's email address",
+                "example": "user@example.com"
+               }
+              }
+             },
+             "modified_by": {
+              "description": "Contact Information",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "User ID",
+                "example": "12345"
+               },
+               "name": {
+                "type": "string",
+                "description": "User's full name",
+                "example": "John Doe"
+               },
+               "email": {
+                "type": "string",
+                "description": "User's email address",
+                "example": "user@example.com"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped',\n  qs: {\n    rule_type: 'SOME_ARRAY_VALUE',\n    asset_type_id: 'SOME_STRING_VALUE',\n    trigger_field: 'SOME_STRING_VALUE'\n  },\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\"\n    }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/assets/settings/field_rules/grouped?rule_type=SOME_ARRAY_VALUE&asset_type_id=SOME_STRING_VALUE&trigger_field=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped?rule_type=SOME_ARRAY_VALUE&asset_type_id=SOME_STRING_VALUE&trigger_field=SOME_STRING_VALUE' \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped?rule_type=SOME_ARRAY_VALUE&asset_type_id=SOME_STRING_VALUE&trigger_field=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "tags": [
+     "field-rule-controller"
+    ],
+    "summary": "Create Grouped Conditional Rule",
+    "description": "Creates a grouped conditional-validation rule that expands into asset_type_ids x trigger_fields granular rules sharing one rule_group_id. Atomic: the whole group is validated for conflicts before any row is persisted.",
+    "operationId": "createGroupedFieldRule",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "description": "Create a grouped conditional-validation rule (MANDATORY / WARNING)",
+        "properties": {
+         "rule_type": {
+          "type": "string",
+          "description": "Rule type; must be MANDATORY or WARNING",
+          "enum": [
+           "NAMING",
+           "FIELD_DEFAULTS",
+           "VALIDATION",
+           "CROSS_FIELD",
+           "MANDATORY",
+           "WARNING"
+          ]
+         },
+         "rule_group_id": {
+          "type": "string",
+          "description": "Optional caller-provided group id (unique within the company). When omitted the backend generates the next available id.",
+          "maxLength": 26,
+          "minLength": 0
+         },
+         "asset_type_ids": {
+          "type": "array",
+          "description": "Asset type ids the rule applies to; a single null entry means 'all asset types'. Maximum 100 entries.",
+          "items": {
+           "type": "string",
+           "description": "Asset type ids the rule applies to; a single null entry means 'all asset types'. Maximum 100 entries."
+          },
+          "maxItems": 100,
+          "minItems": 0
+         },
+         "trigger_fields": {
+          "type": "array",
+          "description": "Trigger fields the rule applies to (e.g. installation_date). Maximum 100 entries.",
+          "items": {
+           "type": "string",
+           "description": "Trigger fields the rule applies to (e.g. installation_date). Maximum 100 entries."
+          },
+          "maxItems": 100,
+          "minItems": 0
+         },
+         "conditions": {
+          "description": "Conditions AST for a conditional-validation rule",
+          "properties": {
+           "schema_version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Version of the conditions schema"
+           },
+           "root": {
+            "type": "object",
+            "description": "Root node of the recursive conditions tree"
+           }
+          },
+          "required": [
+           "root",
+           "schema_version"
+          ]
+         },
+         "is_active": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the created rules are active"
+         },
+         "message": {
+          "type": "string",
+          "description": "Optional custom message shown when the rule fires; also used as the rule description",
+          "maxLength": 512,
+          "minLength": 0
+         }
+        },
+        "required": [
+         "asset_type_ids",
+         "rule_type",
+         "trigger_fields"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Grouped conditional-validation rule (aggregates granular rows sharing a rule_group_id)",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Representative granular rule id (the first row in the group)"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Company this group belongs to"
+            },
+            "project_id": {
+             "type": "integer",
+             "format": "int64",
+             "description": "Project this group applies to; null for company-level rules"
+            },
+            "rule_group_id": {
+             "type": "string",
+             "description": "Group id linking the granular rules; null for an ungrouped singleton"
+            },
+            "rule_type": {
+             "type": "string",
+             "description": "Rule type shared by every rule in the group",
+             "enum": [
+              "NAMING",
+              "FIELD_DEFAULTS",
+              "VALIDATION",
+              "CROSS_FIELD",
+              "MANDATORY",
+              "WARNING"
+             ]
+            },
+            "asset_type_ids": {
+             "type": "array",
+             "description": "Asset type ids in the group; a single null entry means 'all asset types'",
+             "items": {
+              "type": "string",
+              "description": "Asset type ids in the group; a single null entry means 'all asset types'"
+             }
+            },
+            "trigger_field_ids": {
+             "type": "array",
+             "description": "Trigger field ids in the group",
+             "items": {
+              "type": "string",
+              "description": "Trigger field ids in the group"
+             }
+            },
+            "rule_name": {
+             "type": "string",
+             "description": "Representative rule name"
+            },
+            "description": {
+             "type": "string",
+             "description": "Shared description"
+            },
+            "conditions": {
+             "description": "Conditions AST for a conditional-validation rule",
+             "properties": {
+              "schema_version": {
+               "type": "integer",
+               "format": "int32",
+               "description": "Version of the conditions schema"
+              },
+              "root": {
+               "type": "object",
+               "description": "Root node of the recursive conditions tree"
+              }
+             },
+             "required": [
+              "root",
+              "schema_version"
+             ]
+            },
+            "definition": {
+             "description": "Structured rule definition. Shape depends on ruleType: FieldRuleDefinitionDTO for NAMING, FieldDefaultsDefinitionDTO for FIELD_DEFAULTS, ConditionalValidationDefinitionDTO for MANDATORY/WARNING.",
+             "oneOf": [
+              {
+               "type": "object",
+               "description": "Rule definition containing expression segments",
+               "properties": {
+                "expression_fields": {
+                 "type": "array",
+                 "description": "Ordered list of expression segments",
+                 "items": {
+                  "type": "object",
+                  "description": "Expression segment for naming rule",
+                  "properties": {
+                   "type": {
+                    "type": "string",
+                    "enum": [
+                     "LITERAL",
+                     "REF",
+                     "DELIMITER",
+                     "SEQ"
+                    ]
+                   },
+                   "order": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "Display order of the segment",
+                    "minimum": 1
+                   },
+                   "value": {
+                    "type": "string",
+                    "description": "For LITERAL: static text value"
+                   },
+                   "field": {
+                    "type": "string",
+                    "description": "For REF: field identifier from Constants.NAMING_FIELDS (e.g. project, asset_type_id)"
+                   },
+                   "fallback": {
+                    "type": "string",
+                    "description": "For REF: fallback when field value is null or empty"
+                   },
+                   "skip_if_empty": {
+                    "type": "boolean",
+                    "description": "For REF: when true, omit this segment (and collapse delimiters) if the resolved value is empty instead of using fallback. Mutually exclusive with fallback. Default false."
+                   },
+                   "digits": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "For SEQ: number of digits for padding (e.g. 3 -> 001)"
+                   },
+                   "start_value": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "For SEQ: optional starting sequence number"
+                   },
+                   "char": {
+                    "type": "string",
+                    "description": "For DELIMITER: single character (e.g. \"-\", \"_\")"
+                   }
+                  },
+                  "required": [
+                   "order",
+                   "type"
+                  ]
+                 },
+                 "maxItems": 2147483647,
+                 "minItems": 1
+                }
+               },
+               "required": [
+                "expression_fields"
+               ]
+              },
+              {
+               "type": "object",
+               "description": "Rule definition for FIELD_DEFAULTS rules (actions-based)",
+               "properties": {
+                "actions": {
+                 "type": "array",
+                 "description": "Non-empty list of actions to apply. Must include exactly one SET_DEFAULT; SET_READ_ONLY is optional and appears at most once.",
+                 "items": {
+                  "type": "object",
+                  "description": "A single action inside a field rule definition",
+                  "properties": {
+                   "type": {
+                    "type": "string",
+                    "description": "Action type (SET_DEFAULT, SET_READ_ONLY)",
+                    "enum": [
+                     "SET_DEFAULT",
+                     "SET_READ_ONLY"
+                    ]
+                   },
+                   "value": {
+                    "type": "object",
+                    "description": "Action value. For SET_DEFAULT: matches the Asset custom_fields storage format (String/Number/Boolean for primitives, {id, name} for reference types). For SET_READ_ONLY: Boolean true/false."
+                   },
+                   "data_type": {
+                    "type": "string",
+                    "description": "FieldType key (required for SET_DEFAULT; null for SET_READ_ONLY)",
+                    "enum": [
+                     "boolean",
+                     "cost_code",
+                     "datetime",
+                     "datetime/time",
+                     "datetime/mm_yyyy",
+                     "datetime/yyyy",
+                     "decimal",
+                     "decimal/currency",
+                     "location",
+                     "login_information",
+                     "login_information/project_directory",
+                     "login_informations",
+                     "lov_entries",
+                     "lov_entry",
+                     "lov_entry/radio_button",
+                     "lov_entry/with_code",
+                     "prequal_file_uploads",
+                     "prostore_files",
+                     "rich_text",
+                     "rich_text/read_only",
+                     "string",
+                     "string/phone_number",
+                     "vendor"
+                    ]
+                   },
+                   "message": {
+                    "type": "string",
+                    "description": "Optional message (reserved for future action types like SET_REQUIRED)"
+                   }
+                  },
+                  "required": [
+                   "type"
+                  ]
+                 },
+                 "maxItems": 2147483647,
+                 "minItems": 1
+                }
+               },
+               "required": [
+                "actions"
+               ]
+              },
+              {
+               "type": "object",
+               "description": "Rule definition for MANDATORY/WARNING rules (optional custom message)",
+               "properties": {
+                "message": {
+                 "type": "string",
+                 "description": "Optional custom validation message shown when the rule fires",
+                 "maxLength": 512,
+                 "minLength": 0
+                }
+               }
+              }
+             ]
+            },
+            "expression": {
+             "type": "string",
+             "description": "Derived expression string"
+            },
+            "is_active": {
+             "type": "boolean",
+             "description": "Whether the group's rules are active"
+            },
+            "granular_rule_count": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Number of granular rules in the group"
+            },
+            "validation_errors": {
+             "type": "array",
+             "description": "Optional read-time health findings for this grouped rule.",
+             "items": {
+              "type": "object",
+              "description": "Validation issue detected on a field rule at read time.",
+              "properties": {
+               "code": {
+                "type": "string",
+                "description": "Code identifying the class of issue.",
+                "enum": [
+                 "FIELDSET_NOT_FOUND",
+                 "FIELDSET_NOT_MAPPED",
+                 "FIELD_NOT_FOUND",
+                 "LOV_ENTRY_NOT_FOUND",
+                 "VENDOR_NOT_FOUND",
+                 "STATUS_NOT_FOUND",
+                 "STATUS_GROUP_MISMATCH",
+                 "CONDITIONAL_TARGET_FIELD_INELIGIBLE",
+                 "CONDITIONAL_TARGET_FIELD_ALWAYS_REQUIRED",
+                 "ASSET_TYPE_NOT_FOUND",
+                 "TRADE_NOT_FOUND",
+                 "ASSET_TYPE_HIDDEN_AT_PROJECT",
+                 "FIELDSET_VALIDATION_UNAVAILABLE",
+                 "REFERENCE_VALIDATION_UNAVAILABLE"
+                ]
+               },
+               "severity": {
+                "type": "string",
+                "description": "Severity of the issue (\"error\" or \"warning\")."
+               },
+               "cause": {
+                "type": "string",
+                "description": "Description of what went wrong."
+               },
+               "effect": {
+                "type": "string",
+                "description": "Description of the impact of this issue."
+               },
+               "remedy": {
+                "type": "string",
+                "description": "Guidance on how an admin can resolve the issue."
+               }
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "modified_at": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "created_by": {
+             "description": "Contact Information",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "User ID",
+               "example": "12345"
+              },
+              "name": {
+               "type": "string",
+               "description": "User's full name",
+               "example": "John Doe"
+              },
+              "email": {
+               "type": "string",
+               "description": "User's email address",
+               "example": "user@example.com"
+              }
+             }
+            },
+            "modified_by": {
+             "description": "Contact Information",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "User ID",
+               "example": "12345"
+              },
+              "name": {
+               "type": "string",
+               "description": "User's full name",
+               "example": "John Doe"
+              },
+              "email": {
+               "type": "string",
+               "description": "User's email address",
+               "example": "user@example.com"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped',\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE',\n    'content-type': 'application/json'\n  },\n  body: {\n    rule_type: 'NAMING',\n    rule_group_id: 'string',\n    asset_type_ids: ['string'],\n    trigger_fields: ['string'],\n    conditions: {schema_version: 0, root: {}},\n    is_active: true,\n    message: 'string'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\npayload = \"{\\\"rule_type\\\":\\\"NAMING\\\",\\\"rule_group_id\\\":\\\"string\\\",\\\"asset_type_ids\\\":[\\\"string\\\"],\\\"trigger_fields\\\":[\\\"string\\\"],\\\"conditions\\\":{\\\"schema_version\\\":0,\\\"root\\\":{}},\\\"is_active\\\":true,\\\"message\\\":\\\"string\\\"}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/assets/settings/field_rules/grouped\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"rule_type\":\"NAMING\",\"rule_group_id\":\"string\",\"asset_type_ids\":[\"string\"],\"trigger_fields\":[\"string\"],\"conditions\":{\"schema_version\":0,\"root\":{}},\"is_active\":true,\"message\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"rule_type\\\":\\\"NAMING\\\",\\\"rule_group_id\\\":\\\"string\\\",\\\"asset_type_ids\\\":[\\\"string\\\"],\\\"trigger_fields\\\":[\\\"string\\\"],\\\"conditions\\\":{\\\"schema_version\\\":0,\\\"root\\\":{}},\\\"is_active\\\":true,\\\"message\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/assets/settings/field_rules/grouped/{rule_group_id}/duplicate": {
+   "post": {
+    "tags": [
+     "field-rule-controller"
+    ],
+    "summary": "Duplicate Grouped Conditional Rule",
+    "description": "Copies a grouped conditional-validation rule under a new rule_group_id. The copy is created inactive (an editable draft), so it does not conflict with the source group.",
+    "operationId": "duplicateGroupedFieldRule",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "rule_group_id",
+      "in": "path",
+      "description": "Group id of the rule to duplicate.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Grouped conditional-validation rule (aggregates granular rows sharing a rule_group_id)",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Representative granular rule id (the first row in the group)"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Company this group belongs to"
+            },
+            "project_id": {
+             "type": "integer",
+             "format": "int64",
+             "description": "Project this group applies to; null for company-level rules"
+            },
+            "rule_group_id": {
+             "type": "string",
+             "description": "Group id linking the granular rules; null for an ungrouped singleton"
+            },
+            "rule_type": {
+             "type": "string",
+             "description": "Rule type shared by every rule in the group",
+             "enum": [
+              "NAMING",
+              "FIELD_DEFAULTS",
+              "VALIDATION",
+              "CROSS_FIELD",
+              "MANDATORY",
+              "WARNING"
+             ]
+            },
+            "asset_type_ids": {
+             "type": "array",
+             "description": "Asset type ids in the group; a single null entry means 'all asset types'",
+             "items": {
+              "type": "string",
+              "description": "Asset type ids in the group; a single null entry means 'all asset types'"
+             }
+            },
+            "trigger_field_ids": {
+             "type": "array",
+             "description": "Trigger field ids in the group",
+             "items": {
+              "type": "string",
+              "description": "Trigger field ids in the group"
+             }
+            },
+            "rule_name": {
+             "type": "string",
+             "description": "Representative rule name"
+            },
+            "description": {
+             "type": "string",
+             "description": "Shared description"
+            },
+            "conditions": {
+             "description": "Conditions AST for a conditional-validation rule",
+             "properties": {
+              "schema_version": {
+               "type": "integer",
+               "format": "int32",
+               "description": "Version of the conditions schema"
+              },
+              "root": {
+               "type": "object",
+               "description": "Root node of the recursive conditions tree"
+              }
+             },
+             "required": [
+              "root",
+              "schema_version"
+             ]
+            },
+            "definition": {
+             "description": "Structured rule definition. Shape depends on ruleType: FieldRuleDefinitionDTO for NAMING, FieldDefaultsDefinitionDTO for FIELD_DEFAULTS, ConditionalValidationDefinitionDTO for MANDATORY/WARNING.",
+             "oneOf": [
+              {
+               "type": "object",
+               "description": "Rule definition containing expression segments",
+               "properties": {
+                "expression_fields": {
+                 "type": "array",
+                 "description": "Ordered list of expression segments",
+                 "items": {
+                  "type": "object",
+                  "description": "Expression segment for naming rule",
+                  "properties": {
+                   "type": {
+                    "type": "string",
+                    "enum": [
+                     "LITERAL",
+                     "REF",
+                     "DELIMITER",
+                     "SEQ"
+                    ]
+                   },
+                   "order": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "Display order of the segment",
+                    "minimum": 1
+                   },
+                   "value": {
+                    "type": "string",
+                    "description": "For LITERAL: static text value"
+                   },
+                   "field": {
+                    "type": "string",
+                    "description": "For REF: field identifier from Constants.NAMING_FIELDS (e.g. project, asset_type_id)"
+                   },
+                   "fallback": {
+                    "type": "string",
+                    "description": "For REF: fallback when field value is null or empty"
+                   },
+                   "skip_if_empty": {
+                    "type": "boolean",
+                    "description": "For REF: when true, omit this segment (and collapse delimiters) if the resolved value is empty instead of using fallback. Mutually exclusive with fallback. Default false."
+                   },
+                   "digits": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "For SEQ: number of digits for padding (e.g. 3 -> 001)"
+                   },
+                   "start_value": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "For SEQ: optional starting sequence number"
+                   },
+                   "char": {
+                    "type": "string",
+                    "description": "For DELIMITER: single character (e.g. \"-\", \"_\")"
+                   }
+                  },
+                  "required": [
+                   "order",
+                   "type"
+                  ]
+                 },
+                 "maxItems": 2147483647,
+                 "minItems": 1
+                }
+               },
+               "required": [
+                "expression_fields"
+               ]
+              },
+              {
+               "type": "object",
+               "description": "Rule definition for FIELD_DEFAULTS rules (actions-based)",
+               "properties": {
+                "actions": {
+                 "type": "array",
+                 "description": "Non-empty list of actions to apply. Must include exactly one SET_DEFAULT; SET_READ_ONLY is optional and appears at most once.",
+                 "items": {
+                  "type": "object",
+                  "description": "A single action inside a field rule definition",
+                  "properties": {
+                   "type": {
+                    "type": "string",
+                    "description": "Action type (SET_DEFAULT, SET_READ_ONLY)",
+                    "enum": [
+                     "SET_DEFAULT",
+                     "SET_READ_ONLY"
+                    ]
+                   },
+                   "value": {
+                    "type": "object",
+                    "description": "Action value. For SET_DEFAULT: matches the Asset custom_fields storage format (String/Number/Boolean for primitives, {id, name} for reference types). For SET_READ_ONLY: Boolean true/false."
+                   },
+                   "data_type": {
+                    "type": "string",
+                    "description": "FieldType key (required for SET_DEFAULT; null for SET_READ_ONLY)",
+                    "enum": [
+                     "boolean",
+                     "cost_code",
+                     "datetime",
+                     "datetime/time",
+                     "datetime/mm_yyyy",
+                     "datetime/yyyy",
+                     "decimal",
+                     "decimal/currency",
+                     "location",
+                     "login_information",
+                     "login_information/project_directory",
+                     "login_informations",
+                     "lov_entries",
+                     "lov_entry",
+                     "lov_entry/radio_button",
+                     "lov_entry/with_code",
+                     "prequal_file_uploads",
+                     "prostore_files",
+                     "rich_text",
+                     "rich_text/read_only",
+                     "string",
+                     "string/phone_number",
+                     "vendor"
+                    ]
+                   },
+                   "message": {
+                    "type": "string",
+                    "description": "Optional message (reserved for future action types like SET_REQUIRED)"
+                   }
+                  },
+                  "required": [
+                   "type"
+                  ]
+                 },
+                 "maxItems": 2147483647,
+                 "minItems": 1
+                }
+               },
+               "required": [
+                "actions"
+               ]
+              },
+              {
+               "type": "object",
+               "description": "Rule definition for MANDATORY/WARNING rules (optional custom message)",
+               "properties": {
+                "message": {
+                 "type": "string",
+                 "description": "Optional custom validation message shown when the rule fires",
+                 "maxLength": 512,
+                 "minLength": 0
+                }
+               }
+              }
+             ]
+            },
+            "expression": {
+             "type": "string",
+             "description": "Derived expression string"
+            },
+            "is_active": {
+             "type": "boolean",
+             "description": "Whether the group's rules are active"
+            },
+            "granular_rule_count": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Number of granular rules in the group"
+            },
+            "validation_errors": {
+             "type": "array",
+             "description": "Optional read-time health findings for this grouped rule.",
+             "items": {
+              "type": "object",
+              "description": "Validation issue detected on a field rule at read time.",
+              "properties": {
+               "code": {
+                "type": "string",
+                "description": "Code identifying the class of issue.",
+                "enum": [
+                 "FIELDSET_NOT_FOUND",
+                 "FIELDSET_NOT_MAPPED",
+                 "FIELD_NOT_FOUND",
+                 "LOV_ENTRY_NOT_FOUND",
+                 "VENDOR_NOT_FOUND",
+                 "STATUS_NOT_FOUND",
+                 "STATUS_GROUP_MISMATCH",
+                 "CONDITIONAL_TARGET_FIELD_INELIGIBLE",
+                 "CONDITIONAL_TARGET_FIELD_ALWAYS_REQUIRED",
+                 "ASSET_TYPE_NOT_FOUND",
+                 "TRADE_NOT_FOUND",
+                 "ASSET_TYPE_HIDDEN_AT_PROJECT",
+                 "FIELDSET_VALIDATION_UNAVAILABLE",
+                 "REFERENCE_VALIDATION_UNAVAILABLE"
+                ]
+               },
+               "severity": {
+                "type": "string",
+                "description": "Severity of the issue (\"error\" or \"warning\")."
+               },
+               "cause": {
+                "type": "string",
+                "description": "Description of what went wrong."
+               },
+               "effect": {
+                "type": "string",
+                "description": "Description of the impact of this issue."
+               },
+               "remedy": {
+                "type": "string",
+                "description": "Guidance on how an admin can resolve the issue."
+               }
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "modified_at": {
+             "type": "string",
+             "format": "date-time"
+            },
+            "created_by": {
+             "description": "Contact Information",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "User ID",
+               "example": "12345"
+              },
+              "name": {
+               "type": "string",
+               "description": "User's full name",
+               "example": "John Doe"
+              },
+              "email": {
+               "type": "string",
+               "description": "User's email address",
+               "example": "user@example.com"
+              }
+             }
+            },
+            "modified_by": {
+             "description": "Contact Information",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "User ID",
+               "example": "12345"
+              },
+              "name": {
+               "type": "string",
+               "description": "User's full name",
+               "example": "John Doe"
+              },
+              "email": {
+               "type": "string",
+               "description": "User's email address",
+               "example": "user@example.com"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D/duplicate',\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D/duplicate\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D/duplicate \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/assets/settings/field_rules/grouped/%7Brule_group_id%7D/duplicate\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

@@ -1,0 +1,1584 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Resource Requests",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Resource Requests",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/resource-requests": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Resource Requests for a Single Project",
+    "description": "Retrieves all Resource Requests for a specified Project within a company. This is a pageable endpoint.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A paginated collection of Resource Requests.",
+         "properties": {
+          "possible_pages": {
+           "type": "integer",
+           "description": "The total number of pages available for pagination.",
+           "example": 5
+          },
+          "current_page": {
+           "type": "integer",
+           "description": "The current page index (0-based).",
+           "example": 2
+          },
+          "data": {
+           "type": "array",
+           "description": "The list of Resource Requests on the current page.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the Resource Request.",
+              "example": "012e9b89-2c7c-420b-a08a-d0e94a63e0a8"
+             },
+             "creator_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the user who created the Resource Request, if applicable.",
+              "example": "2116968d-7320-4edc-bda8-836968ce6622"
+             },
+             "project_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID of the project associated with this Resource Request.",
+              "example": "479b6fe1-fc3e-49f3-9898-544e68bcc191"
+             },
+             "start_day": {
+              "type": "string",
+              "description": "The start date for the requested resource (MM/DD/YY).",
+              "example": "6/11/20"
+             },
+             "end_day": {
+              "type": "string",
+              "description": "The end date for the requested resource (MM/DD/YY).",
+              "example": "6/19/20"
+             },
+             "start_time": {
+              "type": "string",
+              "description": "The start time of the requested resource.",
+              "example": "7:30 am"
+             },
+             "end_time": {
+              "type": "string",
+              "description": "The end time of the requested resource.",
+              "example": "3:30 pm"
+             },
+             "percent_allocated": {
+              "type": "integer",
+              "nullable": true,
+              "description": "The percentage allocation of the requested resource if applicable.",
+              "example": 50
+             },
+             "job_title_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Job Title associated with the Resource Request.",
+              "example": "8f134c16-dee8-45f9-b622-be344d19304d"
+             },
+             "category_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Project Category associated with the Resource Request.",
+              "example": "f34e8fe3-4c3b-4abb-b1f6-c1cd956ba2f5"
+             },
+             "subcategory_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Project Subcategory associated with the Resource Request.",
+              "example": "1b787e24-d67a-4042-8499-cb96b3b7ab37"
+             },
+             "state_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Assignment State associated with the Resource Request.",
+              "example": null
+             },
+             "work_scope_text": {
+              "type": "string",
+              "nullable": true,
+              "description": "Description of the work scope for the requested resource.",
+              "example": "An example scope"
+             },
+             "instruction_text": {
+              "type": "string",
+              "nullable": true,
+              "description": "Instructions related to the requested resource.",
+              "example": "Some items to do"
+             },
+             "work_days": {
+              "type": "object",
+              "description": "Object representing workdays for the requested resource, using a 0-based index (Sunday-Saturday).",
+              "example": {
+               "0": false,
+               "1": true,
+               "2": true,
+               "3": true,
+               "4": true,
+               "5": false,
+               "6": false
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Project Resource Requests endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/projects/{project_id}/resource-requests",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-requests?version=1.0#get-all-resource-requests-for-a-single-project"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Resource Request on a Project",
+    "description": "Creates a new Resource Request for a specified project within a given company. Resource requests can be based on work hours (start_time and end_time) or percent allocation (percent_allocated).\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for creating a Resource Request.",
+        "required": [
+         "start_day",
+         "end_day"
+        ],
+        "oneOf": [
+         {
+          "required": [
+           "start_time",
+           "end_time"
+          ]
+         },
+         {
+          "required": [
+           "percent_allocated"
+          ]
+         }
+        ],
+        "properties": {
+         "start_day": {
+          "type": "string",
+          "format": "date",
+          "description": "The first day the requested resource is needed (ISO 8601).",
+          "example": "2023-06-11T00:00:00Z"
+         },
+         "end_day": {
+          "type": "string",
+          "format": "date",
+          "description": "The last day the requested resource is needed (ISO 8601).",
+          "example": "2023-06-19T00:00:00Z"
+         },
+         "start_time": {
+          "type": "string",
+          "description": "Start time of the request (HH:MM am/pm format).",
+          "example": "7:30 am"
+         },
+         "end_time": {
+          "type": "string",
+          "description": "End time of the request (HH:MM am/pm format).",
+          "example": "3:30 pm"
+         },
+         "percent_allocated": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Allocation percentage if the request is not hour-based.",
+          "example": 50
+         },
+         "quantity": {
+          "type": "integer",
+          "description": "Number of resource requests to create.",
+          "example": 1
+         },
+         "job_title_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Job Title UUID for this request.",
+          "example": "8f134c16-dee8-45f9-b622-be344d19304d"
+         },
+         "category_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Project Category.",
+          "example": "f34e8fe3-4c3b-4abb-b1f6-c1cd956ba2f5"
+         },
+         "subcategory_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Project Subcategory.",
+          "example": "1b787e24-d67a-4042-8499-cb96b3b7ab37"
+         },
+         "state_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Assignment State.",
+          "example": "null"
+         },
+         "work_scope_text": {
+          "type": "string",
+          "description": "Scope of Work for the Resource Request.",
+          "example": "An example scope"
+         },
+         "instruction_text": {
+          "type": "string",
+          "description": "Instructions for the Resource Request.",
+          "example": "Some items to do"
+         },
+         "tag_ids": {
+          "type": "array",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "description": "Array of UUIDs representing Tags.",
+          "example": [
+           "d8b4e4b7-47a2-4a5c-92ff-23b17cd93e2e"
+          ]
+         },
+         "work_days": {
+          "type": "object",
+          "description": "Object to control working days (Sunday - Saturday as 0-6 index).",
+          "properties": {
+           "0": {
+            "type": "boolean",
+            "example": false
+           },
+           "1": {
+            "type": "boolean",
+            "example": true
+           },
+           "2": {
+            "type": "boolean",
+            "example": true
+           },
+           "3": {
+            "type": "boolean",
+            "example": true
+           },
+           "4": {
+            "type": "boolean",
+            "example": true
+           },
+           "5": {
+            "type": "boolean",
+            "example": false
+           },
+           "6": {
+            "type": "boolean",
+            "example": false
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single Resource Request record.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Resource Request.",
+           "example": "012e9b89-2c7c-420b-a08a-d0e94a63e0a8"
+          },
+          "project_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Project ID where the request is created.",
+           "example": "479b6fe1-fc3e-49f3-9898-544e68bcc191"
+          },
+          "start_day": {
+           "type": "string",
+           "description": "Start date of the request.",
+           "example": "2023-06-11"
+          },
+          "end_day": {
+           "type": "string",
+           "description": "End date of the request.",
+           "example": "2023-06-19"
+          },
+          "start_time": {
+           "type": "string",
+           "description": "Start time of the request.",
+           "example": "7:30 am"
+          },
+          "end_time": {
+           "type": "string",
+           "description": "End time of the request.",
+           "example": "3:30 pm"
+          },
+          "percent_allocated": {
+           "type": "integer",
+           "description": "Allocation percentage if not hour-based.",
+           "example": 50
+          },
+          "work_days": {
+           "type": "object",
+           "description": "Object defining working days.",
+           "properties": {
+            "0": {
+             "type": "boolean",
+             "example": false
+            },
+            "1": {
+             "type": "boolean",
+             "example": true
+            },
+            "2": {
+             "type": "boolean",
+             "example": true
+            },
+            "3": {
+             "type": "boolean",
+             "example": true
+            },
+            "4": {
+             "type": "boolean",
+             "example": true
+            },
+            "5": {
+             "type": "boolean",
+             "example": false
+            },
+            "6": {
+             "type": "boolean",
+             "example": false
+            }
+           }
+          },
+          "job_title_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Job Title UUID for this request.",
+           "example": "8f134c16-dee8-45f9-b622-be344d19304d"
+          },
+          "category_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "UUID of the Project Category.",
+           "example": "f34e8fe3-4c3b-4abb-b1f6-c1cd956ba2f5"
+          },
+          "subcategory_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "UUID of the Project Subcategory.",
+           "example": "1b787e24-d67a-4042-8499-cb96b3b7ab37"
+          },
+          "work_scope_text": {
+           "type": "string",
+           "description": "Scope of Work for the Resource Request.",
+           "example": "An example scope"
+          },
+          "instruction_text": {
+           "type": "string",
+           "description": "Instructions for the Resource Request.",
+           "example": "Some items to do"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Project Resource Request endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/projects/{project_id}/resource-requests",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-requests?version=1.0#create-a-resource-request-on-a-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/resource-requests": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Resource Requests in a Company",
+    "description": "Retrieves all Resource Requests across a company. This is a pageable endpoint.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A paginated collection of Resource Requests.",
+         "properties": {
+          "possible_pages": {
+           "type": "integer",
+           "description": "The total number of pages available for pagination.",
+           "example": 5
+          },
+          "current_page": {
+           "type": "integer",
+           "description": "The current page index (0-based).",
+           "example": 2
+          },
+          "data": {
+           "type": "array",
+           "description": "The list of Resource Requests on the current page.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the Resource Request.",
+              "example": "012e9b89-2c7c-420b-a08a-d0e94a63e0a8"
+             },
+             "creator_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the user who created the Resource Request, if applicable.",
+              "example": "2116968d-7320-4edc-bda8-836968ce6622"
+             },
+             "project_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID of the project associated with this Resource Request.",
+              "example": "479b6fe1-fc3e-49f3-9898-544e68bcc191"
+             },
+             "start_day": {
+              "type": "string",
+              "description": "The start date for the requested resource (MM/DD/YY).",
+              "example": "6/11/20"
+             },
+             "end_day": {
+              "type": "string",
+              "description": "The end date for the requested resource (MM/DD/YY).",
+              "example": "6/19/20"
+             },
+             "start_time": {
+              "type": "string",
+              "description": "The start time of the requested resource.",
+              "example": "7:30 am"
+             },
+             "end_time": {
+              "type": "string",
+              "description": "The end time of the requested resource.",
+              "example": "3:30 pm"
+             },
+             "percent_allocated": {
+              "type": "integer",
+              "nullable": true,
+              "description": "The percentage allocation of the requested resource if applicable.",
+              "example": 50
+             },
+             "job_title_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Job Title associated with the Resource Request.",
+              "example": "8f134c16-dee8-45f9-b622-be344d19304d"
+             },
+             "category_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Project Category associated with the Resource Request.",
+              "example": "f34e8fe3-4c3b-4abb-b1f6-c1cd956ba2f5"
+             },
+             "subcategory_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Project Subcategory associated with the Resource Request.",
+              "example": "1b787e24-d67a-4042-8499-cb96b3b7ab37"
+             },
+             "state_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Assignment State associated with the Resource Request.",
+              "example": null
+             },
+             "work_scope_text": {
+              "type": "string",
+              "nullable": true,
+              "description": "Description of the work scope for the requested resource.",
+              "example": "An example scope"
+             },
+             "instruction_text": {
+              "type": "string",
+              "nullable": true,
+              "description": "Instructions related to the requested resource.",
+              "example": "Some items to do"
+             },
+             "work_days": {
+              "type": "object",
+              "description": "Object representing workdays for the requested resource, using a 0-based index (Sunday-Saturday).",
+              "example": {
+               "0": false,
+               "1": true,
+               "2": true,
+               "3": true,
+               "4": true,
+               "5": false,
+               "6": false
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Resource Requests endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/resource-requests",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-requests?version=1.0#get-all-resource-requests-in-a-company"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/resource-requests": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Resource Requests for Projects in a Single Group",
+    "description": "Retrieves all Resource Requests for projects within a specified group. This is a pageable endpoint.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A paginated collection of Resource Requests.",
+         "properties": {
+          "possible_pages": {
+           "type": "integer",
+           "description": "The total number of pages available for pagination.",
+           "example": 5
+          },
+          "current_page": {
+           "type": "integer",
+           "description": "The current page index (0-based).",
+           "example": 2
+          },
+          "data": {
+           "type": "array",
+           "description": "The list of Resource Requests on the current page.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the Resource Request.",
+              "example": "012e9b89-2c7c-420b-a08a-d0e94a63e0a8"
+             },
+             "creator_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the user who created the Resource Request, if applicable.",
+              "example": "2116968d-7320-4edc-bda8-836968ce6622"
+             },
+             "project_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID of the project associated with this Resource Request.",
+              "example": "479b6fe1-fc3e-49f3-9898-544e68bcc191"
+             },
+             "start_day": {
+              "type": "string",
+              "description": "The start date for the requested resource (MM/DD/YY).",
+              "example": "6/11/20"
+             },
+             "end_day": {
+              "type": "string",
+              "description": "The end date for the requested resource (MM/DD/YY).",
+              "example": "6/19/20"
+             },
+             "start_time": {
+              "type": "string",
+              "description": "The start time of the requested resource.",
+              "example": "7:30 am"
+             },
+             "end_time": {
+              "type": "string",
+              "description": "The end time of the requested resource.",
+              "example": "3:30 pm"
+             },
+             "percent_allocated": {
+              "type": "integer",
+              "nullable": true,
+              "description": "The percentage allocation of the requested resource if applicable.",
+              "example": 50
+             },
+             "job_title_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Job Title associated with the Resource Request.",
+              "example": "8f134c16-dee8-45f9-b622-be344d19304d"
+             },
+             "category_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Project Category associated with the Resource Request.",
+              "example": "f34e8fe3-4c3b-4abb-b1f6-c1cd956ba2f5"
+             },
+             "subcategory_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Project Subcategory associated with the Resource Request.",
+              "example": "1b787e24-d67a-4042-8499-cb96b3b7ab37"
+             },
+             "state_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "ID of the Assignment State associated with the Resource Request.",
+              "example": null
+             },
+             "work_scope_text": {
+              "type": "string",
+              "nullable": true,
+              "description": "Description of the work scope for the requested resource.",
+              "example": "An example scope"
+             },
+             "instruction_text": {
+              "type": "string",
+              "nullable": true,
+              "description": "Instructions related to the requested resource.",
+              "example": "Some items to do"
+             },
+             "work_days": {
+              "type": "object",
+              "description": "Object representing workdays for the requested resource, using a 0-based index (Sunday-Saturday).",
+              "example": {
+               "0": false,
+               "1": true,
+               "2": true,
+               "3": true,
+               "4": true,
+               "5": false,
+               "6": false
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get group resource requests",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/resource-requests",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-requests?version=1.0#get-all-resource-requests-for-projects-in-a-single-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/resource-requests/{request_id}": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a Single Resource Request",
+    "description": "Updates an existing Resource Request within a company. Only specified properties in the request body will be updated.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "request_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "Unique identifier for the Resource Request.",
+      "example": "012e9b89-2c7c-420b-a08a-d0e94a63e0a8"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for updating a Resource Request.",
+        "properties": {
+         "start_day": {
+          "type": "string",
+          "format": "date",
+          "description": "The first day the requested resource is needed (ISO 8601).",
+          "example": "2023-06-11T00:00:00Z"
+         },
+         "end_day": {
+          "type": "string",
+          "format": "date",
+          "description": "The last day the requested resource is needed (ISO 8601).",
+          "example": "2023-06-19T00:00:00Z"
+         },
+         "start_time": {
+          "type": "string",
+          "description": "Start time of the request (HH:MM am/pm format).",
+          "example": "7:30 am"
+         },
+         "end_time": {
+          "type": "string",
+          "description": "End time of the request (HH:MM am/pm format).",
+          "example": "3:30 pm"
+         },
+         "percent_allocated": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Allocation percentage if the request is not hour-based.",
+          "example": 50
+         },
+         "job_title_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Job Title UUID for this request.",
+          "example": "8f134c16-dee8-45f9-b622-be344d19304d"
+         },
+         "category_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Project Category.",
+          "example": "f34e8fe3-4c3b-4abb-b1f6-c1cd956ba2f5"
+         },
+         "subcategory_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Project Subcategory.",
+          "example": "1b787e24-d67a-4042-8499-cb96b3b7ab37"
+         },
+         "state_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Assignment State.",
+          "example": "null"
+         },
+         "work_scope_text": {
+          "type": "string",
+          "description": "Scope of Work for the Resource Request.",
+          "example": "An updated scope of work."
+         },
+         "instruction_text": {
+          "type": "string",
+          "description": "Instructions for the Resource Request.",
+          "example": "Updated instructions for this request."
+         },
+         "work_days": {
+          "type": "object",
+          "description": "Object to control working days (Sunday - Saturday as 0-6 index).",
+          "properties": {
+           "0": {
+            "type": "boolean",
+            "example": false
+           },
+           "1": {
+            "type": "boolean",
+            "example": true
+           },
+           "2": {
+            "type": "boolean",
+            "example": true
+           },
+           "3": {
+            "type": "boolean",
+            "example": true
+           },
+           "4": {
+            "type": "boolean",
+            "example": true
+           },
+           "5": {
+            "type": "boolean",
+            "example": false
+           },
+           "6": {
+            "type": "boolean",
+            "example": false
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single Resource Request record.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Resource Request.",
+           "example": "012e9b89-2c7c-420b-a08a-d0e94a63e0a8"
+          },
+          "project_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Project ID where the request is created.",
+           "example": "479b6fe1-fc3e-49f3-9898-544e68bcc191"
+          },
+          "start_day": {
+           "type": "string",
+           "description": "Start date of the request.",
+           "example": "2023-06-11"
+          },
+          "end_day": {
+           "type": "string",
+           "description": "End date of the request.",
+           "example": "2023-06-19"
+          },
+          "start_time": {
+           "type": "string",
+           "description": "Start time of the request.",
+           "example": "7:30 am"
+          },
+          "end_time": {
+           "type": "string",
+           "description": "End time of the request.",
+           "example": "3:30 pm"
+          },
+          "percent_allocated": {
+           "type": "integer",
+           "description": "Allocation percentage if not hour-based.",
+           "example": 50
+          },
+          "work_days": {
+           "type": "object",
+           "description": "Object defining working days.",
+           "properties": {
+            "0": {
+             "type": "boolean",
+             "example": false
+            },
+            "1": {
+             "type": "boolean",
+             "example": true
+            },
+            "2": {
+             "type": "boolean",
+             "example": true
+            },
+            "3": {
+             "type": "boolean",
+             "example": true
+            },
+            "4": {
+             "type": "boolean",
+             "example": true
+            },
+            "5": {
+             "type": "boolean",
+             "example": false
+            },
+            "6": {
+             "type": "boolean",
+             "example": false
+            }
+           }
+          },
+          "job_title_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Job Title UUID for this request.",
+           "example": "8f134c16-dee8-45f9-b622-be344d19304d"
+          },
+          "category_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "UUID of the Project Category.",
+           "example": "f34e8fe3-4c3b-4abb-b1f6-c1cd956ba2f5"
+          },
+          "subcategory_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "UUID of the Project Subcategory.",
+           "example": "1b787e24-d67a-4042-8499-cb96b3b7ab37"
+          },
+          "work_scope_text": {
+           "type": "string",
+           "description": "Scope of Work for the Resource Request.",
+           "example": "An example scope"
+          },
+          "instruction_text": {
+           "type": "string",
+           "description": "Instructions for the Resource Request.",
+           "example": "Some items to do"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Resource Request endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/resource-requests/{request_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-requests?version=1.0#update-a-single-resource-request"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Resource Request",
+    "description": "Deletes an existing Resource Request within a company.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "request_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "Unique identifier for the Resource Request.",
+      "example": "012e9b89-2c7c-420b-a08a-d0e94a63e0a8"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "The UUID of the deleted Resource Request.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Resource Request endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/resource-requests/{request_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-requests?version=1.0#delete-a-resource-request"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

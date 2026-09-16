@@ -1,0 +1,1880 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Company Currency Configurations",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Currency Configurations",
+  "x-resource-name": "Company Currency Configurations",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/currency_configuration": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Company Currency Configuration",
+    "description": "Creates the initial currency configuration for the specified company. The supplied `currency_iso_code` becomes the company's base currency. Setting `multicurrency_enabled=true` requires a signed multicurrency beta agreement, otherwise the API returns 400 MISSING_BETA_AGREEMENT. Returns the created configuration wrapped under a `data` key (V2 convention).",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "String ID of the Procore company for which to create the currency configuration. Obtainable from GET /rest/v1.0/companies (cast to string).",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "tags": [
+     "Currency Configuration"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "currency_iso_code"
+        ],
+        "properties": {
+         "currency_iso_code": {
+          "type": "string",
+          "description": "ISO 4217 three-letter code for the company's base currency (e.g., 'USD', 'EUR', 'JPY'). Required. Determines the default currency for all company-level financial objects. Cannot be changed via the v1 PATCH endpoint, so choose carefully.",
+          "nullable": false,
+          "example": "USD"
+         },
+         "currency_display": {
+          "type": "string",
+          "description": "How currency amounts should be rendered. 'symbol' renders with the locale currency glyph (e.g., $); 'code' renders with the ISO code (e.g., USD). Omit to leave unset.",
+          "enum": [
+           "symbol",
+           "code"
+          ],
+          "example": "symbol"
+         },
+         "multicurrency_enabled": {
+          "type": "boolean",
+          "description": "Whether to enable multicurrency for the company on creation. When true, projects under this company may be configured with their own currency and exchange rates; requires a signed multicurrency beta agreement, otherwise the API returns 400 MISSING_BETA_AGREEMENT.",
+          "example": false
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Company Currency Configuration V2 Response",
+         "description": "V2 response wrapper for a created Company Currency Configuration. The newly persisted configuration is nested under `data`. The `company_id` is returned as a string (V2 ID convention).",
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "The created company currency configuration.",
+           "properties": {
+            "company_id": {
+             "type": "string",
+             "description": "String identifier of the Procore company this configuration belongs to. Matches the {company_id} path parameter (V2 returns IDs as strings).",
+             "example": "43"
+            },
+            "currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 three-letter currency code for the company's base currency (e.g., 'USD', 'EUR', 'JPY'). All company-scoped monetary amounts in Procore are denominated in this currency.",
+             "example": "USD"
+            },
+            "currency_display": {
+             "type": "string",
+             "description": "How currency amounts should be rendered. 'symbol' renders with the locale currency glyph (e.g., $); 'code' renders with the ISO code (e.g., USD). Returned as null when not specified in the create request.",
+             "enum": [
+              "symbol",
+              "code"
+             ],
+             "example": "symbol",
+             "nullable": true
+            },
+            "multicurrency_enabled": {
+             "type": "boolean",
+             "description": "Whether multicurrency support is enabled for the company at the time of creation. Returned as null when not specified in the create request (treated as false until explicitly enabled).",
+             "example": false,
+             "nullable": true
+            },
+            "multicurrency_enabled_effective_date": {
+             "type": "string",
+             "format": "date-time",
+             "description": "ISO 8601 timestamp marking when multicurrency was first enabled for the company. Null when multicurrency was not enabled in the create request.",
+             "example": "2023-08-24T18:27:44Z",
+             "nullable": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/currency_configuration',\n  headers: {'content-type': 'application/json'},\n  body: {\n    currency_iso_code: 'USD',\n    currency_display: 'symbol',\n    multicurrency_enabled: false\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"currency_iso_code\\\":\\\"USD\\\",\\\"currency_display\\\":\\\"symbol\\\",\\\"multicurrency_enabled\\\":false}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/currency_configuration\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/currency_configuration \\\n  --header 'content-type: application/json' \\\n  --data '{\"currency_iso_code\":\"USD\",\"currency_display\":\"symbol\",\"multicurrency_enabled\":false}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/currency_configuration\"),\n    Content = new StringContent(\"{\\\"currency_iso_code\\\":\\\"USD\\\",\\\"currency_display\\\":\\\"symbol\\\",\\\"multicurrency_enabled\\\":false}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Company Currency Configuration endpoint",
+      "description": "Added endpoint to create company currency configuration. Included in the Multi-Currency feature release.",
+      "endpoint": "POST /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=2.0#create-company-currency-configuration"
+     },
+     {
+      "summary": "Add response codes to Company Currency Configuration v2.0 endpoints",
+      "description": "Add 400, 500, and 503 response codes to POST and change history endpoints for comprehensive error handling documentation",
+      "endpoint": "POST /companies/{company_id}/currency_configuration",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2025-08-26",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=2.0#create-company-currency-configuration"
+     },
+     {
+      "summary": "Add Company Currency Configurations Create v2.0 endpoint",
+      "description": "Create a Company Currency Configuration by Company ID",
+      "endpoint": "POST /companies/{company_id}/currency_configuration",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-05-07",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=2.0#create-company-currency-configuration"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/companies/{company_id}/currency_configuration": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Integer ID of the Procore company. Obtainable from GET /rest/v1.0/companies. Identifies which company's currency configuration to act on.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Company Currency Configuration",
+    "description": "Returns the currency configuration for the specified company. When no configuration has been created yet, currency-related fields are returned as null while company eligibility and toggle defaults are still populated, so consumers can detect the unconfigured state without a 404.",
+    "tags": [
+     "Currency Configuration"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Company Currency Configuration GET Response",
+         "description": "Currency configuration for a Procore company. When no configuration has been created yet, currency-related fields are returned as null while company eligibility and toggle defaults are still populated.",
+         "type": "object",
+         "properties": {
+          "company_id": {
+           "type": "integer",
+           "description": "Procore company ID this configuration belongs to. Matches the {company_id} path parameter and is the foreign key to use for all company-scoped multicurrency requests.",
+           "example": 43
+          },
+          "currency_iso_code": {
+           "type": "string",
+           "description": "ISO 4217 three-letter currency code for the company's base currency (e.g., 'USD', 'EUR', 'JPY'). All company-scoped monetary amounts in Procore are denominated in this currency. Null when no currency configuration has been created for the company.",
+           "example": "USD",
+           "nullable": true
+          },
+          "currency_display": {
+           "type": "string",
+           "description": "How currency amounts should be rendered. 'symbol' renders with the locale currency glyph (e.g., $); 'code' renders with the ISO code (e.g., USD). Null when no currency configuration has been created for the company.",
+           "enum": [
+            "symbol",
+            "code"
+           ],
+           "example": "code",
+           "nullable": true
+          },
+          "multicurrency_enabled": {
+           "type": "boolean",
+           "description": "Whether multicurrency support is enabled for the company. When true, projects under this company may be configured with their own currency and exchange rates. Returns false (and effective date null) when no configuration exists or multicurrency has not been enabled.",
+           "example": false
+          },
+          "multicurrency_enabled_effective_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp marking when multicurrency was first enabled for the company. Null if multicurrency has never been enabled or no currency configuration exists. Use to audit when multicurrency went live.",
+           "example": "2023-08-24T18:27:44Z",
+           "nullable": true
+          },
+          "eligible_for_multicurrency": {
+           "type": "boolean",
+           "description": "Whether the company satisfies the prerequisites to enable multicurrency (e.g., compatible ERP integration). When false, attempts to enable multicurrency will be rejected; use this to decide whether to surface the multicurrency toggle in your UI.",
+           "example": true
+          },
+          "multicurrency_phase_two_flag_enabled": {
+           "type": "boolean",
+           "description": "Whether the company has access to the extended multicurrency capabilities (separate base/quote currency tracking and per-record exchange rate fields used by multicurrency-aware downstream resources). When false, the company is limited to baseline multicurrency behavior. Use as a hint when deciding which API shape to expect from other multicurrency-aware endpoints.",
+           "example": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Company Currency Configuration endpoint",
+      "description": "Added endpoint to get company currency configuration. Included in the Multi-Currency feature release.",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Add response codes to Company Currency Configuration endpoints",
+      "description": "Add 400, 500, and 503 response codes to GET, PATCH, and DELETE endpoints for comprehensive error handling documentation",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2025-08-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Add eligible_for_multicurrency field to Company Currency Configuration response",
+      "description": "Add \"eligible_for_multicurrency\" boolean field to the GET response body to indicate company eligibility for multicurrency features",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Remove eligible_for_multicurrency From Response Body",
+      "description": "Remove the \"eligible_for_multicurrency\" boolean field from the response body",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2024-12-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Add multicurrency_enabled_effective_date field",
+      "description": "Adds the \"multicurrency_enabled_effective_date\" string field in the response body",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-08-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Add multicurrency_enabled field",
+      "description": "Adds the \"multicurrency_enabled\" boolean field in the response body",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Add currency_display field",
+      "description": "Adds the \"currency_display\" string field in the response body",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Add Company Currency Configurations Read v1.0 endpoint",
+      "description": "Retrieve a Company Currency Configuration by Company ID",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     },
+     {
+      "summary": "Fixed currency_iso_code and currency_display field descriptions",
+      "description": "Corrected the currency_iso_code and currency_display field descriptions in the company currency configuration GET response schema to reference \"company currency configuration\" instead of \"project currency configuration\".",
+      "endpoint": "GET /companies/{company_id}/currency_configuration",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-04-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#get-company-currency-configuration"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Company Currency Configuration",
+    "description": "Updates the company's currency configuration. Send only the fields you want to change; omitted fields are left unchanged. Note that `currency_iso_code` cannot be changed via this endpoint \u2014 the base currency is fixed once set. Enabling multicurrency for the first time requires a signed beta agreement (returns 400 MISSING_BETA_AGREEMENT otherwise).",
+    "tags": [
+     "Currency Configuration"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "properties": {
+         "currency_display": {
+          "type": "string",
+          "description": "How currency amounts should be rendered. 'symbol' renders with the locale currency glyph (e.g., $); 'code' renders with the ISO code (e.g., USD). Defaults to 'symbol' on first configuration. Omit to leave the existing value unchanged.",
+          "enum": [
+           "symbol",
+           "code"
+          ],
+          "default": "symbol",
+          "example": "symbol"
+         },
+         "multicurrency_enabled": {
+          "type": "boolean",
+          "description": "Whether to enable multicurrency for the company. When true, projects under this company may be configured with their own currency and exchange rates. The first time you set this to true the company must have a signed multicurrency beta agreement; otherwise the API returns 400 MISSING_BETA_AGREEMENT. Omit to leave the existing value unchanged.",
+          "default": false,
+          "example": false
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Company Currency Configuration",
+         "description": "Currency configuration for a Procore company. Returned after a successful update or delete; all fields reflect the persisted record.",
+         "type": "object",
+         "properties": {
+          "company_id": {
+           "type": "integer",
+           "description": "Procore company ID this configuration belongs to. Matches the {company_id} path parameter and is the foreign key to use for all company-scoped multicurrency requests.",
+           "example": 43
+          },
+          "currency_iso_code": {
+           "type": "string",
+           "description": "ISO 4217 three-letter currency code for the company's base currency (e.g., 'USD', 'EUR', 'JPY'). All company-scoped monetary amounts in Procore are denominated in this currency.",
+           "example": "USD"
+          },
+          "currency_display": {
+           "type": "string",
+           "description": "How currency amounts should be rendered. 'symbol' renders with the locale currency glyph (e.g., $); 'code' renders with the ISO code (e.g., USD).",
+           "enum": [
+            "symbol",
+            "code"
+           ],
+           "example": "code"
+          },
+          "multicurrency_enabled": {
+           "type": "boolean",
+           "description": "Whether multicurrency support is enabled for the company. When true, projects under this company may be configured with their own currency and exchange rates.",
+           "example": false
+          },
+          "multicurrency_enabled_effective_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp marking when multicurrency was first enabled for the company. Null if multicurrency has never been enabled. Use to audit when multicurrency went live.",
+           "example": "2023-08-24T18:27:44Z",
+           "nullable": true
+          },
+          "eligible_for_multicurrency": {
+           "type": "boolean",
+           "description": "Whether the company satisfies the prerequisites to enable multicurrency (e.g., compatible ERP integration). When false, attempts to enable multicurrency will be rejected.",
+           "example": true
+          },
+          "multicurrency_phase_two_flag_enabled": {
+           "type": "boolean",
+           "description": "Whether the company has access to the extended multicurrency capabilities (separate base/quote currency tracking and per-record exchange rate fields used by multicurrency-aware downstream resources). When false, the company is limited to baseline multicurrency behavior. Use as a hint when deciding which API shape to expect from other multicurrency-aware endpoints.",
+           "example": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration',\n  headers: {'content-type': 'application/json'},\n  body: {currency_display: 'symbol', multicurrency_enabled: false},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"currency_display\\\":\\\"symbol\\\",\\\"multicurrency_enabled\\\":false}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration \\\n  --header 'content-type: application/json' \\\n  --data '{\"currency_display\":\"symbol\",\"multicurrency_enabled\":false}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration\"),\n    Content = new StringContent(\"{\\\"currency_display\\\":\\\"symbol\\\",\\\"multicurrency_enabled\\\":false}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Company Currency Configuration endpoint",
+      "description": "Added endpoint to update company currency configuration. Included in the Multi-Currency feature release.",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#update-company-currency-configuration"
+     },
+     {
+      "summary": "Add response codes to Company Currency Configuration endpoints",
+      "description": "Add 500 and 503 response codes to PATCH and DELETE endpoints for comprehensive error handling documentation",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2025-08-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#update-company-currency-configuration"
+     },
+     {
+      "summary": "Add Optional currency_iso_code In The Request Body",
+      "description": "Add the optional \"currency_iso_code\" string field in the request body",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-12-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#update-company-currency-configuration"
+     },
+     {
+      "summary": "Add multicurrency_enabled_effective_date field",
+      "description": "Adds the \"multicurrency_enabled_effective_date\" string field in the response body",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-08-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#update-company-currency-configuration"
+     },
+     {
+      "summary": "Add multicurrency_enabled field",
+      "description": "Adds the \"multicurrency_enabled\" boolean field",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#update-company-currency-configuration"
+     },
+     {
+      "summary": "Add currency_display field",
+      "description": "Adds the \"currency_display\" string field",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#update-company-currency-configuration"
+     },
+     {
+      "summary": "Add Company Currency Configurations Update v1.0 endpoints",
+      "description": "Update a Company Currency Configuration by Company ID",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#update-company-currency-configuration"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Company Currency Configuration",
+    "description": "Deletes the company's currency configuration. Returns the deleted configuration in the 200 response body. After deletion, subsequent GETs return null currency fields until a new configuration is created. Returns 404 if no configuration exists.",
+    "tags": [
+     "Currency Configuration"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Company Currency Configuration",
+         "description": "Currency configuration for a Procore company. Returned after a successful update or delete; all fields reflect the persisted record.",
+         "type": "object",
+         "properties": {
+          "company_id": {
+           "type": "integer",
+           "description": "Procore company ID this configuration belongs to. Matches the {company_id} path parameter and is the foreign key to use for all company-scoped multicurrency requests.",
+           "example": 43
+          },
+          "currency_iso_code": {
+           "type": "string",
+           "description": "ISO 4217 three-letter currency code for the company's base currency (e.g., 'USD', 'EUR', 'JPY'). All company-scoped monetary amounts in Procore are denominated in this currency.",
+           "example": "USD"
+          },
+          "currency_display": {
+           "type": "string",
+           "description": "How currency amounts should be rendered. 'symbol' renders with the locale currency glyph (e.g., $); 'code' renders with the ISO code (e.g., USD).",
+           "enum": [
+            "symbol",
+            "code"
+           ],
+           "example": "code"
+          },
+          "multicurrency_enabled": {
+           "type": "boolean",
+           "description": "Whether multicurrency support is enabled for the company. When true, projects under this company may be configured with their own currency and exchange rates.",
+           "example": false
+          },
+          "multicurrency_enabled_effective_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp marking when multicurrency was first enabled for the company. Null if multicurrency has never been enabled. Use to audit when multicurrency went live.",
+           "example": "2023-08-24T18:27:44Z",
+           "nullable": true
+          },
+          "eligible_for_multicurrency": {
+           "type": "boolean",
+           "description": "Whether the company satisfies the prerequisites to enable multicurrency (e.g., compatible ERP integration). When false, attempts to enable multicurrency will be rejected.",
+           "example": true
+          },
+          "multicurrency_phase_two_flag_enabled": {
+           "type": "boolean",
+           "description": "Whether the company has access to the extended multicurrency capabilities (separate base/quote currency tracking and per-record exchange rate fields used by multicurrency-aware downstream resources). When false, the company is limited to baseline multicurrency behavior. Use as a hint when deciding which API shape to expect from other multicurrency-aware endpoints.",
+           "example": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Company Currency Configuration endpoint",
+      "description": "Added endpoint to delete company currency configuration. Included in the Multi-Currency feature release.",
+      "endpoint": "DELETE /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#delete-company-currency-configuration"
+     },
+     {
+      "summary": "Add response codes to Company Currency Configuration endpoints",
+      "description": "Add 400 and 500 response codes to DELETE endpoint for comprehensive error handling documentation",
+      "endpoint": "DELETE /companies/{company_id}/currency_configuration",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2025-08-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#delete-company-currency-configuration"
+     },
+     {
+      "summary": "Add multicurrency_enabled_effective_date field",
+      "description": "Adds the \"multicurrency_enabled_effective_date\" string field in the response body",
+      "endpoint": "DELETE /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-08-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#delete-company-currency-configuration"
+     },
+     {
+      "summary": "Add multicurrency_enabled field",
+      "description": "Adds the \"multicurrency_enabled\" boolean field in the response body",
+      "endpoint": "DELETE /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#delete-company-currency-configuration"
+     },
+     {
+      "summary": "Add currency_display field",
+      "description": "Adds the \"currency_display\" string field in the response body",
+      "endpoint": "DELETE /companies/{company_id}/currency_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#delete-company-currency-configuration"
+     },
+     {
+      "summary": "Add Company Currency Configurations Delete v1.0 endpoints",
+      "description": "Delete a Company Currency Configuration by Company ID",
+      "endpoint": "DELETE /companies/{company_id}/currency_configuration",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-currency-configurations?version=1.0#delete-company-currency-configuration"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

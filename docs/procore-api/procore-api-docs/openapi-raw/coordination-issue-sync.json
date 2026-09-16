@@ -1,0 +1,1899 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Coordination Issue Sync",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Coordination Issues",
+  "x-resource-name": "Coordination Issue Sync",
+  "version": "1.0",
+  "x-product-lines": [
+   "Design Coordination"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/coordination_issues/sync": {
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create and Update Bulk Coordination Issues",
+    "description": "This endpoint is used to create and update a batch of CoordinationIssues.\nSee [Using Sync Actions](/documentation/using-sync-actions) for additional information.\n\nIf an 'id' attribute is present in any payload item, that item is processed for 'update'.\nOn update, only title, description, status, due_date, location_id, assignee_id, issue_type, priority, coordination_issue_type_id, coordination_issue_priority_id, trade_id, is_private, and watcher_ids can be modified.",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "updates"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 12345
+         },
+         "updates": {
+          "type": "array",
+          "description": "An array of coordination issue payloads",
+          "items": {
+           "type": "object",
+           "description": "Coordination Issue",
+           "required": [
+            "title"
+           ],
+           "properties": {
+            "uuid": {
+             "type": "string",
+             "description": "Coordination Issue UUID. This is an optional parameter, and is set automatically on server if not present in the payload",
+             "example": "0b1a32a7-9cf4-4e53-bef4-3d70201b709a"
+            },
+            "title": {
+             "type": "string",
+             "description": "Coordination Issue title. The title can have a maximum of 80 characters",
+             "example": "Plumbing Issue on second floor"
+            },
+            "description": {
+             "type": "string",
+             "description": "Coordination Issue description.",
+             "example": "Plumbing conflicts with light fixtures"
+            },
+            "status": {
+             "type": "string",
+             "description": "Status of the issue",
+             "example": "open",
+             "enum": [
+              "open",
+              "in_progress",
+              "blocked",
+              "unblocked",
+              "ready_for_review",
+              "moved_to_observation",
+              "closed"
+             ]
+            },
+            "creation_source": {
+             "type": "string",
+             "description": "Source of issue creation. This attribute is ignored when issue is create by third party developers.",
+             "example": "navisworks"
+            },
+            "location_id": {
+             "type": "integer",
+             "description": "Location where the issue is present. The location must be in the same project as the project_id",
+             "example": 5
+            },
+            "assignee_id": {
+             "type": "integer",
+             "description": "ID of Procore user that should be assigned the issue",
+             "example": 624
+            },
+            "coordination_issue_file_id": {
+             "type": "integer",
+             "description": "ID of the BIM File to be set as origin source (required if viewpoints is included in payload)",
+             "example": 8
+            },
+            "drawing_revision_id": {
+             "type": "integer",
+             "description": "ID of the drawing revision to be set as origin source. Only one of drawing_revision_id or coordination_issue_file_id can be present",
+             "example": 9
+            },
+            "bim_model_id": {
+             "type": "integer",
+             "description": "ID of the model to be associated",
+             "example": 19
+            },
+            "due_date": {
+             "type": "string",
+             "description": "Due date of the Coordination Issue",
+             "example": "2018-08-16"
+            },
+            "issue_type": {
+             "type": "string",
+             "description": "Issue Type of the Coordination Issue",
+             "example": "building_code",
+             "enum": [
+              "building_code",
+              "clash",
+              "client_feedback",
+              "constructability",
+              "coordination",
+              "design_review",
+              "existing_condition",
+              "requirement_change",
+              "other"
+             ]
+            },
+            "priority": {
+             "type": "string",
+             "description": "Priority of the Coordination Issue",
+             "example": "high",
+             "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+             ]
+            },
+            "trade_id": {
+             "type": "integer",
+             "description": "Trade associated with the Coordination Issue",
+             "example": 999
+            },
+            "is_private": {
+             "type": "boolean",
+             "description": "Whether the Coordination Issue is private.",
+             "example": false
+            },
+            "coordination_issue_type_id": {
+             "type": "integer",
+             "description": "ID of the configurable issue type to associate with the issue.",
+             "example": 45
+            },
+            "coordination_issue_priority_id": {
+             "type": "integer",
+             "description": "ID of the configurable priority to associate with the issue.",
+             "example": 12
+            },
+            "watcher_ids": {
+             "type": "array",
+             "description": "IDs of users to set as watchers of the issue.",
+             "items": {
+              "type": "integer"
+             },
+             "example": [
+              624,
+              625
+             ]
+            },
+            "origin": {
+             "type": "object",
+             "description": "Origin source for a Coordination Issue",
+             "required": [
+              "title",
+              "origin_id",
+              "origin_type",
+              "deep_link_url"
+             ],
+             "properties": {
+              "title": {
+               "type": "string",
+               "description": "Title of the origin item",
+               "example": "My BcfTopic"
+              },
+              "origin_id": {
+               "type": "string",
+               "description": "Id of the origin item",
+               "example": "7b3c8752-e03e-417f-bb57-46bb5aca1139"
+              },
+              "origin_type": {
+               "type": "string",
+               "description": "Type of origin item",
+               "example": "BcfTopic"
+              },
+              "deep_link_url": {
+               "type": "string",
+               "description": "Deep link URL to the origin item",
+               "example": "https://some-company.com/bcf-topics/156"
+              }
+             }
+            },
+            "attachment_upload_uuids": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "UUID of uploaded file",
+              "example": "1ZE258W9K804SAJJZX19JVAB3R"
+             }
+            },
+            "attachments": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "File to use as image data. Note that it's only possible to post a\nfile using a multipart/form-data body (see RFC 2388). Most HTTP\nlibraries will do the right thing when you pass in an open file or\nIO stream. Alternatively you can use attachment_upload_uuids. You should not\nuse both file and upload_uuid fields in the same request."
+             }
+            },
+            "viewpoints": {
+             "type": "array",
+             "description": "An array of issue viewpoints. Only one viewpoint is allowed at this time. If specified, must also include coordination_issue_file_id.",
+             "items": {
+              "type": "object",
+              "required": [
+               "camera_data",
+               "snapshot_upload_uuid"
+              ],
+              "properties": {
+               "name": {
+                "type": "string",
+                "description": "Viewpoint name",
+                "example": "Ceiling view"
+               },
+               "view_folder_id": {
+                "type": "integer",
+                "description": "ID of the BIM View Folder the viewpoint belongs to"
+               },
+               "snapshot_upload_uuid": {
+                "type": "string",
+                "description": "UUID of uploaded snapshot",
+                "example": "1ZE146W9K804SAJJZX19JVAD0R"
+               },
+               "camera_data": {
+                "type": "string",
+                "description": "JSON string representation of camera position",
+                "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+               },
+               "redlines_data": {
+                "type": "string",
+                "description": "JSON string representation of markup",
+                "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+               },
+               "sections_data": {
+                "type": "string",
+                "description": "JSON string representation of sections applied to a 3d model as a bounding box",
+                "example": "{\"min_boundary\":{\"x\":6.24,\"y\":12.48,\"z\":24.96},\"max_boundary\":{\"x\":12.48,\"y\":24.96,\"z\":48.12},\"rotation\":{\"x\":1.0,\"y\":0.0,\"z\":2.0}}"
+               },
+               "render_mode": {
+                "type": "string",
+                "description": "Viewer render mode when viewpoint is applied",
+                "enum": [
+                 "shaded",
+                 "xray"
+                ]
+               },
+               "visibility": {
+                "type": "object",
+                "description": "Object visibility settings",
+                "properties": {
+                 "default_visibility": {
+                  "type": "boolean"
+                 },
+                 "exceptions": {
+                  "type": "object",
+                  "description": "Group of model objects represented as an array of object ids, or object ranges",
+                  "properties": {
+                   "object_ids": {
+                    "type": "array",
+                    "description": "Array of object ids",
+                    "example": [
+                     24861,
+                     46732
+                    ],
+                    "items": {
+                     "type": "integer"
+                    }
+                   },
+                   "object_ranges": {
+                    "type": "array",
+                    "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                    "example": [
+                     [
+                      24862,
+                      24
+                     ]
+                    ],
+                    "items": {
+                     "type": "array",
+                     "items": {
+                      "type": "integer"
+                     },
+                     "minItems": 2,
+                     "maxItems": 2
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "document_container_metadata": {
+             "type": "object",
+             "description": "Document container metadata associated with the Coordination Issue",
+             "properties": {
+              "document_container_id": {
+               "type": "string",
+               "description": "Unique identifier of the document container",
+               "example": "container-123"
+              },
+              "document_revision_id": {
+               "type": "string",
+               "description": "Unique identifier of the document revision",
+               "example": "revision-456"
+              },
+              "workflows_instance_id": {
+               "type": "integer",
+               "description": "ID of the associated workflow instance",
+               "example": 789
+              },
+              "pin_id": {
+               "type": "string",
+               "description": "Unique identifier of the pin",
+               "example": "pin-abc-123"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "CoordinationIssueSyncResponse",
+         "type": "object",
+         "properties": {
+          "entities": {
+           "type": "array",
+           "items": {
+            "allOf": [
+             {
+              "type": "object",
+              "description": "Coordination Issue",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 426
+               },
+               "uuid": {
+                "type": "string",
+                "description": "Unique identifier for the issue. This is auto-generated attribute if not provided during issue creation.",
+                "example": "a00147dd-a698-468a-b082-d277a564cf0c"
+               },
+               "title": {
+                "type": "string",
+                "description": "Coordination Issue title. The title can have a maximum of 80 characters.",
+                "example": "Plumbing Issue on second floor"
+               },
+               "description": {
+                "type": "string",
+                "description": "Coordination Issue description.",
+                "example": "Elaborate details on the plumbing issue"
+               },
+               "status": {
+                "type": "string",
+                "description": "Status of the issue.",
+                "example": "open",
+                "enum": [
+                 "open",
+                 "in_progress",
+                 "blocked",
+                 "unblocked",
+                 "ready_for_review",
+                 "moved_to_observation",
+                 "closed"
+                ]
+               },
+               "issue_number": {
+                "type": "integer",
+                "description": "Issue Number. A number that can be referred by users to easily identify an issue. Issue number starts from 1 for each project, and is unique per project",
+                "example": 2
+               },
+               "creation_source": {
+                "type": "string",
+                "description": "Coordination Issue can be created from Procore app or a plugin i.e. a source",
+                "example": "navisworks"
+               },
+               "due_date": {
+                "type": "string",
+                "description": "Due date of the Coordination Issue. Accepted date formats are \"yyyy-mm-dd\" and \"yyyymmdd\"",
+                "example": "2018-08-16"
+               },
+               "coordination_issue_file": {
+                "type": "object",
+                "description": "BIM File",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "ID",
+                  "example": 101
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Name of the file to be associated to a project",
+                  "example": "101_BLDG_FLR_2.NWF"
+                 },
+                 "uuid": {
+                  "type": "string",
+                  "description": "Unique UUID associated with the file",
+                  "example": "a00147dd-a698-468a-b082-d277a564cf0c"
+                 }
+                }
+               },
+               "project_id": {
+                "type": "number",
+                "format": "integer",
+                "description": "Unique identifier for the project.",
+                "example": 29
+               },
+               "bim_model_id": {
+                "type": "number",
+                "nullable": true,
+                "format": "integer",
+                "description": "Model ID",
+                "example": 86
+               },
+               "comments_count": {
+                "type": "number",
+                "format": "integer",
+                "description": "Count of comments",
+                "example": 15
+               },
+               "issue_type": {
+                "type": "string",
+                "description": "Issue type of the Coordination Issue",
+                "example": "building_code"
+               },
+               "priority": {
+                "type": "string",
+                "description": "Priority of the Coordination Issue",
+                "example": "high"
+               },
+               "drawing_revision": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "ID",
+                  "example": 662
+                 },
+                 "title": {
+                  "type": "string",
+                  "description": "Formatted title of the drawing revision",
+                  "example": "A001: COVER SHEET Rev.0"
+                 }
+                }
+               },
+               "trade": {
+                "type": "object",
+                "title": "Trade",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Trade ID",
+                  "example": 999
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Trade name",
+                  "example": "09 - acoustical panels"
+                 },
+                 "active": {
+                  "type": "boolean",
+                  "description": "Trade availability",
+                  "example": true
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp of last update to Trade",
+                  "example": "2016-08-01T23:33:54Z"
+                 }
+                }
+               },
+               "origin": {
+                "type": "object",
+                "description": "Origin source for a Coordination Issue",
+                "properties": {
+                 "title": {
+                  "type": "string",
+                  "description": "Title of the origin item",
+                  "example": "My BcfTopic"
+                 },
+                 "origin_id": {
+                  "type": "string",
+                  "description": "Id of the origin item",
+                  "example": "7b3c8752-e03e-417f-bb57-46bb5aca1139"
+                 },
+                 "origin_type": {
+                  "type": "string",
+                  "description": "Type of origin item",
+                  "example": "BcfTopic"
+                 },
+                 "deep_link_url": {
+                  "type": "string",
+                  "description": "Deep link URL to the origin item",
+                  "example": "https://some-company.com/bcf-topics/156"
+                 }
+                }
+               },
+               "location": {
+                "type": "object",
+                "title": "Location",
+                "nullable": true,
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Location ID",
+                  "example": 15504
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Location name",
+                  "example": "North Building>First Floor>Electrical Closet"
+                 },
+                 "node_name": {
+                  "type": "string",
+                  "description": "Location node name",
+                  "example": "Electrical Closet"
+                 },
+                 "parent_id": {
+                  "type": "integer",
+                  "description": "Location parent id",
+                  "example": 788866,
+                  "nullable": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp of Location creation",
+                  "example": "2016-08-01T23:33:54Z"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp of last update to Location",
+                  "example": "2016-08-01T23:33:54Z"
+                 },
+                 "code": {
+                  "type": "string",
+                  "description": "The unique code for this Location",
+                  "example": "L1",
+                  "nullable": true
+                 }
+                }
+               },
+               "assignee": {
+                "type": "object",
+                "description": "Login Information",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Login Information ID uniquely identifying this user.",
+                  "example": 1738090
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "User's display name, formatted first name then last name.",
+                  "example": "John Doe"
+                 },
+                 "login": {
+                  "type": "string",
+                  "description": "User's login email address.",
+                  "example": "johndoe@example.com"
+                 },
+                 "company_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "User Company name. If the user belongs to a vendor, the vendor name will be returned.",
+                  "example": "Builders Inc."
+                 },
+                 "locale": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "IETF locale code for the user's language preference (e.g., 'en', 'ko'). Null when the user has not set a locale.",
+                  "example": "ko"
+                 }
+                }
+               },
+               "created_by": {
+                "type": "object",
+                "description": "Login Information",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Login Information ID uniquely identifying this user.",
+                  "example": 1738090
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "User's display name, formatted first name then last name.",
+                  "example": "John Doe"
+                 },
+                 "login": {
+                  "type": "string",
+                  "description": "User's login email address.",
+                  "example": "johndoe@example.com"
+                 },
+                 "company_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "User Company name. If the user belongs to a vendor, the vendor name will be returned.",
+                  "example": "Builders Inc."
+                 },
+                 "locale": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "IETF locale code for the user's language preference (e.g., 'en', 'ko'). Null when the user has not set a locale.",
+                  "example": "ko"
+                 }
+                }
+               },
+               "updated_by": {
+                "type": "object",
+                "description": "Login Information",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Login Information ID uniquely identifying this user.",
+                  "example": 1738090
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "User's display name, formatted first name then last name.",
+                  "example": "John Doe"
+                 },
+                 "login": {
+                  "type": "string",
+                  "description": "User's login email address.",
+                  "example": "johndoe@example.com"
+                 },
+                 "company_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "User Company name. If the user belongs to a vendor, the vendor name will be returned.",
+                  "example": "Builders Inc."
+                 },
+                 "locale": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "IETF locale code for the user's language preference (e.g., 'en', 'ko'). Null when the user has not set a locale.",
+                  "example": "ko"
+                 }
+                }
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Created date",
+                "example": "2018-04-19T09:36:42Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Updated date",
+                "example": "2018-04-20T09:36:42Z"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "viewpoints": {
+                "type": "array",
+                "description": "An array of viewpoints",
+                "items": {
+                 "type": "object",
+                 "allOf": [
+                  {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "ID",
+                     "example": 206
+                    },
+                    "bim_file_id": {
+                     "type": "integer",
+                     "description": "ID of associated BIM File",
+                     "example": 809
+                    },
+                    "view_folder_id": {
+                     "type": "integer",
+                     "nullable": true,
+                     "description": "ID of associated BIM View Folder",
+                     "example": 316
+                    },
+                    "created_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Created date",
+                     "example": "2018-04-19T09:36:42Z"
+                    },
+                    "updated_at": {
+                     "type": "string",
+                     "format": "date-time",
+                     "description": "Updated date",
+                     "example": "2018-04-20T09:36:42Z"
+                    },
+                    "snapshot": {
+                     "type": "object",
+                     "properties": {
+                      "id": {
+                       "type": "integer"
+                      },
+                      "name": {
+                       "type": "string",
+                       "description": "Base name of the file without its path",
+                       "example": "filename.ext"
+                      },
+                      "content_type": {
+                       "type": "string",
+                       "description": "A mime type or a file extension",
+                       "example": "image/png"
+                      },
+                      "url": {
+                       "type": "string",
+                       "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                       "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                      }
+                     }
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Viewpoint name",
+                     "example": "Mechanical Conflict View"
+                    },
+                    "render_mode": {
+                     "type": "string",
+                     "description": "Viewer render mode when viewpoint is applied",
+                     "enum": [
+                      "shaded",
+                      "xray"
+                     ]
+                    },
+                    "uuid": {
+                     "type": "string",
+                     "nullable": true,
+                     "description": "Unique identifier for the Extraction viewpoint",
+                     "example": "123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "visibility": {
+                     "type": "object",
+                     "nullable": true,
+                     "description": "Object Visibility settings",
+                     "properties": {
+                      "default_visibility": {
+                       "type": "boolean"
+                      },
+                      "exceptions": {
+                       "type": "object",
+                       "description": "Group of model objects represented as an array of object ids, or object ranges",
+                       "properties": {
+                        "object_ids": {
+                         "type": "array",
+                         "description": "Array of object ids",
+                         "example": [
+                          24861,
+                          46732
+                         ],
+                         "items": {
+                          "type": "integer"
+                         }
+                        },
+                        "object_ranges": {
+                         "type": "array",
+                         "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                         "example": [
+                          [
+                           24862,
+                           24
+                          ]
+                         ],
+                         "items": {
+                          "type": "array",
+                          "items": {
+                           "type": "integer"
+                          },
+                          "minItems": 2,
+                          "maxItems": 2
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  },
+                  {
+                   "type": "object",
+                   "properties": {
+                    "camera_data": {
+                     "type": "string",
+                     "description": "JSON string representation of camera position",
+                     "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+                    }
+                   }
+                  },
+                  {
+                   "type": "object",
+                   "properties": {
+                    "redlines_data": {
+                     "type": "string",
+                     "description": "JSON string representation of markup",
+                     "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+                    }
+                   }
+                  },
+                  {
+                   "type": "object",
+                   "properties": {
+                    "sections_data": {
+                     "type": "string",
+                     "description": "JSON string representation of sections applied to a 3d model as a set of clipping planes",
+                     "example": "[{\"location\":{\"x\":0.0,\"y\":0.0,\"z\":28.82},\"direction\":{\"x\":0,\"y\":0,\"z\":-1},\"unit\":\"ft\"},{\"location\":{\"x\":10.0,\"y\":50.0,\"z\":68.82},\"direction\":{\"x\":2,\"y\":4,\"z\":-6}}]"
+                    }
+                   }
+                  }
+                 ]
+                }
+               },
+               "attachments": {
+                "type": "array",
+                "description": "An array of attachments",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Base name of the file without its path",
+                   "example": "filename.ext"
+                  },
+                  "content_type": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "A mime type or a file extension",
+                   "example": "application/vnd.ext"
+                  },
+                  "url": {
+                   "type": "string",
+                   "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                   "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                  },
+                  "viewable": {
+                   "type": "boolean",
+                   "description": "Boolean value indicating whether or not a viewable document has been created for the file."
+                  }
+                 }
+                }
+               },
+               "linked_procore_items": {
+                "type": "array",
+                "description": "Procore items linked to Coordination Issue",
+                "items": {
+                 "allOf": [
+                  {
+                   "type": "object",
+                   "description": "CoordinationIssue Procore Item Association details",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "ID",
+                     "example": 101
+                    },
+                    "coordination_issue_id": {
+                     "type": "integer",
+                     "description": "Id of the associated Coordination Issue",
+                     "example": 426
+                    },
+                    "item_id": {
+                     "type": "integer",
+                     "description": "Id of the associated Procore item",
+                     "example": 1287
+                    },
+                    "item_type": {
+                     "type": "string",
+                     "description": "Type of the associated Procore item",
+                     "example": "rfi"
+                    },
+                    "item_url": {
+                     "type": "string",
+                     "description": "Deep-link URL to the associated Procore item",
+                     "example": "http://app.procore.com/3664/project/rfi/show/16768"
+                    }
+                   }
+                  },
+                  {
+                   "type": "object",
+                   "properties": {
+                    "item_data": {
+                     "type": "object",
+                     "description": "This field shows data specific to the associated item. If item type is RFI, it will contain attribute subject, number, and has_official_response",
+                     "properties": {
+                      "has_official_response": {
+                       "type": "boolean",
+                       "example": true
+                      },
+                      "subject": {
+                       "type": "string",
+                       "example": "Construction RFI"
+                      },
+                      "number": {
+                       "type": "string",
+                       "example": "84"
+                      }
+                     }
+                    }
+                   }
+                  }
+                 ]
+                }
+               },
+               "linked_drawings": {
+                "type": "array",
+                "description": "Details of drawings linked to Coordination Issue",
+                "items": {
+                 "type": "object",
+                 "description": "CoordinationIssue pinned preview image",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Drawing ID",
+                   "example": 667
+                  },
+                  "title": {
+                   "type": "string",
+                   "description": "Formatted title of the drawing",
+                   "example": "A201: Floor II Plan"
+                  },
+                  "url": {
+                   "type": "string",
+                   "description": "Procore Web App URL of the drawing",
+                   "example": "http://app.procore.com/drawings/1"
+                  }
+                 }
+                }
+               },
+               "linked_observation_items": {
+                "type": "array",
+                "description": "Observation Items linked to Coordination Issue",
+                "items": {
+                 "type": "object",
+                 "description": "CoordinationIssue linked Observation Item",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "ID",
+                   "example": 93
+                  },
+                  "number": {
+                   "type": "string",
+                   "description": "Observation Item number",
+                   "example": "113"
+                  },
+                  "personal": {
+                   "type": "boolean",
+                   "description": "Observation Item privacy status",
+                   "example": true
+                  },
+                  "title": {
+                   "type": "string",
+                   "description": "Formatted Observation Item title",
+                   "example": "#113 - Duct and Structural Conflict"
+                  },
+                  "url": {
+                   "type": "string",
+                   "description": "Deep-link URL to Observation Item",
+                   "example": "http://app.procore.com/3664/project/observations/items/7142"
+                  },
+                  "created_by_id": {
+                   "type": "integer",
+                   "description": "ID of user that created the Observation Item",
+                   "example": 47531
+                  }
+                 }
+                }
+               },
+               "document_container_metadata": {
+                "type": "object",
+                "description": "Document container metadata associated with the Coordination Issue",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "ID of the document container metadata",
+                  "example": 1
+                 },
+                 "document_container_id": {
+                  "type": "string",
+                  "description": "Unique identifier of the document container",
+                  "example": "container-123"
+                 },
+                 "document_revision_id": {
+                  "type": "string",
+                  "description": "Unique identifier of the document revision",
+                  "example": "revision-456"
+                 },
+                 "workflows_instance_id": {
+                  "type": "integer",
+                  "nullable": true,
+                  "description": "ID of the associated workflow instance",
+                  "example": 789
+                 },
+                 "pin_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Unique identifier of the pin",
+                  "example": "pin-abc-123"
+                 }
+                }
+               },
+               "document_snapshots": {
+                "type": "array",
+                "description": "Point-in-time snapshot images of document revisions linked to the Coordination Issue.",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "ID of the document snapshot",
+                   "example": 42
+                  },
+                  "document_container_id": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Unique identifier of the document container the source document belongs to",
+                   "example": "container-123"
+                  },
+                  "document_name": {
+                   "type": "string",
+                   "maxLength": 255,
+                   "nullable": true,
+                   "description": "Human-readable name of the source document. Surfaced as the Coordination Issue's source file for outside-workflow (document snapshot) issues. May be null for snapshots created before this field existed.",
+                   "example": "Floor Plan.pdf"
+                  },
+                  "document_revision_id": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Unique identifier of the document revision the snapshot was taken from",
+                   "example": "revision-456"
+                  },
+                  "document_revision_version_id": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Unique identifier of the specific document revision version for this snapshot",
+                   "example": "version-789"
+                  },
+                  "created_at": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Timestamp when the snapshot was created",
+                   "example": "2018-04-19T09:36:42Z"
+                  },
+                  "prostore_file": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer"
+                    },
+                    "name": {
+                     "type": "string",
+                     "description": "Base name of the file without its path",
+                     "example": "filename.ext"
+                    },
+                    "content_type": {
+                     "type": "string",
+                     "nullable": true,
+                     "description": "A mime type or a file extension",
+                     "example": "application/vnd.ext"
+                    },
+                    "url": {
+                     "type": "string",
+                     "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                     "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                    },
+                    "viewable": {
+                     "type": "boolean",
+                     "description": "Boolean value indicating whether or not a viewable document has been created for the file."
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "drawing_markup_preview_images": {
+                "type": "array",
+                "description": "Preview images generated by drawings with Coordination Issue Pin",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer"
+                  },
+                  "drawing_revision_id": {
+                   "type": "integer"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Base name of the file without its path",
+                   "example": "filename.ext"
+                  },
+                  "content_type": {
+                   "type": "string",
+                   "description": "A mime type or a file extension",
+                   "example": "application/vnd.ext"
+                  },
+                  "url": {
+                   "type": "string",
+                   "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                   "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                  }
+                 }
+                }
+               },
+               "custom_fields": {
+                "type": "object",
+                "properties": {
+                 "custom_field_%{custom_field_string_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "The data type of the Custom Field Definition.",
+                    "example": "string"
+                   },
+                   "value": {
+                    "type": "string",
+                    "description": "The value of the custom field.",
+                    "example": "custom field value"
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_decimal_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "The data type of the Custom Field Definition.",
+                    "example": "decimal"
+                   },
+                   "value": {
+                    "type": "number",
+                    "description": "The value of the custom field.",
+                    "example": 2.2
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_boolean_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "The data type of the Custom Field Definition.",
+                    "example": "boolean"
+                   },
+                   "value": {
+                    "type": "boolean",
+                    "description": "The value of the custom field.",
+                    "example": true
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_lov_entry_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "The data type of the Custom Field Definition.",
+                    "example": "lov_entry"
+                   },
+                   "value": {
+                    "type": "object",
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "The unique identifier of the list of values (LOV) entry.",
+                      "example": 1
+                     },
+                     "label": {
+                      "type": "string",
+                      "description": "Label of the list of values (LOV) entry.",
+                      "example": "Open"
+                     }
+                    }
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_lov_entries_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "The data type of the Custom Field Definition.",
+                    "example": "lov_entries"
+                   },
+                   "value": {
+                    "type": "array",
+                    "items": {
+                     "type": "object",
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "The unique identifier of the list of values (LOV) entry.",
+                       "example": 2
+                      },
+                      "label": {
+                       "type": "string",
+                       "description": "The label of the list of values (LOV) entry.",
+                       "example": "Open"
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          },
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "allOf": [
+             {
+              "type": "object",
+              "description": "Coordination Issue",
+              "required": [
+               "title"
+              ],
+              "properties": {
+               "uuid": {
+                "type": "string",
+                "description": "Coordination Issue UUID. This is an optional parameter, and is set automatically on server if not present in the payload",
+                "example": "0b1a32a7-9cf4-4e53-bef4-3d70201b709a"
+               },
+               "title": {
+                "type": "string",
+                "description": "Coordination Issue title. The title can have a maximum of 80 characters",
+                "example": "Plumbing Issue on second floor"
+               },
+               "description": {
+                "type": "string",
+                "description": "Coordination Issue description.",
+                "example": "Plumbing conflicts with light fixtures"
+               },
+               "status": {
+                "type": "string",
+                "description": "Status of the issue.",
+                "example": "open",
+                "enum": [
+                 "open",
+                 "in_progress",
+                 "blocked",
+                 "unblocked",
+                 "ready_for_review",
+                 "moved_to_observation",
+                 "closed"
+                ]
+               },
+               "creation_source": {
+                "type": "string",
+                "description": "Source of issue creation. This attribute is ignored when issue is create by third party developers.",
+                "example": "navisworks"
+               },
+               "location_id": {
+                "type": "integer",
+                "description": "Location where the issue is present. The location must be in the same project as the project_id",
+                "example": 5
+               },
+               "assignee_id": {
+                "type": "integer",
+                "description": "ID of Procore user that should be assigned the issue",
+                "example": 624
+               },
+               "coordination_issue_file_id": {
+                "type": "integer",
+                "description": "ID of the BIM File to be set as origin source",
+                "example": 8
+               },
+               "drawing_revision_id": {
+                "type": "integer",
+                "description": "ID of the drawing revision to be set as origin source. Only one of drawing_revision_id or coordination_issue_file_id can be present",
+                "example": 9
+               },
+               "bim_model_id": {
+                "type": "integer",
+                "description": "ID of the model to be associated",
+                "example": 19
+               },
+               "due_date": {
+                "type": "string",
+                "description": "Due date of the Coordination Issue",
+                "example": "2018-08-16"
+               },
+               "origin": {
+                "type": "object",
+                "description": "Origin source for a Coordination Issue",
+                "required": [
+                 "title",
+                 "origin_id",
+                 "origin_type",
+                 "deep_link_url"
+                ],
+                "properties": {
+                 "title": {
+                  "type": "string",
+                  "description": "Title of the origin item",
+                  "example": "My BcfTopic"
+                 },
+                 "origin_id": {
+                  "type": "string",
+                  "description": "Id of the origin item",
+                  "example": "7b3c8752-e03e-417f-bb57-46bb5aca1139"
+                 },
+                 "origin_type": {
+                  "type": "string",
+                  "description": "Type of origin item",
+                  "example": "BcfTopic"
+                 },
+                 "deep_link_url": {
+                  "type": "string",
+                  "description": "Deep link URL to the origin item",
+                  "example": "https://some-company.com/bcf-topics/156"
+                 }
+                }
+               },
+               "attachment_upload_uuids": {
+                "type": "array",
+                "items": {
+                 "type": "string",
+                 "description": "UUID of uploaded file",
+                 "example": "1ZE258W9K804SAJJZX19JVAB3R"
+                }
+               },
+               "attachments": {
+                "type": "array",
+                "items": {
+                 "type": "string",
+                 "description": "File to use as image data. Note that it's only possible to post a\nfile using a multipart/form-data body (see RFC 2388). Most HTTP\nlibraries will do the right thing when you pass in an open file or\nIO stream. Alternatively you can use attachment_upload_uuids. You should not\nuse both file and upload_uuid fields in the same request."
+                }
+               },
+               "viewpoints": {
+                "type": "array",
+                "description": "An array of issue viewpoints. Only one viewpoint is allowed at this time.",
+                "items": {
+                 "type": "object",
+                 "required": [
+                  "snapshot_upload_uuid",
+                  "camera_data"
+                 ],
+                 "properties": {
+                  "snapshot_upload_uuid": {
+                   "type": "string",
+                   "description": "UUID of uploaded snapshot",
+                   "example": "1ZE146W9K804SAJJZX19JVAD0R"
+                  },
+                  "snapshot": {
+                   "type": "string",
+                   "description": "File to use as image data. Note that it's only possible to post a\nfile using a multipart/form-data body (see RFC 2388). Most HTTP\nlibraries will do the right thing when you pass in an open file or\nIO stream. Alternatively you can use snapshot_upload_uuid. You should not\nuse both file and upload_uuid fields in the same request."
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Viewpoint name",
+                   "example": "Mechanical Conflict View"
+                  },
+                  "camera_data": {
+                   "type": "string",
+                   "description": "Camera data for the building model associated with the issue",
+                   "example": "{\"Type\":\"Camera\",\"Scale\":1,\"Up\":[0,0,1],\"Front\":[0,1,2.22],\"Right\":[1,0,0],\"Position\":[36.48,22.38,68.27],\"View\":[-0.11,-0.14,-0.98]}"
+                  },
+                  "redlines_data": {
+                   "type": "string",
+                   "description": "Lines data for the building model associated with the issue",
+                   "example": "{\"Type\":\"RedlineCollection\",\"Values\":[{\"Type\":\"RedlineEllipse\",\"Thickness\":3,\"Color\":[1,0,0],\"MinPoint\":[-0.131,0.202],\"MaxPoint\":[0.144,0.024]}]}"
+                  },
+                  "sections_data": {
+                   "type": "string",
+                   "description": "Clipping plane data for the building model associated with the issue",
+                   "example": "{\"Type\":\"ClipPlaneSet\",\"Version\":1\"}"
+                  }
+                 }
+                }
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "errors": {
+                "type": "object",
+                "properties": {
+                 "field_name": {
+                  "type": "array",
+                  "items": {
+                   "type": "string"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/coordination_issues/sync',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 12345,\n    updates: [\n      {\n        uuid: '0b1a32a7-9cf4-4e53-bef4-3d70201b709a',\n        title: 'Plumbing Issue on second floor',\n        description: 'Plumbing conflicts with light fixtures',\n        status: 'open',\n        creation_source: 'navisworks',\n        location_id: 5,\n        assignee_id: 624,\n        coordination_issue_file_id: 8,\n        drawing_revision_id: 9,\n        bim_model_id: 19,\n        due_date: '2018-08-16',\n        issue_type: 'building_code',\n        priority: 'high',\n        trade_id: 999,\n        is_private: false,\n        coordination_issue_type_id: 45,\n        coordination_issue_priority_id: 12,\n        watcher_ids: [624, 625],\n        origin: {\n          title: 'My BcfTopic',\n          origin_id: '7b3c8752-e03e-417f-bb57-46bb5aca1139',\n          origin_type: 'BcfTopic',\n          deep_link_url: 'https://some-company.com/bcf-topics/156'\n        },\n        attachment_upload_uuids: ['1ZE258W9K804SAJJZX19JVAB3R'],\n        attachments: ['string'],\n        viewpoints: [\n          {\n            name: 'Ceiling view',\n            view_folder_id: 0,\n            snapshot_upload_uuid: '1ZE146W9K804SAJJZX19JVAD0R',\n            camera_data: '{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}',\n            redlines_data: '{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}',\n            sections_data: '{\"min_boundary\":{\"x\":6.24,\"y\":12.48,\"z\":24.96},\"max_boundary\":{\"x\":12.48,\"y\":24.96,\"z\":48.12},\"rotation\":{\"x\":1.0,\"y\":0.0,\"z\":2.0}}',\n            render_mode: 'shaded',\n            visibility: {\n              default_visibility: true,\n              exceptions: {object_ids: [24861, 46732], object_ranges: [[24862, 24]]}\n            }\n          }\n        ],\n        document_container_metadata: {\n          document_container_id: 'container-123',\n          document_revision_id: 'revision-456',\n          workflows_instance_id: 789,\n          pin_id: 'pin-abc-123'\n        }\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"updates\\\":[{\\\"uuid\\\":\\\"0b1a32a7-9cf4-4e53-bef4-3d70201b709a\\\",\\\"title\\\":\\\"Plumbing Issue on second floor\\\",\\\"description\\\":\\\"Plumbing conflicts with light fixtures\\\",\\\"status\\\":\\\"open\\\",\\\"creation_source\\\":\\\"navisworks\\\",\\\"location_id\\\":5,\\\"assignee_id\\\":624,\\\"coordination_issue_file_id\\\":8,\\\"drawing_revision_id\\\":9,\\\"bim_model_id\\\":19,\\\"due_date\\\":\\\"2018-08-16\\\",\\\"issue_type\\\":\\\"building_code\\\",\\\"priority\\\":\\\"high\\\",\\\"trade_id\\\":999,\\\"is_private\\\":false,\\\"coordination_issue_type_id\\\":45,\\\"coordination_issue_priority_id\\\":12,\\\"watcher_ids\\\":[624,625],\\\"origin\\\":{\\\"title\\\":\\\"My BcfTopic\\\",\\\"origin_id\\\":\\\"7b3c8752-e03e-417f-bb57-46bb5aca1139\\\",\\\"origin_type\\\":\\\"BcfTopic\\\",\\\"deep_link_url\\\":\\\"https://some-company.com/bcf-topics/156\\\"},\\\"attachment_upload_uuids\\\":[\\\"1ZE258W9K804SAJJZX19JVAB3R\\\"],\\\"attachments\\\":[\\\"string\\\"],\\\"viewpoints\\\":[{\\\"name\\\":\\\"Ceiling view\\\",\\\"view_folder_id\\\":0,\\\"snapshot_upload_uuid\\\":\\\"1ZE146W9K804SAJJZX19JVAD0R\\\",\\\"camera_data\\\":\\\"{\\\\\\\"perspective_camera\\\\\\\":{\\\\\\\"camera_direction\\\\\\\":{\\\\\\\"x\\\\\\\":-0.24,\\\\\\\"y\\\\\\\":-0.14,\\\\\\\"z\\\\\\\":-0.99},\\\\\\\"camera_up_vector\\\\\\\":{\\\\\\\"x\\\\\\\":-0.17,\\\\\\\"y\\\\\\\":-0.74,\\\\\\\"z\\\\\\\":0.14},\\\\\\\"camera_view_point\\\\\\\":{\\\\\\\"x\\\\\\\":-13.86,\\\\\\\"y\\\\\\\":64.83,\\\\\\\"z\\\\\\\":31.9},\\\\\\\"field_of_view\\\\\\\":0.78,\\\\\\\"target_distance\\\\\\\":9.18,\\\\\\\"unit\\\\\\\":\\\\\\\"ft\\\\\\\"}}\\\",\\\"redlines_data\\\":\\\"{\\\\\\\"lines\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.53,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"texts\\\\\\\":[{\\\\\\\"origin\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"text\\\\\\\":\\\\\\\"Issue\\\\\\\",\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1}}],\\\\\\\"arrows\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.16,\\\\\\\"y\\\\\\\":0.33,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.58,\\\\\\\"y\\\\\\\":0.25,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"ellipses\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"max_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.11,\\\\\\\"y\\\\\\\":-0.25,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"min_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.31,\\\\\\\"y\\\\\\\":0.68,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3}]}\\\",\\\"sections_data\\\":\\\"{\\\\\\\"min_boundary\\\\\\\":{\\\\\\\"x\\\\\\\":6.24,\\\\\\\"y\\\\\\\":12.48,\\\\\\\"z\\\\\\\":24.96},\\\\\\\"max_boundary\\\\\\\":{\\\\\\\"x\\\\\\\":12.48,\\\\\\\"y\\\\\\\":24.96,\\\\\\\"z\\\\\\\":48.12},\\\\\\\"rotation\\\\\\\":{\\\\\\\"x\\\\\\\":1.0,\\\\\\\"y\\\\\\\":0.0,\\\\\\\"z\\\\\\\":2.0}}\\\",\\\"render_mode\\\":\\\"shaded\\\",\\\"visibility\\\":{\\\"default_visibility\\\":true,\\\"exceptions\\\":{\\\"object_ids\\\":[24861,46732],\\\"object_ranges\\\":[[24862,24]]}}}],\\\"document_container_metadata\\\":{\\\"document_container_id\\\":\\\"container-123\\\",\\\"document_revision_id\\\":\\\"revision-456\\\",\\\"workflows_instance_id\\\":789,\\\"pin_id\\\":\\\"pin-abc-123\\\"}}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/coordination_issues/sync\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/coordination_issues/sync \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"updates\":[{\"uuid\":\"0b1a32a7-9cf4-4e53-bef4-3d70201b709a\",\"title\":\"Plumbing Issue on second floor\",\"description\":\"Plumbing conflicts with light fixtures\",\"status\":\"open\",\"creation_source\":\"navisworks\",\"location_id\":5,\"assignee_id\":624,\"coordination_issue_file_id\":8,\"drawing_revision_id\":9,\"bim_model_id\":19,\"due_date\":\"2018-08-16\",\"issue_type\":\"building_code\",\"priority\":\"high\",\"trade_id\":999,\"is_private\":false,\"coordination_issue_type_id\":45,\"coordination_issue_priority_id\":12,\"watcher_ids\":[624,625],\"origin\":{\"title\":\"My BcfTopic\",\"origin_id\":\"7b3c8752-e03e-417f-bb57-46bb5aca1139\",\"origin_type\":\"BcfTopic\",\"deep_link_url\":\"https://some-company.com/bcf-topics/156\"},\"attachment_upload_uuids\":[\"1ZE258W9K804SAJJZX19JVAB3R\"],\"attachments\":[\"string\"],\"viewpoints\":[{\"name\":\"Ceiling view\",\"view_folder_id\":0,\"snapshot_upload_uuid\":\"1ZE146W9K804SAJJZX19JVAD0R\",\"camera_data\":\"{\\\"perspective_camera\\\":{\\\"camera_direction\\\":{\\\"x\\\":-0.24,\\\"y\\\":-0.14,\\\"z\\\":-0.99},\\\"camera_up_vector\\\":{\\\"x\\\":-0.17,\\\"y\\\":-0.74,\\\"z\\\":0.14},\\\"camera_view_point\\\":{\\\"x\\\":-13.86,\\\"y\\\":64.83,\\\"z\\\":31.9},\\\"field_of_view\\\":0.78,\\\"target_distance\\\":9.18,\\\"unit\\\":\\\"ft\\\"}}\",\"redlines_data\":\"{\\\"lines\\\":[{\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1},\\\"end_point\\\":{\\\"x\\\":-0.29,\\\"y\\\":-0.15,\\\"z\\\":0.0},\\\"thickness\\\":3,\\\"start_point\\\":{\\\"x\\\":-0.29,\\\"y\\\":-0.53,\\\"z\\\":0.0}}],\\\"texts\\\":[{\\\"origin\\\":{\\\"x\\\":-0.29,\\\"y\\\":-0.15,\\\"z\\\":0.0},\\\"text\\\":\\\"Issue\\\",\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1}}],\\\"arrows\\\":[{\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1},\\\"end_point\\\":{\\\"x\\\":-0.16,\\\"y\\\":0.33,\\\"z\\\":0.0},\\\"thickness\\\":3,\\\"start_point\\\":{\\\"x\\\":0.58,\\\"y\\\":0.25,\\\"z\\\":0.0}}],\\\"ellipses\\\":[{\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1},\\\"max_point\\\":{\\\"x\\\":0.11,\\\"y\\\":-0.25,\\\"z\\\":0.0},\\\"min_point\\\":{\\\"x\\\":0.31,\\\"y\\\":0.68,\\\"z\\\":0.0},\\\"thickness\\\":3}]}\",\"sections_data\":\"{\\\"min_boundary\\\":{\\\"x\\\":6.24,\\\"y\\\":12.48,\\\"z\\\":24.96},\\\"max_boundary\\\":{\\\"x\\\":12.48,\\\"y\\\":24.96,\\\"z\\\":48.12},\\\"rotation\\\":{\\\"x\\\":1.0,\\\"y\\\":0.0,\\\"z\\\":2.0}}\",\"render_mode\":\"shaded\",\"visibility\":{\"default_visibility\":true,\"exceptions\":{\"object_ids\":[24861,46732],\"object_ranges\":[[24862,24]]}}}],\"document_container_metadata\":{\"document_container_id\":\"container-123\",\"document_revision_id\":\"revision-456\",\"workflows_instance_id\":789,\"pin_id\":\"pin-abc-123\"}}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/coordination_issues/sync\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"updates\\\":[{\\\"uuid\\\":\\\"0b1a32a7-9cf4-4e53-bef4-3d70201b709a\\\",\\\"title\\\":\\\"Plumbing Issue on second floor\\\",\\\"description\\\":\\\"Plumbing conflicts with light fixtures\\\",\\\"status\\\":\\\"open\\\",\\\"creation_source\\\":\\\"navisworks\\\",\\\"location_id\\\":5,\\\"assignee_id\\\":624,\\\"coordination_issue_file_id\\\":8,\\\"drawing_revision_id\\\":9,\\\"bim_model_id\\\":19,\\\"due_date\\\":\\\"2018-08-16\\\",\\\"issue_type\\\":\\\"building_code\\\",\\\"priority\\\":\\\"high\\\",\\\"trade_id\\\":999,\\\"is_private\\\":false,\\\"coordination_issue_type_id\\\":45,\\\"coordination_issue_priority_id\\\":12,\\\"watcher_ids\\\":[624,625],\\\"origin\\\":{\\\"title\\\":\\\"My BcfTopic\\\",\\\"origin_id\\\":\\\"7b3c8752-e03e-417f-bb57-46bb5aca1139\\\",\\\"origin_type\\\":\\\"BcfTopic\\\",\\\"deep_link_url\\\":\\\"https://some-company.com/bcf-topics/156\\\"},\\\"attachment_upload_uuids\\\":[\\\"1ZE258W9K804SAJJZX19JVAB3R\\\"],\\\"attachments\\\":[\\\"string\\\"],\\\"viewpoints\\\":[{\\\"name\\\":\\\"Ceiling view\\\",\\\"view_folder_id\\\":0,\\\"snapshot_upload_uuid\\\":\\\"1ZE146W9K804SAJJZX19JVAD0R\\\",\\\"camera_data\\\":\\\"{\\\\\\\"perspective_camera\\\\\\\":{\\\\\\\"camera_direction\\\\\\\":{\\\\\\\"x\\\\\\\":-0.24,\\\\\\\"y\\\\\\\":-0.14,\\\\\\\"z\\\\\\\":-0.99},\\\\\\\"camera_up_vector\\\\\\\":{\\\\\\\"x\\\\\\\":-0.17,\\\\\\\"y\\\\\\\":-0.74,\\\\\\\"z\\\\\\\":0.14},\\\\\\\"camera_view_point\\\\\\\":{\\\\\\\"x\\\\\\\":-13.86,\\\\\\\"y\\\\\\\":64.83,\\\\\\\"z\\\\\\\":31.9},\\\\\\\"field_of_view\\\\\\\":0.78,\\\\\\\"target_distance\\\\\\\":9.18,\\\\\\\"unit\\\\\\\":\\\\\\\"ft\\\\\\\"}}\\\",\\\"redlines_data\\\":\\\"{\\\\\\\"lines\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.53,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"texts\\\\\\\":[{\\\\\\\"origin\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"text\\\\\\\":\\\\\\\"Issue\\\\\\\",\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1}}],\\\\\\\"arrows\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.16,\\\\\\\"y\\\\\\\":0.33,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.58,\\\\\\\"y\\\\\\\":0.25,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"ellipses\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"max_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.11,\\\\\\\"y\\\\\\\":-0.25,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"min_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.31,\\\\\\\"y\\\\\\\":0.68,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3}]}\\\",\\\"sections_data\\\":\\\"{\\\\\\\"min_boundary\\\\\\\":{\\\\\\\"x\\\\\\\":6.24,\\\\\\\"y\\\\\\\":12.48,\\\\\\\"z\\\\\\\":24.96},\\\\\\\"max_boundary\\\\\\\":{\\\\\\\"x\\\\\\\":12.48,\\\\\\\"y\\\\\\\":24.96,\\\\\\\"z\\\\\\\":48.12},\\\\\\\"rotation\\\\\\\":{\\\\\\\"x\\\\\\\":1.0,\\\\\\\"y\\\\\\\":0.0,\\\\\\\"z\\\\\\\":2.0}}\\\",\\\"render_mode\\\":\\\"shaded\\\",\\\"visibility\\\":{\\\"default_visibility\\\":true,\\\"exceptions\\\":{\\\"object_ids\\\":[24861,46732],\\\"object_ranges\\\":[[24862,24]]}}}],\\\"document_container_metadata\\\":{\\\"document_container_id\\\":\\\"container-123\\\",\\\"document_revision_id\\\":\\\"revision-456\\\",\\\"workflows_instance_id\\\":789,\\\"pin_id\\\":\\\"pin-abc-123\\\"}}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/coordination_issues/bulk_delete": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Bulk Coordination Issues",
+    "description": "This endpoint is used to delete a batch of CoordinationIssues.",
+    "tags": [
+     "Coordination Issues"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "deletes"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 12345
+         },
+         "deletes": {
+          "type": "array",
+          "description": "An array of objects containing resource id to delete",
+          "items": {
+           "type": "object",
+           "description": "Coordination Issue",
+           "required": [
+            "id"
+           ],
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Id of the Coordination Issue to delete",
+             "example": 212
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "CoordinationIssueSyncResponse",
+         "type": "object",
+         "properties": {
+          "entities": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Coordination Issue Id",
+              "example": 12345
+             }
+            }
+           }
+          },
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "errors": {
+              "type": "object",
+              "properties": {
+               "field_name": {
+                "type": "array",
+                "items": {
+                 "type": "string"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/coordination_issues/bulk_delete',\n  headers: {'content-type': 'application/json'},\n  body: {project_id: 12345, deletes: [{id: 212}]},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"deletes\\\":[{\\\"id\\\":212}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/coordination_issues/bulk_delete\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/coordination_issues/bulk_delete \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"deletes\":[{\"id\":212}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/coordination_issues/bulk_delete\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"deletes\\\":[{\\\"id\\\":212}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,2288 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Lookaheads",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Schedule (Legacy)",
+  "x-resource-name": "Lookaheads",
+  "version": "1.1",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.1/projects/{project_id}/schedule/lookaheads": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Lookaheads",
+    "description": "Returns all Lookaheads for the project.",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Schedule Lookahead",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Lookahead ID"
+           },
+           "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lookahead start date, in project time zone",
+            "example": "2019-09-20T12:42:00Z"
+           },
+           "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lookahead end date, in project time zone",
+            "example": "2019-09-20T12:42:00Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Lookahead",
+    "description": "Create a new Lookahead for the project",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "lookahead"
+        ],
+        "properties": {
+         "lookahead": {
+          "title": "Lookahead",
+          "type": "object",
+          "required": [
+           "start_date",
+           "end_date"
+          ],
+          "properties": {
+           "start_date": {
+            "type": "string",
+            "description": "Lookahead start date, in project time zone",
+            "example": "2019-09-20"
+           },
+           "end_date": {
+            "type": "string",
+            "description": "Lookahead end date, in project time zone",
+            "example": "2019-09-30"
+           },
+           "copied_from_id": {
+            "type": "integer",
+            "description": "ID of a previously created lookahead that will be used\nto populate this lookahead. Defaults to null, in which\ncase the lookahead will populate directly from the\nmaster schedule."
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schedule Lookahead",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Lookahead ID"
+          },
+          "start_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead start date, in project time zone",
+           "example": "2019-09-20T12:42:00Z"
+          },
+          "end_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead end date, in project time zone",
+           "example": "2019-09-20T12:42:00Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads',\n  headers: {'content-type': 'application/json'},\n  body: {\n    lookahead: {start_date: '2019-09-20', end_date: '2019-09-30', copied_from_id: 0}\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"lookahead\\\":{\\\"start_date\\\":\\\"2019-09-20\\\",\\\"end_date\\\":\\\"2019-09-30\\\",\\\"copied_from_id\\\":0}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads \\\n  --header 'content-type: application/json' \\\n  --data '{\"lookahead\":{\"start_date\":\"2019-09-20\",\"end_date\":\"2019-09-30\",\"copied_from_id\":0}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads\"),\n    Content = new StringContent(\"{\\\"lookahead\\\":{\\\"start_date\\\":\\\"2019-09-20\\\",\\\"end_date\\\":\\\"2019-09-30\\\",\\\"copied_from_id\\\":0}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Changed default 'copied_from_id' value",
+      "description": "If no `copied_from_id` is passed, the lookahead will be populated directly\nfrom the master schedule.",
+      "endpoint": "POST /projects/{project_id}/schedule/lookaheads",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2021-11-24",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.1#create-lookahead"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.1/projects/{project_id}/schedule/lookaheads/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Lookahead ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Lookahead",
+    "description": "Returns single Lookahead.",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schedule Lookahead",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Lookahead ID"
+          },
+          "start_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Lookahead start date, in project time zone",
+           "example": "2019-09-20"
+          },
+          "end_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Lookahead end date, in project time zone",
+           "example": "2019-09-20"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead creation time",
+           "example": "2019-08-01T00:00:00Z"
+          },
+          "data_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead last update time",
+           "example": "2019-08-01T00:00:00Z"
+          },
+          "created_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "label": {
+           "type": "string",
+           "description": "Lookahead label",
+           "example": "08/27/21 - 09/16/21 | 3 Weeks"
+          },
+          "lookahead_tasks": {
+           "type": "array",
+           "description": "List of tasks in the Lookahead, given in a nested tree structure\naccording to parent-child relationships",
+           "items": {
+            "type": "object",
+            "description": "Schedule Lookahead Task, with subtasks",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Lookahead Task ID"
+             },
+             "parent_id": {
+              "type": "integer",
+              "nullable": true,
+              "example": 1234
+             },
+             "name": {
+              "type": "string",
+              "description": "Task name"
+             },
+             "row_number": {
+              "type": "integer",
+              "description": "Number of the task row within the project schedule",
+              "example": 1
+             },
+             "critical_path": {
+              "type": "boolean",
+              "description": "Whether or not the task is included in critical path"
+             },
+             "comment": {
+              "type": "string",
+              "description": "Additional comments"
+             },
+             "activity_id": {
+              "type": "string",
+              "description": "Activity ID",
+              "example": 1000435
+             },
+             "wbs": {
+              "type": "string",
+              "description": "WBS",
+              "example": 1.2
+             },
+             "segments": {
+              "type": "array",
+              "description": "Segments define the set of days for the entire date range of the task,\nand the completion status of each day in the task",
+              "items": {
+               "type": "object",
+               "required": [
+                "date",
+                "status"
+               ],
+               "properties": {
+                "date": {
+                 "type": "string",
+                 "description": "Date represented by the task segment",
+                 "example": "2019-09-20"
+                },
+                "status": {
+                 "type": "string",
+                 "description": "Completion status of the task segment",
+                 "example": "complete",
+                 "enum": [
+                  "blank",
+                  "complete",
+                  "incomplete"
+                 ]
+                }
+               }
+              }
+             },
+             "resources": {
+              "type": "array",
+              "description": "Resource(s) assigned to this Lookahead Task",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 1
+                },
+                "company_id": {
+                 "type": "integer",
+                 "example": 2
+                },
+                "deleted_at": {
+                 "type": "string",
+                 "format": "date-time",
+                 "example": "2019-08-01T00:00:00Z"
+                },
+                "project_id": {
+                 "type": "integer",
+                 "example": 3
+                },
+                "source_uid": {
+                 "type": "string",
+                 "example": "00000000-0000-0000-0000-000000000000"
+                }
+               }
+              }
+             },
+             "assignees": {
+              "type": "array",
+              "description": "Contact(s) assigned to this Lookahead Task",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 1
+                },
+                "email": {
+                 "type": "string",
+                 "example": "assignee@example.com"
+                },
+                "login_information_id": {
+                 "type": "integer",
+                 "example": 2
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Arnold Assignee"
+                }
+               }
+              }
+             },
+             "vendors": {
+              "type": "array",
+              "description": "Company(s) assigned to this Lookahead Task",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 1
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Versatile Vendor"
+                }
+               }
+              }
+             },
+             "task": {
+              "type": "object",
+              "description": "The Master Scheduled Task this Lookahead Task corresponds with, if one exists",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Lookahead ID"
+               },
+               "finish": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Task finish time",
+                "example": "2019-08-22T23:59:99Z"
+               },
+               "start": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Task start time",
+                "example": "2019-08-01T00:00:00Z"
+               }
+              }
+             },
+             "subtasks": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "description": "Schedule Lookahead Task",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 43
+                },
+                "parent_id": {
+                 "type": "integer",
+                 "description": "ID reference to the parent task"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Task name"
+                },
+                "row_number": {
+                 "type": "integer",
+                 "example": 2
+                },
+                "critical_path": {
+                 "type": "boolean",
+                 "description": "Whether or not the task is included in critical path"
+                },
+                "comment": {
+                 "type": "string",
+                 "description": "Additional comments"
+                },
+                "activity_id": {
+                 "type": "string",
+                 "description": "Activity ID",
+                 "example": 1000435
+                },
+                "wbs": {
+                 "type": "string",
+                 "description": "WBS",
+                 "example": 1.2
+                },
+                "segments": {
+                 "type": "array",
+                 "description": "Segments define the set of days for the entire date range of the task,\nand the completion status of each day in the task",
+                 "items": {
+                  "type": "object",
+                  "required": [
+                   "date",
+                   "status"
+                  ],
+                  "properties": {
+                   "date": {
+                    "type": "string",
+                    "description": "Date represented by the task segment",
+                    "example": "2019-09-20"
+                   },
+                   "status": {
+                    "type": "string",
+                    "description": "Completion status of the task segment",
+                    "example": "complete",
+                    "enum": [
+                     "blank",
+                     "complete",
+                     "incomplete"
+                    ]
+                   }
+                  }
+                 }
+                },
+                "resources": {
+                 "type": "array",
+                 "description": "Resource(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "example": 1
+                   },
+                   "company_id": {
+                    "type": "integer",
+                    "example": 2
+                   },
+                   "deleted_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2019-08-01T00:00:00Z"
+                   },
+                   "project_id": {
+                    "type": "integer",
+                    "example": 3
+                   },
+                   "source_uid": {
+                    "type": "string",
+                    "example": "00000000-0000-0000-0000-000000000000"
+                   }
+                  }
+                 }
+                },
+                "assignees": {
+                 "type": "array",
+                 "description": "Contact(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "example": 1
+                   },
+                   "email": {
+                    "type": "string",
+                    "example": "assignee@example.com"
+                   },
+                   "login_information_id": {
+                    "type": "integer",
+                    "example": 2
+                   },
+                   "name": {
+                    "type": "string",
+                    "example": "Arnold Assignee"
+                   }
+                  }
+                 }
+                },
+                "vendors": {
+                 "type": "array",
+                 "description": "Company(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "example": 1
+                   },
+                   "name": {
+                    "type": "string",
+                    "example": "Versatile Vendor"
+                   }
+                  }
+                 }
+                },
+                "task": {
+                 "type": "object",
+                 "description": "The Master Scheduled Task this Lookahead Task corresponds with, if one exists",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Lookahead ID"
+                  },
+                  "finish": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Task finish time",
+                   "example": "2019-08-22T23:59:99Z"
+                  },
+                  "start": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Task start time",
+                   "example": "2019-08-01T00:00:00Z"
+                  }
+                 }
+                },
+                "subtasks": {
+                 "type": "array",
+                 "description": "Subtask(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "generation_errors": {
+           "type": "array",
+           "description": "List of errors that appeared during Lookahead generation.",
+           "items": {
+            "type": "object",
+            "description": "Errors and their corresponding Scheduled Tasks.",
+            "properties": {
+             "task": {
+              "type": "object",
+              "description": "Schedule Task",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 43
+               },
+               "row_number": {
+                "type": "integer",
+                "example": 43
+               },
+               "name": {
+                "type": "string",
+                "example": "task"
+               }
+              }
+             },
+             "errors": {
+              "type": "array",
+              "items": {
+               "type": "string",
+               "example": "Start date cannot be greater than end date"
+              }
+             }
+            }
+           }
+          },
+          "status": {
+           "type": "string",
+           "description": "Lookahead processing status.",
+           "example": "ready",
+           "enum": [
+            "queued",
+            "processing_previous_lookahead",
+            "processing_master_schedule",
+            "ready"
+           ]
+          },
+          "weeks": {
+           "type": "integer",
+           "description": "Number of weeks the Lookahead spans in duration",
+           "example": 3
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added data_date field to response",
+      "description": "Added data_date field to response",
+      "endpoint": "GET /projects/{project_id}/schedule/lookaheads/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-03-15",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#show-lookahead"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Lookahead",
+    "description": "Deletes a single Lookahead.",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "responses": {
+     "204": {
+      "description": "The lookahead was deleted"
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/schedule/lookaheads": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Lookaheads",
+    "description": "Returns all Lookaheads for the project.",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Schedule Lookahead",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Lookahead ID"
+           },
+           "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lookahead start date, in project time zone",
+            "example": "2019-09-20T12:42:00Z"
+           },
+           "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lookahead end date, in project time zone",
+            "example": "2019-09-20T12:42:00Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Rest v1.0 endpoint",
+      "description": "Added Rest v1.0 endpoint",
+      "endpoint": "GET /projects/{project_id}/schedule/lookaheads",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#list-lookaheads"
+     }
+    ],
+    "x-superseded": true
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Lookahead",
+    "description": "Create a new Lookahead for the project",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "lookahead"
+        ],
+        "properties": {
+         "lookahead": {
+          "title": "Lookahead",
+          "type": "object",
+          "required": [
+           "start_date",
+           "end_date"
+          ],
+          "properties": {
+           "start_date": {
+            "type": "string",
+            "description": "Lookahead start date, in project time zone",
+            "example": "2019-09-20"
+           },
+           "end_date": {
+            "type": "string",
+            "description": "Lookahead end date, in project time zone",
+            "example": "2019-09-30"
+           },
+           "copied_from_id": {
+            "type": "integer",
+            "description": "ID of a previously created lookahead that will be used\nto populate this lookahead. Defaults to the most recent\nlookahead."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schedule Lookahead",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Lookahead ID"
+          },
+          "start_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead start date, in project time zone",
+           "example": "2019-09-20T12:42:00Z"
+          },
+          "end_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead end date, in project time zone",
+           "example": "2019-09-20T12:42:00Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads',\n  headers: {'content-type': 'application/json'},\n  body: {\n    lookahead: {start_date: '2019-09-20', end_date: '2019-09-30', copied_from_id: 0}\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"lookahead\\\":{\\\"start_date\\\":\\\"2019-09-20\\\",\\\"end_date\\\":\\\"2019-09-30\\\",\\\"copied_from_id\\\":0}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads \\\n  --header 'content-type: application/json' \\\n  --data '{\"lookahead\":{\"start_date\":\"2019-09-20\",\"end_date\":\"2019-09-30\",\"copied_from_id\":0}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads\"),\n    Content = new StringContent(\"{\\\"lookahead\\\":{\\\"start_date\\\":\\\"2019-09-20\\\",\\\"end_date\\\":\\\"2019-09-30\\\",\\\"copied_from_id\\\":0}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Rest v1.0 endpoint",
+      "description": "Added Rest v1.0 endpoint",
+      "endpoint": "POST /projects/{project_id}/schedule/lookaheads",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#create-lookahead"
+     },
+     {
+      "summary": "Added 'copied_from_id' parameter",
+      "description": "Added a 'copied_from_id' parameter, which allows the ability to select\nwhich existing lookahead will be used to populate the newly created\nlookahead. If none is passed, the most recent lookahead for the project\nwill be used.",
+      "endpoint": "POST /projects/{project_id}/schedule/lookaheads",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-11-24",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#create-lookahead"
+     }
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/projects/{project_id}/schedule/lookaheads/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Lookahead ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Lookahead",
+    "description": "Returns single Lookahead.",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schedule Lookahead",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Lookahead ID"
+          },
+          "start_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Lookahead start date, in project time zone",
+           "example": "2019-09-20"
+          },
+          "end_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Lookahead end date, in project time zone",
+           "example": "2019-09-20"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead creation time",
+           "example": "2019-08-01T00:00:00Z"
+          },
+          "data_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Lookahead last update time",
+           "example": "2019-08-01T00:00:00Z"
+          },
+          "created_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "label": {
+           "type": "string",
+           "description": "Lookahead label",
+           "example": "08/27/21 - 09/16/21 | 3 Weeks"
+          },
+          "lookahead_tasks": {
+           "type": "array",
+           "description": "List of tasks in the Lookahead, given in a nested tree structure\naccording to parent-child relationships",
+           "items": {
+            "type": "object",
+            "description": "Schedule Lookahead Task, with subtasks",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Lookahead Task ID"
+             },
+             "parent_id": {
+              "type": "integer",
+              "nullable": true,
+              "example": 1234
+             },
+             "name": {
+              "type": "string",
+              "description": "Task name"
+             },
+             "row_number": {
+              "type": "integer",
+              "description": "Number of the task row within the project schedule",
+              "example": 1
+             },
+             "critical_path": {
+              "type": "boolean",
+              "description": "Whether or not the task is included in critical path"
+             },
+             "comment": {
+              "type": "string",
+              "description": "Additional comments"
+             },
+             "activity_id": {
+              "type": "string",
+              "description": "Activity ID",
+              "example": 1000435
+             },
+             "wbs": {
+              "type": "string",
+              "description": "WBS",
+              "example": 1.2
+             },
+             "segments": {
+              "type": "array",
+              "description": "Segments define the set of days for the entire date range of the task,\nand the completion status of each day in the task",
+              "items": {
+               "type": "object",
+               "required": [
+                "date",
+                "status"
+               ],
+               "properties": {
+                "date": {
+                 "type": "string",
+                 "description": "Date represented by the task segment",
+                 "example": "2019-09-20"
+                },
+                "status": {
+                 "type": "string",
+                 "description": "Completion status of the task segment",
+                 "example": "complete",
+                 "enum": [
+                  "blank",
+                  "complete",
+                  "incomplete"
+                 ]
+                }
+               }
+              }
+             },
+             "resources": {
+              "type": "array",
+              "description": "Resource(s) assigned to this Lookahead Task",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 1
+                },
+                "company_id": {
+                 "type": "integer",
+                 "example": 2
+                },
+                "deleted_at": {
+                 "type": "string",
+                 "format": "date-time",
+                 "example": "2019-08-01T00:00:00Z"
+                },
+                "project_id": {
+                 "type": "integer",
+                 "example": 3
+                },
+                "source_uid": {
+                 "type": "string",
+                 "example": "00000000-0000-0000-0000-000000000000"
+                }
+               }
+              }
+             },
+             "assignees": {
+              "type": "array",
+              "description": "Contact(s) assigned to this Lookahead Task",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 1
+                },
+                "email": {
+                 "type": "string",
+                 "example": "assignee@example.com"
+                },
+                "login_information_id": {
+                 "type": "integer",
+                 "example": 2
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Arnold Assignee"
+                }
+               }
+              }
+             },
+             "vendors": {
+              "type": "array",
+              "description": "Company(s) assigned to this Lookahead Task",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 1
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Versatile Vendor"
+                }
+               }
+              }
+             },
+             "task": {
+              "type": "object",
+              "description": "The Master Scheduled Task this Lookahead Task corresponds with, if one exists",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Lookahead ID"
+               },
+               "finish": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Task finish time",
+                "example": "2019-08-22T23:59:99Z"
+               },
+               "start": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Task start time",
+                "example": "2019-08-01T00:00:00Z"
+               }
+              }
+             },
+             "subtasks": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "description": "Schedule Lookahead Task",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 43
+                },
+                "parent_id": {
+                 "type": "integer",
+                 "description": "ID reference to the parent task"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Task name"
+                },
+                "row_number": {
+                 "type": "integer",
+                 "example": 2
+                },
+                "critical_path": {
+                 "type": "boolean",
+                 "description": "Whether or not the task is included in critical path"
+                },
+                "comment": {
+                 "type": "string",
+                 "description": "Additional comments"
+                },
+                "activity_id": {
+                 "type": "string",
+                 "description": "Activity ID",
+                 "example": 1000435
+                },
+                "wbs": {
+                 "type": "string",
+                 "description": "WBS",
+                 "example": 1.2
+                },
+                "segments": {
+                 "type": "array",
+                 "description": "Segments define the set of days for the entire date range of the task,\nand the completion status of each day in the task",
+                 "items": {
+                  "type": "object",
+                  "required": [
+                   "date",
+                   "status"
+                  ],
+                  "properties": {
+                   "date": {
+                    "type": "string",
+                    "description": "Date represented by the task segment",
+                    "example": "2019-09-20"
+                   },
+                   "status": {
+                    "type": "string",
+                    "description": "Completion status of the task segment",
+                    "example": "complete",
+                    "enum": [
+                     "blank",
+                     "complete",
+                     "incomplete"
+                    ]
+                   }
+                  }
+                 }
+                },
+                "resources": {
+                 "type": "array",
+                 "description": "Resource(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "example": 1
+                   },
+                   "company_id": {
+                    "type": "integer",
+                    "example": 2
+                   },
+                   "deleted_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2019-08-01T00:00:00Z"
+                   },
+                   "project_id": {
+                    "type": "integer",
+                    "example": 3
+                   },
+                   "source_uid": {
+                    "type": "string",
+                    "example": "00000000-0000-0000-0000-000000000000"
+                   }
+                  }
+                 }
+                },
+                "assignees": {
+                 "type": "array",
+                 "description": "Contact(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "example": 1
+                   },
+                   "email": {
+                    "type": "string",
+                    "example": "assignee@example.com"
+                   },
+                   "login_information_id": {
+                    "type": "integer",
+                    "example": 2
+                   },
+                   "name": {
+                    "type": "string",
+                    "example": "Arnold Assignee"
+                   }
+                  }
+                 }
+                },
+                "vendors": {
+                 "type": "array",
+                 "description": "Company(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "example": 1
+                   },
+                   "name": {
+                    "type": "string",
+                    "example": "Versatile Vendor"
+                   }
+                  }
+                 }
+                },
+                "task": {
+                 "type": "object",
+                 "description": "The Master Scheduled Task this Lookahead Task corresponds with, if one exists",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Lookahead ID"
+                  },
+                  "finish": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Task finish time",
+                   "example": "2019-08-22T23:59:99Z"
+                  },
+                  "start": {
+                   "type": "string",
+                   "format": "date-time",
+                   "description": "Task start time",
+                   "example": "2019-08-01T00:00:00Z"
+                  }
+                 }
+                },
+                "subtasks": {
+                 "type": "array",
+                 "description": "Subtask(s) assigned to this Lookahead Task",
+                 "items": {
+                  "type": "object"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "generation_errors": {
+           "type": "array",
+           "description": "List of errors that appeared during Lookahead generation.",
+           "items": {
+            "type": "object",
+            "description": "Errors and their corresponding Scheduled Tasks.",
+            "properties": {
+             "task": {
+              "type": "object",
+              "description": "Schedule Task",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 43
+               },
+               "row_number": {
+                "type": "integer",
+                "example": 43
+               },
+               "name": {
+                "type": "string",
+                "example": "task"
+               }
+              }
+             },
+             "errors": {
+              "type": "array",
+              "items": {
+               "type": "string",
+               "example": "Start date cannot be greater than end date"
+              }
+             }
+            }
+           }
+          },
+          "status": {
+           "type": "string",
+           "description": "Lookahead processing status.",
+           "example": "ready",
+           "enum": [
+            "queued",
+            "processing_previous_lookahead",
+            "processing_master_schedule",
+            "ready"
+           ]
+          },
+          "weeks": {
+           "type": "integer",
+           "description": "Number of weeks the Lookahead spans in duration",
+           "example": 3
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Rest v1.0 endpoint",
+      "description": "Added Rest v1.0 endpoint",
+      "endpoint": "GET /projects/{project_id}/schedule/lookaheads/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#show-lookahead"
+     },
+     {
+      "summary": "Added generation_errors field in response",
+      "description": "Added generation_errors field in response",
+      "endpoint": "GET /projects/{project_id}/schedule/lookaheads/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-03-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#show-lookahead"
+     },
+     {
+      "summary": "Added 'activity_id' and 'wbs' fields to response",
+      "description": "Added 'activity_id' and 'wbs' fields to response",
+      "endpoint": "GET /projects/{project_id}/schedule/lookaheads/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-05-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#show-lookahead"
+     },
+     {
+      "summary": "Added data_date field to response",
+      "description": "Added data_date field to response",
+      "endpoint": "GET /projects/{project_id}/schedule/lookaheads/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-03-15",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#show-lookahead"
+     }
+    ],
+    "x-superseded": true
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Lookahead",
+    "description": "Deletes a single Lookahead.",
+    "tags": [
+     "Schedule",
+     "Lookaheads"
+    ],
+    "responses": {
+     "204": {
+      "description": "The lookahead was deleted"
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule/lookaheads/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Rest v1.0 endpoint",
+      "description": "Added Rest v1.0 endpoint",
+      "endpoint": "DELETE /projects/{project_id}/schedule/lookaheads/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-02-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "lookaheads?version=1.0#delete-lookahead"
+     }
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

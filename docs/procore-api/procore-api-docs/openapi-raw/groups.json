@@ -1,0 +1,1133 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Groups",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Groups",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Company Groups",
+    "description": "Gets all Groups in a given Company",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a single Group.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Group.",
+            "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+           },
+           "name": {
+            "type": "string",
+            "description": "The name of the Group.",
+            "example": "West Coast - HQ"
+           },
+           "timezone": {
+            "type": "string",
+            "description": "The timezone associated with the Group.",
+            "example": "America/Los_Angeles"
+           },
+           "color": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6})$",
+            "description": "Hexadecimal color code for the Group.",
+            "example": "#53A9FF"
+           },
+           "address_1": {
+            "type": "string",
+            "description": "The first part of the Group's address.",
+            "example": "1111 S Figueroa St"
+           },
+           "address_2": {
+            "type": "string",
+            "nullable": true,
+            "description": "The second part of the Group's address (e.g., Building, Suite, Unit).",
+            "example": "Building 3"
+           },
+           "city_town": {
+            "type": "string",
+            "description": "The city or town where the Group is located.",
+            "example": "Los Angeles"
+           },
+           "state_province": {
+            "type": "string",
+            "description": "The state or province where the Group is located.",
+            "example": "CA"
+           },
+           "zipcode": {
+            "type": "string",
+            "description": "The postal/zip code for the Group.",
+            "example": "90015"
+           },
+           "country": {
+            "type": "string",
+            "description": "The country where the Group is located.",
+            "example": "United States"
+           },
+           "contact_name": {
+            "type": "string",
+            "description": "The primary Point of Contact (P.O.C.) for the Group.",
+            "example": "John Doe"
+           },
+           "contact_number": {
+            "type": "string",
+            "description": "Phone number for the Group\u2019s Point of Contact.",
+            "example": "1-213-444-3535"
+           },
+           "contact_email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address for the Group\u2019s Point of Contact.",
+            "example": "j.doe@example.com"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to list groups",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "groups?version=1.0#get-all-company-groups"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Single Group",
+    "description": "Creates a single Group",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for creating a new Group.",
+        "required": [
+         "name",
+         "timezone"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Group Name.",
+          "example": "Engineering Team"
+         },
+         "timezone": {
+          "type": "string",
+          "description": "The default Timezone for scheduling outbound messages from projects in this group that don't specify their own Timezone. Example format: America/Chicago.\n",
+          "example": "America/Chicago"
+         },
+         "color": {
+          "type": "string",
+          "description": "Hexadecimal color code for the Group. Can be helpful for categorization. Example: #53A9FF.\n",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "example": "#53A9FF"
+         },
+         "address_1": {
+          "type": "string",
+          "description": "The first part of the Group's address.",
+          "example": "123 Main St"
+         },
+         "address_2": {
+          "type": "string",
+          "description": "The second part of the Group's address (e.g., Apartment, Suite, Unit).",
+          "example": "Suite 400"
+         },
+         "city_town": {
+          "type": "string",
+          "description": "The City or Town for the Group.",
+          "example": "Chicago"
+         },
+         "state_province": {
+          "type": "string",
+          "description": "The State or Province for the Group.",
+          "example": "Illinois"
+         },
+         "zipcode": {
+          "type": "string",
+          "description": "Zip or Postal Code for the Group.",
+          "example": "60601"
+         },
+         "country": {
+          "type": "string",
+          "description": "The Country for the Group.",
+          "example": "United States"
+         },
+         "contact_name": {
+          "type": "string",
+          "description": "The Point of Contact (P.O.C.) name for the Group.",
+          "example": "John Doe"
+         },
+         "contact_phone": {
+          "type": "string",
+          "description": "Phone number for the Group's Point of Contact. Must include country and area code.\n",
+          "example": "+1-312-555-1234"
+         },
+         "contact_email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address for the Group's Point of Contact.",
+          "example": "johndoe@example.com"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for successfully creating a Group.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the newly created Group.",
+           "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to create a group",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/groups",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "groups?version=1.0#create-a-single-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a Single Group",
+    "description": "Get the single Group in a given ID",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Group.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Group.",
+           "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Group.",
+           "example": "West Coast - HQ"
+          },
+          "timezone": {
+           "type": "string",
+           "description": "The timezone associated with the Group.",
+           "example": "America/Los_Angeles"
+          },
+          "color": {
+           "type": "string",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "description": "Hexadecimal color code for the Group.",
+           "example": "#53A9FF"
+          },
+          "address_1": {
+           "type": "string",
+           "description": "The first part of the Group's address.",
+           "example": "1111 S Figueroa St"
+          },
+          "address_2": {
+           "type": "string",
+           "nullable": true,
+           "description": "The second part of the Group's address (e.g., Building, Suite, Unit).",
+           "example": "Building 3"
+          },
+          "city_town": {
+           "type": "string",
+           "description": "The city or town where the Group is located.",
+           "example": "Los Angeles"
+          },
+          "state_province": {
+           "type": "string",
+           "description": "The state or province where the Group is located.",
+           "example": "CA"
+          },
+          "zipcode": {
+           "type": "string",
+           "description": "The postal/zip code for the Group.",
+           "example": "90015"
+          },
+          "country": {
+           "type": "string",
+           "description": "The country where the Group is located.",
+           "example": "United States"
+          },
+          "contact_name": {
+           "type": "string",
+           "description": "The primary Point of Contact (P.O.C.) for the Group.",
+           "example": "John Doe"
+          },
+          "contact_number": {
+           "type": "string",
+           "description": "Phone number for the Group\u2019s Point of Contact.",
+           "example": "1-213-444-3535"
+          },
+          "contact_email": {
+           "type": "string",
+           "format": "email",
+           "description": "Email address for the Group\u2019s Point of Contact.",
+           "example": "j.doe@example.com"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get a group",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "groups?version=1.0#get-a-single-group"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a Single Group",
+    "description": "Update the single Group in a given ID and body",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for updating a Group.",
+        "required": [
+         "name",
+         "timezone"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Group Name.",
+          "example": "Engineering Team"
+         },
+         "timezone": {
+          "type": "string",
+          "description": "The default Timezone for scheduling outbound messages from projects in this group that don't specify their own Timezone. Example format: America/Chicago.\n",
+          "example": "America/Chicago"
+         },
+         "color": {
+          "type": "string",
+          "description": "Hexadecimal color code for the Group. Can be helpful for categorization. Example: #53A9FF.\n",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "example": "#53A9FF"
+         },
+         "address_1": {
+          "type": "string",
+          "description": "The first part of the Group's address.",
+          "example": "123 Main St"
+         },
+         "address_2": {
+          "type": "string",
+          "description": "The second part of the Group's address (e.g., Apartment, Suite, Unit).",
+          "example": "Suite 400"
+         },
+         "city_town": {
+          "type": "string",
+          "description": "The City or Town for the Group.",
+          "example": "Chicago"
+         },
+         "state_province": {
+          "type": "string",
+          "description": "The State or Province for the Group.",
+          "example": "Illinois"
+         },
+         "zipcode": {
+          "type": "string",
+          "description": "Zip or Postal Code for the Group.",
+          "example": "60601"
+         },
+         "country": {
+          "type": "string",
+          "description": "The Country for the Group.",
+          "example": "United States"
+         },
+         "contact_name": {
+          "type": "string",
+          "description": "The Point of Contact (P.O.C.) name for the Group.",
+          "example": "John Doe"
+         },
+         "contact_phone": {
+          "type": "string",
+          "description": "Phone number for the Group's Point of Contact. Must include country and area code.\n",
+          "example": "+1-312-555-1234"
+         },
+         "contact_email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address for the Group's Point of Contact.",
+          "example": "johndoe@example.com"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Group.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Group.",
+           "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Group.",
+           "example": "West Coast - HQ"
+          },
+          "timezone": {
+           "type": "string",
+           "description": "The timezone associated with the Group.",
+           "example": "America/Los_Angeles"
+          },
+          "color": {
+           "type": "string",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "description": "Hexadecimal color code for the Group.",
+           "example": "#53A9FF"
+          },
+          "address_1": {
+           "type": "string",
+           "description": "The first part of the Group's address.",
+           "example": "1111 S Figueroa St"
+          },
+          "address_2": {
+           "type": "string",
+           "nullable": true,
+           "description": "The second part of the Group's address (e.g., Building, Suite, Unit).",
+           "example": "Building 3"
+          },
+          "city_town": {
+           "type": "string",
+           "description": "The city or town where the Group is located.",
+           "example": "Los Angeles"
+          },
+          "state_province": {
+           "type": "string",
+           "description": "The state or province where the Group is located.",
+           "example": "CA"
+          },
+          "zipcode": {
+           "type": "string",
+           "description": "The postal/zip code for the Group.",
+           "example": "90015"
+          },
+          "country": {
+           "type": "string",
+           "description": "The country where the Group is located.",
+           "example": "United States"
+          },
+          "contact_name": {
+           "type": "string",
+           "description": "The primary Point of Contact (P.O.C.) for the Group.",
+           "example": "John Doe"
+          },
+          "contact_number": {
+           "type": "string",
+           "description": "Phone number for the Group\u2019s Point of Contact.",
+           "example": "1-213-444-3535"
+          },
+          "contact_email": {
+           "type": "string",
+           "format": "email",
+           "description": "Email address for the Group\u2019s Point of Contact.",
+           "example": "j.doe@example.com"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to update a group",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/groups/{group_id}",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "groups?version=1.0#update-a-single-group"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Single Group",
+    "description": "Delete a single Group in a given ID. It should be noted that you can not delete a Group that has active Projects or People belonging to it. This is to prevent those entities from being \"stranded\" in the system if the group you are trying to delete is the single group they belong to. When you try to delete a Group that can not be deleted for this reason, you will be provided with a list of Project and People IDs that belong to this group so you can remove this group ID from those entities if you choose.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to delete a group",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/groups/{group_id}",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "groups?version=1.0#delete-a-single-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

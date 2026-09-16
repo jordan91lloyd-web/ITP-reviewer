@@ -1,0 +1,441 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Company Observation Templates",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Observations",
+  "x-resource-name": "Company Observation Templates",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/observation_templates/bulk_update": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Update Company Observation Templates",
+    "description": "Sets the same Trade on several Company Observation Templates in one request. `trade_id` is the only attribute this endpoint changes; a Trade that does not belong to the Company is rejected with a `422` before any template is written.",
+    "tags": [
+     "Company Observation Templates"
+    ],
+    "parameters": [
+     {
+      "name": "observation_template_ids",
+      "in": "query",
+      "description": "IDs of the Company Observation Templates to update. Comma-separate to include several. Templates not owned by this Company are silently skipped.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "observation_template"
+        ],
+        "properties": {
+         "observation_template": {
+          "type": "object",
+          "title": "Company Observation Template",
+          "properties": {
+           "trade_id": {
+            "type": "integer",
+            "example": 54,
+            "description": "ID of the Trade to set on every template in `observation_template_ids`. Must belong to this Company."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "title": "Company Observation Template",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this Company Observation Template. Pass as the `{id}` path parameter to `GET /rest/v1.0/companies/{company_id}/observation_templates/{id}`.",
+            "example": 1738
+           },
+           "observation_title": {
+            "type": "string",
+            "description": "Title pre-filled on Observations created from this template, and inherited by any Project Observation Template cloned from it.",
+            "example": "Worker seen not wearing PPE"
+           },
+           "observation_type": {
+            "description": "Observation Type applied to Observations created from this template.",
+            "type": "object",
+            "title": "Company Observation Type",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for this Company Observation Type. Pass as `observation_template[observation_type_id]` when creating an Observation Template, or as `observation[type_id]` when creating an Observation Item on a Project where the type is activated.",
+              "example": 2020
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the Observation Type, localized to the requesting user's locale when a translation exists.",
+              "example": "Air Quality"
+             },
+             "localized_name": {
+              "type": "string",
+              "description": "Type name resolved for the locale of the request, falling back to the Company default and then the stored name. Display this to end users rather than reimplementing the fallback chain.",
+              "example": "Air Quality"
+             },
+             "category": {
+              "type": "string",
+              "description": "Localized display name of the type's Observations Category. Procore ships six built-in categories (Quality, Safety, Commissioning, Warranty, Work to Complete, Environmental), but companies can define additional categories, so treat this as free-form text. Use `category_key` for programmatic comparisons.",
+              "example": "Environmental"
+             },
+             "category_key": {
+              "type": "string",
+              "description": "Stable, unlocalized key of the type's Observations Category. Prefer this over `category` when branching on category in code.",
+              "example": "environmental"
+             },
+             "category_id": {
+              "type": "integer",
+              "description": "ID of the Observations Category this type belongs to. Corresponds to the `id` returned by `GET /rest/v2.0/companies/{company_id}/observations/categories`.",
+              "example": 13
+             },
+             "company_active": {
+              "type": "boolean",
+              "description": "Whether the type is active at the Company level. For a company-level type this always matches `active`; the two diverge only when the same type is read in a Project scope where it has been deactivated.",
+              "example": true
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Whether the type can be selected on new Observations. Inactive types are still returned so existing Observations render correctly.",
+              "example": true
+             },
+             "kind": {
+              "type": "string",
+              "description": "Whether the type is owned by the Company or defined on a single Project. Always `company` for records returned by the Company Observation Types endpoint.",
+              "enum": [
+               "company",
+               "project"
+              ],
+              "example": "company"
+             },
+             "parent_inactive": {
+              "type": "boolean",
+              "description": "Whether the type's parent company-level type has been deactivated. Always false here, since Company Observation Types have no parent.",
+              "example": false
+             },
+             "in_use": {
+              "type": "boolean",
+              "description": "Whether at least one Observation Item currently references this type or one of its project-level children. Use to warn before deactivating or deleting a type.",
+              "example": false
+             },
+             "name_translations": {
+              "type": "object",
+              "nullable": true,
+              "additionalProperties": {
+               "type": "string"
+              },
+              "description": "Company-authored translations of the type name, keyed by locale code (for example `en`, `es`, `fr-CA`). Null when the Company has not configured custom translations for this type.",
+              "example": {
+               "en": "Air Quality",
+               "es": "Calidad del aire"
+              }
+             }
+            }
+           },
+           "trade": {
+            "description": "Trade applied to Observations created from this template. Null when the template does not set a Trade. This is the only attribute the bulk update endpoint changes.",
+            "type": "object",
+            "title": "Trade",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Trade ID",
+              "example": 999
+             },
+             "name": {
+              "type": "string",
+              "description": "Trade name",
+              "example": "09 - acoustical panels"
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Trade availability",
+              "example": true
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of last update to Trade",
+              "example": "2016-08-01T23:33:54Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/observation_templates/bulk_update',\n  qs: {observation_template_ids: 'SOME_ARRAY_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {observation_template: {trade_id: 54}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"observation_template\\\":{\\\"trade_id\\\":54}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/companies/%7Bcompany_id%7D/observation_templates/bulk_update?observation_template_ids=SOME_ARRAY_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/observation_templates/bulk_update?observation_template_ids=SOME_ARRAY_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"observation_template\":{\"trade_id\":54}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/observation_templates/bulk_update?observation_template_ids=SOME_ARRAY_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"observation_template\\\":{\\\"trade_id\\\":54}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Company Observation Templates bulk update endpoint",
+      "description": "Bulk Update Company Observation Templates for a given company id.",
+      "endpoint": "PATCH /companies/{company_id}/observation_templates/bulk_update",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2020-07-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-observation-templates?version=1.0#bulk-update-company-observation-templates"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

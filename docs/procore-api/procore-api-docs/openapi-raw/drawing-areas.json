@@ -1,0 +1,2353 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Drawing Areas",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Drawings",
+  "x-resource-name": "Drawing Areas",
+  "version": "1.1",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.1/projects/{project_id}/drawing_areas": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List drawing areas",
+    "description": "Returns a list of all Drawing Areas in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Filter by Drawing Areas ID\nTo request specific drawing area ids add `filters[id]=[1,2,3]` to filters",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[exclude_empty_connected]",
+      "in": "query",
+      "description": "When `true`, excludes connected drawing areas with no active revisions.\nExample: `filters[exclude_empty_connected]=true`",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "Specify response schema view",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "compact",
+        "extended",
+        "only_ids",
+        "mfe"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of drawing areas",
+         "items": {
+          "type": "object",
+          "description": "Drawing Area",
+          "title": "DrawingArea",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Drawing Area ID",
+            "example": 1
+           },
+           "name": {
+            "type": "string",
+            "description": "Drawing Area name",
+            "example": "Building A"
+           },
+           "drawings_count": {
+            "type": "integer",
+            "description": "Amount of Drawings",
+            "example": 3
+           },
+           "description": {
+            "type": "string",
+            "description": "Drawing Area Description",
+            "example": "East Hall"
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Drawing Area created at timestamp"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Drawing Area updated at timestamp"
+           },
+           "deletable": {
+            "type": "boolean",
+            "description": "Whether the Drawing Area can be deleted"
+           },
+           "latest_revision_update": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the most recent revision update in this Drawing Area, falls back to the area's updated_at if no revisions exist. Only included in the mfe view."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[exclude_empty_connected]': 'SOME_BOOLEAN_VALUE',\n    view: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bexclude_empty_connected%5D=SOME_BOOLEAN_VALUE&view=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bexclude_empty_connected%5D=SOME_BOOLEAN_VALUE&view=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bexclude_empty_connected%5D=SOME_BOOLEAN_VALUE&view=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added exclude_empty_connected filter",
+      "description": "Added support for `filters[exclude_empty_connected]=true` on the drawing areas index route to exclude connected drawing areas that have no active revisions.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-03-31",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Updated response, added only_ids view and filtering by IDs.",
+      "description": "Updated index route to not include drawing_disciplines or drawing_sets in response. Added option to get drawing areas by ID only. Also added support for filtering by ID.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2021-02-23",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.1#list-drawing-areas"
+     },
+     {
+      "summary": "Updated response",
+      "description": "Updated index route to include created_at, updated_at, and deletable.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-10-03",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Added GET view param",
+      "description": "Added support for `mfe` view param, which will solely support the Drawings Micro Frontend Application",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-13",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Added latest_revision_update to mfe view",
+      "description": "Added `latest_revision_update` field to the mfe view response. Returns the timestamp of the most recent revision update in the drawing area, or the area's own updated_at if no revisions exist.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-03-17",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Fixed drawing_disciplines in response",
+      "description": "A drawing area now only lists disciplines that have at least one active revision in that area.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-07-16",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create drawing area",
+    "description": "Create a new Drawing Area in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "name"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Drawing Area name",
+          "example": "My new drawing area"
+         },
+         "description": {
+          "type": "string",
+          "description": "Drawing Area description"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Created drawing area",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Drawing Area ID"
+          },
+          "name": {
+           "type": "string",
+           "description": "Drawing Area name"
+          },
+          "description": {
+           "type": "string",
+           "description": "Description of Drawing Area",
+           "nullable": true
+          }
+         },
+         "example": {
+          "id": 114483,
+          "name": "My new drawing area",
+          "description": "East Hall"
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas',\n  headers: {'content-type': 'application/json'},\n  body: {name: 'My new drawing area', description: 'string'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"My new drawing area\",\"description\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas\"),\n    Content = new StringContent(\"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new endpoint",
+      "description": "Create Drawing Area.",
+      "endpoint": "POST /projects/{project_id}/drawing_areas",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2021-07-17",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.1#create-drawing-area"
+     },
+     {
+      "summary": "Added description parameter",
+      "description": "Updated create route to accept a new parameter `description` to set a drawing area's description when creating",
+      "endpoint": "POST /projects/{project_id}/drawing_areas",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-10-08",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#create-drawing-area"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/projects/{project_id}/drawing_areas/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the drawing area.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a drawing area",
+    "description": "Update an existing Drawing Area in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Drawing Area name",
+          "example": "My new drawing area"
+         },
+         "description": {
+          "type": "string",
+          "description": "Drawing Area description"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Updated drawing area",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Drawing Area ID"
+          },
+          "name": {
+           "type": "string",
+           "description": "Drawing Area name"
+          },
+          "description": {
+           "type": "string",
+           "description": "Description of Drawing Area",
+           "nullable": true
+          }
+         },
+         "example": {
+          "id": 114483,
+          "name": "My drawing area",
+          "description": "East Hall"
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {name: 'My new drawing area', description: 'string'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"My new drawing area\",\"description\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new endpoint",
+      "description": "Update name and/or description for a Drawing Area.",
+      "endpoint": "PATCH /projects/{project_id}/drawing_areas/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-10-10",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#update-a-drawing-area"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a drawing area",
+    "description": "Delete an existing Drawing Area in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Deleted drawing area",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Drawing Area ID"
+          },
+          "success": {
+           "type": "boolean",
+           "description": "True if the drawing area was successfully deleted."
+          }
+         },
+         "example": {
+          "id": 114483,
+          "success": true
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new endpoint",
+      "description": "Delete a Drawing Area.",
+      "endpoint": "DELETE /projects/{project_id}/drawing_areas/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-10-15",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#delete-a-drawing-area"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/drawing_areas": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List drawing areas",
+    "description": "Returns a list of all Drawing Areas in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[exclude_empty_connected]",
+      "in": "query",
+      "description": "When `true`, excludes connected drawing areas with no active revisions.\nExample: `filters[exclude_empty_connected]=true`",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of drawing areas",
+         "items": {
+          "type": "object",
+          "description": "Drawing Area",
+          "title": "DrawingArea",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Drawing Area ID",
+            "example": 1
+           },
+           "name": {
+            "type": "string",
+            "description": "Drawing Area name",
+            "example": "Building A"
+           },
+           "drawings_count": {
+            "type": "integer",
+            "description": "Amount of Drawings",
+            "example": 3
+           },
+           "description": {
+            "type": "string",
+            "description": "Drawing Area Description",
+            "example": "East Hall"
+           },
+           "drawing_sets": {
+            "type": "array",
+            "description": "Array of Drawing Sets",
+            "items": {
+             "type": "object",
+             "title": "DrawingSet",
+             "description": "Drawing Set",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Drawing Set ID",
+               "example": 268062
+              },
+              "project_id": {
+               "type": "integer",
+               "description": "Drawing Set project ID",
+               "example": 225096
+              },
+              "name": {
+               "type": "string",
+               "description": "Drawing Set name",
+               "example": "another new drawing set"
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Drawing Set created at",
+               "example": "2016-09-01T20:02:27Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Drawing Set updated at",
+               "example": "2016-09-01T20:02:27Z"
+              },
+              "date": {
+               "type": "string",
+               "format": "date",
+               "description": "Drawing Set date",
+               "example": "2016-08-31"
+              },
+              "position": {
+               "type": "integer",
+               "description": "Drawing Set position",
+               "example": 1
+              },
+              "drawing_revisions_count": {
+               "type": "integer",
+               "description": "Amount of Drawing Revisions",
+               "example": 3
+              }
+             }
+            }
+           },
+           "drawing_disciplines": {
+            "type": "array",
+            "description": "Array of Drawing Disciplines",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Drawing Discipline ID",
+               "example": 6739
+              },
+              "name": {
+               "type": "string",
+               "description": "Drawing Discipline name",
+               "example": "Architectural"
+              },
+              "position": {
+               "type": "integer",
+               "description": "Drawing Discipline position",
+               "example": 1
+              }
+             }
+            }
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Drawing Area created at",
+            "example": "2015-03-19T12:00:00Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Drawing Area updated at",
+            "example": "2015-03-19T12:00:00Z"
+           },
+           "area_deletable": {
+            "type": "boolean",
+            "description": "True if Drawing Area can be deleted. Does not check permissions",
+            "example": true
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[exclude_empty_connected]': 'SOME_BOOLEAN_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bexclude_empty_connected%5D=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bexclude_empty_connected%5D=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bexclude_empty_connected%5D=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added exclude_empty_connected filter",
+      "description": "Added support for `filters[exclude_empty_connected]=true` on the drawing areas index route to exclude connected drawing areas that have no active revisions.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-03-31",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Updated response",
+      "description": "Updated index route to include created_at, updated_at, and deletable.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-10-03",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Added GET view param",
+      "description": "Added support for `mfe` view param, which will solely support the Drawings Micro Frontend Application",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-13",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Added latest_revision_update to mfe view",
+      "description": "Added `latest_revision_update` field to the mfe view response. Returns the timestamp of the most recent revision update in the drawing area, or the area's own updated_at if no revisions exist.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-03-17",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     },
+     {
+      "summary": "Fixed drawing_disciplines in response",
+      "description": "A drawing area now only lists disciplines that have at least one active revision in that area.",
+      "endpoint": "GET /projects/{project_id}/drawing_areas",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-07-16",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#list-drawing-areas"
+     }
+    ],
+    "x-superseded": true
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create drawing area",
+    "description": "Create a new Drawing Area in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "name"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Drawing Area name"
+         },
+         "description": {
+          "type": "string",
+          "description": "Drawing Area description"
+         }
+        },
+        "example": {
+         "name": "My new drawing area",
+         "description": "Shop Drawings"
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Created drawing area",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Drawing Area ID"
+          },
+          "name": {
+           "type": "string",
+           "description": "Drawing Area name"
+          },
+          "description": {
+           "type": "string",
+           "description": "Description of Drawing Area",
+           "nullable": true
+          }
+         },
+         "example": {
+          "id": 114483,
+          "name": "My new drawing area",
+          "description": "East Hall"
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas',\n  headers: {'content-type': 'application/json'},\n  body: {name: 'My new drawing area', description: 'Shop Drawings'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"Shop Drawings\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"My new drawing area\",\"description\":\"Shop Drawings\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas\"),\n    Content = new StringContent(\"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"Shop Drawings\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added description parameter",
+      "description": "Updated create route to accept a new parameter `description` to set a drawing area's description when creating",
+      "endpoint": "POST /projects/{project_id}/drawing_areas",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-10-08",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#create-drawing-area"
+     }
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/drawing_areas/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the drawing area.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a drawing area",
+    "description": "Update an existing Drawing Area in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Drawing Area name",
+          "example": "My new drawing area"
+         },
+         "description": {
+          "type": "string",
+          "description": "Drawing Area description"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Updated drawing area",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Drawing Area ID"
+          },
+          "name": {
+           "type": "string",
+           "description": "Drawing Area name"
+          },
+          "description": {
+           "type": "string",
+           "description": "Description of Drawing Area",
+           "nullable": true
+          }
+         },
+         "example": {
+          "id": 114483,
+          "name": "My drawing area",
+          "description": "East Hall"
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {name: 'My new drawing area', description: 'string'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"My new drawing area\",\"description\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"name\\\":\\\"My new drawing area\\\",\\\"description\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new endpoint",
+      "description": "Update name and/or description for a Drawing Area.",
+      "endpoint": "PATCH /projects/{project_id}/drawing_areas/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-10-10",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#update-a-drawing-area"
+     }
+    ],
+    "x-superseded": true
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a drawing area",
+    "description": "Delete an existing Drawing Area in the specified Project.",
+    "tags": [
+     "Drawings"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Deleted drawing area",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Drawing Area ID"
+          },
+          "success": {
+           "type": "boolean",
+           "description": "True if the drawing area was successfully deleted."
+          }
+         },
+         "example": {
+          "id": 114483,
+          "success": true
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/drawing_areas/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new endpoint",
+      "description": "Delete a Drawing Area.",
+      "endpoint": "DELETE /projects/{project_id}/drawing_areas/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-10-15",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "drawing-areas?version=1.0#delete-a-drawing-area"
+     }
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

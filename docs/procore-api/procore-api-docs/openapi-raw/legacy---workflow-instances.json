@@ -1,0 +1,976 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Legacy - Workflow Instances",
+  "x-product-category": "Core",
+  "x-tool-category": "Workflows",
+  "x-resource-name": "Legacy - Workflow Instances",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workflow_instances": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "query",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Workflow Instances",
+    "description": "Return a list of workflow instances for a workflow. Any resource using workflow should have a workflow instance.\n\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "parameters": [
+     {
+      "name": "filters[workflowed_object_id]",
+      "in": "query",
+      "description": "ID of the workflowed object. When supplied with `filters[workflowed_object_type]`, the pair is resolved to the stored V1 workflow instance.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[workflowed_object_type]",
+      "in": "query",
+      "description": "Tool or V1 class name of the workflowed object. When supplied with `filters[workflowed_object_id]`, V2 tool names are resolved to the stored V1 workflowed object type.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "query",
+      "description": "Project ID. Required when resolving a change-order workflowed object.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Workflow Instance",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "ID",
+            "example": 43584
+           },
+           "becomes_overdue_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Workflowed Object is considered overdue after",
+            "example": "2016-10-23T21:39:40Z"
+           },
+           "current_state_set_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Workflow entered the current state at",
+            "example": "2016-10-23T21:39:40Z"
+           },
+           "workflowed_object_id": {
+            "type": "integer",
+            "description": "Workflowed Object ID",
+            "example": 43584
+           },
+           "workflowed_object_type": {
+            "type": "string",
+            "description": "The Type of the Workflowed Object",
+            "example": "WorkOrderContract"
+           },
+           "project": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "name": {
+              "type": "string",
+              "description": "Name of the associated project",
+              "example": "Example Project"
+             },
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for the project.",
+              "example": 43584
+             }
+            }
+           },
+           "current_workflow_activities": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "description": "Workflow Activity",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 43584
+              },
+              "name": {
+               "type": "string",
+               "description": "Name",
+               "example": "Approve"
+              },
+              "workflow_user_role": {
+               "type": "object",
+               "description": "Workflow User Role",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "ID",
+                 "example": 43584
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Name",
+                 "example": "Project Manager"
+                },
+                "assignee": {
+                 "type": "object",
+                 "description": "Assignee",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "ID",
+                   "example": 43584
+                  },
+                  "avatar": {
+                   "type": "string",
+                   "description": "The URL for the assignees avatar image"
+                  },
+                  "initials": {
+                   "type": "string",
+                   "description": "The initials for the assignee",
+                   "example": "PP"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "First, last and company name of the assignee",
+                   "example": "Peter Pan (Neverland Inc.)"
+                  }
+                 }
+                }
+               }
+              },
+              "perform_activity": {
+               "type": "object",
+               "description": "Endpoint to perform Workflow Activities",
+               "properties": {
+                "url": {
+                 "type": "string",
+                 "description": "URL to perform the Workflow Activity",
+                 "example": "https://app.procore.com/rest/v1.0/workflow_activity_histories?"
+                },
+                "method": {
+                 "type": "string",
+                 "description": "HTTP Method with which to request the URL",
+                 "example": "POST"
+                },
+                "data": {
+                 "type": "object",
+                 "description": "JSON to be submitted as the request body",
+                 "properties": {
+                  "workflow_activity_history": {
+                   "type": "object",
+                   "description": "Workflow Activity History properties",
+                   "properties": {
+                    "workflow_activity_id": {
+                     "type": "integer",
+                     "description": "Workflow Activity ID",
+                     "example": 43584
+                    },
+                    "workflow_instance_id": {
+                     "type": "integer",
+                     "description": "Workflow Instance ID",
+                     "example": 43584
+                    },
+                    "workflow_user_role_id": {
+                     "type": "integer",
+                     "description": "Workflow User Role ID",
+                     "example": 43584
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "current_workflow_state": {
+            "type": "object",
+            "description": "Workflow State",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 43584
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Under Review"
+             },
+             "status": {
+              "type": "string",
+              "description": "Human-readable status. In the Show response (GET /workflow_instances/{id}) this uses the workflowed object's status text when available, otherwise the workflow state's status. The list endpoint returns the workflow state's status.",
+              "example": "Draft"
+             },
+             "ball_in_court": {
+              "type": "array",
+              "description": "Users the workflow is currently waiting on to act. Computed per instance, so each item in a list response carries its own set.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "First, last and company name of the user",
+                 "example": "Peter Pan (Neverland Inc.)"
+                }
+               }
+              }
+             }
+            }
+           },
+           "workflow": {
+            "type": "object",
+            "description": "Workflow",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 43584
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "nullable": true,
+              "example": "Subcontract Workflow"
+             },
+             "description": {
+              "type": "string",
+              "description": "Description",
+              "nullable": true,
+              "example": "Workflow for Subcontracts < 10M"
+             },
+             "class_name": {
+              "type": "string",
+              "description": "Class Name",
+              "example": "WorkOrderContract"
+             },
+             "friendly_name": {
+              "type": "string",
+              "nullable": true,
+              "description": "Human-readable name of the workflowed object's type.",
+              "example": "Contract"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Created at",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Created at",
+              "example": "2012-11-28T18:11:03Z"
+             },
+             "domain": {
+              "type": "string",
+              "description": "Domain name"
+             }
+            }
+           },
+           "terminated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When this workflow instance was terminated. Present after a successful terminate request; otherwise null. Matches `archived_at` on the instance.",
+            "example": "2016-10-23T21:39:40Z"
+           },
+           "terminated_by": {
+            "type": "object",
+            "description": "User who terminated the workflow instance",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID of the user who terminated the workflow",
+              "example": 1
+             },
+             "login": {
+              "type": "string",
+              "description": "Login/email of the user who terminated the workflow",
+              "example": "abc@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the user who terminated the workflow",
+              "example": "Customer Support"
+             }
+            }
+           },
+           "permissions": {
+            "type": "object",
+            "description": "Permissions of the requesting user against this workflow instance. Computed independently for each instance in list and show responses. Two instances in the same list can therefore return different flags for the same user (assignee on one instance, not the other). When serialized without a requesting user, every flag is returned as false.",
+            "properties": {
+             "can_view": {
+              "type": "boolean",
+              "description": "Whether the user can view this workflow instance. True when the user is a company directory admin (company-scoped GET /workflow_instances), passes the workflowed object's VisiblePolicy (project-scoped GET /projects/{project_id}/workflow_instances), or can respond to the current state.",
+              "example": true
+             },
+             "can_respond": {
+              "type": "boolean",
+              "description": "Whether the user can respond to the current state. False for an archived instance. Otherwise true when the user is a company directory admin (REST POST /workflow_activity_histories), is a tool/domain admin for the workflowed object, or is an assignee of a current workflow user role that can act (GenericWorkflowActivityHistoriesController#create).",
+              "example": true
+             },
+             "can_act_on_behalf_of": {
+              "type": "boolean",
+              "description": "Whether the user can act on behalf of an assignee on the current state. Matches legacy UI: true when the user is a tool/domain admin for the workflowed object and satisfies the company's WorkflowAdminOverride settings (company/project/tool admin allow-list). When no override flags are enabled, tool admins can act on behalf.",
+              "example": false
+             },
+             "can_terminate": {
+              "type": "boolean",
+              "description": "Whether the user can terminate this legacy workflow instance. True when the instance is not already archived and the user is a tool/domain admin for the workflowed object who satisfies the company's WorkflowAdminOverride settings.",
+              "example": false
+             },
+             "can_restart": {
+              "type": "boolean",
+              "description": "Whether this V1 instance can be replaced by a new V2 instance for the filters[workflowed_object_type] and filters[workflowed_object_id] supplied to the Show request. This verifies V1 termination permission, the V1-to-V2 tool and object mapping, V2 tool enablement, V2 create permission, absence of an active V2 instance, and availability of a valid default preset. False when those filters are not supplied.",
+              "example": false
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/workflow_instances',\n  qs: {\n    company_id: 'SOME_INTEGER_VALUE',\n    'filters[workflowed_object_id]': 'SOME_INTEGER_VALUE',\n    'filters[workflowed_object_type]': 'SOME_STRING_VALUE',\n    project_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/workflow_instances?company_id=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_id%5D=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_type%5D=SOME_STRING_VALUE&project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/workflow_instances?company_id=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_id%5D=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_type%5D=SOME_STRING_VALUE&project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/workflow_instances?company_id=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_id%5D=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_type%5D=SOME_STRING_VALUE&project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added permissions, ball_in_court, and friendly_name to workflow instance list",
+      "description": "Enriched the list workflow instance response so each item includes the same\nrequesting-user `permissions` object as show (`can_view`, `can_respond`,\n`can_act_on_behalf_of`), `current_workflow_state.ball_in_court`, and\n`workflow.friendly_name`. Flags and ball-in-court users are computed per\ninstance; two rows in one page can differ for the same user. List\n`current_workflow_state.status` is unchanged and still comes from the\nworkflow state record (show continues to prefer the workflowed object's\nstatus text).",
+      "endpoint": "GET /workflow_instances",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-09-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "legacy---workflow-instances?version=1.0#list-workflow-instances"
+     },
+     {
+      "summary": "Added workflowed object addressing to workflow instance list and show",
+      "description": "Workflow instances can now be resolved with both `filters[workflowed_object_type]` and `filters[workflowed_object_id]`, using the same object-reference lookup as Legacy Workflow Permanent Logs, Workflow Setup, and Workflow Activity Histories. On show requests, the complete object filter pair takes precedence over the path `id`; requests without both filters continue to use the workflow instance ID.",
+      "endpoint": "GET /workflow_instances and GET /workflow_instances/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-09-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "legacy---workflow-instances?version=1.0#list-workflow-instances"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/workflow_instances/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "query",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Workflow Instance ID. When both workflowed object filters are supplied, those filters identify the instance and this path value is ignored; object-addressed callers should provide the workflowed object ID here.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Workflow Instance",
+    "description": "Get information about a Workflow Instance. By default, `id` identifies the workflow instance. Alternatively, supply both `filters[workflowed_object_type]` and `filters[workflowed_object_id]` to resolve the instance from its workflowed object. The complete filter pair takes precedence over `id`.",
+    "parameters": [
+     {
+      "name": "filters[workflowed_object_type]",
+      "in": "query",
+      "description": "Tool or V1 class name of the workflowed object. Supply with filters[workflowed_object_id] to resolve the instance and evaluate permissions.can_restart.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[workflowed_object_id]",
+      "in": "query",
+      "description": "ID of the workflowed object. Supply with filters[workflowed_object_type] to resolve the instance and evaluate permissions.can_restart.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "query",
+      "description": "Project ID. Required when resolving a change-order workflowed object.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Instance",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 43584
+          },
+          "becomes_overdue_at": {
+           "type": "string",
+           "format": "date-time",
+           "nullable": true,
+           "description": "Workflowed Object is considered overdue after",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "current_state_set_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Workflow entered the current state at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "workflowed_object_id": {
+           "type": "integer",
+           "description": "Workflowed Object ID",
+           "example": 43584
+          },
+          "workflowed_object_type": {
+           "type": "string",
+           "description": "The Type of the Workflowed Object",
+           "example": "WorkOrderContract"
+          },
+          "project": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "Name of the associated project",
+             "example": "Example Project"
+            },
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for the project.",
+             "example": 43584
+            }
+           }
+          },
+          "current_workflow_activities": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Workflow Activity",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 43584
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Approve"
+             },
+             "workflow_user_role": {
+              "type": "object",
+              "description": "Workflow User Role",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 43584
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Project Manager"
+               },
+               "assignee": {
+                "type": "object",
+                "description": "Assignee",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "ID",
+                  "example": 43584
+                 },
+                 "avatar": {
+                  "type": "string",
+                  "description": "The URL for the assignees avatar image"
+                 },
+                 "initials": {
+                  "type": "string",
+                  "description": "The initials for the assignee",
+                  "example": "PP"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "First, last and company name of the assignee",
+                  "example": "Peter Pan (Neverland Inc.)"
+                 }
+                }
+               }
+              }
+             },
+             "perform_activity": {
+              "type": "object",
+              "description": "Endpoint to perform Workflow Activities",
+              "properties": {
+               "url": {
+                "type": "string",
+                "description": "URL to perform the Workflow Activity",
+                "example": "https://app.procore.com/rest/v1.0/workflow_activity_histories?"
+               },
+               "method": {
+                "type": "string",
+                "description": "HTTP Method with which to request the URL",
+                "example": "POST"
+               },
+               "data": {
+                "type": "object",
+                "description": "JSON to be submitted as the request body",
+                "properties": {
+                 "workflow_activity_history": {
+                  "type": "object",
+                  "description": "Workflow Activity History properties",
+                  "properties": {
+                   "workflow_activity_id": {
+                    "type": "integer",
+                    "description": "Workflow Activity ID",
+                    "example": 43584
+                   },
+                   "workflow_instance_id": {
+                    "type": "integer",
+                    "description": "Workflow Instance ID",
+                    "example": 43584
+                   },
+                   "workflow_user_role_id": {
+                    "type": "integer",
+                    "description": "Workflow User Role ID",
+                    "example": 43584
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "current_workflow_state": {
+           "type": "object",
+           "description": "Workflow State",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 43584
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Under Review"
+            },
+            "status": {
+             "type": "string",
+             "description": "Human-readable status. In the Show response (GET /workflow_instances/{id}) this uses the workflowed object's status text when available, otherwise the workflow state's status. The list endpoint returns the workflow state's status.",
+             "example": "Draft"
+            },
+            "ball_in_court": {
+             "type": "array",
+             "description": "Users the workflow is currently waiting on to act. Computed per instance, so each item in a list response carries its own set.",
+             "items": {
+              "type": "object",
+              "properties": {
+               "name": {
+                "type": "string",
+                "description": "First, last and company name of the user",
+                "example": "Peter Pan (Neverland Inc.)"
+               }
+              }
+             }
+            }
+           }
+          },
+          "workflow": {
+           "type": "object",
+           "description": "Workflow",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 43584
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "nullable": true,
+             "example": "Subcontract Workflow"
+            },
+            "description": {
+             "type": "string",
+             "description": "Description",
+             "nullable": true,
+             "example": "Workflow for Subcontracts < 10M"
+            },
+            "class_name": {
+             "type": "string",
+             "description": "Class Name",
+             "example": "WorkOrderContract"
+            },
+            "friendly_name": {
+             "type": "string",
+             "nullable": true,
+             "description": "Human-readable name of the workflowed object's type.",
+             "example": "Contract"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Created at",
+             "example": "2012-10-23T21:39:40Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Created at",
+             "example": "2012-11-28T18:11:03Z"
+            },
+            "domain": {
+             "type": "string",
+             "description": "Domain name"
+            }
+           }
+          },
+          "terminated_at": {
+           "type": "string",
+           "format": "date-time",
+           "nullable": true,
+           "description": "When this workflow instance was terminated. Present after a successful terminate request; otherwise null. Matches `archived_at` on the instance.",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "terminated_by": {
+           "type": "object",
+           "description": "User who terminated the workflow instance",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID of the user who terminated the workflow",
+             "example": 1
+            },
+            "login": {
+             "type": "string",
+             "description": "Login/email of the user who terminated the workflow",
+             "example": "abc@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the user who terminated the workflow",
+             "example": "Customer Support"
+            }
+           }
+          },
+          "permissions": {
+           "type": "object",
+           "description": "Permissions of the requesting user against this workflow instance. Computed independently for each instance in list and show responses. Two instances in the same list can therefore return different flags for the same user (assignee on one instance, not the other). When serialized without a requesting user, every flag is returned as false.",
+           "properties": {
+            "can_view": {
+             "type": "boolean",
+             "description": "Whether the user can view this workflow instance. True when the user is a company directory admin (company-scoped GET /workflow_instances), passes the workflowed object's VisiblePolicy (project-scoped GET /projects/{project_id}/workflow_instances), or can respond to the current state.",
+             "example": true
+            },
+            "can_respond": {
+             "type": "boolean",
+             "description": "Whether the user can respond to the current state. False for an archived instance. Otherwise true when the user is a company directory admin (REST POST /workflow_activity_histories), is a tool/domain admin for the workflowed object, or is an assignee of a current workflow user role that can act (GenericWorkflowActivityHistoriesController#create).",
+             "example": true
+            },
+            "can_act_on_behalf_of": {
+             "type": "boolean",
+             "description": "Whether the user can act on behalf of an assignee on the current state. Matches legacy UI: true when the user is a tool/domain admin for the workflowed object and satisfies the company's WorkflowAdminOverride settings (company/project/tool admin allow-list). When no override flags are enabled, tool admins can act on behalf.",
+             "example": false
+            },
+            "can_terminate": {
+             "type": "boolean",
+             "description": "Whether the user can terminate this legacy workflow instance. True when the instance is not already archived and the user is a tool/domain admin for the workflowed object who satisfies the company's WorkflowAdminOverride settings.",
+             "example": false
+            },
+            "can_restart": {
+             "type": "boolean",
+             "description": "Whether this V1 instance can be replaced by a new V2 instance for the filters[workflowed_object_type] and filters[workflowed_object_id] supplied to the Show request. This verifies V1 termination permission, the V1-to-V2 tool and object mapping, V2 tool enablement, V2 create permission, absence of an active V2 instance, and availability of a valid default preset. False when those filters are not supplied.",
+             "example": false
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/workflow_instances/%7Bid%7D',\n  qs: {\n    company_id: 'SOME_INTEGER_VALUE',\n    'filters[workflowed_object_type]': 'SOME_STRING_VALUE',\n    'filters[workflowed_object_id]': 'SOME_INTEGER_VALUE',\n    project_id: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/workflow_instances/%7Bid%7D?company_id=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_type%5D=SOME_STRING_VALUE&filters%5Bworkflowed_object_id%5D=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/workflow_instances/%7Bid%7D?company_id=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_type%5D=SOME_STRING_VALUE&filters%5Bworkflowed_object_id%5D=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/workflow_instances/%7Bid%7D?company_id=SOME_INTEGER_VALUE&filters%5Bworkflowed_object_type%5D=SOME_STRING_VALUE&filters%5Bworkflowed_object_id%5D=SOME_INTEGER_VALUE&project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added permissions, ball_in_court, friendly_name and refined status to workflow instance show",
+      "description": "Enriched the show workflow instance response:\n- Added a top-level `permissions` object with `can_view`, `can_respond`, and `can_act_on_behalf_of` booleans describing the requesting user's access to the instance. `can_view` follows company-admin / VisiblePolicy / respond access; `can_respond` follows company admin, tool admin, or assignee that can act; `can_act_on_behalf_of` matches legacy UI (tool admin and WorkflowAdminOverride). When serialized without a requesting user, every flag is returned as false.\n- Added `current_workflow_state.ball_in_court`, an array of users the workflow is currently waiting on to act.\n- Added `workflow.friendly_name`, the human-readable name of the workflowed object's type.\n- `current_workflow_state.status` now reflects the workflowed object's status text when available, falling back to the workflow state status otherwise.",
+      "endpoint": "GET /workflow_instances/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "legacy---workflow-instances?version=1.0#show-workflow-instance"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

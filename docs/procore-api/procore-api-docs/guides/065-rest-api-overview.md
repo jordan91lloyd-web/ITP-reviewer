@@ -1,0 +1,141 @@
+# REST API Overview
+
+_Learn about Procore's REST API versioning, URL structure, and how to make API calls._
+
+Source: https://developers.procore.com/documentation/rest-api-overview
+
+---
+
+## Overview
+The Procore REST API provides a versioning architecture, comprehensive resource coverage, and a built-in changelog feature.
+
+## REST API Versioning Architecture
+
+The REST API versioning architecture allows for a flexible approach to version management because resources are versioned independently from one another.
+This lets you choose whether you want to adopt new resource versions (with breaking changes), or stay with the ones you are currently using.
+Use new resource versions as they are released and update your code accordingly, or wait until it makes more sense for your particular development timeline.
+
+## Version Numbering
+
+Each resource in REST is associated with a specific REST version number which comprises two components.
+
+- The _API version_ is set across the API. There is a complete set of resources at each supported API version (v1.x, v2.x, etc.).
+- The _resource version_ is specific to each resource, and incremented whenever a breaking change is made to the API.
+
+A breaking change is any change to the API that could potentially cause failures in the applications that consume the API.
+If a change could cause API calls in an application to fail or to return different results than what is expected, we consider it a breaking change.
+
+The format for specifying a REST version number is as follows:
+
+    v{api_version}.{resource_version}
+
+For example, REST **v1.4** indicates an API version of **1** with a resource version of **4**.
+
+## Versioning Example
+
+The following diagram presents a typical versioning scenario and illustrates how API versions and resource versions are managed over the course of several API releases.
+
+![rest api versioning](https://developers.procore.com/documentation/assets/guides/rest-versioning-diagram.png)
+
+Breaking down this example further we see…
+
+- An initial release of REST v1.0 with Projects and Companies as example resources.
+- A breaking change is made to the Projects resource, the resource version is incremented but retains the same API version - Projects v1.1.
+- REST v2.0 is released. All existing resources from REST v1.0 are promoted to v2.0 and all resource versions are reset to 0.
+- A new RFIs resource is added to REST API v2.0 starting with resource version 0.
+- REST v3.0 is released with all three example resources set to v3.0.
+
+## Make REST API Calls
+The resource version is specified in the URL using the following format.
+
+    /rest/v{api_version}.{resource_version}
+
+_example_: https://api.procore.com/rest/v1.2/projects
+
+## REST v2
+
+REST v2 is a major version of the Procore REST API that introduces changes to path structure, response shape, and error formatting.
+It is not a drop-in replacement for v1 — the differences below affect how you build requests and parse responses.
+
+### Paths Are Scoped to Company and Project
+
+v2 paths begin with `/rest/v2.x/...` and most are scoped to a company and, where applicable, a project.
+
+- Company-level resources: `/rest/v2.x/companies/{company_id}/resource(s)`
+- Project-level resources: `/rest/v2.x/companies/{company_id}/projects/{project_id}/resource(s)`
+
+This differs from v1, where the company is typically supplied as the `Procore-Company-Id` header rather than in the path.
+
+### Responses Use a Data Envelope
+
+Successful (200-level) v2 responses wrap the payload in a top-level `data` key, and ID attributes are returned as **strings** rather than integers.
+
+```
+# JSON Response Example
+
+{
+  "data": {
+    "id": "160586",
+    "login": "carl.contractor@example.com",
+    "name": "Carl Contractor"
+  }
+}
+```
+
+> **Parse IDs as strings in v2.** Code that assumes integer IDs from v1 will break against v2 responses.
+
+### Collection Endpoints Are Paginated
+
+v2 collection endpoints — those returning an array as the main payload under `data` — are paginated, with a default page size of 10 and a maximum of 100.
+Pagination information is returned in the `Per-Page`, `Total`, and `Link` response headers.
+See [Pagination](067-pagination.md) for how to work with these parameters and headers.
+
+### Errors Follow a Standard Format
+
+v2 returns 400-level errors in a standardized JSON response format.
+See [Error Code Reference](073-error-reference.md) for status codes, causes, and resolutions.
+
+## REST API Changelog
+
+The REST API includes a changelog feature.
+Use the changelog to stay up to date on changes our development teams make to REST API resources.
+Changelog entries for individual resource endpoints are viewable in the reference documentation.
+Each endpoint has its own list of changes, and only displays changes relevant to the version of the resource you are currently viewing.
+
+![rest changelog endpoint](https://developers.procore.com/documentation/assets/guides/rest-changelog-endpoint.png)
+
+Each changelog entry includes the following information:
+
+- **Summary** - A short description of the change, typically no longer than a sentence.
+- **Date** - Specifies the date the change was introduced.
+- **Breaking** - If 'true', the change is considered to be breaking. Breaking changes are only introduced in a new version of a resource.
+- **Category** - Identifies the classification of the change as follows.
+  - _New_ - a newly created endpoint.
+  - _Feature_ - an addition to the endpoint that provides new functionality. Such as a query filter, additional data in the response, etc.
+  - _Refinement_ - a change to how the endpoint is used or responds, not directly related to new features. For example, changes that make the endpoint more consistent or easier to use.
+  - _Fix_ - a change to address a defect that is significant enough to note in the changelog.
+  - _Deprecated_ - the resource endpoint is superseded by a newer version.
+  - _Sunset_ - the resource is no longer available on production.
+
+Selecting a changelog entry on the reference page displays a more detailed description that may include additional information such as:
+
+- Affected resource versions
+- Instructions on how to take advantage of a new feature
+- Details about changes to the API contract
+- Links to other documentation
+- Short code snippets or examples
+
+![rest changelog popup](https://developers.procore.com/documentation/assets/guides/rest-changelog-popup.png)
+
+You can also access changelog information for the REST API directly from the Developer Portal navigation header.
+All changelog entries are listed chronologically on this page.
+Filters allow you to drill down on the types of changes you are most interested in learning about.
+
+![changelog page](https://developers.procore.com/documentation/assets/guides/changelog-page.png)
+
+## See Also
+
+- [API Lifecycle and Deprecation](010-rest-api-lifecycle.md)
+- [API Request and Response Format](066-restful-api-concepts.md)
+- [Pagination](067-pagination.md)
+- [Error Code Reference](073-error-reference.md)

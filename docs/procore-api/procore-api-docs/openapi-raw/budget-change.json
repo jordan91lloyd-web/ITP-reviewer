@@ -1,0 +1,3691 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Budget Changes",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Budget Change",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/budget_changes": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Budget Change Summaries",
+    "description": "Return a list of budget change summary rows.",
+    "tags": [
+     "Budget Change"
+    ],
+    "parameters": [
+     {
+      "name": "exclude_custom_fields",
+      "in": "query",
+      "description": "When true, omits custom_fields from each summary row for faster response.",
+      "schema": {
+       "type": "boolean",
+       "default": false
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Result set of budget change summary rows. Summary row doesn't contain all fields of a budget change.",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "allOf": [
+             {
+              "type": "object",
+              "description": "Budget Change Package information",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for the budget change",
+                "example": 75414
+               },
+               "number": {
+                "type": "number",
+                "description": "Number field of the budget change",
+                "example": 10
+               },
+               "status": {
+                "type": "string",
+                "description": "Status of the budget change",
+                "example": "draft",
+                "enum": [
+                 "draft",
+                 "approved",
+                 "under_review",
+                 "void"
+                ]
+               },
+               "title": {
+                "type": "string",
+                "description": "Title of budget change",
+                "example": "My title"
+               },
+               "description": {
+                "type": "string",
+                "description": "Description of the budget change in HTML format",
+                "example": "<p>Bla bla <em>description</em></p>"
+               },
+               "erp_status": {
+                "type": "string",
+                "description": "The ERP (Enterprise Resource Planning) synchronization state of this budget change.",
+                "example": "ready_to_export",
+                "enum": [
+                 "not_in_erp",
+                 "ready_to_export",
+                 "exporting",
+                 "failed_to_export",
+                 "rejected",
+                 "invalid",
+                 "synced",
+                 "not_integrated"
+                ]
+               }
+              }
+             },
+             {
+              "type": "object",
+              "description": "Budget Change Summary information",
+              "properties": {
+               "prime_contract_id": {
+                "type": "integer",
+                "description": "Unique identifier for the prime contract this budget change is associated with",
+                "example": 1234,
+                "nullable": true
+               },
+               "amount": {
+                "type": "number",
+                "description": "Total amount of adjustments",
+                "example": 0
+               },
+               "change_event_line_item_ids": {
+                "type": "array",
+                "description": "List of change event line item ids",
+                "items": {
+                 "type": "integer",
+                 "example": 22
+                }
+               },
+               "created_by": {
+                "type": "object",
+                "description": "The user who created the budget change",
+                "properties": {
+                 "id": {
+                  "type": "number",
+                  "description": "The ID of the user",
+                  "example": 1
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "The name of the user",
+                  "example": "John Doe"
+                 },
+                 "login": {
+                  "type": "string",
+                  "description": "The login of the user",
+                  "example": "johndoe@example.com"
+                 }
+                }
+               },
+               "custom_fields": {
+                "type": "object",
+                "properties": {
+                 "custom_field_%{custom_field_string_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "Data type of the Custom Field Definition",
+                    "example": "string"
+                   },
+                   "value": {
+                    "type": "string",
+                    "description": "The value of the custom field",
+                    "example": "custom field value"
+                   },
+                   "variant": {
+                    "type": "string",
+                    "description": "The variant of the Custom Field Definition (e.g. `phone_number`). Present only when the definition has an associated variant.",
+                    "example": "phone_number"
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_decimal_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "Data type of the Custom Field Definition",
+                    "example": "decimal"
+                   },
+                   "value": {
+                    "type": "number",
+                    "description": "The value of the custom field",
+                    "example": 2.2
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_boolean_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "Data type of the Custom Field Definition",
+                    "example": "boolean"
+                   },
+                   "value": {
+                    "type": "boolean",
+                    "description": "The value of the custom field",
+                    "example": true
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_lov_entry_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "Data type of the Custom Field Definition",
+                    "example": "lov_entry"
+                   },
+                   "value": {
+                    "type": "object",
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "ID of the LOV Entry",
+                      "example": 1
+                     },
+                     "label": {
+                      "type": "string",
+                      "description": "Label of the LOV Entry",
+                      "example": "Open"
+                     }
+                    }
+                   },
+                   "variant": {
+                    "type": "string",
+                    "description": "The variant of the Custom Field Definition (e.g. `project_directory`). Present only when the definition has an associated variant.",
+                    "example": "with_code"
+                   }
+                  }
+                 },
+                 "custom_field_%{custom_field_lov_entries_definition_id}": {
+                  "type": "object",
+                  "properties": {
+                   "data_type": {
+                    "type": "string",
+                    "description": "Data type of the Custom Field Definition",
+                    "example": "lov_entries"
+                   },
+                   "value": {
+                    "type": "array",
+                    "items": {
+                     "type": "object",
+                     "properties": {
+                      "id": {
+                       "type": "integer",
+                       "description": "ID of the LOV Entry",
+                       "example": 2
+                      },
+                      "label": {
+                       "type": "string",
+                       "description": "Label of the LOV Entry",
+                       "example": "Open"
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "currency_configuration": {
+                "type": "object",
+                "properties": {
+                 "currency_iso_code": {
+                  "type": "string",
+                  "description": "Currency ISO Code configured for the financial entity",
+                  "example": "USD",
+                  "nullable": true
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes',\n  qs: {exclude_custom_fields: 'SOME_BOOLEAN_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/budget_changes?exclude_custom_fields=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes?exclude_custom_fields=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes?exclude_custom_fields=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing a List Budget Change Summaries endpoint",
+      "description": "Introduces a new endpoint to list the budget change summaries for the project",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-08-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     },
+     {
+      "summary": "Additional created_by_id field is returned as part of response for Budget Change.",
+      "description": "The budget_changes endpoint will now also return the user ID who created the entry as 'created_by_id'.",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-03-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     },
+     {
+      "summary": "Extend Budget Change index endpoint to return ERP status in projects that are ERP integrated",
+      "description": "The budget change index endpoint will now return the ERP status of each budget change summary if ERP integration is on.",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-09-01",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     },
+     {
+      "summary": "Extend Budget Change index endpoint to return currency configuration",
+      "description": "The budget change index endpoint will now return the currency configuration on each budget change and adjustment line item.",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-08-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     },
+     {
+      "summary": "The Budget Change Index endpoint includes the identifier for the associated prime contract",
+      "description": "The Budget Change index endpoint response includes the id of the associated prime contract",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-10-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     },
+     {
+      "summary": "Extend Budget Change List created_by attribute",
+      "description": "The budget change list created_by attribute will now return the created_by object in the budget change body.",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-01-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     },
+     {
+      "summary": "Budget Change Number attribute includes decimals",
+      "description": "The budget change number attribute will now accept decimals(1.1) or integers(1).",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-04-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     },
+     {
+      "summary": "Extend Budget Change index endpoint to include skip custom fields parameter",
+      "description": "The budget change index endpoint already returns the custom_fields object on each summary row when available.\nA new query parameter 'exclude_custom_fields' can be provided to omit custom_fields from the response for faster response time.",
+      "endpoint": "GET /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#list-budget-change-summaries"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a budget change",
+    "description": "Create a new budget change with adjustments.",
+    "tags": [
+     "Budget Change"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Budget Change Package information Input",
+        "properties": {
+         "number": {
+          "type": "number",
+          "description": "Number field of budget change. If not provided, it will be assigned.",
+          "example": 10
+         },
+         "status": {
+          "type": "string",
+          "description": "Status of budget change",
+          "example": "draft",
+          "enum": [
+           "draft",
+           "approved",
+           "under_review",
+           "void"
+          ]
+         },
+         "title": {
+          "type": "string",
+          "description": "Title of budget change",
+          "example": "Equipment"
+         },
+         "description": {
+          "type": "string",
+          "description": "Description of budget change in HTML format",
+          "example": "<p>bla bla <em>description</em></p>"
+         },
+         "adjustment_line_items": {
+          "type": "array",
+          "description": "List of budget change line items. todo this key be renamed to line_items in the future",
+          "items": {
+           "type": "object",
+           "description": "Budget Change Adjustment line item",
+           "properties": {
+            "ref": {
+             "type": "string",
+             "description": "Identifier used to map line items in the request to their respective objects or errors in the response",
+             "example": "item56",
+             "nullable": true
+            },
+            "adjustment_number": {
+             "type": "integer",
+             "description": "Number of this adjustment",
+             "example": 5
+            },
+            "wbs_code_id": {
+             "type": "integer",
+             "description": "Work Breakdown Structure Code ID",
+             "example": 56
+            },
+            "description": {
+             "type": "string",
+             "description": "Description of the adjustment",
+             "example": "Foobar",
+             "nullable": true
+            },
+            "comment": {
+             "type": "string",
+             "description": "Comment of the adjustment",
+             "example": "Baz",
+             "nullable": true
+            },
+            "calculation_strategy": {
+             "type": "string",
+             "description": "Cost calculation strategy",
+             "example": "manual",
+             "enum": [
+              "automatic",
+              "manual"
+             ]
+            },
+            "quantity": {
+             "type": "number",
+             "description": "Estimated cost quantity",
+             "example": 1
+            },
+            "type": {
+             "type": "string",
+             "description": "Used to identify type of line item. id uniquess is guaranteed per type.\n\nNOTE: To add an Adjustment Line Item with the type budget_change for an adjustment_number, an Adjustment Line item with the type change_event must be created for the same adjustment_number.",
+             "example": "change_event",
+             "enum": [
+              "change_event",
+              "budget_change"
+             ]
+            },
+            "uom": {
+             "type": "string",
+             "description": "Unit of measure used",
+             "example": "Ea"
+            },
+            "unit_cost": {
+             "type": "number",
+             "description": "Estimated unit cost",
+             "example": 500
+            },
+            "amount": {
+             "type": "number",
+             "description": "Estimated cost amount",
+             "example": 500
+            },
+            "change_event_line_item_id": {
+             "type": "integer",
+             "description": "ID for the change event line item associated with the adjustment",
+             "example": 860001,
+             "nullable": true
+            }
+           }
+          }
+         },
+         "prostore_file_ids": {
+          "type": "array",
+          "description": "The prostore file identifiers that will be associated with this budget change as attachments",
+          "items": {
+           "type": "integer",
+           "example": 123
+          }
+         },
+         "production_quantities": {
+          "type": "array",
+          "description": "List of budget change production quantities",
+          "items": {
+           "type": "object",
+           "description": "Budget Change Adjustment Production Quantity",
+           "properties": {
+            "comment": {
+             "type": "string",
+             "description": "Comment of the production quantity",
+             "example": "Baz",
+             "nullable": true
+            },
+            "cost_code_id": {
+             "type": "integer",
+             "description": "Cost Code ID",
+             "example": 56
+            },
+            "description": {
+             "type": "string",
+             "description": "Description of the production quantity",
+             "example": "Foobar",
+             "nullable": true
+            },
+            "quantity": {
+             "type": "number",
+             "description": "Estimated cost quantity",
+             "example": 1
+            },
+            "ref": {
+             "type": "string",
+             "description": "Identifier used to map production quantities in the request to their respective objects or errors in the response",
+             "example": "item56",
+             "nullable": true
+            },
+            "uom": {
+             "type": "string",
+             "description": "Unit of measure used",
+             "example": "Ea"
+            },
+            "change_event_production_quantity_id": {
+             "type": "number",
+             "description": "ID of the Change Event Production Quantity that is to be associated with the Budget Change Production Quantity",
+             "example": 1,
+             "nullable": true
+            }
+           },
+           "required": [
+            "cost_code_id",
+            "quantity",
+            "uom"
+           ]
+          }
+         }
+        },
+        "required": [
+         "status"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "allOf": [
+            {
+             "type": "object",
+             "description": "Budget Change Package information",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier for the budget change",
+               "example": 75414
+              },
+              "number": {
+               "type": "number",
+               "description": "Number field of the budget change",
+               "example": 10
+              },
+              "status": {
+               "type": "string",
+               "description": "Status of the budget change",
+               "example": "draft",
+               "enum": [
+                "draft",
+                "approved",
+                "under_review",
+                "void"
+               ]
+              },
+              "title": {
+               "type": "string",
+               "description": "Title of budget change",
+               "example": "My title"
+              },
+              "description": {
+               "type": "string",
+               "description": "Description of the budget change in HTML format",
+               "example": "<p>Bla bla <em>description</em></p>"
+              },
+              "erp_status": {
+               "type": "string",
+               "description": "The ERP (Enterprise Resource Planning) synchronization state of this budget change.",
+               "example": "ready_to_export",
+               "enum": [
+                "not_in_erp",
+                "ready_to_export",
+                "exporting",
+                "failed_to_export",
+                "rejected",
+                "invalid",
+                "synced",
+                "not_integrated"
+               ]
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "attachments": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "integer",
+                  "description": "Unique identifier of the attached file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Base name of the file without its path",
+                  "example": "snapshot.png"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                  "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                 }
+                }
+               }
+              },
+              "adjustment_line_items": {
+               "type": "array",
+               "description": "todo this key be renamed to line_items in the future",
+               "items": {
+                "type": "object",
+                "description": "Budget Change Adjustment line item",
+                "properties": {
+                 "id": {
+                  "type": "number",
+                  "description": "ID of this adjustment",
+                  "example": 56
+                 },
+                 "ref": {
+                  "type": "string",
+                  "description": "Identifier used to map line items in the request to their respective objects or errors in the response",
+                  "example": "item56",
+                  "nullable": true
+                 },
+                 "adjustment_number": {
+                  "type": "integer",
+                  "description": "Number of this adjustment. When creating a line item with type 'change_event', this is optional and it will be auto-assigned an adjustment_number. However, it is required when creating a line item with type 'budget_change'.",
+                  "example": 5
+                 },
+                 "budget_change_id": {
+                  "type": "number",
+                  "description": "ID of the budget change this line item belongs to.",
+                  "example": 235
+                 },
+                 "wbs_code": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "Wbs Code ID",
+                    "example": 999
+                   },
+                   "flat_code": {
+                    "type": "string",
+                    "description": "Wbs Code",
+                    "example": "01-011.CT1"
+                   },
+                   "description": {
+                    "type": "string",
+                    "description": "Wbs Code Description",
+                    "example": "Project Engineer.Cost Type 1"
+                   }
+                  }
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Description of the adjustment",
+                  "example": "Foobar",
+                  "nullable": true
+                 },
+                 "comment": {
+                  "type": "string",
+                  "description": "Comment of the adjustment",
+                  "example": "Baz",
+                  "nullable": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp when this line item was created, in ISO 8601 format.",
+                  "example": "2018-04-19T09:36:42Z"
+                 },
+                 "calculation_strategy": {
+                  "type": "string",
+                  "description": "Cost calculation strategy",
+                  "example": "manual",
+                  "enum": [
+                   "automatic",
+                   "manual"
+                  ]
+                 },
+                 "quantity": {
+                  "type": "number",
+                  "description": "Estimated cost quantity",
+                  "example": 1
+                 },
+                 "type": {
+                  "type": "string",
+                  "description": "used to identify type of line item. id uniqueness is guaranteed per type",
+                  "example": "change_event",
+                  "enum": [
+                   "budget_change",
+                   "change_event"
+                  ]
+                 },
+                 "uom": {
+                  "type": "string",
+                  "description": "Unit of measure used",
+                  "example": "Ea"
+                 },
+                 "unit_cost": {
+                  "type": "number",
+                  "description": "Estimated unit cost",
+                  "example": 30.5
+                 },
+                 "amount": {
+                  "type": "number",
+                  "description": "Estimated cost amount",
+                  "example": 76.25
+                 },
+                 "change_event_line_item_id": {
+                  "type": "number",
+                  "description": "ID of the associated change event line item if it exists (To be deprecated, use change_event_line_item instead)",
+                  "nullable": true,
+                  "example": 78
+                 },
+                 "change_event_line_item": {
+                  "type": "object",
+                  "description": "change event line item simple object",
+                  "nullable": true,
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "ID of the associated change event line item if it exists",
+                    "example": 78
+                   },
+                   "event_id": {
+                    "type": "integer",
+                    "description": "ID of the associated change event that this change event line item is associated with",
+                    "example": 999
+                   }
+                  }
+                 },
+                 "currency_configuration": {
+                  "type": "object",
+                  "properties": {
+                   "currency_iso_code": {
+                    "type": "string",
+                    "description": "Currency ISO Code configured for the financial entity",
+                    "example": "USD",
+                    "nullable": true
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              "created_change_event": {
+               "type": "object",
+               "nullable": true,
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Identifier of the created change event",
+                 "example": 123
+                },
+                "number": {
+                 "type": "string",
+                 "description": "Number of the created change event",
+                 "example": "456"
+                }
+               }
+              },
+              "production_quantities": {
+               "type": "array",
+               "description": "List of budget change production quantities",
+               "items": {
+                "type": "object",
+                "description": "Budget Change Adjustment Production Quantity",
+                "properties": {
+                 "id": {
+                  "type": "number",
+                  "description": "ID of this production quantity",
+                  "example": 56
+                 },
+                 "budget_change_id": {
+                  "type": "number",
+                  "description": "ID of the Budget Change to which this production quantity is associated",
+                  "nullable": true,
+                  "example": 78
+                 },
+                 "comment": {
+                  "type": "string",
+                  "description": "Comment of the production quantity",
+                  "example": "Baz",
+                  "nullable": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp when this production quantity was created, in ISO 8601 format.",
+                  "example": "2018-04-19T09:36:42Z"
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Description of the production quantity",
+                  "example": "Foobar",
+                  "nullable": true
+                 },
+                 "quantity": {
+                  "type": "number",
+                  "description": "Estimated cost quantity",
+                  "example": 1
+                 },
+                 "ref": {
+                  "type": "string",
+                  "description": "Identifier used to map production quantities in the request to their respective objects or errors in the response",
+                  "example": "item56",
+                  "nullable": true
+                 },
+                 "uom": {
+                  "type": "string",
+                  "description": "Unit of measure used",
+                  "example": "Ea"
+                 },
+                 "wbs_code": {
+                  "type": "object",
+                  "description": "Work Breakdown Structure",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the WBS Code",
+                    "example": 1
+                   },
+                   "flat_code": {
+                    "type": "string",
+                    "description": "wbs code flat code",
+                    "example": "2.E"
+                   },
+                   "description": {
+                    "type": "string",
+                    "description": "The description of the WBS Code",
+                    "example": "Purpose"
+                   }
+                  }
+                 },
+                 "cost_code": {
+                  "type": "object",
+                  "description": "The cost code associated with the Production Quantity",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the Cost Code",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The display value for the Cost Code",
+                    "example": "01-000 - Purpose"
+                   }
+                  }
+                 },
+                 "sub_job": {
+                  "type": "object",
+                  "description": "The sub job associated with the Production Quantity",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the sub job",
+                    "example": 1,
+                    "nullable": true
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The name of the Sub Job",
+                    "example": "Floor 1",
+                    "nullable": true
+                   }
+                  }
+                 },
+                 "change_event_production_quantity_id": {
+                  "type": "number",
+                  "description": "ID of the associated Change Event Production Quantity",
+                  "example": 1
+                 }
+                }
+               }
+              },
+              "currency_configuration": {
+               "type": "object",
+               "properties": {
+                "currency_iso_code": {
+                 "type": "string",
+                 "description": "Currency ISO Code configured for the financial entity",
+                 "example": "USD",
+                 "nullable": true
+                }
+               }
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "example": {
+             "number": [
+              "can't be blank",
+              "is not a number"
+             ],
+             "status": [
+              "can't be blank",
+              "is not included in the list"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes',\n  headers: {'content-type': 'application/json'},\n  body: {\n    number: 10,\n    status: 'draft',\n    title: 'Equipment',\n    description: '<p>bla bla <em>description</em></p>',\n    adjustment_line_items: [\n      {\n        ref: 'item56',\n        adjustment_number: 5,\n        wbs_code_id: 56,\n        description: 'Foobar',\n        comment: 'Baz',\n        calculation_strategy: 'manual',\n        quantity: 1,\n        type: 'change_event',\n        uom: 'Ea',\n        unit_cost: 500,\n        amount: 500,\n        change_event_line_item_id: 860001\n      }\n    ],\n    prostore_file_ids: [123],\n    production_quantities: [\n      {\n        comment: 'Baz',\n        cost_code_id: 56,\n        description: 'Foobar',\n        quantity: 1,\n        ref: 'item56',\n        uom: 'Ea',\n        change_event_production_quantity_id: 1\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"number\\\":10,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Equipment\\\",\\\"description\\\":\\\"<p>bla bla <em>description</em></p>\\\",\\\"adjustment_line_items\\\":[{\\\"ref\\\":\\\"item56\\\",\\\"adjustment_number\\\":5,\\\"wbs_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"comment\\\":\\\"Baz\\\",\\\"calculation_strategy\\\":\\\"manual\\\",\\\"quantity\\\":1,\\\"type\\\":\\\"change_event\\\",\\\"uom\\\":\\\"Ea\\\",\\\"unit_cost\\\":500,\\\"amount\\\":500,\\\"change_event_line_item_id\\\":860001}],\\\"prostore_file_ids\\\":[123],\\\"production_quantities\\\":[{\\\"comment\\\":\\\"Baz\\\",\\\"cost_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"quantity\\\":1,\\\"ref\\\":\\\"item56\\\",\\\"uom\\\":\\\"Ea\\\",\\\"change_event_production_quantity_id\\\":1}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/budget_changes\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes \\\n  --header 'content-type: application/json' \\\n  --data '{\"number\":10,\"status\":\"draft\",\"title\":\"Equipment\",\"description\":\"<p>bla bla <em>description</em></p>\",\"adjustment_line_items\":[{\"ref\":\"item56\",\"adjustment_number\":5,\"wbs_code_id\":56,\"description\":\"Foobar\",\"comment\":\"Baz\",\"calculation_strategy\":\"manual\",\"quantity\":1,\"type\":\"change_event\",\"uom\":\"Ea\",\"unit_cost\":500,\"amount\":500,\"change_event_line_item_id\":860001}],\"prostore_file_ids\":[123],\"production_quantities\":[{\"comment\":\"Baz\",\"cost_code_id\":56,\"description\":\"Foobar\",\"quantity\":1,\"ref\":\"item56\",\"uom\":\"Ea\",\"change_event_production_quantity_id\":1}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes\"),\n    Content = new StringContent(\"{\\\"number\\\":10,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Equipment\\\",\\\"description\\\":\\\"<p>bla bla <em>description</em></p>\\\",\\\"adjustment_line_items\\\":[{\\\"ref\\\":\\\"item56\\\",\\\"adjustment_number\\\":5,\\\"wbs_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"comment\\\":\\\"Baz\\\",\\\"calculation_strategy\\\":\\\"manual\\\",\\\"quantity\\\":1,\\\"type\\\":\\\"change_event\\\",\\\"uom\\\":\\\"Ea\\\",\\\"unit_cost\\\":500,\\\"amount\\\":500,\\\"change_event_line_item_id\\\":860001}],\\\"prostore_file_ids\\\":[123],\\\"production_quantities\\\":[{\\\"comment\\\":\\\"Baz\\\",\\\"cost_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"quantity\\\":1,\\\"ref\\\":\\\"item56\\\",\\\"uom\\\":\\\"Ea\\\",\\\"change_event_production_quantity_id\\\":1}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.0 Create Budget Changes endpoint",
+      "description": "Introduction of Public API endpoint for creating Budget Change records.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2021-07-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "Enabling Attachment Support for Create Budget Changes endpoint",
+      "description": "Allows attachment params to be used when creating a Budget Change. Requires that content type is multipart form data.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-08-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "Number is optional for Create Budget Changes endpoint",
+      "description": "Number is now optional. If not provided, it will be assigned.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2021-12-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change create endpoint request to support Production Quantity",
+      "description": "The budget change POST request will now accept and return the Production Quantities when creating a new Budget Change as 'production_quantities'.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-04-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change create endpoint to support association of Change Event Production Quantities",
+      "description": "The budget change create request will now accept and return the Change Event Production Quantity IDs associated to a Budget Change Production Quantity as 'change_event_production_quantity_id' on a `production_quantity` object.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-06-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "Add wbs_code_id to POST API endpoint",
+      "description": "'wbs_code_id' is now an accepted parameter for creating Budget Change Production Quantity.\nAs well, 'wbs_code' is now a property of the response of a successful Budget Change Production Quantity creation.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2023-06-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "We added new \"currency_configuration\" property to (create) POST API endpoint response.",
+      "description": "The \"currency_configuration\" will now be a property of the API response when the user creates a new Budget Change.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "Creating change event adjustment line items does not require adjustment number",
+      "description": "The budget change create endpoint does not require the adjustment_number parameter and will auto-assign it if it is not given when creating adjustment line items of type 'change_event'",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-10-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     },
+     {
+      "summary": "The Budget Change Create endpoint allows creation with an associated prime contract",
+      "description": "When the \"Allow budget changes to be billed on owner invoices\" setting is active, the Budget Change create endpoint will accept a prime contract id to associate with the budget change. The response includes information about the associated prime contract.",
+      "endpoint": "POST /projects/{project_id}/budget_changes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-10-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#create-a-budget-change"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/projects/{project_id}/budget_changes/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier of budget change",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get information of a budget change",
+    "description": "Get information of a budget change (without adjustment)",
+    "tags": [
+     "Budget Change"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "allOf": [
+            {
+             "type": "object",
+             "description": "Budget Change Package information",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier for the budget change",
+               "example": 75414
+              },
+              "number": {
+               "type": "number",
+               "description": "Number field of the budget change",
+               "example": 10
+              },
+              "status": {
+               "type": "string",
+               "description": "Status of the budget change",
+               "example": "draft",
+               "enum": [
+                "draft",
+                "approved",
+                "under_review",
+                "void"
+               ]
+              },
+              "title": {
+               "type": "string",
+               "description": "Title of budget change",
+               "example": "My title"
+              },
+              "description": {
+               "type": "string",
+               "description": "Description of the budget change in HTML format",
+               "example": "<p>Bla bla <em>description</em></p>"
+              },
+              "erp_status": {
+               "type": "string",
+               "description": "The ERP (Enterprise Resource Planning) synchronization state of this budget change.",
+               "example": "ready_to_export",
+               "enum": [
+                "not_in_erp",
+                "ready_to_export",
+                "exporting",
+                "failed_to_export",
+                "rejected",
+                "invalid",
+                "synced",
+                "not_integrated"
+               ]
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "amount": {
+               "type": "number",
+               "description": "Total amount of the budget change",
+               "example": 9.99
+              },
+              "prime_contract": {
+               "type": "object",
+               "description": "Information on the prime contract this budget change is associated with",
+               "nullable": true,
+               "properties": {
+                "id": {
+                 "type": "number",
+                 "description": "The ID of the prime contract",
+                 "example": 1
+                },
+                "number": {
+                 "type": "string",
+                 "description": "Number",
+                 "example": "A-1"
+                },
+                "title": {
+                 "type": "string",
+                 "description": "Title",
+                 "example": "ABC Owner Contract"
+                }
+               }
+              },
+              "budget_change_type": {
+               "type": "object",
+               "description": "The budget change type categorizing this budget change. Null when no type is assigned.",
+               "nullable": true,
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "ID of the budget change type.",
+                 "example": 12
+                },
+                "display_name": {
+                 "type": "string",
+                 "description": "Human-readable name of the budget change type.",
+                 "example": "Owner Change"
+                }
+               }
+              },
+              "attachments": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "integer",
+                  "description": "Unique identifier of the attached file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Base name of the file without its path",
+                  "example": "snapshot.png"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                  "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                 }
+                }
+               }
+              },
+              "adjustment_line_items": {
+               "type": "array",
+               "description": "todo this key be renamed to line_items in the future",
+               "items": {
+                "type": "object",
+                "description": "Budget Change Adjustment line item",
+                "properties": {
+                 "id": {
+                  "type": "number",
+                  "description": "ID of this adjustment",
+                  "example": 56
+                 },
+                 "ref": {
+                  "type": "string",
+                  "description": "Identifier used to map line items in the request to their respective objects or errors in the response",
+                  "example": "item56",
+                  "nullable": true
+                 },
+                 "adjustment_number": {
+                  "type": "integer",
+                  "description": "Number of this adjustment. When creating a line item with type 'change_event', this is optional and it will be auto-assigned an adjustment_number. However, it is required when creating a line item with type 'budget_change'.",
+                  "example": 5
+                 },
+                 "budget_change_id": {
+                  "type": "number",
+                  "description": "ID of the budget change this line item belongs to.",
+                  "example": 235
+                 },
+                 "wbs_code": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "Wbs Code ID",
+                    "example": 999
+                   },
+                   "flat_code": {
+                    "type": "string",
+                    "description": "Wbs Code",
+                    "example": "01-011.CT1"
+                   },
+                   "description": {
+                    "type": "string",
+                    "description": "Wbs Code Description",
+                    "example": "Project Engineer.Cost Type 1"
+                   }
+                  }
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Description of the adjustment",
+                  "example": "Foobar",
+                  "nullable": true
+                 },
+                 "comment": {
+                  "type": "string",
+                  "description": "Comment of the adjustment",
+                  "example": "Baz",
+                  "nullable": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp when this line item was created, in ISO 8601 format.",
+                  "example": "2018-04-19T09:36:42Z"
+                 },
+                 "calculation_strategy": {
+                  "type": "string",
+                  "description": "Cost calculation strategy",
+                  "example": "manual",
+                  "enum": [
+                   "automatic",
+                   "manual"
+                  ]
+                 },
+                 "quantity": {
+                  "type": "number",
+                  "description": "Estimated cost quantity",
+                  "example": 1
+                 },
+                 "type": {
+                  "type": "string",
+                  "description": "used to identify type of line item. id uniqueness is guaranteed per type",
+                  "example": "change_event",
+                  "enum": [
+                   "budget_change",
+                   "change_event"
+                  ]
+                 },
+                 "uom": {
+                  "type": "string",
+                  "description": "Unit of measure used",
+                  "example": "Ea"
+                 },
+                 "unit_cost": {
+                  "type": "number",
+                  "description": "Estimated unit cost",
+                  "example": 30.5
+                 },
+                 "amount": {
+                  "type": "number",
+                  "description": "Estimated cost amount",
+                  "example": 76.25
+                 },
+                 "change_event_line_item_id": {
+                  "type": "number",
+                  "description": "ID of the associated change event line item if it exists (To be deprecated, use change_event_line_item instead)",
+                  "nullable": true,
+                  "example": 78
+                 },
+                 "change_event_line_item": {
+                  "type": "object",
+                  "description": "change event line item simple object",
+                  "nullable": true,
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "ID of the associated change event line item if it exists",
+                    "example": 78
+                   },
+                   "event_id": {
+                    "type": "integer",
+                    "description": "ID of the associated change event that this change event line item is associated with",
+                    "example": 999
+                   }
+                  }
+                 },
+                 "currency_configuration": {
+                  "type": "object",
+                  "properties": {
+                   "currency_iso_code": {
+                    "type": "string",
+                    "description": "Currency ISO Code configured for the financial entity",
+                    "example": "USD",
+                    "nullable": true
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              "production_quantities": {
+               "type": "array",
+               "description": "List of budget change production quantities",
+               "items": {
+                "type": "object",
+                "description": "Budget Change Adjustment Production Quantity",
+                "properties": {
+                 "id": {
+                  "type": "number",
+                  "description": "ID of this production quantity",
+                  "example": 56
+                 },
+                 "budget_change_id": {
+                  "type": "number",
+                  "description": "ID of the Budget Change to which this production quantity is associated",
+                  "nullable": true,
+                  "example": 78
+                 },
+                 "comment": {
+                  "type": "string",
+                  "description": "Comment of the production quantity",
+                  "example": "Baz",
+                  "nullable": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp when this production quantity was created, in ISO 8601 format.",
+                  "example": "2018-04-19T09:36:42Z"
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Description of the production quantity",
+                  "example": "Foobar",
+                  "nullable": true
+                 },
+                 "quantity": {
+                  "type": "number",
+                  "description": "Estimated cost quantity",
+                  "example": 1
+                 },
+                 "ref": {
+                  "type": "string",
+                  "description": "Identifier used to map production quantities in the request to their respective objects or errors in the response",
+                  "example": "item56",
+                  "nullable": true
+                 },
+                 "uom": {
+                  "type": "string",
+                  "description": "Unit of measure used",
+                  "example": "Ea"
+                 },
+                 "wbs_code": {
+                  "type": "object",
+                  "description": "Work Breakdown Structure",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the WBS Code",
+                    "example": 1
+                   },
+                   "flat_code": {
+                    "type": "string",
+                    "description": "wbs code flat code",
+                    "example": "2.E"
+                   },
+                   "description": {
+                    "type": "string",
+                    "description": "The description of the WBS Code",
+                    "example": "Purpose"
+                   }
+                  }
+                 },
+                 "cost_code": {
+                  "type": "object",
+                  "description": "The cost code associated with the Production Quantity",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the Cost Code",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The display value for the Cost Code",
+                    "example": "01-000 - Purpose"
+                   }
+                  }
+                 },
+                 "sub_job": {
+                  "type": "object",
+                  "description": "The sub job associated with the Production Quantity",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the sub job",
+                    "example": 1,
+                    "nullable": true
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The name of the Sub Job",
+                    "example": "Floor 1",
+                    "nullable": true
+                   }
+                  }
+                 },
+                 "change_event_production_quantity_id": {
+                  "type": "number",
+                  "description": "ID of the associated Change Event Production Quantity",
+                  "example": 1
+                 }
+                }
+               }
+              },
+              "currency_configuration": {
+               "type": "object",
+               "properties": {
+                "currency_iso_code": {
+                 "type": "string",
+                 "description": "Currency ISO Code configured for the financial entity",
+                 "example": "USD",
+                 "nullable": true
+                }
+               }
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "example": "2012-10-23T21:39:40Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "example": "2012-10-23T21:39:40Z"
+              },
+              "created_by": {
+               "type": "object",
+               "description": "The user who created the budget change",
+               "properties": {
+                "id": {
+                 "type": "number",
+                 "description": "The ID of the user",
+                 "example": 1
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the user",
+                 "example": "John Doe"
+                },
+                "login": {
+                 "type": "string",
+                 "description": "The login of the user",
+                 "example": "johndoe@example.com"
+                }
+               }
+              },
+              "custom_fields": {
+               "type": "object",
+               "properties": {
+                "custom_field_%{custom_field_string_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "string"
+                  },
+                  "value": {
+                   "type": "string",
+                   "description": "The value of the custom field",
+                   "example": "custom field value"
+                  },
+                  "variant": {
+                   "type": "string",
+                   "description": "The variant of the Custom Field Definition (e.g. `phone_number`). Present only when the definition has an associated variant.",
+                   "example": "phone_number"
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_decimal_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "decimal"
+                  },
+                  "value": {
+                   "type": "number",
+                   "description": "The value of the custom field",
+                   "example": 2.2
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_boolean_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "boolean"
+                  },
+                  "value": {
+                   "type": "boolean",
+                   "description": "The value of the custom field",
+                   "example": true
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_lov_entry_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "lov_entry"
+                  },
+                  "value": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "ID of the LOV Entry",
+                     "example": 1
+                    },
+                    "label": {
+                     "type": "string",
+                     "description": "Label of the LOV Entry",
+                     "example": "Open"
+                    }
+                   }
+                  },
+                  "variant": {
+                   "type": "string",
+                   "description": "The variant of the Custom Field Definition (e.g. `project_directory`). Present only when the definition has an associated variant.",
+                   "example": "with_code"
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_lov_entries_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "lov_entries"
+                  },
+                  "value": {
+                   "type": "array",
+                   "items": {
+                    "type": "object",
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "ID of the LOV Entry",
+                      "example": 2
+                     },
+                     "label": {
+                      "type": "string",
+                      "description": "Label of the LOV Entry",
+                      "example": "Open"
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "example": {
+             "number": [
+              "can't be blank",
+              "is not a number"
+             ],
+             "status": [
+              "can't be blank",
+              "is not included in the list"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing a Show Budget Change endpoint",
+      "description": "Introduces a new endpoint to show a budget change",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-08-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change show endpoint to support Production Quantity",
+      "description": "The budget change get request will now return the Production Quantities associated to a Budget Change as 'production_quantities'.",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-04-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change show endpoint to support association of Change Event Production Quantities",
+      "description": "The budget change show request will now return the Change Event Production Quantity IDs associated to a Budget Change Production Quantity as 'change_event_production_quantity_id' on a `production_quantity` object.",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-06-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change read endpoint to support ERP integration status",
+      "description": "The budget change index endpoint will now return the ERP status for the specific budget change.",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-09-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "Add wbs_code to (show) GET API endpoint",
+      "description": "'wbs_code' is now a property of the response of a Budget Change Production Quantity entity.",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2023-06-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend the Show Budget Change endpoint",
+      "description": "The budget change show endpoint will now return the currency configuration on the budget change and each adjustment line item.",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-08-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "The Budget Change Show endpoint includes the identifier for the associated prime contract",
+      "description": "The Budget Change show endpoint response includes information about the associated prime contract",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-10-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change show endpoint to return the total amount",
+      "description": "The budget change show request will now return the amount property in the budget change body.",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-12-05",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change show endpoint to return created_at, created_by, and updated_at",
+      "description": "The budget change show request will now return created_at, created_by, and updated_at in the budget change body.",
+      "endpoint": "GET /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-01-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#get-information-of-a-budget-change"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update information of a Budget Change",
+    "description": "Update information of a Budget Change",
+    "tags": [
+     "Budget Change"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Budget Change Package information Input",
+        "properties": {
+         "id": {
+          "type": "integer",
+          "description": "Unique identifier of this budget change",
+          "example": 1
+         },
+         "number": {
+          "type": "number",
+          "description": "Number field of budget change",
+          "example": 10
+         },
+         "status": {
+          "type": "string",
+          "description": "Status of budget change",
+          "example": "draft",
+          "enum": [
+           "draft",
+           "approved",
+           "under_review",
+           "void"
+          ]
+         },
+         "title": {
+          "type": "string",
+          "description": "Title of budget change",
+          "example": "Equipment"
+         },
+         "description": {
+          "type": "string",
+          "description": "Description of budget change in HTML format",
+          "example": "<p>bla bla <em>description</em></p>"
+         },
+         "adjustment_line_items": {
+          "type": "array",
+          "description": "List of budget change adjustments",
+          "items": {
+           "type": "object",
+           "description": "Budget Change Adjustment line item",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID of this adjustment",
+             "example": 56,
+             "nullable": true
+            },
+            "type": {
+             "type": "string",
+             "description": "Used to identify type of line item. id uniqueness is guaranteed per type\n\nNOTE: To update an Adjustment Line Item with the type budget_change for an adjustment_number, an Adjustment Line item with the type change_event must exist for the same adjustment_number.",
+             "example": "change_event",
+             "enum": [
+              "change_event",
+              "budget_change"
+             ]
+            },
+            "ref": {
+             "type": "string",
+             "description": "Identifier used to map line items in the request to their respective objects or errors in the response",
+             "example": "item56",
+             "nullable": true
+            },
+            "adjustment_number": {
+             "type": "integer",
+             "description": "Number of this adjustment",
+             "example": 5
+            },
+            "wbs_code_id": {
+             "type": "integer",
+             "description": "Work Breakdown Structure Code ID",
+             "example": 56
+            },
+            "description": {
+             "type": "string",
+             "description": "Description of the adjustment",
+             "example": "Foobar",
+             "nullable": true
+            },
+            "comment": {
+             "type": "string",
+             "description": "Comment of the adjustment",
+             "example": "Baz",
+             "nullable": true
+            },
+            "calculation_strategy": {
+             "type": "string",
+             "description": "Cost calculation strategy",
+             "example": "manual",
+             "enum": [
+              "automatic",
+              "manual"
+             ]
+            },
+            "quantity": {
+             "type": "number",
+             "description": "Estimated cost quantity",
+             "example": 1
+            },
+            "uom": {
+             "type": "string",
+             "description": "Unit of measure used",
+             "example": "Ea"
+            },
+            "unit_cost": {
+             "type": "number",
+             "description": "Estimated unit cost",
+             "example": 500
+            },
+            "amount": {
+             "type": "number",
+             "description": "Estimated cost amount",
+             "example": 500
+            },
+            "change_event_line_item_id": {
+             "type": "integer",
+             "description": "ID for the change event line item associated with the adjustment",
+             "example": 860001,
+             "nullable": true
+            },
+            "_delete": {
+             "type": "boolean",
+             "description": "Whether this adjustment should be deleted",
+             "example": true
+            }
+           }
+          }
+         },
+         "prostore_file_ids": {
+          "type": "array",
+          "description": "The desired prostore file identifiers that will replace the current collection of attachments associated with the budget change",
+          "items": {
+           "type": "integer",
+           "example": 123
+          }
+         },
+         "production_quantities": {
+          "type": "array",
+          "description": "List of budget change production quantities",
+          "items": {
+           "type": "object",
+           "description": "Budget Change Adjustment Production Quantity",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID of this Production Quantity",
+             "example": 56,
+             "nullable": true
+            },
+            "comment": {
+             "type": "string",
+             "description": "Comment of the adjustment",
+             "example": "Baz",
+             "nullable": true
+            },
+            "cost_code_id": {
+             "type": "integer",
+             "description": "Cost Code ID",
+             "example": 56
+            },
+            "description": {
+             "type": "string",
+             "description": "Description of the Production Quantity",
+             "example": "Foobar",
+             "nullable": true
+            },
+            "quantity": {
+             "type": "number",
+             "description": "Estimated cost quantity",
+             "example": 1
+            },
+            "ref": {
+             "type": "string",
+             "description": "Identifier used to map production quantities in the request to their respective objects or errors in the response",
+             "example": "item56",
+             "nullable": true
+            },
+            "uom": {
+             "type": "string",
+             "description": "Unit of measure used",
+             "example": "Ea"
+            },
+            "change_event_production_quantity_id": {
+             "type": "number",
+             "description": "ID of the Change Event Production Quantity that is to be associated with the Budget Change Production Quantity",
+             "example": 1,
+             "nullable": true
+            },
+            "_delete": {
+             "type": "boolean",
+             "description": "Whether this production quantity should be deleted",
+             "example": true
+            }
+           },
+           "required": [
+            "cost_code_id",
+            "quantity",
+            "uom"
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "allOf": [
+            {
+             "type": "object",
+             "description": "Budget Change Package information",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier for the budget change",
+               "example": 75414
+              },
+              "number": {
+               "type": "number",
+               "description": "Number field of the budget change",
+               "example": 10
+              },
+              "status": {
+               "type": "string",
+               "description": "Status of the budget change",
+               "example": "draft",
+               "enum": [
+                "draft",
+                "approved",
+                "under_review",
+                "void"
+               ]
+              },
+              "title": {
+               "type": "string",
+               "description": "Title of budget change",
+               "example": "My title"
+              },
+              "description": {
+               "type": "string",
+               "description": "Description of the budget change in HTML format",
+               "example": "<p>Bla bla <em>description</em></p>"
+              },
+              "erp_status": {
+               "type": "string",
+               "description": "The ERP (Enterprise Resource Planning) synchronization state of this budget change.",
+               "example": "ready_to_export",
+               "enum": [
+                "not_in_erp",
+                "ready_to_export",
+                "exporting",
+                "failed_to_export",
+                "rejected",
+                "invalid",
+                "synced",
+                "not_integrated"
+               ]
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "amount": {
+               "type": "number",
+               "description": "Total amount of the budget change",
+               "example": 9.99
+              },
+              "prime_contract": {
+               "type": "object",
+               "description": "Information on the prime contract this budget change is associated with",
+               "nullable": true,
+               "properties": {
+                "id": {
+                 "type": "number",
+                 "description": "The ID of the prime contract",
+                 "example": 1
+                },
+                "number": {
+                 "type": "string",
+                 "description": "Number",
+                 "example": "A-1"
+                },
+                "title": {
+                 "type": "string",
+                 "description": "Title",
+                 "example": "ABC Owner Contract"
+                }
+               }
+              },
+              "budget_change_type": {
+               "type": "object",
+               "description": "The budget change type categorizing this budget change. Null when no type is assigned.",
+               "nullable": true,
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "ID of the budget change type.",
+                 "example": 12
+                },
+                "display_name": {
+                 "type": "string",
+                 "description": "Human-readable name of the budget change type.",
+                 "example": "Owner Change"
+                }
+               }
+              },
+              "attachments": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "integer",
+                  "description": "Unique identifier of the attached file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Base name of the file without its path",
+                  "example": "snapshot.png"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                  "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                 }
+                }
+               }
+              },
+              "adjustment_line_items": {
+               "type": "array",
+               "description": "todo this key be renamed to line_items in the future",
+               "items": {
+                "type": "object",
+                "description": "Budget Change Adjustment line item",
+                "properties": {
+                 "id": {
+                  "type": "number",
+                  "description": "ID of this adjustment",
+                  "example": 56
+                 },
+                 "ref": {
+                  "type": "string",
+                  "description": "Identifier used to map line items in the request to their respective objects or errors in the response",
+                  "example": "item56",
+                  "nullable": true
+                 },
+                 "adjustment_number": {
+                  "type": "integer",
+                  "description": "Number of this adjustment. When creating a line item with type 'change_event', this is optional and it will be auto-assigned an adjustment_number. However, it is required when creating a line item with type 'budget_change'.",
+                  "example": 5
+                 },
+                 "budget_change_id": {
+                  "type": "number",
+                  "description": "ID of the budget change this line item belongs to.",
+                  "example": 235
+                 },
+                 "wbs_code": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "Wbs Code ID",
+                    "example": 999
+                   },
+                   "flat_code": {
+                    "type": "string",
+                    "description": "Wbs Code",
+                    "example": "01-011.CT1"
+                   },
+                   "description": {
+                    "type": "string",
+                    "description": "Wbs Code Description",
+                    "example": "Project Engineer.Cost Type 1"
+                   }
+                  }
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Description of the adjustment",
+                  "example": "Foobar",
+                  "nullable": true
+                 },
+                 "comment": {
+                  "type": "string",
+                  "description": "Comment of the adjustment",
+                  "example": "Baz",
+                  "nullable": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp when this line item was created, in ISO 8601 format.",
+                  "example": "2018-04-19T09:36:42Z"
+                 },
+                 "calculation_strategy": {
+                  "type": "string",
+                  "description": "Cost calculation strategy",
+                  "example": "manual",
+                  "enum": [
+                   "automatic",
+                   "manual"
+                  ]
+                 },
+                 "quantity": {
+                  "type": "number",
+                  "description": "Estimated cost quantity",
+                  "example": 1
+                 },
+                 "type": {
+                  "type": "string",
+                  "description": "used to identify type of line item. id uniqueness is guaranteed per type",
+                  "example": "change_event",
+                  "enum": [
+                   "budget_change",
+                   "change_event"
+                  ]
+                 },
+                 "uom": {
+                  "type": "string",
+                  "description": "Unit of measure used",
+                  "example": "Ea"
+                 },
+                 "unit_cost": {
+                  "type": "number",
+                  "description": "Estimated unit cost",
+                  "example": 30.5
+                 },
+                 "amount": {
+                  "type": "number",
+                  "description": "Estimated cost amount",
+                  "example": 76.25
+                 },
+                 "change_event_line_item_id": {
+                  "type": "number",
+                  "description": "ID of the associated change event line item if it exists (To be deprecated, use change_event_line_item instead)",
+                  "nullable": true,
+                  "example": 78
+                 },
+                 "change_event_line_item": {
+                  "type": "object",
+                  "description": "change event line item simple object",
+                  "nullable": true,
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "ID of the associated change event line item if it exists",
+                    "example": 78
+                   },
+                   "event_id": {
+                    "type": "integer",
+                    "description": "ID of the associated change event that this change event line item is associated with",
+                    "example": 999
+                   }
+                  }
+                 },
+                 "currency_configuration": {
+                  "type": "object",
+                  "properties": {
+                   "currency_iso_code": {
+                    "type": "string",
+                    "description": "Currency ISO Code configured for the financial entity",
+                    "example": "USD",
+                    "nullable": true
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              "production_quantities": {
+               "type": "array",
+               "description": "List of budget change production quantities",
+               "items": {
+                "type": "object",
+                "description": "Budget Change Adjustment Production Quantity",
+                "properties": {
+                 "id": {
+                  "type": "number",
+                  "description": "ID of this production quantity",
+                  "example": 56
+                 },
+                 "budget_change_id": {
+                  "type": "number",
+                  "description": "ID of the Budget Change to which this production quantity is associated",
+                  "nullable": true,
+                  "example": 78
+                 },
+                 "comment": {
+                  "type": "string",
+                  "description": "Comment of the production quantity",
+                  "example": "Baz",
+                  "nullable": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Timestamp when this production quantity was created, in ISO 8601 format.",
+                  "example": "2018-04-19T09:36:42Z"
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Description of the production quantity",
+                  "example": "Foobar",
+                  "nullable": true
+                 },
+                 "quantity": {
+                  "type": "number",
+                  "description": "Estimated cost quantity",
+                  "example": 1
+                 },
+                 "ref": {
+                  "type": "string",
+                  "description": "Identifier used to map production quantities in the request to their respective objects or errors in the response",
+                  "example": "item56",
+                  "nullable": true
+                 },
+                 "uom": {
+                  "type": "string",
+                  "description": "Unit of measure used",
+                  "example": "Ea"
+                 },
+                 "wbs_code": {
+                  "type": "object",
+                  "description": "Work Breakdown Structure",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the WBS Code",
+                    "example": 1
+                   },
+                   "flat_code": {
+                    "type": "string",
+                    "description": "wbs code flat code",
+                    "example": "2.E"
+                   },
+                   "description": {
+                    "type": "string",
+                    "description": "The description of the WBS Code",
+                    "example": "Purpose"
+                   }
+                  }
+                 },
+                 "cost_code": {
+                  "type": "object",
+                  "description": "The cost code associated with the Production Quantity",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the Cost Code",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The display value for the Cost Code",
+                    "example": "01-000 - Purpose"
+                   }
+                  }
+                 },
+                 "sub_job": {
+                  "type": "object",
+                  "description": "The sub job associated with the Production Quantity",
+                  "properties": {
+                   "id": {
+                    "type": "number",
+                    "description": "The ID of the sub job",
+                    "example": 1,
+                    "nullable": true
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The name of the Sub Job",
+                    "example": "Floor 1",
+                    "nullable": true
+                   }
+                  }
+                 },
+                 "change_event_production_quantity_id": {
+                  "type": "number",
+                  "description": "ID of the associated Change Event Production Quantity",
+                  "example": 1
+                 }
+                }
+               }
+              },
+              "currency_configuration": {
+               "type": "object",
+               "properties": {
+                "currency_iso_code": {
+                 "type": "string",
+                 "description": "Currency ISO Code configured for the financial entity",
+                 "example": "USD",
+                 "nullable": true
+                }
+               }
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "example": "2012-10-23T21:39:40Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "example": "2012-10-23T21:39:40Z"
+              },
+              "created_by": {
+               "type": "object",
+               "description": "The user who created the budget change",
+               "properties": {
+                "id": {
+                 "type": "number",
+                 "description": "The ID of the user",
+                 "example": 1
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the user",
+                 "example": "John Doe"
+                },
+                "login": {
+                 "type": "string",
+                 "description": "The login of the user",
+                 "example": "johndoe@example.com"
+                }
+               }
+              },
+              "custom_fields": {
+               "type": "object",
+               "properties": {
+                "custom_field_%{custom_field_string_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "string"
+                  },
+                  "value": {
+                   "type": "string",
+                   "description": "The value of the custom field",
+                   "example": "custom field value"
+                  },
+                  "variant": {
+                   "type": "string",
+                   "description": "The variant of the Custom Field Definition (e.g. `phone_number`). Present only when the definition has an associated variant.",
+                   "example": "phone_number"
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_decimal_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "decimal"
+                  },
+                  "value": {
+                   "type": "number",
+                   "description": "The value of the custom field",
+                   "example": 2.2
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_boolean_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "boolean"
+                  },
+                  "value": {
+                   "type": "boolean",
+                   "description": "The value of the custom field",
+                   "example": true
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_lov_entry_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "lov_entry"
+                  },
+                  "value": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "ID of the LOV Entry",
+                     "example": 1
+                    },
+                    "label": {
+                     "type": "string",
+                     "description": "Label of the LOV Entry",
+                     "example": "Open"
+                    }
+                   }
+                  },
+                  "variant": {
+                   "type": "string",
+                   "description": "The variant of the Custom Field Definition (e.g. `project_directory`). Present only when the definition has an associated variant.",
+                   "example": "with_code"
+                  }
+                 }
+                },
+                "custom_field_%{custom_field_lov_entries_definition_id}": {
+                 "type": "object",
+                 "properties": {
+                  "data_type": {
+                   "type": "string",
+                   "description": "Data type of the Custom Field Definition",
+                   "example": "lov_entries"
+                  },
+                  "value": {
+                   "type": "array",
+                   "items": {
+                    "type": "object",
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "ID of the LOV Entry",
+                      "example": 2
+                     },
+                     "label": {
+                      "type": "string",
+                      "description": "Label of the LOV Entry",
+                      "example": "Open"
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "example": {
+             "number": [
+              "can't be blank",
+              "is not a number"
+             ],
+             "status": [
+              "can't be blank",
+              "is not included in the list"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "example": {
+             "number": [
+              "can't be blank",
+              "is not a number"
+             ],
+             "status": [
+              "can't be blank",
+              "is not included in the list"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Currency",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the Budget Currency error.",
+           "type": "string",
+           "example": "422 - Unprocessable Currency",
+           "nullable": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    id: 1,\n    number: 10,\n    status: 'draft',\n    title: 'Equipment',\n    description: '<p>bla bla <em>description</em></p>',\n    adjustment_line_items: [\n      {\n        id: 56,\n        type: 'change_event',\n        ref: 'item56',\n        adjustment_number: 5,\n        wbs_code_id: 56,\n        description: 'Foobar',\n        comment: 'Baz',\n        calculation_strategy: 'manual',\n        quantity: 1,\n        uom: 'Ea',\n        unit_cost: 500,\n        amount: 500,\n        change_event_line_item_id: 860001,\n        _delete: true\n      }\n    ],\n    prostore_file_ids: [123],\n    production_quantities: [\n      {\n        id: 56,\n        comment: 'Baz',\n        cost_code_id: 56,\n        description: 'Foobar',\n        quantity: 1,\n        ref: 'item56',\n        uom: 'Ea',\n        change_event_production_quantity_id: 1,\n        _delete: true\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"id\\\":1,\\\"number\\\":10,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Equipment\\\",\\\"description\\\":\\\"<p>bla bla <em>description</em></p>\\\",\\\"adjustment_line_items\\\":[{\\\"id\\\":56,\\\"type\\\":\\\"change_event\\\",\\\"ref\\\":\\\"item56\\\",\\\"adjustment_number\\\":5,\\\"wbs_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"comment\\\":\\\"Baz\\\",\\\"calculation_strategy\\\":\\\"manual\\\",\\\"quantity\\\":1,\\\"uom\\\":\\\"Ea\\\",\\\"unit_cost\\\":500,\\\"amount\\\":500,\\\"change_event_line_item_id\\\":860001,\\\"_delete\\\":true}],\\\"prostore_file_ids\\\":[123],\\\"production_quantities\\\":[{\\\"id\\\":56,\\\"comment\\\":\\\"Baz\\\",\\\"cost_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"quantity\\\":1,\\\"ref\\\":\\\"item56\\\",\\\"uom\\\":\\\"Ea\\\",\\\"change_event_production_quantity_id\\\":1,\\\"_delete\\\":true}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"id\":1,\"number\":10,\"status\":\"draft\",\"title\":\"Equipment\",\"description\":\"<p>bla bla <em>description</em></p>\",\"adjustment_line_items\":[{\"id\":56,\"type\":\"change_event\",\"ref\":\"item56\",\"adjustment_number\":5,\"wbs_code_id\":56,\"description\":\"Foobar\",\"comment\":\"Baz\",\"calculation_strategy\":\"manual\",\"quantity\":1,\"uom\":\"Ea\",\"unit_cost\":500,\"amount\":500,\"change_event_line_item_id\":860001,\"_delete\":true}],\"prostore_file_ids\":[123],\"production_quantities\":[{\"id\":56,\"comment\":\"Baz\",\"cost_code_id\":56,\"description\":\"Foobar\",\"quantity\":1,\"ref\":\"item56\",\"uom\":\"Ea\",\"change_event_production_quantity_id\":1,\"_delete\":true}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"id\\\":1,\\\"number\\\":10,\\\"status\\\":\\\"draft\\\",\\\"title\\\":\\\"Equipment\\\",\\\"description\\\":\\\"<p>bla bla <em>description</em></p>\\\",\\\"adjustment_line_items\\\":[{\\\"id\\\":56,\\\"type\\\":\\\"change_event\\\",\\\"ref\\\":\\\"item56\\\",\\\"adjustment_number\\\":5,\\\"wbs_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"comment\\\":\\\"Baz\\\",\\\"calculation_strategy\\\":\\\"manual\\\",\\\"quantity\\\":1,\\\"uom\\\":\\\"Ea\\\",\\\"unit_cost\\\":500,\\\"amount\\\":500,\\\"change_event_line_item_id\\\":860001,\\\"_delete\\\":true}],\\\"prostore_file_ids\\\":[123],\\\"production_quantities\\\":[{\\\"id\\\":56,\\\"comment\\\":\\\"Baz\\\",\\\"cost_code_id\\\":56,\\\"description\\\":\\\"Foobar\\\",\\\"quantity\\\":1,\\\"ref\\\":\\\"item56\\\",\\\"uom\\\":\\\"Ea\\\",\\\"change_event_production_quantity_id\\\":1,\\\"_delete\\\":true}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.0 Update Budget Changes endpoint",
+      "description": "Introduction of Public API endpoint for update Budget Change records.",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2021-08-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change update endpoint to support Production Quantity",
+      "description": "The budget change update request will now accept and return the Production Quantities associated to a Budget Change as 'production_quantities'.",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-04-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend Budget Change update endpoint to support association of Change Event Production Quantities",
+      "description": "The budget change update request will now accept and return the Change Event Production Quantity IDs associated to a Budget Change Production Quantity as 'change_event_production_quantity_id' on a `production_quantity` object.",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-06-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     },
+     {
+      "summary": "Add wbs_code_id to PATCH API endpoint",
+      "description": "'wbs_code_id' is now an accepted parameter for updating Budget Change Production Quantity.\nAs well, 'wbs_code' is now a property of the response of a successful Budget Change Production Quantity update.",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2023-06-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     },
+     {
+      "summary": "Extend the Update Budget Change endpoint",
+      "description": "The budget change update endpoint will now return the currency configuration on the budget change and each adjustment line item.",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-09-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     },
+     {
+      "summary": "Creating change event adjustment line items does not require adjustment number",
+      "description": "The budget change update endpoint does not require the adjustment_number parameter and will auto-assign it if it is not given when creating adjustment line items of type 'change_event'",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-10-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     },
+     {
+      "summary": "The Budget Change Update endpoint allows updates to which prime contract the Budget Change is associated with",
+      "description": "When the \"Allow budget changes to be billed on owner invoices\" setting is active, the Budget Change update endpoint will accept a prime contract id to associate with the budget change. The response includes information about the associated prime contract.",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-10-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     },
+     {
+      "summary": "The Budget Change Update endpoint error handling for net-zero configuration was improved",
+      "description": "When the user tries to update a Budget change Adjustments with a non-zero amount when the net-zero configuration is enabled, a new message field will be sent along with the error.",
+      "endpoint": "PATCH /projects/{project_id}/budget_changes/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-11-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#update-information-of-a-budget-change"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Budget Change",
+    "description": "Delete Budget Change",
+    "tags": [
+     "Budget Change"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "example": {
+             "number": [
+              "can't be blank",
+              "is not a number"
+             ],
+             "status": [
+              "can't be blank",
+              "is not included in the list"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/budget_changes/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing a Delete Budget Change endpoint",
+      "description": "Introduces a new endpoint to delete a budget change",
+      "endpoint": "DELETE /projects/{project_id}/budget_changes/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-08-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-change?version=1.0#delete-a-budget-change"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

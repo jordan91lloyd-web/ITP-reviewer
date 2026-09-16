@@ -1,0 +1,365 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Payments Subtier Waivers",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Payments",
+  "x-resource-name": "Payments Subtier Waivers",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/payments/subtier_waivers": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "description": "ID of the project",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List payments subtier waivers",
+    "description": "Returns list of payment subtier waivers",
+    "tags": [
+     "Payments"
+    ],
+    "parameters": [
+     {
+      "name": "subtier_requisition_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier of the subtier requisition, supports comma separated list",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "waiver_type",
+      "in": "query",
+      "required": false,
+      "description": "Filters returned waivers by type. Conditional waivers are contingent on payment; unconditional waivers confirm payment received.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "unconditional",
+        "conditional"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of payments subtier waivers",
+         "items": {
+          "type": "object",
+          "description": "A lien waiver for a subtier tied to a specific subtier requisition (billing period).",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier of the subtier waiver. Use as the {id} path parameter for update, cancel, and regenerate operations.",
+            "example": 1
+           },
+           "subtier_requisition_id": {
+            "type": "integer",
+            "description": "Identifier of the subtier requisition (billing period) this waiver applies to.",
+            "example": 1
+           },
+           "subtier_id": {
+            "type": "integer",
+            "description": "Identifier of the subtier this waiver belongs to. Use as the {subtier_id} path parameter.",
+            "example": 1
+           },
+           "waiver_type": {
+            "type": "string",
+            "description": "Whether the waiver is conditional (contingent on payment) or unconditional (payment confirmed).",
+            "enum": [
+             "unconditional",
+             "conditional"
+            ],
+            "example": "conditional"
+           },
+           "created_by": {
+            "type": "string",
+            "description": "Full name of the user who created the waiver.",
+            "example": "John Doe"
+           },
+           "updated_by": {
+            "type": "string",
+            "description": "Full name of the user who last updated the waiver.",
+            "example": "John Doe"
+           },
+           "uploaded_by": {
+            "type": "string",
+            "description": "Full name of the user who uploaded the signed waiver document. Null when no document has been uploaded.",
+            "example": "John Doe"
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the waiver was created, in ISO 8601 format.",
+            "example": "2018-05-08T13:21:20Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the waiver was last updated, in ISO 8601 format.",
+            "example": "2018-05-08T13:21:20Z"
+           },
+           "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the signed waiver document was uploaded, in ISO 8601 format. Null when no document has been uploaded.",
+            "example": "2018-05-08T13:21:20Z"
+           },
+           "reviewed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the waiver was reviewed, in ISO 8601 format. Null until reviewed.",
+            "example": "2018-05-08T13:21:20Z"
+           },
+           "reviewed_by": {
+            "type": "string",
+            "description": "Full name of the user who reviewed the waiver. Null until reviewed.",
+            "example": "John Doe"
+           },
+           "reviewer_notes": {
+            "type": "string",
+            "description": "Free-text notes left by the reviewer, typically explaining a revise-and-resubmit decision.",
+            "example": "Please upload the signed copy."
+           },
+           "status": {
+            "type": "string",
+            "description": "Review lifecycle state of the waiver. One of not_submitted, review_pending, revise_and_resubmit, or approved.",
+            "example": "approved"
+           },
+           "attachment": {
+            "type": "object",
+            "description": "The uploaded waiver document, when one has been attached. Null when no document is present.",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the attachment.",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attachment.",
+              "example": "Waiver"
+             },
+             "url": {
+              "type": "string",
+              "description": "Temporary, downloadable URL for retrieving the attachment file.",
+              "example": "https://example.com/waiver.pdf"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Original filename of the uploaded document.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "description": "MIME type of the attachment file.",
+              "example": "image/jpeg"
+             }
+            }
+           },
+           "generated_waiver": {
+            "type": "object",
+            "nullable": true,
+            "description": "The Procore-generated lien waiver document sent to the subtier for e-signature. Null until a waiver is generated via the generate/regenerate endpoints.",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the generated lien waiver.",
+              "example": 1
+             },
+             "status": {
+              "type": "string",
+              "description": "Current state of the generated lien waiver document.",
+              "example": "sent"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payments/subtier_waivers',\n  qs: {subtier_requisition_id: 'SOME_STRING_VALUE', waiver_type: 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/payments/subtier_waivers?subtier_requisition_id=SOME_STRING_VALUE&waiver_type=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payments/subtier_waivers?subtier_requisition_id=SOME_STRING_VALUE&waiver_type=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payments/subtier_waivers?subtier_requisition_id=SOME_STRING_VALUE&waiver_type=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Made List payments subtier waivers endpoint public",
+      "description": "GET /projects/{project_id}/payments/subtier_waivers is now publicly available",
+      "endpoint": "GET /projects/{project_id}/payments/subtier_waivers",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "payments-subtier-waivers?version=1.0#list-payments-subtier-waivers"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  }
+ }
+}

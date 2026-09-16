@@ -1,0 +1,351 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Company Vendor Comments",
+  "x-product-category": "Core",
+  "x-tool-category": "Directory",
+  "x-resource-name": "Company Vendor Comments",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/vendors/{vendor_id}/comments": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "vendor_id",
+     "in": "path",
+     "description": "Vendor ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "sort",
+     "in": "query",
+     "description": "Return items with the specified sort.",
+     "required": false,
+     "schema": {
+      "type": "string",
+      "enum": [
+       "created_at"
+      ]
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List company vendor comments",
+    "description": "Return a list of Comments for the specified Company Vendor.",
+    "tags": [
+     "Company Vendor Comments"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of company vendor comments",
+         "items": {
+          "type": "object",
+          "title": "VendorComment",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Comment ID",
+            "example": 1
+           },
+           "body": {
+            "type": "string",
+            "description": "The text of the Comment",
+            "example": "This is a comment"
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Comment created at",
+            "example": "2013-11-08T00:00:00Z"
+           },
+           "rating": {
+            "type": "integer",
+            "description": "1-5",
+            "example": 1
+           },
+           "attachments": {
+            "type": "array",
+            "description": "Attachments",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer"
+              },
+              "name": {
+               "type": "string",
+               "description": "Base name of the file without its path",
+               "example": "filename.ext"
+              },
+              "content_type": {
+               "type": "string",
+               "description": "A mime type or a file extension",
+               "example": "application/vnd.ext"
+              },
+              "url": {
+               "type": "string",
+               "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+               "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+              }
+             }
+            }
+           },
+           "created_by": {
+            "type": "object",
+            "description": "The creator of the Comment",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 161072
+             },
+             "name": {
+              "type": "string",
+              "example": "Carl the Contractor"
+             },
+             "avatar_url": {
+              "type": "string",
+              "description": "The URL pointing to the user avatar.",
+              "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MGHNNJSGNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D",
+              "nullable": true
+             },
+             "initials": {
+              "type": "string",
+              "description": "The initials of the user.",
+              "example": "LR",
+              "nullable": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/vendors/%7Bvendor_id%7D/comments',\n  qs: {\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/vendors/%7Bvendor_id%7D/comments?sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/vendors/%7Bvendor_id%7D/comments?sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/vendors/%7Bvendor_id%7D/comments?sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Company Vendor Comments Index endpoint",
+      "description": "Returns the list of comments for a vendor.",
+      "endpoint": "GET /companies/{company_id}/vendors/{vendor_id}/comments",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-05-04",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-vendor-comments?version=1.0#list-company-vendor-comments"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

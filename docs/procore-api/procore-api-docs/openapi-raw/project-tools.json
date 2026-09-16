@@ -1,0 +1,820 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Project Tools",
+  "x-product-category": "Core",
+  "x-tool-category": "Project",
+  "x-resource-name": "Project Tools",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/tools": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List project tools",
+    "description": "Returns all Tools available to the provided Project.",
+    "tags": [
+     "Project Tools"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[is_active]",
+      "in": "query",
+      "description": "Retrieve active or inactive tools.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "for_mobile",
+      "in": "query",
+      "description": "Filters tools that Procore's iOS and Android apps support.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "include_configurable_generic_tools",
+      "in": "query",
+      "description": "Includes configurable custom tools in the for_mobile view.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Success",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "The ID of the Tool",
+            "example": 1
+           },
+           "engine_name": {
+            "type": "string",
+            "description": "The name of the Tool engine",
+            "example": "checklists"
+           },
+           "is_active": {
+            "type": "boolean",
+            "description": "Indicates whether the tool is currently active",
+            "example": true
+           },
+           "position": {
+            "type": "integer",
+            "description": "The ordering position of the Tool",
+            "example": 3
+           },
+           "required": {
+            "type": "boolean",
+            "description": "Indicates whether the tool must be active",
+            "example": false
+           },
+           "title": {
+            "type": "string",
+            "description": "A display name for the tool",
+            "example": "Inspections"
+           }
+          }
+         }
+        },
+        "examples": {
+         "response": {
+          "value": [
+           {
+            "id": 1,
+            "engine_name": "home",
+            "is_active": true,
+            "position": 1,
+            "required": true
+           },
+           {
+            "id": 2,
+            "engine_name": "rfi",
+            "is_active": true,
+            "position": 2,
+            "required": false
+           },
+           {
+            "id": 3,
+            "engine_name": "admin",
+            "is_active": true,
+            "position": 3,
+            "required": true
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/tools',\n  qs: {\n    'filters[is_active]': 'SOME_BOOLEAN_VALUE',\n    for_mobile: 'SOME_BOOLEAN_VALUE',\n    include_configurable_generic_tools: 'SOME_BOOLEAN_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/tools?filters%5Bis_active%5D=SOME_BOOLEAN_VALUE&for_mobile=SOME_BOOLEAN_VALUE&include_configurable_generic_tools=SOME_BOOLEAN_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/tools?filters%5Bis_active%5D=SOME_BOOLEAN_VALUE&for_mobile=SOME_BOOLEAN_VALUE&include_configurable_generic_tools=SOME_BOOLEAN_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/tools?filters%5Bis_active%5D=SOME_BOOLEAN_VALUE&for_mobile=SOME_BOOLEAN_VALUE&include_configurable_generic_tools=SOME_BOOLEAN_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add ERP Integrations project tool visibility gating in project tools responses",
+      "description": "Project tools responses can now include an ERP Integrations tool entry. It is currently hidden from all users except Procore super users on ERP-integrated companies, and is not yet self-enableable by customers. No behavioral change is expected for existing customers.",
+      "endpoint": "GET /projects/{project_id}/tools",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-03",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-tools?version=1.0#list-project-tools"
+     },
+     {
+      "summary": "Add Studio Labs project tools availability in project tools responses",
+      "description": "Project tools responses now include Studio Labs when it is available for the project context. This is a non-breaking enhancement to project tools payload visibility.",
+      "endpoint": "GET /projects/{project_id}/tools",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-29",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-tools?version=1.0#list-project-tools"
+     },
+     {
+      "summary": "Added Project Tools list endpoint",
+      "description": "Get list of all tools available for the specified Project id.",
+      "endpoint": "GET /projects/{project_id}/tools",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2020-08-24",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-tools?version=1.0#list-project-tools"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update project tools",
+    "description": "Updates the order and active status of Project Tools.",
+    "tags": [
+     "Project Tools"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "tools"
+        ],
+        "properties": {
+         "tools": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "The ID of the Tool",
+             "example": 1
+            },
+            "is_active": {
+             "type": "boolean",
+             "description": "Indicates whether the tool is currently active.\nadmin, home, and connection_hub are tools that can't be disabled.",
+             "example": true
+            },
+            "position": {
+             "type": "integer",
+             "description": "The ordering position of the Tool",
+             "example": 3
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "The ID of the Tool",
+            "example": 1
+           },
+           "engine_name": {
+            "type": "string",
+            "description": "The name of the Tool engine",
+            "example": "checklists"
+           },
+           "is_active": {
+            "type": "boolean",
+            "description": "Indicates whether the tool is currently active",
+            "example": true
+           },
+           "position": {
+            "type": "integer",
+            "description": "The ordering position of the Tool",
+            "example": 3
+           },
+           "required": {
+            "type": "boolean",
+            "description": "Indicates whether the tool must be active",
+            "example": false
+           },
+           "title": {
+            "type": "string",
+            "description": "A display name for the tool",
+            "example": "Inspections"
+           }
+          }
+         }
+        },
+        "examples": {
+         "response": {
+          "value": [
+           {
+            "id": 1,
+            "engine_name": "home",
+            "is_active": true,
+            "position": 1,
+            "required": true
+           },
+           {
+            "id": 2,
+            "engine_name": "rfi",
+            "is_active": true,
+            "position": 2,
+            "required": false
+           },
+           {
+            "id": 3,
+            "engine_name": "admin",
+            "is_active": true,
+            "position": 3,
+            "required": true
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/tools',\n  headers: {'content-type': 'application/json'},\n  body: {tools: [{id: 1, is_active: true, position: 3}]},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"tools\\\":[{\\\"id\\\":1,\\\"is_active\\\":true,\\\"position\\\":3}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/tools\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/tools \\\n  --header 'content-type: application/json' \\\n  --data '{\"tools\":[{\"id\":1,\"is_active\":true,\"position\":3}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/tools\"),\n    Content = new StringContent(\"{\\\"tools\\\":[{\\\"id\\\":1,\\\"is_active\\\":true,\\\"position\\\":3}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Published Update Project Tools list endpoint to production from Alpha",
+      "description": "Updates the order and active status of Project Tools.",
+      "endpoint": "PATCH /projects/{project_id}/tools",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-04-21",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-tools?version=1.0#update-project-tools"
+     },
+     {
+      "summary": "Added a restriction to prevent disabling admin, home and connection_hub tools.",
+      "description": "admin, home, connection_hub - tools that can't be disabled.",
+      "endpoint": "PATCH /projects/{project_id}/tools",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2025-07-29",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-tools?version=1.0#update-project-tools"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/tools": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List project tools",
+    "deprecated": true,
+    "x-deprecated-at": "2021-11-15",
+    "description": "Returns all Tools available to the provided Project.",
+    "tags": [
+     "Project Tools"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Success",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "The ID of the Tool",
+            "example": 1
+           },
+           "engine_name": {
+            "type": "string",
+            "description": "The name of the Tool engine",
+            "example": "checklists"
+           },
+           "is_active": {
+            "type": "boolean",
+            "description": "Indicates whether the tool is currently active",
+            "example": true
+           },
+           "position": {
+            "type": "integer",
+            "description": "The ordering position of the Tool",
+            "example": 3
+           },
+           "required": {
+            "type": "boolean",
+            "description": "Indicates whether the tool must be active",
+            "example": false
+           },
+           "user_access_level": {
+            "type": "string",
+            "description": "The user access level",
+            "example": "Admin"
+           },
+           "provider_id": {
+            "type": "integer",
+            "description": "The Provider id",
+            "example": 3
+           },
+           "provider_type": {
+            "type": "string",
+            "description": "The Provider type",
+            "example": "Project"
+           }
+          }
+         }
+        },
+        "examples": {
+         "response": {
+          "value": [
+           {
+            "id": 1,
+            "provider_type": "Project",
+            "provider_id": 123,
+            "engine_name": "admin",
+            "position": 1,
+            "required": true,
+            "user_access_level": "Admin"
+           },
+           {
+            "id": 2,
+            "provider_type": "Project",
+            "provider_id": 123,
+            "engine_name": "time_and_materials",
+            "position": 2,
+            "required": true,
+            "user_access_level": "Admin"
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/tools',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/tools?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/tools?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/tools?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

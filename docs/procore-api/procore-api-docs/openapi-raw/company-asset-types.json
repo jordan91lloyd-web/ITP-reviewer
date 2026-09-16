@@ -1,0 +1,327 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Company Asset Types",
+  "version": "2.0",
+  "x-product-category": "Core",
+  "x-resource-name": "Company Asset Types",
+  "x-tool-category": "Assets",
+  "x-product-lines": [
+   "asset-register"
+  ]
+ },
+ "servers": [
+  {
+   "url": "http://localhost:8080",
+   "description": "Generated server url"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/assets/asset_types": {
+   "get": {
+    "tags": [
+     "asset-type-controller"
+    ],
+    "summary": "List Asset Types",
+    "description": "Returns a list of Assets Types for a given Company",
+    "operationId": "getCompanyAssetTypes",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "asset_type_ids",
+      "in": "query",
+      "description": "Comma-separated list of Asset Type IDs to filter by",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "include_asset_counts",
+      "in": "query",
+      "description": "When true, each item includes assetCount: assets assigned directly to this type. Defaults to false when omitted.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "is_asset",
+      "in": "query",
+      "description": "Filter by is_asset flag (true/false)",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "eligible_sub_asset_of",
+      "in": "query",
+      "description": "Parent asset ID. When supplied, returns only the asset types eligible to receive sub-assets of that parent (a flat, eligibility-scoped list for the Link Sub-Assets dialog).",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sorting criteria in minus-based order format. Default sort order is ascending. Multiple sort criteria can be provided in CSV format, for example: sort=name,-created_at. Default sorting is by display_order in descending order.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "modified_at",
+        "created_at",
+        "display_order"
+       ]
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string"
+             },
+             "name": {
+              "type": "string"
+             },
+             "code": {
+              "type": "string"
+             },
+             "description": {
+              "type": "string"
+             },
+             "parent_type_id": {
+              "type": "string",
+              "deprecated": true,
+              "description": "Deprecated: use 'parents'. Single parent type ID kept for backward compatibility; set to the lowest-display-order parent."
+             },
+             "parents": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "parent_type_id": {
+                 "type": "string",
+                 "description": "ID of the parent asset type for this link. Null denotes a root (top-level) membership."
+                },
+                "display_order": {
+                 "type": "integer",
+                 "format": "int32",
+                 "description": "Order of this child within the parent's sibling group."
+                }
+               }
+              }
+             },
+             "active": {
+              "type": "boolean"
+             },
+             "modified_at": {
+              "type": "string",
+              "format": "date-time"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time"
+             },
+             "modified_by": {
+              "description": "Contact Information",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "User ID",
+                "example": "12345"
+               },
+               "name": {
+                "type": "string",
+                "description": "User's full name",
+                "example": "John Doe"
+               },
+               "email": {
+                "type": "string",
+                "description": "User's email address",
+                "example": "user@example.com"
+               }
+              }
+             },
+             "created_by": {
+              "description": "Contact Information",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "User ID",
+                "example": "12345"
+               },
+               "name": {
+                "type": "string",
+                "description": "User's full name",
+                "example": "John Doe"
+               },
+               "email": {
+                "type": "string",
+                "description": "User's email address",
+                "example": "user@example.com"
+               }
+              }
+             },
+             "asset_status_group": {
+              "properties": {
+               "id": {
+                "type": "string"
+               },
+               "name": {
+                "type": "string"
+               },
+               "metadata": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "object"
+                }
+               }
+              }
+             },
+             "fieldset_dto": {
+              "properties": {
+               "id": {
+                "type": "string"
+               },
+               "name": {
+                "type": "string"
+               },
+               "metadata": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "object"
+                }
+               }
+              }
+             },
+             "company_id": {
+              "type": "string"
+             },
+             "project_id": {
+              "type": "string"
+             },
+             "is_leaf": {
+              "type": "boolean"
+             },
+             "is_asset": {
+              "type": "boolean"
+             },
+             "has_assets": {
+              "type": "boolean"
+             },
+             "display_order": {
+              "type": "integer",
+              "format": "int32"
+             },
+             "overridden": {
+              "type": "boolean",
+              "description": "True when the Asset Type ID is overridden for this project. Project-scoped reads only."
+             },
+             "asset_count": {
+              "type": "integer",
+              "format": "int64"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/assets/asset_types',\n  qs: {\n    asset_type_ids: 'SOME_STRING_VALUE',\n    include_asset_counts: 'SOME_BOOLEAN_VALUE',\n    is_asset: 'SOME_BOOLEAN_VALUE',\n    eligible_sub_asset_of: 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\"\n    }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/assets/asset_types?asset_type_ids=SOME_STRING_VALUE&include_asset_counts=SOME_BOOLEAN_VALUE&is_asset=SOME_BOOLEAN_VALUE&eligible_sub_asset_of=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'http://localhost:8080/rest/v2.0/companies/1234/assets/asset_types?asset_type_ids=SOME_STRING_VALUE&include_asset_counts=SOME_BOOLEAN_VALUE&is_asset=SOME_BOOLEAN_VALUE&eligible_sub_asset_of=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/assets/asset_types?asset_type_ids=SOME_STRING_VALUE&include_asset_counts=SOME_BOOLEAN_VALUE&is_asset=SOME_BOOLEAN_VALUE&eligible_sub_asset_of=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

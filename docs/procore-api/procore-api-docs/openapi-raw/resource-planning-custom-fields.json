@@ -1,0 +1,1230 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Custom Fields",
+  "x-product-category": "Company Admin",
+  "x-tool-category": "Custom - Configurable Tools",
+  "x-resource-name": "Resource Planning Custom Fields",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/custom-fields": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Custom Field",
+    "description": "Creates a new Custom Field for a given company ID. Custom Fields are used to store additional information about Projects or People.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body for creating a Custom Field.",
+        "required": [
+         "name",
+         "type"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the Custom Field that appears in the UI.",
+          "example": "Location"
+         },
+         "type": {
+          "type": "string",
+          "enum": [
+           "text",
+           "number",
+           "currency",
+           "hex-color",
+           "bool",
+           "select",
+           "multi-select",
+           "date",
+           "paragraph"
+          ],
+          "description": "The type of Custom Field. Determines the kind of data it will store. The type cannot be changed once created.\n",
+          "example": "select"
+         },
+         "can_filter": {
+          "type": "boolean",
+          "description": "If true, allows this field to be used as a filter.",
+          "example": true
+         },
+         "integration_only": {
+          "type": "boolean",
+          "description": "If true, only integrations can update this field.",
+          "example": false
+         },
+         "on_projects": {
+          "type": "boolean",
+          "description": "If true, the field is available on Projects.",
+          "example": true
+         },
+         "on_people": {
+          "type": "boolean",
+          "description": "If true, the field is available on People.",
+          "example": true
+         },
+         "description": {
+          "type": "string",
+          "description": "A description to help Admin users understand the field\u2019s purpose.",
+          "example": "This field helps us filter down to different offices within our region groups."
+         },
+         "values": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          },
+          "description": "Only applicable for `select` or `multi-select` fields. List of values that will be options in the field's dropdown.\n",
+          "example": [
+           "Chicago",
+           "Iowa",
+           "Kansas City"
+          ]
+         },
+         "sort_by": {
+          "type": "string",
+          "enum": [
+           "alpha",
+           "listed"
+          ],
+          "description": "Only applicable for `select` or `multi-select` fields. Controls sorting of dropdown values. `alpha` sorts alphabetically, while `listed` maintains the provided order.\n",
+          "example": "alpha"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema for a Custom Field ID response.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "The unique identifier of the created Custom Field.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Custom Field name already exists"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Custom Field endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/custom-fields",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-custom-fields?version=1.0#create-custom-field"
+     }
+    ]
+   },
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Custom Fields",
+    "description": "Retrieves all Custom Fields within the specified company.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns an array of Custom Field objects.",
+         "items": {
+          "type": "object",
+          "description": "Schema representing a single Custom Field.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the Custom Field.",
+            "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+           },
+           "name": {
+            "type": "string",
+            "description": "The name of the Custom Field.",
+            "example": "Location"
+           },
+           "type": {
+            "type": "string",
+            "enum": [
+             "text",
+             "number",
+             "currency",
+             "hex-color",
+             "bool",
+             "select",
+             "multi-select",
+             "date",
+             "paragraph"
+            ],
+            "description": "The type of the Custom Field.",
+            "example": "select"
+           },
+           "can_filter": {
+            "type": "boolean",
+            "description": "If true, allows this field to be used as a filter.",
+            "example": true
+           },
+           "integration_only": {
+            "type": "boolean",
+            "description": "If true, only integrations can update this field.",
+            "example": false
+           },
+           "on_projects": {
+            "type": "boolean",
+            "description": "If true, the field is available on Projects.",
+            "example": true
+           },
+           "on_people": {
+            "type": "boolean",
+            "description": "If true, the field is available on People.",
+            "example": true
+           },
+           "description": {
+            "type": "string",
+            "description": "A description to help Admin users understand the field\u2019s purpose.",
+            "example": "This field helps us filter down to different offices within our region groups."
+           },
+           "values": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            },
+            "description": "Only applicable for `select` or `multi-select` fields. List of dropdown values.\n",
+            "example": [
+             "Chicago",
+             "Iowa",
+             "Kansas City"
+            ]
+           },
+           "sort_by": {
+            "type": "string",
+            "enum": [
+             "alpha",
+             "listed"
+            ],
+            "description": "Controls sorting of dropdown values. `alpha` sorts alphabetically, while `listed` maintains the provided order.\n",
+            "example": "alpha"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All Custom Fields endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/custom-fields",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-custom-fields?version=1.0#get-all-custom-fields"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/custom-fields/{field_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Single Custom Field",
+    "description": "Retrieves a single Custom Field by its ID.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "field_id",
+      "in": "path",
+      "required": true,
+      "description": "UUID of the Custom Field.",
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema representing a single Custom Field.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "UUID of the Custom Field.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Custom Field.",
+           "example": "Location"
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "text",
+            "number",
+            "currency",
+            "hex-color",
+            "bool",
+            "select",
+            "multi-select",
+            "date",
+            "paragraph"
+           ],
+           "description": "The type of the Custom Field.",
+           "example": "select"
+          },
+          "can_filter": {
+           "type": "boolean",
+           "description": "If true, allows this field to be used as a filter.",
+           "example": true
+          },
+          "integration_only": {
+           "type": "boolean",
+           "description": "If true, only integrations can update this field.",
+           "example": false
+          },
+          "on_projects": {
+           "type": "boolean",
+           "description": "If true, the field is available on Projects.",
+           "example": true
+          },
+          "on_people": {
+           "type": "boolean",
+           "description": "If true, the field is available on People.",
+           "example": true
+          },
+          "description": {
+           "type": "string",
+           "description": "A description to help Admin users understand the field\u2019s purpose.",
+           "example": "This field helps us filter down to different offices within our region groups."
+          },
+          "values": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           },
+           "description": "Only applicable for `select` or `multi-select` fields. List of dropdown values.\n",
+           "example": [
+            "Chicago",
+            "Iowa",
+            "Kansas City"
+           ]
+          },
+          "sort_by": {
+           "type": "string",
+           "enum": [
+            "alpha",
+            "listed"
+           ],
+           "description": "Controls sorting of dropdown values. `alpha` sorts alphabetically, while `listed` maintains the provided order.\n",
+           "example": "alpha"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Single Custom Field endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/custom-fields/{field_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-custom-fields?version=1.0#get-single-custom-field"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Custom Field",
+    "description": "Updates an existing Custom Field for a given company ID. The `type` property cannot be modified after creation.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "field_id",
+      "in": "path",
+      "required": true,
+      "description": "UUID of the Custom Field.",
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body for updating a Custom Field.",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The updated name of the Custom Field.",
+          "example": "New Location"
+         },
+         "can_filter": {
+          "type": "boolean",
+          "description": "If true, allows this field to be used as a filter.",
+          "example": true
+         },
+         "integration_only": {
+          "type": "boolean",
+          "description": "If true, only integrations can update this field.",
+          "example": false
+         },
+         "on_projects": {
+          "type": "boolean",
+          "description": "If true, the field is available on Projects.",
+          "example": true
+         },
+         "on_people": {
+          "type": "boolean",
+          "description": "If true, the field is available on People.",
+          "example": true
+         },
+         "description": {
+          "type": "string",
+          "description": "A description to help Admin users understand the field\u2019s purpose.",
+          "example": "Updated description for filtering locations."
+         },
+         "values": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          },
+          "description": "Only applicable for `select` or `multi-select` fields. Replaces the entire list of values.\n",
+          "example": [
+           "Chicago",
+           "Kansas City",
+           "Denver"
+          ]
+         },
+         "sort_by": {
+          "type": "string",
+          "enum": [
+           "alpha",
+           "listed"
+          ],
+          "description": "Controls sorting of dropdown values. `alpha` sorts alphabetically, while `listed` maintains the provided order.\n",
+          "example": "alpha"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Custom Field endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/custom-fields/{field_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-custom-fields?version=1.0#update-custom-field"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Custom Field",
+    "description": "Deletes a Custom Field from a company.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "field_id",
+      "in": "path",
+      "required": true,
+      "description": "UUID of the Custom Field.",
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema for a Custom Field ID response.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "The unique identifier of the created Custom Field.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Custom Field endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/custom-fields/{field_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-custom-fields?version=1.0#delete-custom-field"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/custom-fields/{field_id}/values": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Values to Custom Field",
+    "description": "Appends new values to a Custom Field with type `select` or `multi-select`.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "field_id",
+      "in": "path",
+      "required": true,
+      "description": "UUID of the Custom Field.",
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body for adding new values to a Custom Field.",
+        "required": [
+         "values"
+        ],
+        "properties": {
+         "values": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          },
+          "description": "List of values to append to the field.",
+          "example": [
+           "Option 3",
+           "Option 4"
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Custom Field Values endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/custom-fields/{field_id}/values",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-custom-fields?version=1.0#add-values-to-custom-field"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove Values from Custom Field",
+    "description": "Removes specified values from a Custom Field with type `select` or `multi-select`.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "field_id",
+      "in": "path",
+      "required": true,
+      "description": "UUID of the Custom Field.",
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body for removing values from a Custom Field.",
+        "required": [
+         "values"
+        ],
+        "properties": {
+         "values": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          },
+          "description": "List of values to remove from the field.",
+          "example": [
+           "Option 3",
+           "Option 4"
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean",
+           "example": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Custom Field Values endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/custom-fields/{field_id}/values",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-custom-fields?version=1.0#remove-values-from-custom-field"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

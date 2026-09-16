@@ -1,0 +1,4061 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Requisition Compliance Documents",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Payments",
+  "x-resource-name": "Requisition Compliance Documents",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "ID of the company",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "description": "ID of the project",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "invoice_id",
+     "in": "path",
+     "description": "ID of the SC Invoice",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List requisition compliance documents",
+    "description": "Lists the requisition compliance documents\n\n**Procore Pay must be enabled to use this endpoint.**\n",
+    "tags": [
+     "Compliance"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "status[]",
+      "in": "query",
+      "required": false,
+      "description": "Return only compliance documents in the given statuses. Repeat the parameter to filter on more than one status. Omit it to return documents in every status.\n\nExample usage:\n\n        ?status[]=not_compliant&status[]=in_review&status[]=revision_needed\n\nDocuments still stored under a legacy status are matched by the current equivalent \u2014 `not_compliant` also returns `not_submitted` documents, `in_review` also returns `review_pending`, `revision_needed` also returns `revise_and_resubmit`, and `compliant` also returns `approved`. The legacy values themselves are not accepted as filter values.\n\nA value outside the enum returns `400 Bad Request`.\n",
+      "style": "form",
+      "explode": true,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "not_compliant",
+         "in_review",
+         "revision_needed",
+         "compliant"
+        ]
+       },
+       "example": [
+        "not_compliant",
+        "in_review"
+       ]
+      }
+     },
+     {
+      "name": "allow_vendor_submission",
+      "in": "query",
+      "required": false,
+      "description": "Return only compliance documents whose vendor submission setting matches the given value. Omit it to return documents regardless of the setting.",
+      "schema": {
+       "type": "boolean",
+       "example": true
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Page": {
+        "description": "Number of the page retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "The compliance documents for the invoice.",
+           "items": {
+            "type": "object",
+            "description": "A single compliance document.",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier for this compliance document. Use as the document_id path parameter to retrieve, update, or delete it.",
+              "example": "123456"
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the compliance document.",
+              "example": "Compliance document name example"
+             },
+             "status": {
+              "type": "string",
+              "description": "Current compliance status of the document. Valid values are constrained by the enum.",
+              "enum": [
+               "not_submitted",
+               "review_pending",
+               "revise_and_resubmit",
+               "approved",
+               "not_compliant",
+               "in_review",
+               "revision_needed",
+               "compliant"
+              ],
+              "example": "approved"
+             },
+             "document_type": {
+              "type": "string",
+              "description": "Category of compliance document (e.g. bond, insurance, license). Valid values are constrained by the enum.",
+              "enum": [
+               "bond",
+               "project_insurance",
+               "license",
+               "master_agreement",
+               "permit",
+               "safety",
+               "w9",
+               "other",
+               "payroll",
+               "stored_material",
+               "closeout"
+              ],
+              "example": "safety"
+             },
+             "notes": {
+              "type": "string",
+              "nullable": true,
+              "description": "General notes for the compliance document. Null when no notes have been added.",
+              "example": "Compliance document notes example"
+             },
+             "effective_at": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true,
+              "description": "Date and time the document becomes effective, in ISO 8601 format. Null when not set.",
+              "example": "2021-01-01T00:00:00Z"
+             },
+             "expires_at": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true,
+              "description": "Date and time the document expires, in ISO 8601 format. Null when the document does not expire.",
+              "example": "2021-01-01T00:00:00Z"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date and time the document was created, in ISO 8601 format.",
+              "example": "2021-01-01T00:00:00Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true,
+              "description": "Date and time the document was last updated, in ISO 8601 format. Null if it has never been updated since creation.",
+              "example": "2021-01-01T00:00:00Z"
+             },
+             "reviewed_at": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true,
+              "description": "Date and time the document was last reviewed, in ISO 8601 format. Null if it has not been reviewed.",
+              "example": "2021-01-01T00:00:00Z"
+             },
+             "created_by_id": {
+              "type": "string",
+              "description": "ID of the user who created the document.",
+              "example": "123456"
+             },
+             "created_by": {
+              "type": "string",
+              "description": "Full name of the user who created the document.",
+              "example": "John Doe"
+             },
+             "updated_by_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "ID of the user who last updated the document. Null if it has never been updated.",
+              "example": "123456"
+             },
+             "updated_by": {
+              "type": "string",
+              "nullable": true,
+              "description": "Full name of the user who last updated the document. Null if it has never been updated.",
+              "example": "John Doe"
+             },
+             "reviewed_by_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "ID of the user who last reviewed the document. Null if it has not been reviewed.",
+              "example": "123456"
+             },
+             "reviewed_by": {
+              "type": "string",
+              "nullable": true,
+              "description": "Full name of the user who last reviewed the document. Null if it has not been reviewed.",
+              "example": "John Doe"
+             },
+             "reviewer_notes": {
+              "type": "string",
+              "nullable": true,
+              "description": "Notes recorded by the reviewer during review. Null when the document has not been reviewed or no reviewer notes were added.",
+              "example": "Compliance document reviewer notes example"
+             },
+             "compliance_document_requirement_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "ID of the parent document requirement when the compliance document was created from a template. Null for manually created documents.",
+              "example": "123456"
+             },
+             "allow_vendor_submission": {
+              "type": "boolean",
+              "description": "Whether vendors are allowed to submit files against this compliance document.",
+              "example": true
+             },
+             "required_for_vendor_submission": {
+              "type": "boolean",
+              "description": "Whether the vendor must submit this compliance document before they can submit an invoice. Only applicable when allow_vendor_submission is true. Defaults to false.",
+              "example": false
+             },
+             "send_expiration_notification": {
+              "type": "boolean",
+              "description": "Whether an expiration notification should be sent before this compliance document expires.",
+              "example": false
+             },
+             "compliance_documents_prostore_files": {
+              "type": "array",
+              "nullable": true,
+              "description": "Files attached to this compliance document. Only populated on the show and update responses; null or empty otherwise.",
+              "items": {
+               "type": "object",
+               "description": "A file attached to a compliance document.",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "Unique identifier for this compliance document file attachment.",
+                 "example": "123456"
+                },
+                "compliance_document_id": {
+                 "type": "string",
+                 "description": "ID of the compliance document this file is attached to.",
+                 "example": "123456"
+                },
+                "created_at": {
+                 "type": "string",
+                 "format": "date-time",
+                 "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                 "example": "2021-01-01T00:00:00Z"
+                },
+                "updated_at": {
+                 "type": "string",
+                 "format": "date-time",
+                 "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                 "example": "2021-01-01T00:00:00Z"
+                },
+                "created_by_id": {
+                 "type": "string",
+                 "description": "ID of the user who created the attachment.",
+                 "example": "123456"
+                },
+                "created_by": {
+                 "type": "string",
+                 "description": "Full name of the user who created the attachment.",
+                 "example": "John Doe"
+                },
+                "updated_by_id": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                 "example": "123456"
+                },
+                "updated_by": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                 "example": "John Doe"
+                },
+                "prostore_file": {
+                 "type": "object",
+                 "description": "Prostore Files",
+                 "properties": {
+                  "prostore_file_id": {
+                   "type": "string",
+                   "description": "The unique identifier for the Prostore file"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "The name of the Prostore file"
+                  },
+                  "content_type": {
+                   "type": "string",
+                   "description": "The content type of the Prostore file"
+                  },
+                  "url": {
+                   "type": "string",
+                   "description": "The URL where the Prostore file can be accessed"
+                  },
+                  "uuid": {
+                   "type": "string",
+                   "description": "The UUID of the Prostore file"
+                  }
+                 },
+                 "required": [
+                  "prostore_file_id",
+                  "name",
+                  "content_type",
+                  "url",
+                  "uuid"
+                 ]
+                }
+               }
+              }
+             },
+             "submission_instructions": {
+              "type": "string",
+              "nullable": true,
+              "description": "Rich-text HTML submission instructions inherited live from the parent document requirement, describing how to submit this document. Returned on the show response. Null when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no instructions.",
+              "maxLength": 5000,
+              "example": "<p>Please upload a signed bond certificate.</p>"
+             },
+             "sample_files": {
+              "type": "array",
+              "description": "Sample files inherited live from the parent document requirement to illustrate the expected submission. Returned on the show response. Empty when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no sample files.",
+              "items": {
+               "type": "object",
+               "description": "A sample file attached to a compliance document requirement.",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "Unique identifier for this compliance document requirement file attachment.",
+                 "example": "123456"
+                },
+                "compliance_document_requirement_id": {
+                 "type": "string",
+                 "description": "ID of the compliance document requirement this file is attached to.",
+                 "example": "123456"
+                },
+                "created_at": {
+                 "type": "string",
+                 "format": "date-time",
+                 "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                 "example": "2021-01-01T00:00:00Z"
+                },
+                "updated_at": {
+                 "type": "string",
+                 "format": "date-time",
+                 "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                 "example": "2021-01-01T00:00:00Z"
+                },
+                "created_by_id": {
+                 "type": "string",
+                 "description": "ID of the user who created the attachment.",
+                 "example": "123456"
+                },
+                "created_by": {
+                 "type": "string",
+                 "description": "Full name of the user who created the attachment.",
+                 "example": "John Doe"
+                },
+                "updated_by_id": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                 "example": "123456"
+                },
+                "updated_by": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                 "example": "John Doe"
+                },
+                "prostore_file": {
+                 "type": "object",
+                 "description": "Prostore Files",
+                 "properties": {
+                  "prostore_file_id": {
+                   "type": "string",
+                   "description": "The unique identifier for the Prostore file"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "The name of the Prostore file"
+                  },
+                  "content_type": {
+                   "type": "string",
+                   "description": "The content type of the Prostore file"
+                  },
+                  "url": {
+                   "type": "string",
+                   "description": "The URL where the Prostore file can be accessed"
+                  },
+                  "uuid": {
+                   "type": "string",
+                   "description": "The UUID of the Prostore file"
+                  }
+                 },
+                 "required": [
+                  "prostore_file_id",
+                  "name",
+                  "content_type",
+                  "url",
+                  "uuid"
+                 ]
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'status[]': ['not_compliant', 'in_review'],\n    allow_vendor_submission: 'true'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&status%5B%5D=not_compliant&status%5B%5D=in_review&allow_vendor_submission=true\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&status%5B%5D=not_compliant&status%5B%5D=in_review&allow_vendor_submission=true'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&status%5B%5D=not_compliant&status%5B%5D=in_review&allow_vendor_submission=true\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add allow_vendor_submission field to invoice compliance documents",
+      "description": "The `allow_vendor_submission` field is now included in all API responses for invoice compliance documents (list, show, create, update). It can also be passed in both create and update requests. When the vendor submission feature flag is enabled, commitment admins can toggle this field to control whether vendors can submit compliance documents.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-05-24",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#list-requisition-compliance-documents"
+     },
+     {
+      "summary": "Add status and allow_vendor_submission filters to the invoice compliance documents list endpoint",
+      "description": "The list endpoint now accepts optional `status[]` and `allow_vendor_submission` query parameters, which can be used on their own or together.\n`status[]` may be repeated to match several statuses, for example `?status[]=not_compliant&status[]=in_review&status[]=revision_needed`.\nDocuments still stored under a legacy status are matched by the current equivalent, so `compliant` also returns documents stored as `approved`.\nA status outside the documented list returns a 400.\nOmitting the parameters preserves the existing unfiltered behavior.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#list-requisition-compliance-documents"
+     },
+     {
+      "summary": "Add required_for_vendor_submission field to the invoice compliance documents list and show responses",
+      "description": "The `required_for_vendor_submission` field is now returned by:\n`GET /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents` (list)\n`GET /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents/{document_id}` (show)\nWhen true, the vendor must submit this compliance document before they can submit an invoice. Only applicable when `allow_vendor_submission` is true. Defaults to false.\nThe field is returned only; it is not yet accepted in create or update requests.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#list-requisition-compliance-documents"
+     },
+     {
+      "summary": "Add compliance_document_requirement_id to invoice compliance document responses",
+      "description": "List, show, create, and update now return `compliance_document_requirement_id`.\nIt contains the parent document requirement ID for documents created from a template and is null for manually created documents.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#list-requisition-compliance-documents"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create compliance document",
+    "description": "Creates a compliance document\n\n**Procore Pay must be enabled to use this endpoint.**\n",
+    "tags": [
+     "Compliance"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Compliance document create parameters",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Display name of the compliance document.",
+          "example": "Document One"
+         },
+         "document_type": {
+          "type": "string",
+          "description": "Category of compliance document. Valid values are constrained by the enum.",
+          "enum": [
+           "bond",
+           "project_insurance",
+           "license",
+           "master_agreement",
+           "permit",
+           "safety",
+           "w9",
+           "other",
+           "payroll",
+           "stored_material",
+           "closeout"
+          ],
+          "example": "bond"
+         },
+         "notes": {
+          "type": "string",
+          "description": "General notes for the compliance document.",
+          "example": "GC notes"
+         },
+         "reviewer_notes": {
+          "type": "string",
+          "description": "Notes recorded by the reviewer during review. When provided, the requesting user is recorded as the reviewer and the review timestamp is set.",
+          "example": "Reviewer Notes"
+         },
+         "prostore_file_ids": {
+          "type": "array",
+          "description": "IDs of Procore files to attach to the compliance document.",
+          "items": {
+           "type": "string",
+           "example": "123456"
+          }
+         },
+         "effective_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date and time the document becomes effective, in ISO 8601 format.",
+          "example": "2021-01-01T00:00:00Z"
+         },
+         "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date and time the document expires, in ISO 8601 format.",
+          "example": "2021-01-01T00:00:00Z"
+         },
+         "allow_vendor_submission": {
+          "type": "boolean",
+          "description": "Whether vendors are allowed to submit files against this compliance document.",
+          "example": true
+         },
+         "required_for_vendor_submission": {
+          "type": "boolean",
+          "description": "Whether the vendor must submit this compliance document before they can submit an invoice. Only applicable when the effective allow_vendor_submission is true - it is forced to false otherwise. Defaults to false.",
+          "example": false
+         },
+         "status": {
+          "type": "string",
+          "description": "Initial compliance status of the document. Valid values are constrained by the enum.",
+          "enum": [
+           "not_submitted",
+           "review_pending",
+           "revise_and_resubmit",
+           "approved",
+           "not_compliant",
+           "in_review",
+           "revision_needed",
+           "compliant"
+          ],
+          "example": "not_submitted"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single compliance document wrapped in a data envelope.",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "A single compliance document.",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for this compliance document. Use as the document_id path parameter to retrieve, update, or delete it.",
+             "example": "123456"
+            },
+            "name": {
+             "type": "string",
+             "description": "Display name of the compliance document.",
+             "example": "Compliance document name example"
+            },
+            "status": {
+             "type": "string",
+             "description": "Current compliance status of the document. Valid values are constrained by the enum.",
+             "enum": [
+              "not_submitted",
+              "review_pending",
+              "revise_and_resubmit",
+              "approved",
+              "not_compliant",
+              "in_review",
+              "revision_needed",
+              "compliant"
+             ],
+             "example": "approved"
+            },
+            "document_type": {
+             "type": "string",
+             "description": "Category of compliance document (e.g. bond, insurance, license). Valid values are constrained by the enum.",
+             "enum": [
+              "bond",
+              "project_insurance",
+              "license",
+              "master_agreement",
+              "permit",
+              "safety",
+              "w9",
+              "other",
+              "payroll",
+              "stored_material",
+              "closeout"
+             ],
+             "example": "safety"
+            },
+            "notes": {
+             "type": "string",
+             "nullable": true,
+             "description": "General notes for the compliance document. Null when no notes have been added.",
+             "example": "Compliance document notes example"
+            },
+            "effective_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document becomes effective, in ISO 8601 format. Null when not set.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "expires_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document expires, in ISO 8601 format. Null when the document does not expire.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date and time the document was created, in ISO 8601 format.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document was last updated, in ISO 8601 format. Null if it has never been updated since creation.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "reviewed_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document was last reviewed, in ISO 8601 format. Null if it has not been reviewed.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "created_by_id": {
+             "type": "string",
+             "description": "ID of the user who created the document.",
+             "example": "123456"
+            },
+            "created_by": {
+             "type": "string",
+             "description": "Full name of the user who created the document.",
+             "example": "John Doe"
+            },
+            "updated_by_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the user who last updated the document. Null if it has never been updated.",
+             "example": "123456"
+            },
+            "updated_by": {
+             "type": "string",
+             "nullable": true,
+             "description": "Full name of the user who last updated the document. Null if it has never been updated.",
+             "example": "John Doe"
+            },
+            "reviewed_by_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the user who last reviewed the document. Null if it has not been reviewed.",
+             "example": "123456"
+            },
+            "reviewed_by": {
+             "type": "string",
+             "nullable": true,
+             "description": "Full name of the user who last reviewed the document. Null if it has not been reviewed.",
+             "example": "John Doe"
+            },
+            "reviewer_notes": {
+             "type": "string",
+             "nullable": true,
+             "description": "Notes recorded by the reviewer during review. Null when the document has not been reviewed or no reviewer notes were added.",
+             "example": "Compliance document reviewer notes example"
+            },
+            "compliance_document_requirement_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the parent document requirement when the compliance document was created from a template. Null for manually created documents.",
+             "example": "123456"
+            },
+            "allow_vendor_submission": {
+             "type": "boolean",
+             "description": "Whether vendors are allowed to submit files against this compliance document.",
+             "example": true
+            },
+            "required_for_vendor_submission": {
+             "type": "boolean",
+             "description": "Whether the vendor must submit this compliance document before they can submit an invoice. Only applicable when allow_vendor_submission is true. Defaults to false.",
+             "example": false
+            },
+            "send_expiration_notification": {
+             "type": "boolean",
+             "description": "Whether an expiration notification should be sent before this compliance document expires.",
+             "example": false
+            },
+            "compliance_documents_prostore_files": {
+             "type": "array",
+             "nullable": true,
+             "description": "Files attached to this compliance document. Only populated on the show and update responses; null or empty otherwise.",
+             "items": {
+              "type": "object",
+              "description": "A file attached to a compliance document.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for this compliance document file attachment.",
+                "example": "123456"
+               },
+               "compliance_document_id": {
+                "type": "string",
+                "description": "ID of the compliance document this file is attached to.",
+                "example": "123456"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "created_by_id": {
+                "type": "string",
+                "description": "ID of the user who created the attachment.",
+                "example": "123456"
+               },
+               "created_by": {
+                "type": "string",
+                "description": "Full name of the user who created the attachment.",
+                "example": "John Doe"
+               },
+               "updated_by_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "123456"
+               },
+               "updated_by": {
+                "type": "string",
+                "nullable": true,
+                "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "John Doe"
+               },
+               "prostore_file": {
+                "type": "object",
+                "description": "Prostore Files",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "string",
+                  "description": "The unique identifier for the Prostore file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "The name of the Prostore file"
+                 },
+                 "content_type": {
+                  "type": "string",
+                  "description": "The content type of the Prostore file"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "The URL where the Prostore file can be accessed"
+                 },
+                 "uuid": {
+                  "type": "string",
+                  "description": "The UUID of the Prostore file"
+                 }
+                },
+                "required": [
+                 "prostore_file_id",
+                 "name",
+                 "content_type",
+                 "url",
+                 "uuid"
+                ]
+               }
+              }
+             }
+            },
+            "submission_instructions": {
+             "type": "string",
+             "nullable": true,
+             "description": "Rich-text HTML submission instructions inherited live from the parent document requirement, describing how to submit this document. Returned on the show response. Null when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no instructions.",
+             "maxLength": 5000,
+             "example": "<p>Please upload a signed bond certificate.</p>"
+            },
+            "sample_files": {
+             "type": "array",
+             "description": "Sample files inherited live from the parent document requirement to illustrate the expected submission. Returned on the show response. Empty when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no sample files.",
+             "items": {
+              "type": "object",
+              "description": "A sample file attached to a compliance document requirement.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for this compliance document requirement file attachment.",
+                "example": "123456"
+               },
+               "compliance_document_requirement_id": {
+                "type": "string",
+                "description": "ID of the compliance document requirement this file is attached to.",
+                "example": "123456"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "created_by_id": {
+                "type": "string",
+                "description": "ID of the user who created the attachment.",
+                "example": "123456"
+               },
+               "created_by": {
+                "type": "string",
+                "description": "Full name of the user who created the attachment.",
+                "example": "John Doe"
+               },
+               "updated_by_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "123456"
+               },
+               "updated_by": {
+                "type": "string",
+                "nullable": true,
+                "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "John Doe"
+               },
+               "prostore_file": {
+                "type": "object",
+                "description": "Prostore Files",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "string",
+                  "description": "The unique identifier for the Prostore file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "The name of the Prostore file"
+                 },
+                 "content_type": {
+                  "type": "string",
+                  "description": "The content type of the Prostore file"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "The URL where the Prostore file can be accessed"
+                 },
+                 "uuid": {
+                  "type": "string",
+                  "description": "The UUID of the Prostore file"
+                 }
+                },
+                "required": [
+                 "prostore_file_id",
+                 "name",
+                 "content_type",
+                 "url",
+                 "uuid"
+                ]
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents',\n  headers: {'content-type': 'application/json'},\n  body: {\n    name: 'Document One',\n    document_type: 'bond',\n    notes: 'GC notes',\n    reviewer_notes: 'Reviewer Notes',\n    prostore_file_ids: ['123456'],\n    effective_at: '2021-01-01T00:00:00Z',\n    expires_at: '2021-01-01T00:00:00Z',\n    allow_vendor_submission: true,\n    required_for_vendor_submission: false,\n    status: 'not_submitted'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"Document One\\\",\\\"document_type\\\":\\\"bond\\\",\\\"notes\\\":\\\"GC notes\\\",\\\"reviewer_notes\\\":\\\"Reviewer Notes\\\",\\\"prostore_file_ids\\\":[\\\"123456\\\"],\\\"effective_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"expires_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"allow_vendor_submission\\\":true,\\\"required_for_vendor_submission\\\":false,\\\"status\\\":\\\"not_submitted\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Document One\",\"document_type\":\"bond\",\"notes\":\"GC notes\",\"reviewer_notes\":\"Reviewer Notes\",\"prostore_file_ids\":[\"123456\"],\"effective_at\":\"2021-01-01T00:00:00Z\",\"expires_at\":\"2021-01-01T00:00:00Z\",\"allow_vendor_submission\":true,\"required_for_vendor_submission\":false,\"status\":\"not_submitted\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents\"),\n    Content = new StringContent(\"{\\\"name\\\":\\\"Document One\\\",\\\"document_type\\\":\\\"bond\\\",\\\"notes\\\":\\\"GC notes\\\",\\\"reviewer_notes\\\":\\\"Reviewer Notes\\\",\\\"prostore_file_ids\\\":[\\\"123456\\\"],\\\"effective_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"expires_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"allow_vendor_submission\\\":true,\\\"required_for_vendor_submission\\\":false,\\\"status\\\":\\\"not_submitted\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add notes field to invoice compliance document create and update requests",
+      "description": "The `notes` field can now be passed in create and update requests for invoice compliance documents.\nOnly commitment admins can update `notes` on existing invoice compliance documents.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-10",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#create-compliance-document"
+     },
+     {
+      "summary": "Add status field to invoice compliance document create request",
+      "description": "The `status` field can now be passed in create requests for invoice compliance documents.\nWhen the vendor submission feature flag is enabled, `status` is required \u2014 omitting it returns a 400.\nWhen the flag is disabled, the field is ignored and status is auto-determined based on file attachment presence.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-04",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#create-compliance-document"
+     },
+     {
+      "summary": "Add required_for_vendor_submission field to invoice compliance document create and update requests",
+      "description": "The `required_for_vendor_submission` field can now be passed in the request body for:\n`POST /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents` (create)\n`PATCH /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents/{document_id}` (update)\nWhen true, the vendor must submit this compliance document before they can submit an invoice. It is only applicable when the effective `allow_vendor_submission` is true and is forced to false otherwise. Defaults to false on create.\nOnly commitment admins can change this value on an existing document; other users receive a 400 error.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-24",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#create-compliance-document"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents/{document_id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "ID of the company",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "description": "ID of the project",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "invoice_id",
+     "in": "path",
+     "description": "ID of the SC Invoice",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "document_id",
+     "in": "path",
+     "description": "ID of the compliance document",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get requisition compliance document",
+    "description": "Gets the requisition compliance document\n\n**Procore Pay must be enabled to use this endpoint.**\n",
+    "tags": [
+     "Compliance"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single compliance document wrapped in a data envelope.",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "A single compliance document.",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for this compliance document. Use as the document_id path parameter to retrieve, update, or delete it.",
+             "example": "123456"
+            },
+            "name": {
+             "type": "string",
+             "description": "Display name of the compliance document.",
+             "example": "Compliance document name example"
+            },
+            "status": {
+             "type": "string",
+             "description": "Current compliance status of the document. Valid values are constrained by the enum.",
+             "enum": [
+              "not_submitted",
+              "review_pending",
+              "revise_and_resubmit",
+              "approved",
+              "not_compliant",
+              "in_review",
+              "revision_needed",
+              "compliant"
+             ],
+             "example": "approved"
+            },
+            "document_type": {
+             "type": "string",
+             "description": "Category of compliance document (e.g. bond, insurance, license). Valid values are constrained by the enum.",
+             "enum": [
+              "bond",
+              "project_insurance",
+              "license",
+              "master_agreement",
+              "permit",
+              "safety",
+              "w9",
+              "other",
+              "payroll",
+              "stored_material",
+              "closeout"
+             ],
+             "example": "safety"
+            },
+            "notes": {
+             "type": "string",
+             "nullable": true,
+             "description": "General notes for the compliance document. Null when no notes have been added.",
+             "example": "Compliance document notes example"
+            },
+            "effective_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document becomes effective, in ISO 8601 format. Null when not set.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "expires_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document expires, in ISO 8601 format. Null when the document does not expire.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date and time the document was created, in ISO 8601 format.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document was last updated, in ISO 8601 format. Null if it has never been updated since creation.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "reviewed_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document was last reviewed, in ISO 8601 format. Null if it has not been reviewed.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "created_by_id": {
+             "type": "string",
+             "description": "ID of the user who created the document.",
+             "example": "123456"
+            },
+            "created_by": {
+             "type": "string",
+             "description": "Full name of the user who created the document.",
+             "example": "John Doe"
+            },
+            "updated_by_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the user who last updated the document. Null if it has never been updated.",
+             "example": "123456"
+            },
+            "updated_by": {
+             "type": "string",
+             "nullable": true,
+             "description": "Full name of the user who last updated the document. Null if it has never been updated.",
+             "example": "John Doe"
+            },
+            "reviewed_by_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the user who last reviewed the document. Null if it has not been reviewed.",
+             "example": "123456"
+            },
+            "reviewed_by": {
+             "type": "string",
+             "nullable": true,
+             "description": "Full name of the user who last reviewed the document. Null if it has not been reviewed.",
+             "example": "John Doe"
+            },
+            "reviewer_notes": {
+             "type": "string",
+             "nullable": true,
+             "description": "Notes recorded by the reviewer during review. Null when the document has not been reviewed or no reviewer notes were added.",
+             "example": "Compliance document reviewer notes example"
+            },
+            "compliance_document_requirement_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the parent document requirement when the compliance document was created from a template. Null for manually created documents.",
+             "example": "123456"
+            },
+            "allow_vendor_submission": {
+             "type": "boolean",
+             "description": "Whether vendors are allowed to submit files against this compliance document.",
+             "example": true
+            },
+            "required_for_vendor_submission": {
+             "type": "boolean",
+             "description": "Whether the vendor must submit this compliance document before they can submit an invoice. Only applicable when allow_vendor_submission is true. Defaults to false.",
+             "example": false
+            },
+            "send_expiration_notification": {
+             "type": "boolean",
+             "description": "Whether an expiration notification should be sent before this compliance document expires.",
+             "example": false
+            },
+            "compliance_documents_prostore_files": {
+             "type": "array",
+             "nullable": true,
+             "description": "Files attached to this compliance document. Only populated on the show and update responses; null or empty otherwise.",
+             "items": {
+              "type": "object",
+              "description": "A file attached to a compliance document.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for this compliance document file attachment.",
+                "example": "123456"
+               },
+               "compliance_document_id": {
+                "type": "string",
+                "description": "ID of the compliance document this file is attached to.",
+                "example": "123456"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "created_by_id": {
+                "type": "string",
+                "description": "ID of the user who created the attachment.",
+                "example": "123456"
+               },
+               "created_by": {
+                "type": "string",
+                "description": "Full name of the user who created the attachment.",
+                "example": "John Doe"
+               },
+               "updated_by_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "123456"
+               },
+               "updated_by": {
+                "type": "string",
+                "nullable": true,
+                "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "John Doe"
+               },
+               "prostore_file": {
+                "type": "object",
+                "description": "Prostore Files",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "string",
+                  "description": "The unique identifier for the Prostore file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "The name of the Prostore file"
+                 },
+                 "content_type": {
+                  "type": "string",
+                  "description": "The content type of the Prostore file"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "The URL where the Prostore file can be accessed"
+                 },
+                 "uuid": {
+                  "type": "string",
+                  "description": "The UUID of the Prostore file"
+                 }
+                },
+                "required": [
+                 "prostore_file_id",
+                 "name",
+                 "content_type",
+                 "url",
+                 "uuid"
+                ]
+               }
+              }
+             }
+            },
+            "submission_instructions": {
+             "type": "string",
+             "nullable": true,
+             "description": "Rich-text HTML submission instructions inherited live from the parent document requirement, describing how to submit this document. Returned on the show response. Null when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no instructions.",
+             "maxLength": 5000,
+             "example": "<p>Please upload a signed bond certificate.</p>"
+            },
+            "sample_files": {
+             "type": "array",
+             "description": "Sample files inherited live from the parent document requirement to illustrate the expected submission. Returned on the show response. Empty when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no sample files.",
+             "items": {
+              "type": "object",
+              "description": "A sample file attached to a compliance document requirement.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for this compliance document requirement file attachment.",
+                "example": "123456"
+               },
+               "compliance_document_requirement_id": {
+                "type": "string",
+                "description": "ID of the compliance document requirement this file is attached to.",
+                "example": "123456"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "created_by_id": {
+                "type": "string",
+                "description": "ID of the user who created the attachment.",
+                "example": "123456"
+               },
+               "created_by": {
+                "type": "string",
+                "description": "Full name of the user who created the attachment.",
+                "example": "John Doe"
+               },
+               "updated_by_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "123456"
+               },
+               "updated_by": {
+                "type": "string",
+                "nullable": true,
+                "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "John Doe"
+               },
+               "prostore_file": {
+                "type": "object",
+                "description": "Prostore Files",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "string",
+                  "description": "The unique identifier for the Prostore file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "The name of the Prostore file"
+                 },
+                 "content_type": {
+                  "type": "string",
+                  "description": "The content type of the Prostore file"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "The URL where the Prostore file can be accessed"
+                 },
+                 "uuid": {
+                  "type": "string",
+                  "description": "The UUID of the Prostore file"
+                 }
+                },
+                "required": [
+                 "prostore_file_id",
+                 "name",
+                 "content_type",
+                 "url",
+                 "uuid"
+                ]
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add submission_instructions and sample_files to the invoice compliance document show response",
+      "description": "The show endpoint now returns `submission_instructions` (rich-text HTML) and `sample_files`, both inherited live from the document's parent requirement.\nThey are only included when the document originates from a requirement that permits vendor submission; otherwise they are omitted.\n`submission_instructions` is null when the parent requirement has no instructions, and `sample_files` is an empty array when the requirement has no sample files.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents/{document_id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-16",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#get-requisition-compliance-document"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete requisition compliance document",
+    "description": "Deletes the requisition compliance document\n\n**Procore Pay must be enabled to use this endpoint.**\n",
+    "tags": [
+     "Compliance"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update requisition compliance document",
+    "description": "Updates the requisition compliance document\n\n**Procore Pay must be enabled to use this endpoint.**\n",
+    "tags": [
+     "Compliance"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Compliance document update parameters",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Display name of the compliance document.",
+          "example": "Document One"
+         },
+         "document_type": {
+          "type": "string",
+          "description": "Category of compliance document. Valid values are constrained by the enum.",
+          "enum": [
+           "bond",
+           "project_insurance",
+           "license",
+           "master_agreement",
+           "permit",
+           "safety",
+           "w9",
+           "other",
+           "payroll",
+           "stored_material",
+           "closeout"
+          ],
+          "example": "bond"
+         },
+         "status": {
+          "type": "string",
+          "description": "Compliance status to set on the document. Valid values are constrained by the enum.",
+          "enum": [
+           "not_submitted",
+           "review_pending",
+           "revise_and_resubmit",
+           "approved",
+           "not_compliant",
+           "in_review",
+           "revision_needed",
+           "compliant"
+          ],
+          "example": "approved"
+         },
+         "reviewer_notes": {
+          "type": "string",
+          "description": "Notes recorded by the reviewer during review.",
+          "example": "Reviewer Notes"
+         },
+         "notes": {
+          "type": "string",
+          "description": "General notes for the compliance document. Only commitment admins can update this field.",
+          "example": "GC notes"
+         },
+         "prostore_file_ids": {
+          "type": "array",
+          "description": "IDs of Procore files to attach to the compliance document.",
+          "items": {
+           "type": "string",
+           "example": "123456"
+          }
+         },
+         "effective_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date and time the document becomes effective, in ISO 8601 format.",
+          "example": "2021-01-01T00:00:00Z"
+         },
+         "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date and time the document expires, in ISO 8601 format.",
+          "example": "2021-01-01T00:00:00Z"
+         },
+         "allow_vendor_submission": {
+          "type": "boolean",
+          "description": "Whether vendors are allowed to submit files against this compliance document.",
+          "example": true
+         },
+         "required_for_vendor_submission": {
+          "type": "boolean",
+          "description": "Whether the vendor must submit this compliance document before they can submit an invoice. Only applicable when the effective allow_vendor_submission is true - it is forced to false otherwise. Only commitment admins can change this value. Omit this field to leave the current value unchanged.",
+          "example": false
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single compliance document wrapped in a data envelope.",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "A single compliance document.",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for this compliance document. Use as the document_id path parameter to retrieve, update, or delete it.",
+             "example": "123456"
+            },
+            "name": {
+             "type": "string",
+             "description": "Display name of the compliance document.",
+             "example": "Compliance document name example"
+            },
+            "status": {
+             "type": "string",
+             "description": "Current compliance status of the document. Valid values are constrained by the enum.",
+             "enum": [
+              "not_submitted",
+              "review_pending",
+              "revise_and_resubmit",
+              "approved",
+              "not_compliant",
+              "in_review",
+              "revision_needed",
+              "compliant"
+             ],
+             "example": "approved"
+            },
+            "document_type": {
+             "type": "string",
+             "description": "Category of compliance document (e.g. bond, insurance, license). Valid values are constrained by the enum.",
+             "enum": [
+              "bond",
+              "project_insurance",
+              "license",
+              "master_agreement",
+              "permit",
+              "safety",
+              "w9",
+              "other",
+              "payroll",
+              "stored_material",
+              "closeout"
+             ],
+             "example": "safety"
+            },
+            "notes": {
+             "type": "string",
+             "nullable": true,
+             "description": "General notes for the compliance document. Null when no notes have been added.",
+             "example": "Compliance document notes example"
+            },
+            "effective_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document becomes effective, in ISO 8601 format. Null when not set.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "expires_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document expires, in ISO 8601 format. Null when the document does not expire.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date and time the document was created, in ISO 8601 format.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document was last updated, in ISO 8601 format. Null if it has never been updated since creation.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "reviewed_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date and time the document was last reviewed, in ISO 8601 format. Null if it has not been reviewed.",
+             "example": "2021-01-01T00:00:00Z"
+            },
+            "created_by_id": {
+             "type": "string",
+             "description": "ID of the user who created the document.",
+             "example": "123456"
+            },
+            "created_by": {
+             "type": "string",
+             "description": "Full name of the user who created the document.",
+             "example": "John Doe"
+            },
+            "updated_by_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the user who last updated the document. Null if it has never been updated.",
+             "example": "123456"
+            },
+            "updated_by": {
+             "type": "string",
+             "nullable": true,
+             "description": "Full name of the user who last updated the document. Null if it has never been updated.",
+             "example": "John Doe"
+            },
+            "reviewed_by_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the user who last reviewed the document. Null if it has not been reviewed.",
+             "example": "123456"
+            },
+            "reviewed_by": {
+             "type": "string",
+             "nullable": true,
+             "description": "Full name of the user who last reviewed the document. Null if it has not been reviewed.",
+             "example": "John Doe"
+            },
+            "reviewer_notes": {
+             "type": "string",
+             "nullable": true,
+             "description": "Notes recorded by the reviewer during review. Null when the document has not been reviewed or no reviewer notes were added.",
+             "example": "Compliance document reviewer notes example"
+            },
+            "compliance_document_requirement_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the parent document requirement when the compliance document was created from a template. Null for manually created documents.",
+             "example": "123456"
+            },
+            "allow_vendor_submission": {
+             "type": "boolean",
+             "description": "Whether vendors are allowed to submit files against this compliance document.",
+             "example": true
+            },
+            "required_for_vendor_submission": {
+             "type": "boolean",
+             "description": "Whether the vendor must submit this compliance document before they can submit an invoice. Only applicable when allow_vendor_submission is true. Defaults to false.",
+             "example": false
+            },
+            "send_expiration_notification": {
+             "type": "boolean",
+             "description": "Whether an expiration notification should be sent before this compliance document expires.",
+             "example": false
+            },
+            "compliance_documents_prostore_files": {
+             "type": "array",
+             "nullable": true,
+             "description": "Files attached to this compliance document. Only populated on the show and update responses; null or empty otherwise.",
+             "items": {
+              "type": "object",
+              "description": "A file attached to a compliance document.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for this compliance document file attachment.",
+                "example": "123456"
+               },
+               "compliance_document_id": {
+                "type": "string",
+                "description": "ID of the compliance document this file is attached to.",
+                "example": "123456"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "created_by_id": {
+                "type": "string",
+                "description": "ID of the user who created the attachment.",
+                "example": "123456"
+               },
+               "created_by": {
+                "type": "string",
+                "description": "Full name of the user who created the attachment.",
+                "example": "John Doe"
+               },
+               "updated_by_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "123456"
+               },
+               "updated_by": {
+                "type": "string",
+                "nullable": true,
+                "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "John Doe"
+               },
+               "prostore_file": {
+                "type": "object",
+                "description": "Prostore Files",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "string",
+                  "description": "The unique identifier for the Prostore file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "The name of the Prostore file"
+                 },
+                 "content_type": {
+                  "type": "string",
+                  "description": "The content type of the Prostore file"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "The URL where the Prostore file can be accessed"
+                 },
+                 "uuid": {
+                  "type": "string",
+                  "description": "The UUID of the Prostore file"
+                 }
+                },
+                "required": [
+                 "prostore_file_id",
+                 "name",
+                 "content_type",
+                 "url",
+                 "uuid"
+                ]
+               }
+              }
+             }
+            },
+            "submission_instructions": {
+             "type": "string",
+             "nullable": true,
+             "description": "Rich-text HTML submission instructions inherited live from the parent document requirement, describing how to submit this document. Returned on the show response. Null when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no instructions.",
+             "maxLength": 5000,
+             "example": "<p>Please upload a signed bond certificate.</p>"
+            },
+            "sample_files": {
+             "type": "array",
+             "description": "Sample files inherited live from the parent document requirement to illustrate the expected submission. Returned on the show response. Empty when the document does not originate from a requirement that permits vendor submission, when the feature is not enabled for the company, or when the parent requirement has no sample files.",
+             "items": {
+              "type": "object",
+              "description": "A sample file attached to a compliance document requirement.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for this compliance document requirement file attachment.",
+                "example": "123456"
+               },
+               "compliance_document_requirement_id": {
+                "type": "string",
+                "description": "ID of the compliance document requirement this file is attached to.",
+                "example": "123456"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was created, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the attachment was last updated, in ISO 8601 format.",
+                "example": "2021-01-01T00:00:00Z"
+               },
+               "created_by_id": {
+                "type": "string",
+                "description": "ID of the user who created the attachment.",
+                "example": "123456"
+               },
+               "created_by": {
+                "type": "string",
+                "description": "Full name of the user who created the attachment.",
+                "example": "John Doe"
+               },
+               "updated_by_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "ID of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "123456"
+               },
+               "updated_by": {
+                "type": "string",
+                "nullable": true,
+                "description": "Full name of the user who last updated the attachment. Null if it has never been updated.",
+                "example": "John Doe"
+               },
+               "prostore_file": {
+                "type": "object",
+                "description": "Prostore Files",
+                "properties": {
+                 "prostore_file_id": {
+                  "type": "string",
+                  "description": "The unique identifier for the Prostore file"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "The name of the Prostore file"
+                 },
+                 "content_type": {
+                  "type": "string",
+                  "description": "The content type of the Prostore file"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "The URL where the Prostore file can be accessed"
+                 },
+                 "uuid": {
+                  "type": "string",
+                  "description": "The UUID of the Prostore file"
+                 }
+                },
+                "required": [
+                 "prostore_file_id",
+                 "name",
+                 "content_type",
+                 "url",
+                 "uuid"
+                ]
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    name: 'Document One',\n    document_type: 'bond',\n    status: 'approved',\n    reviewer_notes: 'Reviewer Notes',\n    notes: 'GC notes',\n    prostore_file_ids: ['123456'],\n    effective_at: '2021-01-01T00:00:00Z',\n    expires_at: '2021-01-01T00:00:00Z',\n    allow_vendor_submission: true,\n    required_for_vendor_submission: false\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"Document One\\\",\\\"document_type\\\":\\\"bond\\\",\\\"status\\\":\\\"approved\\\",\\\"reviewer_notes\\\":\\\"Reviewer Notes\\\",\\\"notes\\\":\\\"GC notes\\\",\\\"prostore_file_ids\\\":[\\\"123456\\\"],\\\"effective_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"expires_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"allow_vendor_submission\\\":true,\\\"required_for_vendor_submission\\\":false}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Document One\",\"document_type\":\"bond\",\"status\":\"approved\",\"reviewer_notes\":\"Reviewer Notes\",\"notes\":\"GC notes\",\"prostore_file_ids\":[\"123456\"],\"effective_at\":\"2021-01-01T00:00:00Z\",\"expires_at\":\"2021-01-01T00:00:00Z\",\"allow_vendor_submission\":true,\"required_for_vendor_submission\":false}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/%7Bdocument_id%7D\"),\n    Content = new StringContent(\"{\\\"name\\\":\\\"Document One\\\",\\\"document_type\\\":\\\"bond\\\",\\\"status\\\":\\\"approved\\\",\\\"reviewer_notes\\\":\\\"Reviewer Notes\\\",\\\"notes\\\":\\\"GC notes\\\",\\\"prostore_file_ids\\\":[\\\"123456\\\"],\\\"effective_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"expires_at\\\":\\\"2021-01-01T00:00:00Z\\\",\\\"allow_vendor_submission\\\":true,\\\"required_for_vendor_submission\\\":false}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add name and document_type fields to invoice compliance document update request",
+      "description": "The `name` and `document_type` fields can now be passed in update requests for invoice compliance documents.\nThe `name` must be a non-empty string with a maximum of 85 characters.\nThe `document_type` must be one of the valid document types: bond, project_insurance, license, master_agreement, permit, safety, w9, other, payroll, stored_material, or closeout.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents/{document_id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-21",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "requisition-compliance-documents?version=2.0#update-requisition-compliance-document"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/compliance/invoices/{invoice_id}/documents/attachments": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "ID of the company",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "description": "ID of the project",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "invoice_id",
+     "in": "path",
+     "description": "ID of the SC Invoice",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List requisition compliance attachments",
+    "description": "Lists the requisition compliance attachments\n\n**Procore Pay must be enabled to use this endpoint.**\n",
+    "tags": [
+     "Compliance"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Page": {
+        "description": "Number of the page retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "description": "Array of Compliance Attachments",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Compliance Attachments",
+            "properties": {
+             "data": {
+              "type": "object",
+              "description": "Compliance attachment data object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for this compliance attachment.",
+                "example": "123456"
+               },
+               "name": {
+                "type": "string",
+                "description": "File name of the compliance attachment.",
+                "example": "Compliance attachment name example"
+               },
+               "type": {
+                "type": "string",
+                "description": "Source type of the attachment (e.g. a Procore file).",
+                "example": "prostore_file"
+               },
+               "content_type": {
+                "type": "string",
+                "description": "MIME content type of the attached file.",
+                "example": "application/pdf"
+               },
+               "url": {
+                "type": "string",
+                "description": "URL where the compliance attachment file can be downloaded.",
+                "example": "https://example.com/compliance_attachment.pdf"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/attachments',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/attachments?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/attachments?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/compliance/invoices/%7Binvoice_id%7D/documents/attachments?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

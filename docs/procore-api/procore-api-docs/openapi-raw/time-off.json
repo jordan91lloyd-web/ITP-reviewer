@@ -1,0 +1,1187 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Time Off",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Time Off",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/time-off": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Time Off for a Single Person",
+    "description": "Retrieves all Time Off entries for a specified Person within a company.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "timezone",
+      "in": "query",
+      "required": true,
+      "description": "The timezone in which to order time off entries.",
+      "schema": {
+       "type": "string",
+       "example": "America/Chicago"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "description": "The number of time off records to be returned in a single request. Default is 40.",
+      "schema": {
+       "type": "integer",
+       "example": 40
+      }
+     },
+     {
+      "name": "start_after",
+      "in": "query",
+      "required": false,
+      "description": "Time off ID used for pagination.",
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "example": "222df6e4-b8ea-46fd-a39c-5570d3fd5ace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A collection of time off records for a single person.",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "List of time off records associated with the person.",
+           "items": {
+            "type": "object",
+            "description": "A single time off record.",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the Time Off record.",
+              "example": "7263bc0c-68d5-4944-892f-72c770702cc6"
+             },
+             "person_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID of the person associated with this Time Off entry.",
+              "example": "81c63107-6843-4822-be42-a40b41e75285"
+             },
+             "company_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID of the company this Time Off is associated with.",
+              "example": "a4592b47-42ae-478f-926d-e77a7f768059"
+             },
+             "start_day": {
+              "type": "string",
+              "description": "Start date of the time off (MM/DD/YY).",
+              "example": "11/01/23"
+             },
+             "end_day": {
+              "type": "string",
+              "description": "End date of the time off (MM/DD/YY).",
+              "example": "11/29/23"
+             },
+             "is_paid": {
+              "type": "boolean",
+              "description": "Whether the time off is paid.",
+              "example": true
+             },
+             "reason": {
+              "type": "string",
+              "description": "Reason for the time off.",
+              "example": "medical"
+             },
+             "repeat": {
+              "type": "string",
+              "enum": [
+               "never",
+               "weekly",
+               "monthly",
+               "yearly"
+              ],
+              "description": "The repeat interval for recurring time off.",
+              "example": "weekly"
+             },
+             "repeat_end_day": {
+              "type": "string",
+              "description": "The end date of the repeating time off.",
+              "example": "12/01/23"
+             },
+             "cadence": {
+              "type": "integer",
+              "description": "Frequency of repetition (e.g., every 1 week, every 2 weeks).",
+              "example": 1
+             },
+             "apply_to_saturday": {
+              "type": "boolean",
+              "description": "Whether the time off applies to Saturdays.",
+              "example": false
+             },
+             "apply_to_sunday": {
+              "type": "boolean",
+              "description": "Whether the time off applies to Sundays.",
+              "example": false
+             },
+             "batch_start_time": {
+              "type": "string",
+              "description": "Start time of the time off (formatted as HH:MM am/pm).",
+              "example": "7:00 AM"
+             },
+             "batch_end_time": {
+              "type": "string",
+              "description": "End time of the time off (formatted as HH:MM am/pm).",
+              "example": "3:30 PM"
+             },
+             "instances": {
+              "type": "array",
+              "description": "List of instances for repeating time off.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "format": "uuid",
+                 "description": "Unique identifier for the time off instance.",
+                 "example": "e52d54b4-1e61-4324-850d-cf8e62ac201c"
+                },
+                "start_day": {
+                 "type": "string",
+                 "description": "Start date for the instance.",
+                 "example": "11/01/23"
+                },
+                "end_day": {
+                 "type": "string",
+                 "description": "End date for the instance.",
+                 "example": "11/01/23"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "pagination": {
+           "type": "object",
+           "description": "Pagination metadata for the time off records.",
+           "properties": {
+            "limit": {
+             "type": "integer",
+             "description": "The number of records returned in the response.",
+             "example": 40
+            },
+            "next_starting_after": {
+             "type": "string",
+             "format": "uuid",
+             "description": "The ID of the last record in the response, used for pagination.",
+             "example": "222df6e4-b8ea-46fd-a39c-5570d3fd5ace"
+            },
+            "previous_starting_before": {
+             "type": "string",
+             "format": "uuid",
+             "nullable": true,
+             "description": "The ID of the first record in the response, used for reverse pagination.",
+             "example": null
+            },
+            "total_possible": {
+             "type": "integer",
+             "description": "The total number of records available.",
+             "example": 8
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Person Time Off endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/people/{person_id}/time-off",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "time-off?version=1.0#get-all-time-off-for-a-single-person"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Time Off for a Person",
+    "description": "Creates a new Time Off entry for a specified Person within a given company.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body for creating Time Off for a Person.",
+        "required": [
+         "start_day",
+         "end_day"
+        ],
+        "properties": {
+         "start_day": {
+          "type": "string",
+          "description": "The start date of the time off.",
+          "example": "10/23/23"
+         },
+         "end_day": {
+          "type": "string",
+          "description": "The end date of the time off.",
+          "example": "10/23/23"
+         },
+         "apply_to_saturday": {
+          "type": "boolean",
+          "description": "Whether the time off applies to Saturdays.",
+          "example": false
+         },
+         "apply_to_sunday": {
+          "type": "boolean",
+          "description": "Whether the time off applies to Sundays.",
+          "example": false
+         },
+         "is_paid": {
+          "type": "boolean",
+          "description": "Whether the time off is paid.",
+          "example": true
+         },
+         "reason": {
+          "type": "string",
+          "description": "The reason for the time off.",
+          "example": "medical"
+         },
+         "repeat": {
+          "type": "string",
+          "enum": [
+           "never",
+           "weekly",
+           "monthly",
+           "yearly"
+          ],
+          "description": "Repeat interval of the time off instances.",
+          "example": "weekly"
+         },
+         "batch_start_time": {
+          "type": "string",
+          "description": "Start time of the time off (HH:MM am/pm).",
+          "example": "7:30 AM"
+         },
+         "batch_end_time": {
+          "type": "string",
+          "description": "End time of the time off (HH:MM am/pm).",
+          "example": "3:30 PM"
+         },
+         "cadence": {
+          "type": "integer",
+          "description": "Cadence of the repeating time off.",
+          "example": 1
+         },
+         "repeat_end_day": {
+          "type": "string",
+          "description": "The end date of the repeating time off.",
+          "example": "12/01/23"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single time off record.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Time Off record.",
+           "example": "7263bc0c-68d5-4944-892f-72c770702cc6"
+          },
+          "person_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "ID of the person associated with this Time Off entry.",
+           "example": "81c63107-6843-4822-be42-a40b41e75285"
+          },
+          "company_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "ID of the company this Time Off is associated with.",
+           "example": "a4592b47-42ae-478f-926d-e77a7f768059"
+          },
+          "start_day": {
+           "type": "string",
+           "description": "Start date of the time off (MM/DD/YY).",
+           "example": "11/01/23"
+          },
+          "end_day": {
+           "type": "string",
+           "description": "End date of the time off (MM/DD/YY).",
+           "example": "11/29/23"
+          },
+          "is_paid": {
+           "type": "boolean",
+           "description": "Whether the time off is paid.",
+           "example": true
+          },
+          "reason": {
+           "type": "string",
+           "description": "Reason for the time off.",
+           "example": "medical"
+          },
+          "repeat": {
+           "type": "string",
+           "enum": [
+            "never",
+            "weekly",
+            "monthly",
+            "yearly"
+           ],
+           "description": "The repeat interval for recurring time off.",
+           "example": "weekly"
+          },
+          "repeat_end_day": {
+           "type": "string",
+           "description": "The end date of the repeating time off.",
+           "example": "12/01/23"
+          },
+          "cadence": {
+           "type": "integer",
+           "description": "Frequency of repetition (e.g., every 1 week, every 2 weeks).",
+           "example": 1
+          },
+          "apply_to_saturday": {
+           "type": "boolean",
+           "description": "Whether the time off applies to Saturdays.",
+           "example": false
+          },
+          "apply_to_sunday": {
+           "type": "boolean",
+           "description": "Whether the time off applies to Sundays.",
+           "example": false
+          },
+          "batch_start_time": {
+           "type": "string",
+           "description": "Start time of the time off (formatted as HH:MM am/pm).",
+           "example": "7:00 AM"
+          },
+          "batch_end_time": {
+           "type": "string",
+           "description": "End time of the time off (formatted as HH:MM am/pm).",
+           "example": "3:30 PM"
+          },
+          "instances": {
+           "type": "array",
+           "description": "List of instances for repeating time off.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the time off instance.",
+              "example": "e52d54b4-1e61-4324-850d-cf8e62ac201c"
+             },
+             "start_day": {
+              "type": "string",
+              "description": "Start date for the instance.",
+              "example": "11/01/23"
+             },
+             "end_day": {
+              "type": "string",
+              "description": "End date for the instance.",
+              "example": "11/01/23"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Person Time Off endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/people/{person_id}/time-off",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "time-off?version=1.0#create-time-off-for-a-person"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/time-off/{time_off_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Single Time Off Record",
+    "description": "Retrieves a specific Time Off record by its ID.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "time_off_id",
+      "in": "path",
+      "required": true,
+      "description": "The UUID of the Time Off record.",
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "example": "7263bc0c-68d5-4944-892f-72c770702cc6"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single time off record.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Time Off record.",
+           "example": "7263bc0c-68d5-4944-892f-72c770702cc6"
+          },
+          "person_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "ID of the person associated with this Time Off entry.",
+           "example": "81c63107-6843-4822-be42-a40b41e75285"
+          },
+          "company_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "ID of the company this Time Off is associated with.",
+           "example": "a4592b47-42ae-478f-926d-e77a7f768059"
+          },
+          "start_day": {
+           "type": "string",
+           "description": "Start date of the time off (MM/DD/YY).",
+           "example": "11/01/23"
+          },
+          "end_day": {
+           "type": "string",
+           "description": "End date of the time off (MM/DD/YY).",
+           "example": "11/29/23"
+          },
+          "is_paid": {
+           "type": "boolean",
+           "description": "Whether the time off is paid.",
+           "example": true
+          },
+          "reason": {
+           "type": "string",
+           "description": "Reason for the time off.",
+           "example": "medical"
+          },
+          "repeat": {
+           "type": "string",
+           "enum": [
+            "never",
+            "weekly",
+            "monthly",
+            "yearly"
+           ],
+           "description": "The repeat interval for recurring time off.",
+           "example": "weekly"
+          },
+          "repeat_end_day": {
+           "type": "string",
+           "description": "The end date of the repeating time off.",
+           "example": "12/01/23"
+          },
+          "cadence": {
+           "type": "integer",
+           "description": "Frequency of repetition (e.g., every 1 week, every 2 weeks).",
+           "example": 1
+          },
+          "apply_to_saturday": {
+           "type": "boolean",
+           "description": "Whether the time off applies to Saturdays.",
+           "example": false
+          },
+          "apply_to_sunday": {
+           "type": "boolean",
+           "description": "Whether the time off applies to Sundays.",
+           "example": false
+          },
+          "batch_start_time": {
+           "type": "string",
+           "description": "Start time of the time off (formatted as HH:MM am/pm).",
+           "example": "7:00 AM"
+          },
+          "batch_end_time": {
+           "type": "string",
+           "description": "End time of the time off (formatted as HH:MM am/pm).",
+           "example": "3:30 PM"
+          },
+          "instances": {
+           "type": "array",
+           "description": "List of instances for repeating time off.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the time off instance.",
+              "example": "e52d54b4-1e61-4324-850d-cf8e62ac201c"
+             },
+             "start_day": {
+              "type": "string",
+              "description": "Start date for the instance.",
+              "example": "11/01/23"
+             },
+             "end_day": {
+              "type": "string",
+              "description": "End date for the instance.",
+              "example": "11/01/23"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Single Person Time Off endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/people/{person_id}/time-off/{time_off_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "time-off?version=1.0#get-single-time-off-record"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a Time Off Record",
+    "description": "Updates an existing Time Off record for a specified Person within a given company. Only specified properties in the request body will be updated.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "time_off_id",
+      "in": "path",
+      "required": true,
+      "description": "The UUID of the Time Off record.",
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "example": "7263bc0c-68d5-4944-892f-72c770702cc6"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Time Off Update Request Body",
+        "properties": {
+         "start_day": {
+          "type": "string",
+          "description": "Start date of the time off (MM/DD/YY).",
+          "example": "12/01/23"
+         },
+         "end_day": {
+          "type": "string",
+          "description": "End date of the time off (MM/DD/YY).",
+          "example": "12/01/23"
+         },
+         "apply_to_saturday": {
+          "type": "boolean",
+          "description": "Whether the time off applies to Saturdays.",
+          "example": false
+         },
+         "apply_to_sunday": {
+          "type": "boolean",
+          "description": "Whether the time off applies to Sundays.",
+          "example": false
+         },
+         "is_paid": {
+          "type": "boolean",
+          "description": "Whether the time off is paid.",
+          "example": true
+         },
+         "reason": {
+          "type": "string",
+          "description": "Reason for the time off.",
+          "example": "medical"
+         },
+         "batch_start_time": {
+          "type": "string",
+          "description": "Start time of the time off (formatted as HH:MM am/pm).",
+          "example": "7:00 AM"
+         },
+         "batch_end_time": {
+          "type": "string",
+          "description": "End time of the time off (formatted as HH:MM am/pm).",
+          "example": "3:30 PM"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single time off record.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Time Off record.",
+           "example": "7263bc0c-68d5-4944-892f-72c770702cc6"
+          },
+          "person_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "ID of the person associated with this Time Off entry.",
+           "example": "81c63107-6843-4822-be42-a40b41e75285"
+          },
+          "company_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "ID of the company this Time Off is associated with.",
+           "example": "a4592b47-42ae-478f-926d-e77a7f768059"
+          },
+          "start_day": {
+           "type": "string",
+           "description": "Start date of the time off (MM/DD/YY).",
+           "example": "11/01/23"
+          },
+          "end_day": {
+           "type": "string",
+           "description": "End date of the time off (MM/DD/YY).",
+           "example": "11/29/23"
+          },
+          "is_paid": {
+           "type": "boolean",
+           "description": "Whether the time off is paid.",
+           "example": true
+          },
+          "reason": {
+           "type": "string",
+           "description": "Reason for the time off.",
+           "example": "medical"
+          },
+          "repeat": {
+           "type": "string",
+           "enum": [
+            "never",
+            "weekly",
+            "monthly",
+            "yearly"
+           ],
+           "description": "The repeat interval for recurring time off.",
+           "example": "weekly"
+          },
+          "repeat_end_day": {
+           "type": "string",
+           "description": "The end date of the repeating time off.",
+           "example": "12/01/23"
+          },
+          "cadence": {
+           "type": "integer",
+           "description": "Frequency of repetition (e.g., every 1 week, every 2 weeks).",
+           "example": 1
+          },
+          "apply_to_saturday": {
+           "type": "boolean",
+           "description": "Whether the time off applies to Saturdays.",
+           "example": false
+          },
+          "apply_to_sunday": {
+           "type": "boolean",
+           "description": "Whether the time off applies to Sundays.",
+           "example": false
+          },
+          "batch_start_time": {
+           "type": "string",
+           "description": "Start time of the time off (formatted as HH:MM am/pm).",
+           "example": "7:00 AM"
+          },
+          "batch_end_time": {
+           "type": "string",
+           "description": "End time of the time off (formatted as HH:MM am/pm).",
+           "example": "3:30 PM"
+          },
+          "instances": {
+           "type": "array",
+           "description": "List of instances for repeating time off.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the time off instance.",
+              "example": "e52d54b4-1e61-4324-850d-cf8e62ac201c"
+             },
+             "start_day": {
+              "type": "string",
+              "description": "Start date for the instance.",
+              "example": "11/01/23"
+             },
+             "end_day": {
+              "type": "string",
+              "description": "End date for the instance.",
+              "example": "11/01/23"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Person Time Off endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "PATCH /workforce-planning/v2/companies/{company_id}/people/{person_id}/time-off/{time_off_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "time-off?version=1.0#update-a-time-off-record"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Time Off Record",
+    "description": "Deletes a Time Off record for a specified Person within a given company. The ID of the deleted record is returned upon successful deletion.\n",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "time_off_id",
+      "in": "path",
+      "required": true,
+      "description": "The UUID of the Time Off record.",
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "example": "7263bc0c-68d5-4944-892f-72c770702cc6"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response body for a successful Time Off record deletion.",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "format": "uuid",
+             "description": "Unique identifier of the deleted Time Off record.",
+             "example": "c70b3873-b323-48ef-8255-03daef250057"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Person Time Off endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/people/{person_id}/time-off/{time_off_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "time-off?version=1.0#delete-a-time-off-record"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

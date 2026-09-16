@@ -1,0 +1,381 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Checklist Item Observations",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Inspections",
+  "x-resource-name": "Checklist Item Observations",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/checklist/list_item_observations": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Checklist Item Observations",
+    "description": "Returns the Observations from Checklist (Inspection) Items on the Project",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[item_id]",
+      "in": "query",
+      "description": "Array of Checklist Item IDs. Return item(s) associated with the specified Checklist Item IDs.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer",
+        "example": 482
+       }
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "created_at"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "title": "Checklist (Inspection) Item Observation",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "ID",
+            "example": 1
+           },
+           "checklist_item_id": {
+            "type": "integer",
+            "description": "Checklist Item ID",
+            "example": 1
+           },
+           "checklist_list_id": {
+            "type": "integer",
+            "description": "Checklist List ID",
+            "example": 5
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of creation",
+            "example": "2017-10-31T23:36:30Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of last update",
+            "example": "2017-10-31T23:36:30Z"
+           },
+           "created_by": {
+            "type": "object",
+            "description": "Login Information",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Login Information ID",
+              "example": 1738090
+             },
+             "name": {
+              "type": "string",
+              "description": "User name",
+              "example": "John Doe"
+             },
+             "login": {
+              "type": "string",
+              "description": "User email",
+              "example": "johndoe@example.com"
+             },
+             "company_name": {
+              "type": "string",
+              "nullable": true,
+              "description": "User Company name. If the user belongs to a vendor, the vendor name will be returned.",
+              "example": "Builders Inc."
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_item_observations',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[item_id]': 'SOME_ARRAY_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_item_observations?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bitem_id%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_item_observations?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bitem_id%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_item_observations?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bitem_id%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Checklist (Inspections) Item Observations list endpoint",
+      "description": "Get a list of Checklist (Inspections) Item Observations in a specified Project.",
+      "endpoint": "GET /projects/{project_id}/checklist/list_item_observations",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2020-03-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-item-observations?version=1.0#list-checklist-item-observations"
+     },
+     {
+      "summary": "Added new company_name key to Checklist (Inspections) Item Observations list endpoint response",
+      "description": "The company_name key is now on the response under created_by when calling the Checklist (Inspections) Item Observations list endpoint",
+      "endpoint": "GET /projects/{project_id}/checklist/list_item_observations",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2020-08-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-item-observations?version=1.0#list-checklist-item-observations"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

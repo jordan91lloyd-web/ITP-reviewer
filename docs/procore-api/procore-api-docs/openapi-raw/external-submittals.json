@@ -1,0 +1,5290 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "External Submittals",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Submittals",
+  "x-resource-name": "External Submittals",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/external_submittals": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Return a list of all External Submittals.",
+    "description": "Return a list of all External Submittals for the specified project. External Submittals are copies of submittals from connected upstream projects, accessible via Connections Manager.",
+    "tags": [
+     "Submittals"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A Connected Submittal is a read-only downstream projection of an upstream submittal shared across a connected-project boundary. The list endpoint returns an array of these objects under `data` (minimal fields); the show endpoint returns a single object under `data` with the additional extended-only fields (`has_revisions`, `connected_distributed_submittals`, `connected_submittal_connection_detail`, `linked_drawings`, `cover_sheet`, `project_connection`).",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "The connected submittal record.",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier of the connected submittal. Use as the {id} path parameter for GET /connected_submittals/{id}, GET /connected_submittals/{id}/revisions, and PATCH /connected_submittals/{id}/linked_local_submittals.",
+             "example": "55321441"
+            },
+            "number": {
+             "type": "string",
+             "description": "Display number of the connected submittal. When spec-section numbering is enabled for the project, this is the spec-section-prefixed number.",
+             "example": "1"
+            },
+            "title": {
+             "type": "string",
+             "nullable": true,
+             "description": "Title of the connected submittal. May be null if the upstream submittal has no title.",
+             "example": "Flooring Product Data"
+            },
+            "description": {
+             "type": "string",
+             "nullable": true,
+             "description": "Free-text description of the connected submittal. May be null.",
+             "example": "Product data for flooring materials."
+            },
+            "status": {
+             "type": "string",
+             "description": "Downstream projection status of the connected submittal, derived from the upstream source. This is not a submittal log status.",
+             "enum": [
+              "closed",
+              "deleted",
+              "outdated",
+              "reopened"
+             ],
+             "example": "closed"
+            },
+            "translated_status": {
+             "type": "string",
+             "description": "Localized, human-readable label for the downstream `status`, suitable for display.",
+             "example": "Closed"
+            },
+            "revision": {
+             "type": "string",
+             "nullable": true,
+             "description": "Revision label of the connected submittal. May be null.",
+             "example": "1"
+            },
+            "current_revision": {
+             "type": "boolean",
+             "description": "Whether this record is the current revision of the connected submittal.",
+             "example": true
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the connected submittal projection was created, in ISO 8601 format.",
+             "example": "2024-06-09T15:14:38Z"
+            },
+            "last_updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the connected submittal projection was last updated, in ISO 8601 format.",
+             "example": "2025-01-07T19:52:46Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Timestamp when the connected submittal was soft-deleted, in ISO 8601 format. Null when the record is not deleted.",
+             "example": "2025-02-01T10:00:00Z"
+            },
+            "for_record_only": {
+             "type": "boolean",
+             "description": "Whether the submittal is marked for record only (no workflow response required).",
+             "example": false
+            },
+            "private": {
+             "type": "boolean",
+             "description": "Whether the submittal is private and visible only to permitted users.",
+             "example": false
+            },
+            "buffer_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Buffer time, in days, configured for the submittal schedule. Null when not set.",
+             "example": 2
+            },
+            "lead_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Lead time, in days, for the submittal. Null when not set.",
+             "example": 14
+            },
+            "prepare_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Preparation time, in days, for the submittal. Null when not set.",
+             "example": 5
+            },
+            "design_team_review_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Design team review time, in days. Null when not set.",
+             "example": 7
+            },
+            "internal_review_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Internal review time, in days. Null when not set.",
+             "example": 3
+            },
+            "revision_source_connected_submittal_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the connected submittal that is the source revision for this record. Null when this record is the original revision.",
+             "example": "55321440"
+            },
+            "connection_status": {
+             "type": "string",
+             "description": "Whether the connected submittal's upstream project connection is currently syncing (`connected`) or not (`disconnected`).",
+             "enum": [
+              "connected",
+              "disconnected"
+             ],
+             "example": "connected"
+            },
+            "actual_delivery_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Actual delivery date, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-26T11:00:00Z"
+            },
+            "confirmed_delivery_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Confirmed delivery date, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-20T11:00:00Z"
+            },
+            "distributed_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date the submittal was distributed, rendered at noon in the project time zone. Null when not distributed.",
+             "example": "2025-01-07T19:52:46Z"
+            },
+            "due_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Due date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2025-02-04T11:00:00Z"
+            },
+            "issue_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Issue date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-06-09T10:00:00Z"
+            },
+            "received_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date the submittal was received, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-06-15T11:00:00Z"
+            },
+            "required_on_site_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Required-on-site date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-26T11:00:00Z"
+            },
+            "submit_by": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Submit-by date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-07-17T10:00:00Z"
+            },
+            "type": {
+             "type": "object",
+             "nullable": true,
+             "description": "Submittal type of the connected submittal. Null when no type is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the submittal type.",
+               "example": "10"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the submittal type.",
+               "example": "Product Information"
+              },
+              "translated_name": {
+               "type": "string",
+               "description": "Localized, human-readable name of the submittal type.",
+               "example": "Product Information"
+              }
+             }
+            },
+            "responsible_contractor": {
+             "type": "object",
+             "nullable": true,
+             "description": "Vendor responsible for the connected submittal. Null when none is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the responsible contractor vendor.",
+               "example": "3168811"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the responsible contractor vendor.",
+               "example": "Arsh Kaur"
+              }
+             }
+            },
+            "created_by": {
+             "type": "object",
+             "description": "Contact who created the upstream submittal.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "11555146"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408095"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "Heba Essam"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Acme Construction"
+              }
+             }
+            },
+            "received_from": {
+             "type": "object",
+             "nullable": true,
+             "description": "Contact the submittal was received from. Null when not set.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "11555147"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408096"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "John Doe"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Acme Construction"
+              }
+             }
+            },
+            "submittal_manager": {
+             "type": "object",
+             "description": "Contact assigned as the submittal manager.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "4301913"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408097"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "Dallas Hall"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Procore Technologies"
+              }
+             }
+            },
+            "specification_section": {
+             "type": "object",
+             "nullable": true,
+             "description": "Specification section associated with the connected submittal. Null when none is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the specification section.",
+               "example": "999"
+              },
+              "number": {
+               "type": "string",
+               "description": "Specification section number.",
+               "example": "03 10 00"
+              },
+              "description": {
+               "type": "string",
+               "nullable": true,
+               "description": "Specification section description.",
+               "example": "Concrete"
+              },
+              "label": {
+               "type": "string",
+               "description": "Display label combining the section number and description.",
+               "example": "03 10 00 - Concrete"
+              }
+             }
+            },
+            "linked_local_submittals": {
+             "type": "array",
+             "description": "Local submittals linked to this connected submittal.",
+             "items": {
+              "type": "object",
+              "description": "A linked local submittal.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the local submittal.",
+                "example": "101"
+               },
+               "formatted_number": {
+                "type": "string",
+                "description": "Formatted submittal number.",
+                "example": "001"
+               },
+               "number": {
+                "type": "string",
+                "description": "Submittal number.",
+                "example": "1"
+               },
+               "revision": {
+                "type": "string",
+                "nullable": true,
+                "description": "Revision label of the local submittal.",
+                "example": "0"
+               },
+               "title": {
+                "type": "string",
+                "nullable": true,
+                "description": "Title of the local submittal.",
+                "example": "Steel Drawings"
+               },
+               "status": {
+                "type": "object",
+                "nullable": true,
+                "description": "Current status of the local submittal. Null when the submittal has no status.",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Identifier of the submittal status.",
+                  "example": "5"
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Machine-readable status key.",
+                  "example": "open"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Display name of the status.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            },
+            "has_revisions": {
+             "type": "boolean",
+             "description": "Whether the connected submittal has additional revisions. Present only on the show (single-record) response.",
+             "example": true
+            },
+            "connected_distributed_submittals": {
+             "type": "array",
+             "description": "List of values",
+             "items": {
+              "type": "object",
+              "description": "Distributed Submittals",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Id",
+                "example": "25566360"
+               },
+               "distributed_by": {
+                "type": "object",
+                "description": "Distributed By",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Id",
+                  "example": "9035722"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Name",
+                  "example": "Rafael Floresta"
+                 }
+                }
+               },
+               "distributed_responses": {
+                "type": "array",
+                "description": "List of Connected Distributed Responses",
+                "items": {
+                 "type": "object",
+                 "description": "Connected Distributed Submittal Response",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Id",
+                   "example": "100"
+                  },
+                  "comment": {
+                   "type": "string",
+                   "description": "Comment",
+                   "example": "Comment added by the user"
+                  },
+                  "distributed_attachments": {
+                   "type": "array",
+                   "description": "List of Connected Distributed Attachments",
+                   "items": {
+                    "type": "object",
+                    "description": "Connected Distributed Attachment",
+                    "properties": {
+                     "id": {
+                      "type": "string",
+                      "example": "100"
+                     },
+                     "content_type": {
+                      "type": "string",
+                      "example": "pdf"
+                     },
+                     "filename": {
+                      "type": "string",
+                      "example": "document.pdf"
+                     },
+                     "source_prostore_file_id": {
+                      "type": "string",
+                      "example": "100"
+                     },
+                     "url": {
+                      "type": "string",
+                      "example": "storage/document.pdf"
+                     },
+                     "viewable_document_id": {
+                      "type": "string",
+                      "example": "150"
+                     }
+                    }
+                   }
+                  },
+                  "submittal_response": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "example": "150"
+                    },
+                    "considered": {
+                     "type": "string",
+                     "example": "approved"
+                    },
+                    "name": {
+                     "type": "string",
+                     "example": "Approved"
+                    }
+                   }
+                  },
+                  "translated_response": {
+                   "type": "string",
+                   "example": "Approved"
+                  },
+                  "user": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "example": "200"
+                    },
+                    "login_information_id": {
+                     "type": "string",
+                     "example": "169"
+                    },
+                    "name": {
+                     "type": "string",
+                     "example": "Ravi Patel"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "distributed_to": {
+                "type": "array",
+                "description": "List of values",
+                "items": {
+                 "type": "object",
+                 "description": "Distributed To",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Id",
+                   "example": "12262620"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Name",
+                   "example": "Slava Lutsenko"
+                  }
+                 }
+                }
+               },
+               "message": {
+                "type": "string",
+                "description": "Message",
+                "example": "<p>test distributed</p>"
+               },
+               "sent_at": {
+                "type": "string",
+                "description": "Sent At",
+                "example": "2025-01-07T19:52:46Z"
+               },
+               "submittal_description": {
+                "type": "string",
+                "description": "Submittal Description",
+                "example": "<p>Distribution Description</p>"
+               },
+               "submittal_distributed_attachments": {
+                "type": "array",
+                "description": "List of Connected Distributed Attachments",
+                "items": {
+                 "type": "object",
+                 "description": "Connected Distributed Attachment",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "example": "100"
+                  },
+                  "content_type": {
+                   "type": "string",
+                   "example": "pdf"
+                  },
+                  "filename": {
+                   "type": "string",
+                   "example": "document.pdf"
+                  },
+                  "source_prostore_file_id": {
+                   "type": "string",
+                   "example": "100"
+                  },
+                  "url": {
+                   "type": "string",
+                   "example": "storage/document.pdf"
+                  },
+                  "viewable_document_id": {
+                   "type": "string",
+                   "example": "150"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "connected_submittal_connection_detail": {
+             "type": "object",
+             "nullable": true,
+             "description": "Details about the upstream project connection for this connected submittal. Present only on the show (single-record) response.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the connection detail record.",
+               "example": "778821"
+              },
+              "status": {
+               "type": "string",
+               "description": "Whether the upstream connection is currently connected or disconnected.",
+               "enum": [
+                "connected",
+                "disconnected"
+               ],
+               "example": "connected"
+              },
+              "upstream_company_name": {
+               "type": "string",
+               "description": "Name of the upstream company that owns the source submittal.",
+               "example": "Upstream Builders Inc."
+              }
+             }
+            },
+            "linked_drawings": {
+             "type": "array",
+             "description": "Drawings linked to the connected submittal upstream. Present only on the show (single-record) response.",
+             "items": {
+              "type": "object",
+              "description": "A linked drawing with its file attachment.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the linked drawing record.",
+                "example": "90211"
+               },
+               "attachment": {
+                "type": "object",
+                "description": "File attachment metadata for the linked drawing (identifier, name, and viewable/download URL)."
+               }
+              }
+             }
+            },
+            "cover_sheet": {
+             "type": "object",
+             "nullable": true,
+             "description": "Most recent generated cover sheet PDF export for the connected submittal, with its file attachment. Null when no export exists. Present only on the show (single-record) response.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the cover sheet PDF export record.",
+               "example": "55110"
+              },
+              "attachment": {
+               "type": "object",
+               "description": "File attachment metadata for the cover sheet PDF (identifier, name, and viewable/download URL)."
+              }
+             }
+            },
+            "project_connection": {
+             "type": "object",
+             "nullable": true,
+             "description": "Upstream project connection identifiers and names for the connected submittal. Null when there is no active connection. Present only on the show (single-record) response.",
+             "properties": {
+              "upstream_project_name": {
+               "type": "string",
+               "description": "Name of the upstream project that owns the source submittal.",
+               "example": "Downtown Tower - GC"
+              },
+              "upstream_company_name": {
+               "type": "string",
+               "description": "Name of the upstream company that owns the source submittal.",
+               "example": "Upstream Builders Inc."
+              },
+              "upstream_project_id": {
+               "type": "string",
+               "description": "Identifier of the upstream project.",
+               "example": "2361000"
+              },
+              "upstream_company_id": {
+               "type": "string",
+               "description": "Identifier of the upstream company.",
+               "example": "375"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET External Submittals Index Endpoint",
+      "description": "Return a list of all External Submittals from a specified Project. External Submittals are copies of submittals from connected upstream projects, accessible via Connections Manager.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/external_submittals",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "external-submittals?version=2.0#return-a-list-of-all-external-submittals"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/external_submittals/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "External Submittal ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Return an External Submittal.",
+    "description": "Return an External Submittal for the specified project.",
+    "tags": [
+     "Submittals"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A Connected Submittal is a read-only downstream projection of an upstream submittal shared across a connected-project boundary. The list endpoint returns an array of these objects under `data` (minimal fields); the show endpoint returns a single object under `data` with the additional extended-only fields (`has_revisions`, `connected_distributed_submittals`, `connected_submittal_connection_detail`, `linked_drawings`, `cover_sheet`, `project_connection`).",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "The connected submittal record.",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier of the connected submittal. Use as the {id} path parameter for GET /connected_submittals/{id}, GET /connected_submittals/{id}/revisions, and PATCH /connected_submittals/{id}/linked_local_submittals.",
+             "example": "55321441"
+            },
+            "number": {
+             "type": "string",
+             "description": "Display number of the connected submittal. When spec-section numbering is enabled for the project, this is the spec-section-prefixed number.",
+             "example": "1"
+            },
+            "title": {
+             "type": "string",
+             "nullable": true,
+             "description": "Title of the connected submittal. May be null if the upstream submittal has no title.",
+             "example": "Flooring Product Data"
+            },
+            "description": {
+             "type": "string",
+             "nullable": true,
+             "description": "Free-text description of the connected submittal. May be null.",
+             "example": "Product data for flooring materials."
+            },
+            "status": {
+             "type": "string",
+             "description": "Downstream projection status of the connected submittal, derived from the upstream source. This is not a submittal log status.",
+             "enum": [
+              "closed",
+              "deleted",
+              "outdated",
+              "reopened"
+             ],
+             "example": "closed"
+            },
+            "translated_status": {
+             "type": "string",
+             "description": "Localized, human-readable label for the downstream `status`, suitable for display.",
+             "example": "Closed"
+            },
+            "revision": {
+             "type": "string",
+             "nullable": true,
+             "description": "Revision label of the connected submittal. May be null.",
+             "example": "1"
+            },
+            "current_revision": {
+             "type": "boolean",
+             "description": "Whether this record is the current revision of the connected submittal.",
+             "example": true
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the connected submittal projection was created, in ISO 8601 format.",
+             "example": "2024-06-09T15:14:38Z"
+            },
+            "last_updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the connected submittal projection was last updated, in ISO 8601 format.",
+             "example": "2025-01-07T19:52:46Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Timestamp when the connected submittal was soft-deleted, in ISO 8601 format. Null when the record is not deleted.",
+             "example": "2025-02-01T10:00:00Z"
+            },
+            "for_record_only": {
+             "type": "boolean",
+             "description": "Whether the submittal is marked for record only (no workflow response required).",
+             "example": false
+            },
+            "private": {
+             "type": "boolean",
+             "description": "Whether the submittal is private and visible only to permitted users.",
+             "example": false
+            },
+            "buffer_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Buffer time, in days, configured for the submittal schedule. Null when not set.",
+             "example": 2
+            },
+            "lead_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Lead time, in days, for the submittal. Null when not set.",
+             "example": 14
+            },
+            "prepare_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Preparation time, in days, for the submittal. Null when not set.",
+             "example": 5
+            },
+            "design_team_review_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Design team review time, in days. Null when not set.",
+             "example": 7
+            },
+            "internal_review_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Internal review time, in days. Null when not set.",
+             "example": 3
+            },
+            "revision_source_connected_submittal_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the connected submittal that is the source revision for this record. Null when this record is the original revision.",
+             "example": "55321440"
+            },
+            "connection_status": {
+             "type": "string",
+             "description": "Whether the connected submittal's upstream project connection is currently syncing (`connected`) or not (`disconnected`).",
+             "enum": [
+              "connected",
+              "disconnected"
+             ],
+             "example": "connected"
+            },
+            "actual_delivery_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Actual delivery date, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-26T11:00:00Z"
+            },
+            "confirmed_delivery_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Confirmed delivery date, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-20T11:00:00Z"
+            },
+            "distributed_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date the submittal was distributed, rendered at noon in the project time zone. Null when not distributed.",
+             "example": "2025-01-07T19:52:46Z"
+            },
+            "due_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Due date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2025-02-04T11:00:00Z"
+            },
+            "issue_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Issue date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-06-09T10:00:00Z"
+            },
+            "received_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date the submittal was received, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-06-15T11:00:00Z"
+            },
+            "required_on_site_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Required-on-site date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-26T11:00:00Z"
+            },
+            "submit_by": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Submit-by date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-07-17T10:00:00Z"
+            },
+            "type": {
+             "type": "object",
+             "nullable": true,
+             "description": "Submittal type of the connected submittal. Null when no type is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the submittal type.",
+               "example": "10"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the submittal type.",
+               "example": "Product Information"
+              },
+              "translated_name": {
+               "type": "string",
+               "description": "Localized, human-readable name of the submittal type.",
+               "example": "Product Information"
+              }
+             }
+            },
+            "responsible_contractor": {
+             "type": "object",
+             "nullable": true,
+             "description": "Vendor responsible for the connected submittal. Null when none is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the responsible contractor vendor.",
+               "example": "3168811"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the responsible contractor vendor.",
+               "example": "Arsh Kaur"
+              }
+             }
+            },
+            "created_by": {
+             "type": "object",
+             "description": "Contact who created the upstream submittal.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "11555146"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408095"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "Heba Essam"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Acme Construction"
+              }
+             }
+            },
+            "received_from": {
+             "type": "object",
+             "nullable": true,
+             "description": "Contact the submittal was received from. Null when not set.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "11555147"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408096"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "John Doe"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Acme Construction"
+              }
+             }
+            },
+            "submittal_manager": {
+             "type": "object",
+             "description": "Contact assigned as the submittal manager.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "4301913"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408097"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "Dallas Hall"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Procore Technologies"
+              }
+             }
+            },
+            "specification_section": {
+             "type": "object",
+             "nullable": true,
+             "description": "Specification section associated with the connected submittal. Null when none is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the specification section.",
+               "example": "999"
+              },
+              "number": {
+               "type": "string",
+               "description": "Specification section number.",
+               "example": "03 10 00"
+              },
+              "description": {
+               "type": "string",
+               "nullable": true,
+               "description": "Specification section description.",
+               "example": "Concrete"
+              },
+              "label": {
+               "type": "string",
+               "description": "Display label combining the section number and description.",
+               "example": "03 10 00 - Concrete"
+              }
+             }
+            },
+            "linked_local_submittals": {
+             "type": "array",
+             "description": "Local submittals linked to this connected submittal.",
+             "items": {
+              "type": "object",
+              "description": "A linked local submittal.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the local submittal.",
+                "example": "101"
+               },
+               "formatted_number": {
+                "type": "string",
+                "description": "Formatted submittal number.",
+                "example": "001"
+               },
+               "number": {
+                "type": "string",
+                "description": "Submittal number.",
+                "example": "1"
+               },
+               "revision": {
+                "type": "string",
+                "nullable": true,
+                "description": "Revision label of the local submittal.",
+                "example": "0"
+               },
+               "title": {
+                "type": "string",
+                "nullable": true,
+                "description": "Title of the local submittal.",
+                "example": "Steel Drawings"
+               },
+               "status": {
+                "type": "object",
+                "nullable": true,
+                "description": "Current status of the local submittal. Null when the submittal has no status.",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Identifier of the submittal status.",
+                  "example": "5"
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Machine-readable status key.",
+                  "example": "open"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Display name of the status.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            },
+            "has_revisions": {
+             "type": "boolean",
+             "description": "Whether the connected submittal has additional revisions. Present only on the show (single-record) response.",
+             "example": true
+            },
+            "connected_distributed_submittals": {
+             "type": "array",
+             "description": "List of values",
+             "items": {
+              "type": "object",
+              "description": "Distributed Submittals",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Id",
+                "example": "25566360"
+               },
+               "distributed_by": {
+                "type": "object",
+                "description": "Distributed By",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Id",
+                  "example": "9035722"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Name",
+                  "example": "Rafael Floresta"
+                 }
+                }
+               },
+               "distributed_responses": {
+                "type": "array",
+                "description": "List of Connected Distributed Responses",
+                "items": {
+                 "type": "object",
+                 "description": "Connected Distributed Submittal Response",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Id",
+                   "example": "100"
+                  },
+                  "comment": {
+                   "type": "string",
+                   "description": "Comment",
+                   "example": "Comment added by the user"
+                  },
+                  "distributed_attachments": {
+                   "type": "array",
+                   "description": "List of Connected Distributed Attachments",
+                   "items": {
+                    "type": "object",
+                    "description": "Connected Distributed Attachment",
+                    "properties": {
+                     "id": {
+                      "type": "string",
+                      "example": "100"
+                     },
+                     "content_type": {
+                      "type": "string",
+                      "example": "pdf"
+                     },
+                     "filename": {
+                      "type": "string",
+                      "example": "document.pdf"
+                     },
+                     "source_prostore_file_id": {
+                      "type": "string",
+                      "example": "100"
+                     },
+                     "url": {
+                      "type": "string",
+                      "example": "storage/document.pdf"
+                     },
+                     "viewable_document_id": {
+                      "type": "string",
+                      "example": "150"
+                     }
+                    }
+                   }
+                  },
+                  "submittal_response": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "example": "150"
+                    },
+                    "considered": {
+                     "type": "string",
+                     "example": "approved"
+                    },
+                    "name": {
+                     "type": "string",
+                     "example": "Approved"
+                    }
+                   }
+                  },
+                  "translated_response": {
+                   "type": "string",
+                   "example": "Approved"
+                  },
+                  "user": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "example": "200"
+                    },
+                    "login_information_id": {
+                     "type": "string",
+                     "example": "169"
+                    },
+                    "name": {
+                     "type": "string",
+                     "example": "Ravi Patel"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "distributed_to": {
+                "type": "array",
+                "description": "List of values",
+                "items": {
+                 "type": "object",
+                 "description": "Distributed To",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Id",
+                   "example": "12262620"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Name",
+                   "example": "Slava Lutsenko"
+                  }
+                 }
+                }
+               },
+               "message": {
+                "type": "string",
+                "description": "Message",
+                "example": "<p>test distributed</p>"
+               },
+               "sent_at": {
+                "type": "string",
+                "description": "Sent At",
+                "example": "2025-01-07T19:52:46Z"
+               },
+               "submittal_description": {
+                "type": "string",
+                "description": "Submittal Description",
+                "example": "<p>Distribution Description</p>"
+               },
+               "submittal_distributed_attachments": {
+                "type": "array",
+                "description": "List of Connected Distributed Attachments",
+                "items": {
+                 "type": "object",
+                 "description": "Connected Distributed Attachment",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "example": "100"
+                  },
+                  "content_type": {
+                   "type": "string",
+                   "example": "pdf"
+                  },
+                  "filename": {
+                   "type": "string",
+                   "example": "document.pdf"
+                  },
+                  "source_prostore_file_id": {
+                   "type": "string",
+                   "example": "100"
+                  },
+                  "url": {
+                   "type": "string",
+                   "example": "storage/document.pdf"
+                  },
+                  "viewable_document_id": {
+                   "type": "string",
+                   "example": "150"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "connected_submittal_connection_detail": {
+             "type": "object",
+             "nullable": true,
+             "description": "Details about the upstream project connection for this connected submittal. Present only on the show (single-record) response.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the connection detail record.",
+               "example": "778821"
+              },
+              "status": {
+               "type": "string",
+               "description": "Whether the upstream connection is currently connected or disconnected.",
+               "enum": [
+                "connected",
+                "disconnected"
+               ],
+               "example": "connected"
+              },
+              "upstream_company_name": {
+               "type": "string",
+               "description": "Name of the upstream company that owns the source submittal.",
+               "example": "Upstream Builders Inc."
+              }
+             }
+            },
+            "linked_drawings": {
+             "type": "array",
+             "description": "Drawings linked to the connected submittal upstream. Present only on the show (single-record) response.",
+             "items": {
+              "type": "object",
+              "description": "A linked drawing with its file attachment.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the linked drawing record.",
+                "example": "90211"
+               },
+               "attachment": {
+                "type": "object",
+                "description": "File attachment metadata for the linked drawing (identifier, name, and viewable/download URL)."
+               }
+              }
+             }
+            },
+            "cover_sheet": {
+             "type": "object",
+             "nullable": true,
+             "description": "Most recent generated cover sheet PDF export for the connected submittal, with its file attachment. Null when no export exists. Present only on the show (single-record) response.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the cover sheet PDF export record.",
+               "example": "55110"
+              },
+              "attachment": {
+               "type": "object",
+               "description": "File attachment metadata for the cover sheet PDF (identifier, name, and viewable/download URL)."
+              }
+             }
+            },
+            "project_connection": {
+             "type": "object",
+             "nullable": true,
+             "description": "Upstream project connection identifiers and names for the connected submittal. Null when there is no active connection. Present only on the show (single-record) response.",
+             "properties": {
+              "upstream_project_name": {
+               "type": "string",
+               "description": "Name of the upstream project that owns the source submittal.",
+               "example": "Downtown Tower - GC"
+              },
+              "upstream_company_name": {
+               "type": "string",
+               "description": "Name of the upstream company that owns the source submittal.",
+               "example": "Upstream Builders Inc."
+              },
+              "upstream_project_id": {
+               "type": "string",
+               "description": "Identifier of the upstream project.",
+               "example": "2361000"
+              },
+              "upstream_company_id": {
+               "type": "string",
+               "description": "Identifier of the upstream company.",
+               "example": "375"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET External Submittals Show Endpoint",
+      "description": "View the details of an External Submittal.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/external_submittals/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "external-submittals?version=2.0#return-an-external-submittal"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/external_submittals/{id}/linked_local_submittals": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "External Submittal ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Update linked local submittals for an External Submittal.",
+    "description": "Adds or removes local submittals linked to an External Submittal. At least one of linked_local_submittals_added_ids or linked_local_submittals_removed_ids must be provided.",
+    "tags": [
+     "Submittals"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "linked_local_submittals_added_ids": {
+          "type": "array",
+          "description": "IDs of local submittals to link to the External Submittal.",
+          "items": {
+           "type": "string"
+          },
+          "example": [
+           "101",
+           "102"
+          ]
+         },
+         "linked_local_submittals_removed_ids": {
+          "type": "array",
+          "description": "IDs of local submittals to unlink from the External Submittal.",
+          "items": {
+           "type": "string"
+          },
+          "example": [
+           "203"
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier of the linked local submittal.",
+              "example": "101"
+             },
+             "formatted_number": {
+              "type": "string",
+              "description": "Formatted submittal number.",
+              "example": "001"
+             },
+             "number": {
+              "type": "string",
+              "description": "Submittal number.",
+              "example": "001"
+             },
+             "revision": {
+              "type": "string",
+              "nullable": true,
+              "description": "Revision label of the linked local submittal. Null when the submittal has no revision.",
+              "example": "01"
+             },
+             "title": {
+              "type": "string",
+              "nullable": true,
+              "description": "Title of the linked local submittal. Null when the submittal has no title.",
+              "example": "Steel Drawings"
+             },
+             "status": {
+              "type": "object",
+              "nullable": true,
+              "description": "Current status of the linked local submittal. Null when the submittal has no assigned status.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Status ID.",
+                "example": "5"
+               },
+               "status": {
+                "type": "string",
+                "description": "Machine-readable status key.",
+                "example": "open"
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the status.",
+                "example": "Open"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/linked_local_submittals',\n  headers: {'content-type': 'application/json'},\n  body: {\n    linked_local_submittals_added_ids: ['101', '102'],\n    linked_local_submittals_removed_ids: ['203']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"linked_local_submittals_added_ids\\\":[\\\"101\\\",\\\"102\\\"],\\\"linked_local_submittals_removed_ids\\\":[\\\"203\\\"]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/linked_local_submittals\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/linked_local_submittals \\\n  --header 'content-type: application/json' \\\n  --data '{\"linked_local_submittals_added_ids\":[\"101\",\"102\"],\"linked_local_submittals_removed_ids\":[\"203\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/linked_local_submittals\"),\n    Content = new StringContent(\"{\\\"linked_local_submittals_added_ids\\\":[\\\"101\\\",\\\"102\\\"],\\\"linked_local_submittals_removed_ids\\\":[\\\"203\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce PATCH External Submittals Linked Local Submittals Endpoint",
+      "description": "Add or remove local submittals linked to an External Submittal.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/external_submittals/{id}/linked_local_submittals",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "external-submittals?version=2.0#update-linked-local-submittals-for-an-external-submittal"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/external_submittals/export": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Download a list of External Submittals.",
+    "description": "Download a CSV or PDF of the External Submittals List.",
+    "tags": [
+     "Submittals"
+    ],
+    "parameters": [
+     {
+      "name": "export_format",
+      "in": "query",
+      "description": "Export File Format",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "csv",
+        "pdf"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/pdf": {
+        "schema": {
+         "type": "string",
+         "description": "External Submittal exported file (when export_format=pdf)."
+        }
+       },
+       "text/csv": {
+        "schema": {
+         "type": "string",
+         "description": "External Submittal exported file (when export_format=csv)."
+        }
+       }
+      }
+     },
+     "202": {
+      "description": "Accepted"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/export',\n  qs: {export_format: 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/export?export_format=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/export?export_format=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/export?export_format=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET External Submittals Export Endpoint",
+      "description": "Download a CSV or PDF list of External Submittals.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/external_submittals/export",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "external-submittals?version=2.0#download-a-list-of-external-submittals"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/external_submittals/{id}/revisions": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "External Submittal ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List revisions for an External Submittal.",
+    "description": "Return all revisions for the specified External Submittal, ordered from the most recent revision to the oldest.",
+    "tags": [
+     "Submittals"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A Connected Submittal is a read-only downstream projection of an upstream submittal shared across a connected-project boundary. The list endpoint returns an array of these objects under `data` (minimal fields); the show endpoint returns a single object under `data` with the additional extended-only fields (`has_revisions`, `connected_distributed_submittals`, `connected_submittal_connection_detail`, `linked_drawings`, `cover_sheet`, `project_connection`).",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "The connected submittal record.",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier of the connected submittal. Use as the {id} path parameter for GET /connected_submittals/{id}, GET /connected_submittals/{id}/revisions, and PATCH /connected_submittals/{id}/linked_local_submittals.",
+             "example": "55321441"
+            },
+            "number": {
+             "type": "string",
+             "description": "Display number of the connected submittal. When spec-section numbering is enabled for the project, this is the spec-section-prefixed number.",
+             "example": "1"
+            },
+            "title": {
+             "type": "string",
+             "nullable": true,
+             "description": "Title of the connected submittal. May be null if the upstream submittal has no title.",
+             "example": "Flooring Product Data"
+            },
+            "description": {
+             "type": "string",
+             "nullable": true,
+             "description": "Free-text description of the connected submittal. May be null.",
+             "example": "Product data for flooring materials."
+            },
+            "status": {
+             "type": "string",
+             "description": "Downstream projection status of the connected submittal, derived from the upstream source. This is not a submittal log status.",
+             "enum": [
+              "closed",
+              "deleted",
+              "outdated",
+              "reopened"
+             ],
+             "example": "closed"
+            },
+            "translated_status": {
+             "type": "string",
+             "description": "Localized, human-readable label for the downstream `status`, suitable for display.",
+             "example": "Closed"
+            },
+            "revision": {
+             "type": "string",
+             "nullable": true,
+             "description": "Revision label of the connected submittal. May be null.",
+             "example": "1"
+            },
+            "current_revision": {
+             "type": "boolean",
+             "description": "Whether this record is the current revision of the connected submittal.",
+             "example": true
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the connected submittal projection was created, in ISO 8601 format.",
+             "example": "2024-06-09T15:14:38Z"
+            },
+            "last_updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the connected submittal projection was last updated, in ISO 8601 format.",
+             "example": "2025-01-07T19:52:46Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Timestamp when the connected submittal was soft-deleted, in ISO 8601 format. Null when the record is not deleted.",
+             "example": "2025-02-01T10:00:00Z"
+            },
+            "for_record_only": {
+             "type": "boolean",
+             "description": "Whether the submittal is marked for record only (no workflow response required).",
+             "example": false
+            },
+            "private": {
+             "type": "boolean",
+             "description": "Whether the submittal is private and visible only to permitted users.",
+             "example": false
+            },
+            "buffer_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Buffer time, in days, configured for the submittal schedule. Null when not set.",
+             "example": 2
+            },
+            "lead_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Lead time, in days, for the submittal. Null when not set.",
+             "example": 14
+            },
+            "prepare_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Preparation time, in days, for the submittal. Null when not set.",
+             "example": 5
+            },
+            "design_team_review_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Design team review time, in days. Null when not set.",
+             "example": 7
+            },
+            "internal_review_time": {
+             "type": "integer",
+             "nullable": true,
+             "description": "Internal review time, in days. Null when not set.",
+             "example": 3
+            },
+            "revision_source_connected_submittal_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "ID of the connected submittal that is the source revision for this record. Null when this record is the original revision.",
+             "example": "55321440"
+            },
+            "connection_status": {
+             "type": "string",
+             "description": "Whether the connected submittal's upstream project connection is currently syncing (`connected`) or not (`disconnected`).",
+             "enum": [
+              "connected",
+              "disconnected"
+             ],
+             "example": "connected"
+            },
+            "actual_delivery_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Actual delivery date, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-26T11:00:00Z"
+            },
+            "confirmed_delivery_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Confirmed delivery date, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-20T11:00:00Z"
+            },
+            "distributed_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date the submittal was distributed, rendered at noon in the project time zone. Null when not distributed.",
+             "example": "2025-01-07T19:52:46Z"
+            },
+            "due_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Due date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2025-02-04T11:00:00Z"
+            },
+            "issue_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Issue date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-06-09T10:00:00Z"
+            },
+            "received_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Date the submittal was received, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-06-15T11:00:00Z"
+            },
+            "required_on_site_date": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Required-on-site date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-12-26T11:00:00Z"
+            },
+            "submit_by": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Submit-by date for the submittal, rendered at noon in the project time zone. Null when not set.",
+             "example": "2024-07-17T10:00:00Z"
+            },
+            "type": {
+             "type": "object",
+             "nullable": true,
+             "description": "Submittal type of the connected submittal. Null when no type is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the submittal type.",
+               "example": "10"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the submittal type.",
+               "example": "Product Information"
+              },
+              "translated_name": {
+               "type": "string",
+               "description": "Localized, human-readable name of the submittal type.",
+               "example": "Product Information"
+              }
+             }
+            },
+            "responsible_contractor": {
+             "type": "object",
+             "nullable": true,
+             "description": "Vendor responsible for the connected submittal. Null when none is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the responsible contractor vendor.",
+               "example": "3168811"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the responsible contractor vendor.",
+               "example": "Arsh Kaur"
+              }
+             }
+            },
+            "created_by": {
+             "type": "object",
+             "description": "Contact who created the upstream submittal.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "11555146"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408095"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "Heba Essam"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Acme Construction"
+              }
+             }
+            },
+            "received_from": {
+             "type": "object",
+             "nullable": true,
+             "description": "Contact the submittal was received from. Null when not set.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "11555147"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408096"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "John Doe"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Acme Construction"
+              }
+             }
+            },
+            "submittal_manager": {
+             "type": "object",
+             "description": "Contact assigned as the submittal manager.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the contact.",
+               "example": "4301913"
+              },
+              "login_information_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "Identifier of the associated login information (user), when the contact maps to a Procore user. Null otherwise.",
+               "example": "8408097"
+              },
+              "name": {
+               "type": "string",
+               "description": "Full name of the contact.",
+               "example": "Dallas Hall"
+              },
+              "vendor_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Name of the vendor the contact belongs to. Null when the contact has no vendor.",
+               "example": "Procore Technologies"
+              }
+             }
+            },
+            "specification_section": {
+             "type": "object",
+             "nullable": true,
+             "description": "Specification section associated with the connected submittal. Null when none is assigned.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the specification section.",
+               "example": "999"
+              },
+              "number": {
+               "type": "string",
+               "description": "Specification section number.",
+               "example": "03 10 00"
+              },
+              "description": {
+               "type": "string",
+               "nullable": true,
+               "description": "Specification section description.",
+               "example": "Concrete"
+              },
+              "label": {
+               "type": "string",
+               "description": "Display label combining the section number and description.",
+               "example": "03 10 00 - Concrete"
+              }
+             }
+            },
+            "linked_local_submittals": {
+             "type": "array",
+             "description": "Local submittals linked to this connected submittal.",
+             "items": {
+              "type": "object",
+              "description": "A linked local submittal.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the local submittal.",
+                "example": "101"
+               },
+               "formatted_number": {
+                "type": "string",
+                "description": "Formatted submittal number.",
+                "example": "001"
+               },
+               "number": {
+                "type": "string",
+                "description": "Submittal number.",
+                "example": "1"
+               },
+               "revision": {
+                "type": "string",
+                "nullable": true,
+                "description": "Revision label of the local submittal.",
+                "example": "0"
+               },
+               "title": {
+                "type": "string",
+                "nullable": true,
+                "description": "Title of the local submittal.",
+                "example": "Steel Drawings"
+               },
+               "status": {
+                "type": "object",
+                "nullable": true,
+                "description": "Current status of the local submittal. Null when the submittal has no status.",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Identifier of the submittal status.",
+                  "example": "5"
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Machine-readable status key.",
+                  "example": "open"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Display name of the status.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            },
+            "has_revisions": {
+             "type": "boolean",
+             "description": "Whether the connected submittal has additional revisions. Present only on the show (single-record) response.",
+             "example": true
+            },
+            "connected_distributed_submittals": {
+             "type": "array",
+             "description": "List of values",
+             "items": {
+              "type": "object",
+              "description": "Distributed Submittals",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Id",
+                "example": "25566360"
+               },
+               "distributed_by": {
+                "type": "object",
+                "description": "Distributed By",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Id",
+                  "example": "9035722"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Name",
+                  "example": "Rafael Floresta"
+                 }
+                }
+               },
+               "distributed_responses": {
+                "type": "array",
+                "description": "List of Connected Distributed Responses",
+                "items": {
+                 "type": "object",
+                 "description": "Connected Distributed Submittal Response",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Id",
+                   "example": "100"
+                  },
+                  "comment": {
+                   "type": "string",
+                   "description": "Comment",
+                   "example": "Comment added by the user"
+                  },
+                  "distributed_attachments": {
+                   "type": "array",
+                   "description": "List of Connected Distributed Attachments",
+                   "items": {
+                    "type": "object",
+                    "description": "Connected Distributed Attachment",
+                    "properties": {
+                     "id": {
+                      "type": "string",
+                      "example": "100"
+                     },
+                     "content_type": {
+                      "type": "string",
+                      "example": "pdf"
+                     },
+                     "filename": {
+                      "type": "string",
+                      "example": "document.pdf"
+                     },
+                     "source_prostore_file_id": {
+                      "type": "string",
+                      "example": "100"
+                     },
+                     "url": {
+                      "type": "string",
+                      "example": "storage/document.pdf"
+                     },
+                     "viewable_document_id": {
+                      "type": "string",
+                      "example": "150"
+                     }
+                    }
+                   }
+                  },
+                  "submittal_response": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "example": "150"
+                    },
+                    "considered": {
+                     "type": "string",
+                     "example": "approved"
+                    },
+                    "name": {
+                     "type": "string",
+                     "example": "Approved"
+                    }
+                   }
+                  },
+                  "translated_response": {
+                   "type": "string",
+                   "example": "Approved"
+                  },
+                  "user": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "example": "200"
+                    },
+                    "login_information_id": {
+                     "type": "string",
+                     "example": "169"
+                    },
+                    "name": {
+                     "type": "string",
+                     "example": "Ravi Patel"
+                    }
+                   }
+                  }
+                 }
+                }
+               },
+               "distributed_to": {
+                "type": "array",
+                "description": "List of values",
+                "items": {
+                 "type": "object",
+                 "description": "Distributed To",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "Id",
+                   "example": "12262620"
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Name",
+                   "example": "Slava Lutsenko"
+                  }
+                 }
+                }
+               },
+               "message": {
+                "type": "string",
+                "description": "Message",
+                "example": "<p>test distributed</p>"
+               },
+               "sent_at": {
+                "type": "string",
+                "description": "Sent At",
+                "example": "2025-01-07T19:52:46Z"
+               },
+               "submittal_description": {
+                "type": "string",
+                "description": "Submittal Description",
+                "example": "<p>Distribution Description</p>"
+               },
+               "submittal_distributed_attachments": {
+                "type": "array",
+                "description": "List of Connected Distributed Attachments",
+                "items": {
+                 "type": "object",
+                 "description": "Connected Distributed Attachment",
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "example": "100"
+                  },
+                  "content_type": {
+                   "type": "string",
+                   "example": "pdf"
+                  },
+                  "filename": {
+                   "type": "string",
+                   "example": "document.pdf"
+                  },
+                  "source_prostore_file_id": {
+                   "type": "string",
+                   "example": "100"
+                  },
+                  "url": {
+                   "type": "string",
+                   "example": "storage/document.pdf"
+                  },
+                  "viewable_document_id": {
+                   "type": "string",
+                   "example": "150"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "connected_submittal_connection_detail": {
+             "type": "object",
+             "nullable": true,
+             "description": "Details about the upstream project connection for this connected submittal. Present only on the show (single-record) response.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the connection detail record.",
+               "example": "778821"
+              },
+              "status": {
+               "type": "string",
+               "description": "Whether the upstream connection is currently connected or disconnected.",
+               "enum": [
+                "connected",
+                "disconnected"
+               ],
+               "example": "connected"
+              },
+              "upstream_company_name": {
+               "type": "string",
+               "description": "Name of the upstream company that owns the source submittal.",
+               "example": "Upstream Builders Inc."
+              }
+             }
+            },
+            "linked_drawings": {
+             "type": "array",
+             "description": "Drawings linked to the connected submittal upstream. Present only on the show (single-record) response.",
+             "items": {
+              "type": "object",
+              "description": "A linked drawing with its file attachment.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Identifier of the linked drawing record.",
+                "example": "90211"
+               },
+               "attachment": {
+                "type": "object",
+                "description": "File attachment metadata for the linked drawing (identifier, name, and viewable/download URL)."
+               }
+              }
+             }
+            },
+            "cover_sheet": {
+             "type": "object",
+             "nullable": true,
+             "description": "Most recent generated cover sheet PDF export for the connected submittal, with its file attachment. Null when no export exists. Present only on the show (single-record) response.",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Identifier of the cover sheet PDF export record.",
+               "example": "55110"
+              },
+              "attachment": {
+               "type": "object",
+               "description": "File attachment metadata for the cover sheet PDF (identifier, name, and viewable/download URL)."
+              }
+             }
+            },
+            "project_connection": {
+             "type": "object",
+             "nullable": true,
+             "description": "Upstream project connection identifiers and names for the connected submittal. Null when there is no active connection. Present only on the show (single-record) response.",
+             "properties": {
+              "upstream_project_name": {
+               "type": "string",
+               "description": "Name of the upstream project that owns the source submittal.",
+               "example": "Downtown Tower - GC"
+              },
+              "upstream_company_name": {
+               "type": "string",
+               "description": "Name of the upstream company that owns the source submittal.",
+               "example": "Upstream Builders Inc."
+              },
+              "upstream_project_id": {
+               "type": "string",
+               "description": "Identifier of the upstream project.",
+               "example": "2361000"
+              },
+              "upstream_company_id": {
+               "type": "string",
+               "description": "Identifier of the upstream company.",
+               "example": "375"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/revisions',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/revisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/revisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/revisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET External Submittals Revisions Endpoint",
+      "description": "Return all revisions for an External Submittal, ordered from the most recent revision to the oldest.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/external_submittals/{id}/revisions",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "external-submittals?version=2.0#list-revisions-for-an-external-submittal"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/external_submittals/{id}/advanced_exports": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "External Submittal ID",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Show advanced export options for an External Submittal.",
+    "description": "Returns the available advanced export configuration options for the specified External Submittal, including cover sheet and file attachment selections.",
+    "tags": [
+     "Submittals"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "slug": {
+              "type": "string",
+              "description": "Unique identifier for the option set.",
+              "example": "files"
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the option set.",
+              "example": "Select All"
+             },
+             "type": {
+              "type": "string",
+              "description": "Selection type.",
+              "enum": [
+               "single_select",
+               "multi_select"
+              ]
+             },
+             "options": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "oneOf": [
+                  {
+                   "type": "integer"
+                  },
+                  {
+                   "type": "string"
+                  }
+                 ],
+                 "description": "Option identifier. Attachment options use the integer prostore file ID; the cover sheet option uses the string `cover_sheet`."
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Display name of the option."
+                },
+                "content_type": {
+                 "type": "string",
+                 "description": "MIME content type (for file options)."
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET External Submittals Advanced Exports Endpoint",
+      "description": "Show the available advanced export options for an External Submittal, including cover sheet and file attachment selections.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/external_submittals/{id}/advanced_exports",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "external-submittals?version=2.0#show-advanced-export-options-for-an-external-submittal"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Create an advanced export for an External Submittal.",
+    "description": "Kicks off an advanced export of the specified External Submittal with the selected format and attachments. ZIP exports and multi-file PDF exports are generated asynchronously and do not return a download URL. A PDF export containing only the cover sheet is generated synchronously and returns a download URL.",
+    "tags": [
+     "Submittals"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "format",
+         "options"
+        ],
+        "properties": {
+         "format": {
+          "type": "string",
+          "description": "Export file format.",
+          "enum": [
+           "pdf",
+           "zip"
+          ],
+          "example": "pdf"
+         },
+         "options": {
+          "type": "object",
+          "description": "Advanced export options.",
+          "properties": {
+           "files": {
+            "type": "array",
+            "description": "IDs of the External Submittal attachments to include in the export. Include the cover sheet slug to prepend a cover sheet.",
+            "items": {
+             "type": "string"
+            },
+            "example": [
+             "101",
+             "cover_sheet"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Export result data.",
+           "properties": {
+            "message": {
+             "type": "string",
+             "description": "Success message."
+            },
+            "url": {
+             "type": "string",
+             "description": "URL to download the exported file (only present when the export is generated synchronously)."
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports',\n  headers: {'content-type': 'application/json'},\n  body: {format: 'pdf', options: {files: ['101', 'cover_sheet']}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"format\\\":\\\"pdf\\\",\\\"options\\\":{\\\"files\\\":[\\\"101\\\",\\\"cover_sheet\\\"]}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports \\\n  --header 'content-type: application/json' \\\n  --data '{\"format\":\"pdf\",\"options\":{\"files\":[\"101\",\"cover_sheet\"]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/external_submittals/%7Bid%7D/advanced_exports\"),\n    Content = new StringContent(\"{\\\"format\\\":\\\"pdf\\\",\\\"options\\\":{\\\"files\\\":[\\\"101\\\",\\\"cover_sheet\\\"]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce POST External Submittals Advanced Exports Endpoint",
+      "description": "Create an advanced export of an External Submittal with the selected format and attachments. ZIP exports and multi-file PDF exports are generated asynchronously and do not return a download URL. A PDF export containing only the cover sheet is generated synchronously and returns a download URL.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/external_submittals/{id}/advanced_exports",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-28",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "external-submittals?version=2.0#create-an-advanced-export-for-an-external-submittal"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  }
+ }
+}

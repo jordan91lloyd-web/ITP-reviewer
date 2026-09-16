@@ -1,0 +1,102 @@
+# Prepare for the Marketplace
+
+_Build, test, and prepare your app for a successful listing on the Procore Marketplace._
+
+Source: https://developers.procore.com/documentation/marketplace-requirements
+
+---
+
+## Overview
+Once you've signed up as a developer, it’s time to build a high-quality integration that delivers value to customers and meets Procore’s Marketplace standards. This page covers the development milestones, Marketplace requirements, and onboarding best practices for preparing your app to list. For the end-to-end partner journey — application, agreement, and launch — see the [Technology Partner Overview](030-procore-partner-overview.md).
+
+***
+## 1. Understand the Developer Environment
+Before building, make sure to:
+- Review our API documentation to explore [available endpoints](https://developers.procore.com/reference/rest/docs/rest-api-overview) and [app types](013-building-apps-app-types.md)
+- Review the [API Usage Guidelines](011-api-usage-guidelines.md) to understand how Procore's APIs are designed to be used
+- Understand [OAuth 2.0 authentication flows](014-oauth-choose-grant-type.md) (User vs. Service Account)
+- Your app **must** implement proper [error handling](073-error-reference.md) and comply with Procore's [rate limits](015-rate-limiting.md)
+- Use your Developer Sandbox to test <a target="_blank" href="https://support.procore.com/products/online/user-guide/company-level/admin/tutorials/install-a-custom-app">app installations</a> and simulate real-world usage
+- Invite [collaborators](028-building-apps-manage-collabs.md) to your app via the Developer Portal
+
+***
+## 2. Meet the Marketplace Requirements
+To be listed on the Procore Marketplace, your app must meet the following requirements. These ensure consistency, reliability, and a great experience for customers.
+
+Procore verifies your app's production readiness — security, API efficiency, and reliability — through the **Certification Assessment**, a required review before your app can reach production. The remaining requirements (customer validation, onboarding, and listing quality) are confirmed during the final Marketplace review. See the [Technology Partner Overview](030-procore-partner-overview.md) for how certification and listing fit into the journey.
+
+### App Functionality
+- Your app must be installable in a customer's Procore account.
+- Your app must deliver clear and meaningful value to Procore customers.
+- Your app must be production-ready — demo-only or trial-only apps are not accepted.
+- Your app must pass functional testing with no major bugs or blockers.
+
+### Onboarding & Support
+- You must provide clear, step-by-step onboarding instructions.
+- You must offer accessible support documentation or support contact information.
+- Your Marketplace listing must be accurate, complete, and regularly maintained.
+
+### API Usage & Compliance
+- You must use Procore's REST APIs for their intended transactional purpose — creating, reading, updating, and deleting records as part of your app's core integration. See the [API Usage Guidelines](011-api-usage-guidelines.md) for details.
+- You must not use Procore APIs for large-scale data extraction, bulk export, or data harvesting beyond your app's core functionality.
+- You must not use Procore data to train, fine-tune, or benchmark AI/ML models (including LLMs).
+- You must not use private or undocumented Procore APIs.
+
+### Compliance & Conduct
+- You must comply with all Procore Partner Program terms, agreements, and conduct policies.
+- You must not include ads, push notifications, or malicious behaviors in your app.
+
+<!-- ### General Requirements
+- Be installable in a customer’s Procore account
+- Have at least one (1) beta customer prior to submission
+- Have at least one (1) active customer using the app within the past 12 months
+- Pass functional testing with no major bugs or blockers
+- Include step-by-step onboarding instructions
+- Provide clear support documentation or contact info
+- Maintain an accurate and up-to-date Marketplace listing
+- Be submitted as a production-ready app (no demo or trial-only apps)
+- Comply with all Partner Program terms, agreements, and conduct policies
+
+<!-- ### Apps That Will Not Be Accepted
+- Are custom-built for a specific customer or internal use only
+- Require a developer or partner user to be added to a customer’s Procore account
+- Deliver a confusing or low-quality user experience
+- Use private or undocumented APIs
+- Only offer “Login with Procore” functionality with no added value
+- Exist solely to search or export Procore data
+- Include ads, push notifications, or any malicious behavior
+- Use Procore data to train AI/ML models (including LLMs) -->
+
+***
+## 3. Onboard and Test with Customers
+As your app nears completion, we strongly encourage engaging at least one beta customer to simulate a real-world installation and gather feedback before you submit.
+
+- Ensure onboarding is simple, intuitive, and well-documented
+- Choose the appropriate authentication method (User vs. Service Account)
+- Provide a “Getting Started” guide or FAQ to reduce support friction
+- Test behavior across multiple Procore company accounts (a common scenario)
+- Design with enterprise needs in mind—privacy, scalability, and security
+
+***
+## Post-Approval Expectations
+Once your app is live on the Marketplace, it's important to maintain quality and stay engaged with customers.
+
+### Maintain Quality & Engagement
+- Respond to customer support requests promptly
+- Keep listing content accurate and up to date
+- Regularly update your app to support Procore platform changes
+- Fix bugs and technical issues in a timely manner
+- Monitor performance and user engagement using analytics
+- Maintain active usage — your app must have at least one (1) active customer using it within any rolling 12-month period
+
+### Enforcement Actions May Be Taken If:
+- Your app has ongoing issues or bugs that are not resolved
+- Customers report broken functionality or spammy behavior
+- Contact/support info in your listing is outdated or missing
+- Your app has no active customers using it within the past 12 months
+
+Procore may remove or unlist apps that do not meet ongoing requirements.
+
+***
+
+***

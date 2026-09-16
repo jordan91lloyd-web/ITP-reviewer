@@ -1,0 +1,867 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Workflow Instances (Bulk)",
+  "x-product-category": "Core",
+  "x-tool-category": "Workflows",
+  "x-resource-name": "Workflow Instances (Bulk)",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/workflows/instances/bulk_create": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Create Workflow Instances (Project) (Public)",
+    "description": "Asynchronously bulk create workflow instances for a list of project-level items. If an active instance already exists for an item, a failure will be returned for that item.\n\nThe returned async operation id can be used to query for status using the [`GET /rest/v2.0/companies/{company_id}/async_operations/{operation_id}`](https://developers.procore.com/reference/rest/operations?version=latest#get-operation-details) API. The result field of the operation contains a list of completed and failed items.\n\nFor example:\n````json\n{\n  \"completed_items\": [\n    {\n      \"item_id\": \"123\",\n      \"instance_id\": \"456\"\n    }\n  ],\n  \"failed_items\": [\n    {\n      \"item_id\": \"789\",\n      \"step\": \"create\",\n      \"message\": \"Item not found\"\n    }\n  ]\n}\n````",
+    "tags": [
+     "Workflow Instances (Bulk)"
+    ],
+    "parameters": [
+     {
+      "required": false,
+      "name": "Idempotency-Token",
+      "in": "header",
+      "description": "Unique idempotent token",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Workflow Instances Bulk Create",
+        "properties": {
+         "tool_type": {
+          "type": "string",
+          "description": "Tool that instances are being created for.",
+          "example": "drawing"
+         },
+         "tool_subtype": {
+          "type": "string",
+          "description": "Tool sub-type. Only required for specific tools.",
+          "example": "-18472",
+          "nullable": true
+         },
+         "items": {
+          "type": "array",
+          "description": "List of objects to create workflow instances for.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "item_id": {
+             "type": "string",
+             "description": "ID of the item to create the workflow for.",
+             "example": "9238237"
+            },
+            "preset_id": {
+             "type": "string",
+             "description": "ID of the workflow configuration to use when creating the workflow.",
+             "example": "328274"
+            }
+           }
+          }
+         }
+        },
+        "required": [
+         "tool_type",
+         "items"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "Accepted",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Instances Bulk Create",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Result of the bulk creation request",
+           "properties": {
+            "operation_id": {
+             "type": "string",
+             "description": "ID of the asynchronous operation",
+             "example": "115654"
+            },
+            "operation_type": {
+             "type": "string",
+             "description": "Type of the asynchronous operation",
+             "example": "workflows_instance_bulk_create"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/instances/bulk_create',\n  headers: {'Idempotency-Token': 'SOME_STRING_VALUE', 'content-type': 'application/json'},\n  body: {\n    tool_type: 'drawing',\n    tool_subtype: '-18472',\n    items: [{item_id: '9238237', preset_id: '328274'}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"tool_type\\\":\\\"drawing\\\",\\\"tool_subtype\\\":\\\"-18472\\\",\\\"items\\\":[{\\\"item_id\\\":\\\"9238237\\\",\\\"preset_id\\\":\\\"328274\\\"}]}\"\n\nheaders = {\n    'Idempotency-Token': \"SOME_STRING_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/instances/bulk_create\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/instances/bulk_create \\\n  --header 'Idempotency-Token: SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"tool_type\":\"drawing\",\"tool_subtype\":\"-18472\",\"items\":[{\"item_id\":\"9238237\",\"preset_id\":\"328274\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/workflows/instances/bulk_create\"),\n    Headers =\n    {\n        { \"Idempotency-Token\", \"SOME_STRING_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"tool_type\\\":\\\"drawing\\\",\\\"tool_subtype\\\":\\\"-18472\\\",\\\"items\\\":[{\\\"item_id\\\":\\\"9238237\\\",\\\"preset_id\\\":\\\"328274\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/workflows/instances/bulk_create": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Create Workflow Instances (Company) (Public)",
+    "description": "Asynchronously bulk create workflow instances for a list of company-level items. If an active instance already exists for an item, a failure will be returned for that item.\n\nThe returned async operation id can be used to query for status using the [`GET /rest/v2.0/companies/{company_id}/async_operations/{operation_id}`](https://developers.procore.com/reference/rest/operations?version=latest#get-operation-details) API. The result field of the operation contains a list of completed and failed items.\n\nFor example:\n````json\n{\n  \"completed_items\": [\n    {\n      \"item_id\": \"123\",\n      \"instance_id\": \"456\"\n    }\n  ],\n  \"failed_items\": [\n    {\n      \"item_id\": \"789\",\n      \"step\": \"create\",\n      \"message\": \"Item not found\"\n    }\n  ]\n}\n````",
+    "tags": [
+     "Workflow Instances (Bulk)"
+    ],
+    "parameters": [
+     {
+      "required": false,
+      "name": "Idempotency-Token",
+      "in": "header",
+      "description": "Unique idempotent token",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Workflow Instances Bulk Create",
+        "properties": {
+         "tool_type": {
+          "type": "string",
+          "description": "Tool that instances are being created for.",
+          "example": "drawing"
+         },
+         "tool_subtype": {
+          "type": "string",
+          "description": "Tool sub-type. Only required for specific tools.",
+          "example": "-18472",
+          "nullable": true
+         },
+         "items": {
+          "type": "array",
+          "description": "List of objects to create workflow instances for.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "item_id": {
+             "type": "string",
+             "description": "ID of the item to create the workflow for.",
+             "example": "9238237"
+            },
+            "preset_id": {
+             "type": "string",
+             "description": "ID of the workflow configuration to use when creating the workflow.",
+             "example": "328274"
+            }
+           }
+          }
+         }
+        },
+        "required": [
+         "tool_type",
+         "items"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "Accepted",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflow Instances Bulk Create",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Result of the bulk creation request",
+           "properties": {
+            "operation_id": {
+             "type": "string",
+             "description": "ID of the asynchronous operation",
+             "example": "115654"
+            },
+            "operation_type": {
+             "type": "string",
+             "description": "Type of the asynchronous operation",
+             "example": "workflows_instance_bulk_create"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/instances/bulk_create',\n  headers: {'Idempotency-Token': 'SOME_STRING_VALUE', 'content-type': 'application/json'},\n  body: {\n    tool_type: 'drawing',\n    tool_subtype: '-18472',\n    items: [{item_id: '9238237', preset_id: '328274'}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"tool_type\\\":\\\"drawing\\\",\\\"tool_subtype\\\":\\\"-18472\\\",\\\"items\\\":[{\\\"item_id\\\":\\\"9238237\\\",\\\"preset_id\\\":\\\"328274\\\"}]}\"\n\nheaders = {\n    'Idempotency-Token': \"SOME_STRING_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/instances/bulk_create\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/instances/bulk_create \\\n  --header 'Idempotency-Token: SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"tool_type\":\"drawing\",\"tool_subtype\":\"-18472\",\"items\":[{\"item_id\":\"9238237\",\"preset_id\":\"328274\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/instances/bulk_create\"),\n    Headers =\n    {\n        { \"Idempotency-Token\", \"SOME_STRING_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"tool_type\\\":\\\"drawing\\\",\\\"tool_subtype\\\":\\\"-18472\\\",\\\"items\\\":[{\\\"item_id\\\":\\\"9238237\\\",\\\"preset_id\\\":\\\"328274\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "partial"
+  }
+ }
+}

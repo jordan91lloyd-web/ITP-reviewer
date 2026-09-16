@@ -1,0 +1,947 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Activities",
+  "version": "2.0",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Activities",
+  "x-tool-category": "Scheduling",
+  "x-product-lines": [
+   "schedule-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/activities": {
+   "get": {
+    "tags": [
+     "activities-controller"
+    ],
+    "summary": "List Activities",
+    "description": "List all activities in a schedule. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "listActivities",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "filters[activity_id]",
+      "in": "query",
+      "description": "Filter activities by activity_id",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[activity_name]",
+      "in": "query",
+      "description": "Filter activities by name",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[is_critical]",
+      "in": "query",
+      "description": "Filter activities by critical path status in read only project schedule",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[updated_at][gt]",
+      "in": "query",
+      "description": "Filter for activities updated after this timestamp (ISO 8601)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[start_date][gte]",
+      "in": "query",
+      "description": "Filter activities with start date on or after this date (inclusive, ISO 8601 date YYYY-MM-DD in project-local time)",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[start_date][lte]",
+      "in": "query",
+      "description": "Filter activities with start date on or before this date (inclusive, ISO 8601 date YYYY-MM-DD in project-local time)",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[finish_date][gte]",
+      "in": "query",
+      "description": "Filter activities with finish date on or after this date (inclusive, ISO 8601 date YYYY-MM-DD in project-local time)",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[finish_date][lte]",
+      "in": "query",
+      "description": "Filter activities with finish date on or before this date (inclusive, ISO 8601 date YYYY-MM-DD in project-local time)",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort by supported fields. Accepts comma separated values to sort by multiple fields. Order is ascending by default, prefix field with '-' for descending",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "activity_id",
+        "activity_name",
+        "start_date",
+        "finish_date",
+        "percent_complete",
+        "parent_id",
+        "ordered_parent_index",
+        "deadline_date",
+        "created_at",
+        "last_modified_at",
+        "starts_at",
+        "finishes_at"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved activities",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int32"
+        }
+       },
+       "Total": {
+        "description": "Total number of records available",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int64"
+        }
+       },
+       "Link": {
+        "description": "Link header for the first, prev, next, and the last page links",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "activity_id": {
+              "type": "string",
+              "description": "The unique identifier for the activity",
+              "example": "245",
+              "pattern": "^\\d+$"
+             },
+             "activity_name": {
+              "type": "string",
+              "description": "The descriptive name of the activity",
+              "example": "Install Windows"
+             },
+             "start_date": {
+              "type": "string",
+              "description": "The activity's start date in UTC (ISO 8601 format)",
+              "example": "2024-05-14T13:30:00Z"
+             },
+             "finish_date": {
+              "type": "string",
+              "description": "The activity's finish date in UTC (ISO 8601 format)",
+              "example": "2024-05-25T17:00:00Z"
+             },
+             "duration": {
+              "type": "number",
+              "format": "float",
+              "description": "The duration of the activity",
+              "example": 5
+             },
+             "duration_unit": {
+              "type": "string",
+              "description": "The unit in which duration is stored (e.g., hours, day)",
+              "example": "day"
+             },
+             "duration_display_unit": {
+              "type": "string",
+              "description": "The unit in which duration is displayed in the UI",
+              "example": "days"
+             },
+             "percent_complete": {
+              "type": "number",
+              "format": "float",
+              "description": "The activity's completion percentage",
+              "example": 75.5
+             },
+             "parent_id": {
+              "type": "string",
+              "description": "The ID for the activity's parent activity",
+              "example": "418600"
+             },
+             "ordered_parent_index": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The order of the activity amongst its siblings",
+              "example": 3
+             },
+             "constraint_type": {
+              "type": "string",
+              "description": "The scheduling constraint type",
+              "example": "SNET"
+             },
+             "constraint_date": {
+              "type": "string",
+              "description": "The constraint date in UTC (ISO 8601 format)",
+              "example": "2024-05-10T08:00:00Z"
+             },
+             "assigned_company": {
+              "type": "string",
+              "description": "The name of the assigned Company",
+              "example": "ABC Contractors"
+             },
+             "crew_size": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The assigned crew size quantity",
+              "example": 5
+             },
+             "calendar_id": {
+              "type": "string",
+              "description": "The ID of the assigned calendar",
+              "example": "101",
+              "pattern": "^\\d+$"
+             },
+             "deadline_date": {
+              "type": "string",
+              "description": "The activity's assigned deadline date without timezone (ISO 8601 format)",
+              "example": "2024-06-01"
+             },
+             "deadline_variance": {
+              "type": "integer",
+              "format": "int32",
+              "description": "The difference between the deadline and finish dates in days",
+              "example": -3
+             },
+             "category_data": {
+              "type": "array",
+              "description": "The imported activity code details associated with the activity",
+              "items": {
+               "type": "object",
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "The name of the category field with the scope appended as a suffix",
+                 "example": "Phase_GLOBAL"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the category field",
+                 "example": "Foundation"
+                }
+               },
+               "required": [
+                "name",
+                "value"
+               ]
+              }
+             },
+             "resource_data": {
+              "type": "array",
+              "description": "The imported resources assignment details associated with the activity",
+              "items": {
+               "type": "object",
+               "properties": {
+                "resource_id": {
+                 "type": "string",
+                 "description": "The unique identifier for the resource",
+                 "example": "101",
+                 "pattern": "^\\d+$"
+                },
+                "resource_name": {
+                 "type": "string",
+                 "description": "The name of the resource",
+                 "example": "Crew 1"
+                }
+               },
+               "required": [
+                "resource_id",
+                "resource_name"
+               ]
+              }
+             },
+             "is_critical": {
+              "type": "boolean",
+              "description": "Describes whether the activity is on the critical path",
+              "example": true
+             },
+             "is_actual_start": {
+              "type": "boolean",
+              "description": "Indicates whether the start date is an actualized value. For newly imported activities, this is initialized as true if an Actual Start exists in the source file or if the Percent Complete is greater than 0%. Once in Procore, this flag is driven by progress; any activity with a Percent Complete greater than 0% is considered to have an actual start.",
+              "example": true
+             },
+             "is_actual_finish": {
+              "type": "boolean",
+              "description": "Indicates whether the finish date is an actualized value. This flag is determined strictly by progress and is true only when the Percent Complete is 100%. This applies both at the time of import and during ongoing management of an activity within Procore.",
+              "example": false
+             },
+             "total_float": {
+              "type": "number",
+              "format": "double",
+              "description": "The activity's total slack / float",
+              "example": 2.5
+             },
+             "notes": {
+              "type": "string",
+              "description": "Any notes associated with the activity",
+              "example": "Foundation work must be completed first"
+             },
+             "schedule_id": {
+              "type": "string",
+              "description": "The ID of the schedule",
+              "example": "15",
+              "pattern": "^\\d+$"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "Procore Project ID",
+              "example": "12345",
+              "pattern": "^\\d+$"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Procore Company ID",
+              "example": "67890",
+              "pattern": "^\\d+$"
+             },
+             "created_at": {
+              "type": "string",
+              "description": "The date and time the task was created (ISO 8601 format)",
+              "example": "2024-05-14T13:30:00Z"
+             },
+             "created_by": {
+              "type": "string",
+              "description": "The ID of the user who created the task",
+              "example": "1001",
+              "pattern": "^\\d+$"
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "The date and time the task was updated (ISO 8601 format)",
+              "example": "2024-05-15T10:30:00Z"
+             },
+             "updated_by": {
+              "type": "string",
+              "description": "The ID of the user who updated the task",
+              "example": "1002",
+              "pattern": "^\\d+$"
+             },
+             "unique_source_id": {
+              "type": "string",
+              "description": "The unique identifier of the task in the source file",
+              "example": "A1008"
+             }
+            },
+            "required": [
+             "activity_id",
+             "activity_name",
+             "company_id",
+             "created_at",
+             "created_by",
+             "ordered_parent_index",
+             "project_id",
+             "schedule_id"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "Unprocessable entity - invalid date filter format or inverted range",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string"
+               },
+               "message": {
+                "type": "string"
+               },
+               "source": {
+                "type": "string"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities',\n  qs: {\n    'filters[activity_id]': 'SOME_STRING_VALUE',\n    'filters[activity_name]': 'SOME_STRING_VALUE',\n    'filters[is_critical]': 'SOME_BOOLEAN_VALUE',\n    'filters[updated_at][gt]': 'SOME_STRING_VALUE',\n    'filters[start_date][gte]': 'SOME_STRING_VALUE',\n    'filters[start_date][lte]': 'SOME_STRING_VALUE',\n    'filters[finish_date][gte]': 'SOME_STRING_VALUE',\n    'filters[finish_date][lte]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities?filters%5Bactivity_id%5D=SOME_STRING_VALUE&filters%5Bactivity_name%5D=SOME_STRING_VALUE&filters%5Bis_critical%5D=SOME_BOOLEAN_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&filters%5Bstart_date%5D%5Bgte%5D=SOME_STRING_VALUE&filters%5Bstart_date%5D%5Blte%5D=SOME_STRING_VALUE&filters%5Bfinish_date%5D%5Bgte%5D=SOME_STRING_VALUE&filters%5Bfinish_date%5D%5Blte%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities?filters%5Bactivity_id%5D=SOME_STRING_VALUE&filters%5Bactivity_name%5D=SOME_STRING_VALUE&filters%5Bis_critical%5D=SOME_BOOLEAN_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&filters%5Bstart_date%5D%5Bgte%5D=SOME_STRING_VALUE&filters%5Bstart_date%5D%5Blte%5D=SOME_STRING_VALUE&filters%5Bfinish_date%5D%5Bgte%5D=SOME_STRING_VALUE&filters%5Bfinish_date%5D%5Blte%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities?filters%5Bactivity_id%5D=SOME_STRING_VALUE&filters%5Bactivity_name%5D=SOME_STRING_VALUE&filters%5Bis_critical%5D=SOME_BOOLEAN_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&filters%5Bstart_date%5D%5Bgte%5D=SOME_STRING_VALUE&filters%5Bstart_date%5D%5Blte%5D=SOME_STRING_VALUE&filters%5Bfinish_date%5D%5Bgte%5D=SOME_STRING_VALUE&filters%5Bfinish_date%5D%5Blte%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added date range filters (start_date and finish_date) to List Activities",
+      "description": "Added four new optional query parameters to filter activities by date range: filters[start_date][gte], filters[start_date][lte], filters[finish_date][gte], and filters[finish_date][lte]. Dates use ISO 8601 date-only format (YYYY-MM-DD) interpreted in project-local time. Returns 422 for invalid date formats or inverted ranges (gte > lte).",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/activities",
+      "datestamp": "2026-06-17",
+      "type": "feature",
+      "versions": [
+       "2.0"
+      ],
+      "breaking": false,
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "activities?version=2.0#list-activities"
+     },
+     {
+      "summary": "Added unique_source_id field to List Activities response",
+      "description": "Added a new unique_source_id field to the activity response object. This field contains the unique identifier of the task in the source file (e.g. P6 or MSP), enabling consumers to correlate Procore activities with their original source records.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/activities",
+      "datestamp": "2026-06-17",
+      "type": "feature",
+      "versions": [
+       "2.0"
+      ],
+      "breaking": false,
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "activities?version=2.0#list-activities"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/activities/{activity_id}": {
+   "get": {
+    "tags": [
+     "activities-controller"
+    ],
+    "summary": "Get Activity by ID",
+    "description": "Get a single activity by id. Use the Show Project API when you need the project time zone to interpret UTC timestamps or values expressed in project time.",
+    "operationId": "getActivityById",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "activity_id",
+      "in": "path",
+      "description": "unique identifier of the activity",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d+$"
+      },
+      "example": "15"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved activity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "activity_id": {
+             "type": "string",
+             "description": "The unique identifier for the activity",
+             "example": "245",
+             "pattern": "^\\d+$"
+            },
+            "activity_name": {
+             "type": "string",
+             "description": "The descriptive name of the activity",
+             "example": "Install Windows"
+            },
+            "start_date": {
+             "type": "string",
+             "description": "The activity's start date in UTC (ISO 8601 format)",
+             "example": "2024-05-14T13:30:00Z"
+            },
+            "finish_date": {
+             "type": "string",
+             "description": "The activity's finish date in UTC (ISO 8601 format)",
+             "example": "2024-05-25T17:00:00Z"
+            },
+            "duration": {
+             "type": "number",
+             "format": "float",
+             "description": "The duration of the activity",
+             "example": 5
+            },
+            "duration_unit": {
+             "type": "string",
+             "description": "The unit in which duration is stored (e.g., hours, day)",
+             "example": "day"
+            },
+            "duration_display_unit": {
+             "type": "string",
+             "description": "The unit in which duration is displayed in the UI",
+             "example": "days"
+            },
+            "percent_complete": {
+             "type": "number",
+             "format": "float",
+             "description": "The activity's completion percentage",
+             "example": 75.5
+            },
+            "parent_id": {
+             "type": "string",
+             "description": "The ID for the activity's parent activity",
+             "example": "418600"
+            },
+            "ordered_parent_index": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The order of the activity amongst its siblings",
+             "example": 3
+            },
+            "constraint_type": {
+             "type": "string",
+             "description": "The scheduling constraint type",
+             "example": "SNET"
+            },
+            "constraint_date": {
+             "type": "string",
+             "description": "The constraint date in UTC (ISO 8601 format)",
+             "example": "2024-05-10T08:00:00Z"
+            },
+            "assigned_company": {
+             "type": "string",
+             "description": "The name of the assigned Company",
+             "example": "ABC Contractors"
+            },
+            "crew_size": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The assigned crew size quantity",
+             "example": 5
+            },
+            "calendar_id": {
+             "type": "string",
+             "description": "The ID of the assigned calendar",
+             "example": "101",
+             "pattern": "^\\d+$"
+            },
+            "deadline_date": {
+             "type": "string",
+             "description": "The activity's assigned deadline date without timezone (ISO 8601 format)",
+             "example": "2024-06-01"
+            },
+            "deadline_variance": {
+             "type": "integer",
+             "format": "int32",
+             "description": "The difference between the deadline and finish dates in days",
+             "example": -3
+            },
+            "category_data": {
+             "type": "array",
+             "description": "The imported activity code details associated with the activity",
+             "items": {
+              "type": "object",
+              "properties": {
+               "name": {
+                "type": "string",
+                "description": "The name of the category field with the scope appended as a suffix",
+                "example": "Phase_GLOBAL"
+               },
+               "value": {
+                "type": "string",
+                "description": "The value of the category field",
+                "example": "Foundation"
+               }
+              },
+              "required": [
+               "name",
+               "value"
+              ]
+             }
+            },
+            "resource_data": {
+             "type": "array",
+             "description": "The imported resources assignment details associated with the activity",
+             "items": {
+              "type": "object",
+              "properties": {
+               "resource_id": {
+                "type": "string",
+                "description": "The unique identifier for the resource",
+                "example": "101",
+                "pattern": "^\\d+$"
+               },
+               "resource_name": {
+                "type": "string",
+                "description": "The name of the resource",
+                "example": "Crew 1"
+               }
+              },
+              "required": [
+               "resource_id",
+               "resource_name"
+              ]
+             }
+            },
+            "is_critical": {
+             "type": "boolean",
+             "description": "Describes whether the activity is on the critical path",
+             "example": true
+            },
+            "is_actual_start": {
+             "type": "boolean",
+             "description": "Indicates whether the start date is an actualized value. For newly imported activities, this is initialized as true if an Actual Start exists in the source file or if the Percent Complete is greater than 0%. Once in Procore, this flag is driven by progress; any activity with a Percent Complete greater than 0% is considered to have an actual start.",
+             "example": true
+            },
+            "is_actual_finish": {
+             "type": "boolean",
+             "description": "Indicates whether the finish date is an actualized value. This flag is determined strictly by progress and is true only when the Percent Complete is 100%. This applies both at the time of import and during ongoing management of an activity within Procore.",
+             "example": false
+            },
+            "total_float": {
+             "type": "number",
+             "format": "double",
+             "description": "The activity's total slack / float",
+             "example": 2.5
+            },
+            "notes": {
+             "type": "string",
+             "description": "Any notes associated with the activity",
+             "example": "Foundation work must be completed first"
+            },
+            "schedule_id": {
+             "type": "string",
+             "description": "The ID of the schedule",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            },
+            "created_at": {
+             "type": "string",
+             "description": "The date and time the task was created (ISO 8601 format)",
+             "example": "2024-05-14T13:30:00Z"
+            },
+            "created_by": {
+             "type": "string",
+             "description": "The ID of the user who created the task",
+             "example": "1001",
+             "pattern": "^\\d+$"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time the task was updated (ISO 8601 format)",
+             "example": "2024-05-15T10:30:00Z"
+            },
+            "updated_by": {
+             "type": "string",
+             "description": "The ID of the user who updated the task",
+             "example": "1002",
+             "pattern": "^\\d+$"
+            },
+            "unique_source_id": {
+             "type": "string",
+             "description": "The unique identifier of the task in the source file",
+             "example": "A1008"
+            }
+           },
+           "required": [
+            "activity_id",
+            "activity_name",
+            "company_id",
+            "created_at",
+            "created_by",
+            "ordered_parent_index",
+            "project_id",
+            "schedule_id"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities/15'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities/15\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities/15"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activities/15\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added unique_source_id field to Get Activity by ID response",
+      "description": "Added a new unique_source_id field to the activity response object. This field contains the unique identifier of the task in the source file (e.g. P6 or MSP), enabling consumers to correlate Procore activities with their original source records.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/activities/{activity_id}",
+      "datestamp": "2026-06-17",
+      "type": "feature",
+      "versions": [
+       "2.0"
+      ],
+      "breaking": false,
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "activities?version=2.0#get-activity-by-id"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

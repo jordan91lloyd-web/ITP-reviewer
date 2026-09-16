@@ -1,0 +1,475 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Invoicing Requisition Line Item Payment Application Associations V2 API",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Invoices",
+  "x-resource-name": "Requisition Line Item Payment Application Associations",
+  "version": "2.0",
+  "x-product-lines": [
+   "Invoicing"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/invoices/requisitions/{invoice_id}/line_item_payment_application_associations": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "invoice_id",
+     "in": "path",
+     "description": "ID of the requisition (subcontractor invoice)",
+     "required": true,
+     "schema": {
+      "type": "string"
+     },
+     "example": "123"
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Requisition Line Item Payment Application Associations",
+    "description": "Returns the owner Payment Applications that each line item of a requisition (subcontractor\ninvoice) was prefilled into.\n\nPrefill v2 associations are line-item-exact: `line_item_id` is the requisition line item\n(Billings Progress) id. Legacy (prefill_version != 2) associations are only known at the\nrequisition level and are returned with a `null` `line_item_id`, one row per associated\nPayment Application.\n\nAccess mirrors the requisition line items permission: a user without commitment view receives\na 403. Payment Applications the user cannot view (prime contract permission) are omitted, so a\nuser with commitment view but no prime contract access receives an empty array.",
+    "tags": [
+     "Invoicing",
+     "Line Items"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "line_item_ids",
+      "in": "query",
+      "description": "Optional list of requisition line item (Billings Progress) ids to filter the associations by.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      },
+      "example": [
+       6,
+       7
+      ]
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Requisition line item to owner Payment Application associations",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "One entry per (line item, payment application) association.",
+           "items": {
+            "type": "object",
+            "required": [
+             "line_item_id",
+             "item_type",
+             "item_id",
+             "payment_application"
+            ],
+            "properties": {
+             "line_item_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "The requisition line item (Billings Progress) id the Payment Application was prefilled from.\nPopulated for prefill v2 associations (line-item-exact) and `null` for legacy\n(prefill_version != 2) associations, which are only known at the requisition level.",
+              "example": "6"
+             },
+             "item_type": {
+              "type": "string",
+              "nullable": true,
+              "description": "The requisition item type the line item belongs to (the SOV / change-order item). `null`\nfor legacy associations.",
+              "enum": [
+               "contract_item",
+               "contract_detail_item",
+               "change_order_item"
+              ],
+              "example": "contract_item"
+             },
+             "item_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "The requisition item id (of `item_type`) the line item belongs to. `null` for legacy\nassociations. Together with `item_type` this correlates to the line items endpoint's\n`requisition_item_id` / `requisition_item_type`.",
+              "example": "42"
+             },
+             "payment_application": {
+              "type": "object",
+              "description": "The owner Payment Application the line item was prefilled into.",
+              "required": [
+               "id",
+               "number",
+               "url"
+              ],
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The Payment Application id.",
+                "example": "1"
+               },
+               "number": {
+                "type": "integer",
+                "nullable": true,
+                "description": "The Payment Application number (its sequential position within the contract).",
+                "example": 3
+               },
+               "url": {
+                "type": "string",
+                "nullable": true,
+                "description": "Deep-link URL to the Payment Application.",
+                "example": "https://app.procore.com/1234/project/prime_contracts/5/payment_applications/1"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/invoices/requisitions/123/line_item_payment_application_associations',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    line_item_ids: ['6', '7']\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/invoices/requisitions/123/line_item_payment_application_associations?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&line_item_ids=6&line_item_ids=7\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/invoices/requisitions/123/line_item_payment_application_associations?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&line_item_ids=6&line_item_ids=7'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/invoices/requisitions/123/line_item_payment_application_associations?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&line_item_ids=6&line_item_ids=7\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add the Requisition Line Item Payment Application Associations endpoint",
+      "description": "New BETA endpoint returning the owner Payment Applications that each line item of a\nrequisition (subcontractor invoice) was prefilled into. v2 prefill associations are\nline-item-exact (line_item_id, item_type, item_id); legacy associations are\nrequisition-level with null line_item_id/item fields.\n",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/invoices/requisitions/{invoice_id}/line_item_payment_application_associations",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-14",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "requisition-line-item-payment-application-associations?version=2.0#list-requisition-line-item-payment-application-associations"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

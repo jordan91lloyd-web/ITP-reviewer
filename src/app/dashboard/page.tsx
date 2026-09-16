@@ -17,6 +17,7 @@ import ReportTab from "@/components/ReportTab";
 import ActionPlansPage from "@/app/action-plans/page";
 import DrawingChangesTab from "@/components/DrawingChangesTab";
 import PhotoClassifierTab from "@/components/PhotoClassifierTab";
+import InspectionCreatorTab from "@/components/InspectionCreatorTab";
 import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
@@ -686,7 +687,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [visitedTabs, setVisitedTabs] = useState<Set<DashboardView>>(new Set(["itp_reviews"]));
   const [insightsFetched, setInsightsFetched] = useState(false);
@@ -1603,6 +1604,7 @@ export default function DashboardPage() {
           ["report",          "Report",          null],
           ["queue",           "Queue",           null],
           ["action_plans",   "Action Plans",    null],
+          ["inspection_creator", "Inspections",  null],
           ["drawing_changes", "Drawing Changes", null],
           ["photo_classifier", "Photo Classifier", null],
         ] as [DashboardView, string, string | null][]).map(([view, baseLabel, icon]) => {
@@ -1719,6 +1721,10 @@ export default function DashboardPage() {
 
       {visitedTabs.has("action_plans") && <div style={{ display: dashboardView === "action_plans" ? undefined : "none", flex: 1, overflow: "auto" }}>
         <ActionPlansPage />
+      </div>}
+
+      {selectedCompany && visitedTabs.has("inspection_creator") && <div style={{ display: dashboardView === "inspection_creator" ? undefined : "none", flex: 1, overflow: "auto" }}>
+        <InspectionCreatorTab company_id={String(selectedCompany.id)} />
       </div>}
 
       {selectedCompany && visitedTabs.has("drawing_changes") && <div style={{ display: dashboardView === "drawing_changes" ? undefined : "none", flex: 1, overflow: "auto" }}>

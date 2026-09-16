@@ -1,0 +1,3235 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Financial Periods",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Financial Periods",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/financial_periods": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Financial Period groups",
+    "description": "Returns all Financial Period groups for the company, paginated by group. Groups are never split across pages and are ordered by their earliest period start date.\n",
+    "tags": [
+     "Budget"
+    ],
+    "parameters": [
+     {
+      "name": "filters[from_date]",
+      "in": "query",
+      "description": "Inclusive lower bound of the date window (ISO 8601 date, \"YYYY-MM-DD\"). When provided, only groups whose span ends on or after this date are returned. Groups are returned in full (all their periods), not only the periods inside the window. Optional; when omitted the window is unbounded below.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date",
+       "example": "2026-01-01"
+      }
+     },
+     {
+      "name": "filters[to_date]",
+      "in": "query",
+      "description": "Inclusive upper bound of the date window (ISO 8601 date, \"YYYY-MM-DD\"). When provided, only groups whose span starts on or before this date are returned. Groups are returned in full (all their periods), not only the periods inside the window. Optional; when omitted the window is unbounded above. Must be on or after `filters[from_date]` when both are given.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date",
+       "example": "2026-12-31"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort groups by start date. `date` orders by earliest period start ascending (the default); `-date` orders descending.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "date",
+        "-date"
+       ],
+       "default": "date",
+       "example": "-date"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page number (default 1)",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 1,
+       "default": 1,
+       "example": 1
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of groups per page (default 10, max 100)",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 100,
+       "default": 10,
+       "example": 10
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of groups per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of groups across all pages",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Pagination links",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Financial Periods",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Financial periods grouped by group name",
+           "additionalProperties": {
+            "type": "array",
+            "description": "Periods belonging to this group",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier of the financial period. Use as the {id} path parameter to update a single period's status via PATCH /financial_periods/periods/{id}.",
+               "example": "1"
+              },
+              "group_name": {
+               "type": "string",
+               "description": "Name of the period group this period belongs to (e.g. \"FY 2026\"). Use as the {group_name} path parameter to update or delete the whole group.",
+               "example": "FY 2026"
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the individual period within the group (e.g. \"Q1 2026\").",
+               "example": "Q1 2026"
+              },
+              "start_date": {
+               "type": "string",
+               "format": "date",
+               "description": "First day of the period, inclusive (ISO 8601 date).",
+               "example": "2026-01-01"
+              },
+              "end_date": {
+               "type": "string",
+               "format": "date",
+               "description": "Last day of the period, inclusive (ISO 8601 date).",
+               "example": "2026-03-31"
+              },
+              "status": {
+               "type": "string",
+               "enum": [
+                "open",
+                "closed"
+               ],
+               "description": "Lifecycle status of the period.",
+               "example": "open"
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when the period was created (ISO 8601).",
+               "example": "2026-05-11T13:14:15Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when the period was last updated (ISO 8601).",
+               "example": "2026-05-11T13:14:15Z"
+              }
+             },
+             "required": [
+              "id",
+              "group_name",
+              "name",
+              "start_date",
+              "end_date",
+              "status",
+              "created_at",
+              "updated_at"
+             ]
+            },
+            "example": {
+             "FY 2026": [
+              {
+               "id": "1",
+               "group_name": "FY 2026",
+               "name": "Q1 2026",
+               "start_date": "2026-01-01",
+               "end_date": "2026-03-31",
+               "status": "open",
+               "created_at": "2026-05-11T13:14:15Z",
+               "updated_at": "2026-05-11T13:14:15Z"
+              }
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods',\n  qs: {\n    'filters[from_date]': '2026-01-01',\n    'filters[to_date]': '2026-12-31',\n    sort: '-date',\n    page: '1',\n    per_page: '10'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods?filters%5Bfrom_date%5D=2026-01-01&filters%5Bto_date%5D=2026-12-31&sort=-date&page=1&per_page=10\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods?filters%5Bfrom_date%5D=2026-01-01&filters%5Bto_date%5D=2026-12-31&sort=-date&page=1&per_page=10'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods?filters%5Bfrom_date%5D=2026-01-01&filters%5Bto_date%5D=2026-12-31&sort=-date&page=1&per_page=10\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET Financial Periods Endpoint",
+      "description": "Fetch Financial Periods grouped by group name (company-level, paginated by group)",
+      "endpoint": "GET /companies/{company_id}/financial_periods",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-period-groups"
+     },
+     {
+      "summary": "Reduce pagination limits for GET Financial Periods",
+      "description": "The maximum allowed per_page value has been reduced from 200 to 100, aligning this endpoint with the Procore REST v2 platform pagination maximum of 100 items per page; requests with per_page > 100 will now fail validation. The default per_page (used when the parameter is omitted) has been reduced from 50 to 10, so clients that do not pass per_page will receive fewer records per page. Use the Total and Per-Page response headers and paginate accordingly.",
+      "endpoint": "GET /companies/{company_id}/financial_periods",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-period-groups"
+     },
+     {
+      "summary": "Add date window filter and date sort to GET Financial Periods",
+      "description": "The endpoint now accepts optional filters[from_date] and filters[to_date] query parameters defining an inclusive date window; a group is returned when its span overlaps the window, and qualifying groups are returned in full (all their periods). It also accepts an optional sort parameter (date or -date) to order groups by start date ascending or descending. Both bounds are optional and independent; when both are supplied, to_date must be on or after from_date.",
+      "endpoint": "GET /companies/{company_id}/financial_periods",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-30",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-period-groups"
+     },
+     {
+      "summary": "Make List Financial Period groups publicly available in beta",
+      "description": "This endpoint is now publicly available in beta. No changes were made to its API contract.",
+      "endpoint": "GET /companies/{company_id}/financial_periods",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-19",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-period-groups"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Create a Financial Period group",
+    "description": "Creates all periods for a new group atomically. Period names must be unique within the group, periods must be internally contiguous, and the group's date span must not overlap any existing group.\n",
+    "tags": [
+     "Budget"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "financial_period_group"
+        ],
+        "properties": {
+         "financial_period_group": {
+          "type": "object",
+          "required": [
+           "group_name",
+           "periods"
+          ],
+          "properties": {
+           "group_name": {
+            "type": "string",
+            "description": "Unique name for this group within the company",
+            "example": "FY 2026"
+           },
+           "periods": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "required": [
+              "name",
+              "start_date",
+              "end_date"
+             ],
+             "properties": {
+              "name": {
+               "type": "string",
+               "description": "Display name of the period within the group (e.g. \"Q1 2026\"). Must be unique within the group.",
+               "example": "Q1 2026"
+              },
+              "start_date": {
+               "type": "string",
+               "format": "date",
+               "description": "First day of the period, inclusive (ISO 8601 date). Periods within a group must be contiguous.",
+               "example": "2026-01-01"
+              },
+              "end_date": {
+               "type": "string",
+               "format": "date",
+               "description": "Last day of the period, inclusive (ISO 8601 date).",
+               "example": "2026-03-31"
+              },
+              "status": {
+               "type": "string",
+               "enum": [
+                "open",
+                "closed"
+               ],
+               "description": "Initial lifecycle status of the period; defaults to open when omitted.",
+               "example": "open"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier of the financial period. Use as the {id} path parameter to update a single period's status via PATCH /financial_periods/periods/{id}.",
+              "example": "1"
+             },
+             "group_name": {
+              "type": "string",
+              "description": "Name of the period group this period belongs to (e.g. \"FY 2026\"). Use as the {group_name} path parameter to update or delete the whole group.",
+              "example": "FY 2026"
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the individual period within the group (e.g. \"Q1 2026\").",
+              "example": "Q1 2026"
+             },
+             "start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "First day of the period, inclusive (ISO 8601 date).",
+              "example": "2026-01-01"
+             },
+             "end_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Last day of the period, inclusive (ISO 8601 date).",
+              "example": "2026-03-31"
+             },
+             "status": {
+              "type": "string",
+              "enum": [
+               "open",
+               "closed"
+              ],
+              "description": "Lifecycle status of the period.",
+              "example": "open"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the period was created (ISO 8601).",
+              "example": "2026-05-11T13:14:15Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the period was last updated (ISO 8601).",
+              "example": "2026-05-11T13:14:15Z"
+             }
+            },
+            "required": [
+             "id",
+             "group_name",
+             "name",
+             "start_date",
+             "end_date",
+             "status",
+             "created_at",
+             "updated_at"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict \u2014 group_name already exists",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods',\n  headers: {'content-type': 'application/json'},\n  body: {\n    financial_period_group: {\n      group_name: 'FY 2026',\n      periods: [\n        {\n          name: 'Q1 2026',\n          start_date: '2026-01-01',\n          end_date: '2026-03-31',\n          status: 'open'\n        }\n      ]\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"financial_period_group\\\":{\\\"group_name\\\":\\\"FY 2026\\\",\\\"periods\\\":[{\\\"name\\\":\\\"Q1 2026\\\",\\\"start_date\\\":\\\"2026-01-01\\\",\\\"end_date\\\":\\\"2026-03-31\\\",\\\"status\\\":\\\"open\\\"}]}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods \\\n  --header 'content-type: application/json' \\\n  --data '{\"financial_period_group\":{\"group_name\":\"FY 2026\",\"periods\":[{\"name\":\"Q1 2026\",\"start_date\":\"2026-01-01\",\"end_date\":\"2026-03-31\",\"status\":\"open\"}]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods\"),\n    Content = new StringContent(\"{\\\"financial_period_group\\\":{\\\"group_name\\\":\\\"FY 2026\\\",\\\"periods\\\":[{\\\"name\\\":\\\"Q1 2026\\\",\\\"start_date\\\":\\\"2026-01-01\\\",\\\"end_date\\\":\\\"2026-03-31\\\",\\\"status\\\":\\\"open\\\"}]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce POST Financial Periods Endpoint",
+      "description": "Create a new group of Financial Periods",
+      "endpoint": "POST /companies/{company_id}/financial_periods",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#create-a-financial-period-group"
+     },
+     {
+      "summary": "Make Create Financial Period group publicly available in beta",
+      "description": "This endpoint is now publicly available in beta. No changes were made to its API contract.",
+      "endpoint": "POST /companies/{company_id}/financial_periods",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-19",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#create-a-financial-period-group"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/financial_periods/with_project_status_snapshots": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Financial Periods with project status snapshots",
+    "description": "Returns all Financial Periods for the company that have at least one project status snapshot attached, paginated by individual period and ordered by start date.\n",
+    "tags": [
+     "Budget"
+    ],
+    "parameters": [
+     {
+      "name": "filters[budget_view_id]",
+      "in": "query",
+      "description": "Limit results to periods that have a snapshot on this budget view. When omitted, all periods with any PSS are returned.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[from_date]",
+      "in": "query",
+      "description": "Inclusive lower bound of the date window (ISO 8601 date, \"YYYY-MM-DD\"). When provided, only periods ending on or after this date are returned. Optional; when omitted the window is unbounded below.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date",
+       "example": "2026-01-01"
+      }
+     },
+     {
+      "name": "filters[to_date]",
+      "in": "query",
+      "description": "Inclusive upper bound of the date window (ISO 8601 date, \"YYYY-MM-DD\"). When provided, only periods starting on or before this date are returned. Optional; when omitted the window is unbounded above. Must be on or after `filters[from_date]` when both are given.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date",
+       "example": "2026-12-31"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort periods by start date. `date` orders ascending (the default); `-date` orders descending.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "date",
+        "-date"
+       ],
+       "default": "date",
+       "example": "-date"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page number (default 1)",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 1,
+       "default": 1,
+       "example": 1
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of periods per page (default 10, max 100)",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 100,
+       "default": 10,
+       "example": 10
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of periods per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of periods across all pages",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Pagination links",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier of the financial period. Use as the {id} path parameter to update a single period's status via PATCH /financial_periods/periods/{id}.",
+              "example": "1"
+             },
+             "group_name": {
+              "type": "string",
+              "description": "Name of the period group this period belongs to (e.g. \"FY 2026\"). Use as the {group_name} path parameter to update or delete the whole group.",
+              "example": "FY 2026"
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the individual period within the group (e.g. \"Q1 2026\").",
+              "example": "Q1 2026"
+             },
+             "start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "First day of the period, inclusive (ISO 8601 date).",
+              "example": "2026-01-01"
+             },
+             "end_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Last day of the period, inclusive (ISO 8601 date).",
+              "example": "2026-03-31"
+             },
+             "status": {
+              "type": "string",
+              "enum": [
+               "open",
+               "closed"
+              ],
+              "description": "Lifecycle status of the period.",
+              "example": "open"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the period was created (ISO 8601).",
+              "example": "2026-05-11T13:14:15Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the period was last updated (ISO 8601).",
+              "example": "2026-05-11T13:14:15Z"
+             }
+            },
+            "required": [
+             "id",
+             "group_name",
+             "name",
+             "start_date",
+             "end_date",
+             "status",
+             "created_at",
+             "updated_at"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/with_project_status_snapshots',\n  qs: {\n    'filters[budget_view_id]': 'SOME_STRING_VALUE',\n    'filters[from_date]': '2026-01-01',\n    'filters[to_date]': '2026-12-31',\n    sort: '-date',\n    page: '1',\n    per_page: '10'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/with_project_status_snapshots?filters%5Bbudget_view_id%5D=SOME_STRING_VALUE&filters%5Bfrom_date%5D=2026-01-01&filters%5Bto_date%5D=2026-12-31&sort=-date&page=1&per_page=10\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/with_project_status_snapshots?filters%5Bbudget_view_id%5D=SOME_STRING_VALUE&filters%5Bfrom_date%5D=2026-01-01&filters%5Bto_date%5D=2026-12-31&sort=-date&page=1&per_page=10'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/with_project_status_snapshots?filters%5Bbudget_view_id%5D=SOME_STRING_VALUE&filters%5Bfrom_date%5D=2026-01-01&filters%5Bto_date%5D=2026-12-31&sort=-date&page=1&per_page=10\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET Financial Periods with Project Status Snapshots Endpoint",
+      "description": "Fetch Financial Periods that have at least one project status snapshot attached (company-level, paginated by period)",
+      "endpoint": "GET /companies/{company_id}/financial_periods/with_project_status_snapshots",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-periods-with-project-status-snapshots"
+     },
+     {
+      "summary": "Add budget_view_id filter to GET Financial Periods with project status snapshots",
+      "description": "The with_project_status_snapshots endpoint now accepts an optional filters[budget_view_id] query parameter. When provided, only financial periods that have a project status snapshot on that specific budget view are returned. When omitted, all periods with any PSS are returned.",
+      "endpoint": "GET /companies/{company_id}/financial_periods/with_project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-periods-with-project-status-snapshots"
+     },
+     {
+      "summary": "Add date window filter and date sort to GET Financial Periods with project status snapshots",
+      "description": "The with_project_status_snapshots endpoint now accepts optional filters[from_date] and filters[to_date] query parameters defining an inclusive date window, limiting results to periods whose effective range overlaps the window. It also accepts an optional sort parameter (date or -date) to order periods by start date ascending or descending. Both bounds are optional and independent; when both are supplied, to_date must be on or after from_date.",
+      "endpoint": "GET /companies/{company_id}/financial_periods/with_project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-30",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-periods-with-project-status-snapshots"
+     },
+     {
+      "summary": "Make List Financial Periods with project status snapshots publicly available in beta",
+      "description": "This endpoint is now publicly available in beta. No changes were made to its API contract.",
+      "endpoint": "GET /companies/{company_id}/financial_periods/with_project_status_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-19",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-financial-periods-with-project-status-snapshots"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/financial_periods/{group_name}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "group_name",
+     "in": "path",
+     "required": true,
+     "description": "URL-encoded name of the Financial Period group",
+     "schema": {
+      "type": "string",
+      "example": "FY%202026"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Update a Financial Period group",
+    "description": "Updates all periods of an existing group. Creates additional periods or deletes extras when the counts are different. Optionally renames the group by passing a new group_name in the request body.\n",
+    "tags": [
+     "Budget"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "financial_period_group"
+        ],
+        "properties": {
+         "financial_period_group": {
+          "type": "object",
+          "required": [
+           "periods"
+          ],
+          "properties": {
+           "group_name": {
+            "type": "string",
+            "description": "New name for the group. When provided and different from the URL group_name, renames the group atomically with the period update.\n",
+            "example": "FY 2026 Renamed"
+           },
+           "periods": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "required": [
+              "name",
+              "start_date",
+              "end_date"
+             ],
+             "properties": {
+              "name": {
+               "type": "string",
+               "description": "Display name of the period within the group (e.g. \"Q1 2026\"). Must be unique within the group.",
+               "example": "Q1 2026"
+              },
+              "start_date": {
+               "type": "string",
+               "format": "date",
+               "description": "First day of the period, inclusive (ISO 8601 date). Periods within a group must be contiguous.",
+               "example": "2026-01-01"
+              },
+              "end_date": {
+               "type": "string",
+               "format": "date",
+               "description": "Last day of the period, inclusive (ISO 8601 date).",
+               "example": "2026-03-31"
+              },
+              "status": {
+               "type": "string",
+               "enum": [
+                "open",
+                "closed"
+               ],
+               "description": "Lifecycle status of the period.",
+               "example": "closed"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Unique identifier of the financial period. Use as the {id} path parameter to update a single period's status via PATCH /financial_periods/periods/{id}.",
+              "example": "1"
+             },
+             "group_name": {
+              "type": "string",
+              "description": "Name of the period group this period belongs to (e.g. \"FY 2026\"). Use as the {group_name} path parameter to update or delete the whole group.",
+              "example": "FY 2026"
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the individual period within the group (e.g. \"Q1 2026\").",
+              "example": "Q1 2026"
+             },
+             "start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "First day of the period, inclusive (ISO 8601 date).",
+              "example": "2026-01-01"
+             },
+             "end_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Last day of the period, inclusive (ISO 8601 date).",
+              "example": "2026-03-31"
+             },
+             "status": {
+              "type": "string",
+              "enum": [
+               "open",
+               "closed"
+              ],
+              "description": "Lifecycle status of the period.",
+              "example": "open"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the period was created (ISO 8601).",
+              "example": "2026-05-11T13:14:15Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the period was last updated (ISO 8601).",
+              "example": "2026-05-11T13:14:15Z"
+             }
+            },
+            "required": [
+             "id",
+             "group_name",
+             "name",
+             "start_date",
+             "end_date",
+             "status",
+             "created_at",
+             "updated_at"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026',\n  headers: {'content-type': 'application/json'},\n  body: {\n    financial_period_group: {\n      group_name: 'FY 2026 Renamed',\n      periods: [\n        {\n          name: 'Q1 2026',\n          start_date: '2026-01-01',\n          end_date: '2026-03-31',\n          status: 'closed'\n        }\n      ]\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"financial_period_group\\\":{\\\"group_name\\\":\\\"FY 2026 Renamed\\\",\\\"periods\\\":[{\\\"name\\\":\\\"Q1 2026\\\",\\\"start_date\\\":\\\"2026-01-01\\\",\\\"end_date\\\":\\\"2026-03-31\\\",\\\"status\\\":\\\"closed\\\"}]}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026 \\\n  --header 'content-type: application/json' \\\n  --data '{\"financial_period_group\":{\"group_name\":\"FY 2026 Renamed\",\"periods\":[{\"name\":\"Q1 2026\",\"start_date\":\"2026-01-01\",\"end_date\":\"2026-03-31\",\"status\":\"closed\"}]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026\"),\n    Content = new StringContent(\"{\\\"financial_period_group\\\":{\\\"group_name\\\":\\\"FY 2026 Renamed\\\",\\\"periods\\\":[{\\\"name\\\":\\\"Q1 2026\\\",\\\"start_date\\\":\\\"2026-01-01\\\",\\\"end_date\\\":\\\"2026-03-31\\\",\\\"status\\\":\\\"closed\\\"}]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce PATCH Financial Period Group Endpoint",
+      "description": "Replace all periods in an existing Financial Period group",
+      "endpoint": "PATCH /companies/{company_id}/financial_periods/{group_name}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#update-a-financial-period-group"
+     },
+     {
+      "summary": "Add group renaming to PATCH Financial Period Group Endpoint",
+      "description": "The PATCH group endpoint now accepts an optional group_name body field. When provided and different from the URL identifier, the group is renamed atomically.",
+      "endpoint": "PATCH /companies/{company_id}/financial_periods/{group_name}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-05-29",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#update-a-financial-period-group"
+     },
+     {
+      "summary": "Make Update Financial Period group publicly available in beta",
+      "description": "This endpoint is now publicly available in beta. No changes were made to its API contract.",
+      "endpoint": "PATCH /companies/{company_id}/financial_periods/{group_name}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-19",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#update-a-financial-period-group"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Delete a Financial Period group",
+    "description": "Hard-deletes all periods belonging to the group.",
+    "tags": [
+     "Budget"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/FY%202026\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce DELETE Financial Period Group Endpoint",
+      "description": "Delete all periods belonging to a Financial Period group",
+      "endpoint": "DELETE /companies/{company_id}/financial_periods/{group_name}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#delete-a-financial-period-group"
+     },
+     {
+      "summary": "Make Delete Financial Period group publicly available in beta",
+      "description": "This endpoint is now publicly available in beta. No changes were made to its API contract.",
+      "endpoint": "DELETE /companies/{company_id}/financial_periods/{group_name}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-19",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#delete-a-financial-period-group"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/financial_periods/periods/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "ID of the Financial Period",
+     "schema": {
+      "type": "string",
+      "example": "42"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Update a Financial Period status",
+    "description": "Updates the status of a single Financial Period, scoped to the company.",
+    "tags": [
+     "Budget"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "financial_period"
+        ],
+        "properties": {
+         "financial_period": {
+          "type": "object",
+          "required": [
+           "status"
+          ],
+          "properties": {
+           "status": {
+            "type": "string",
+            "enum": [
+             "open",
+             "closed"
+            ],
+            "description": "New lifecycle status to apply to this period.",
+            "example": "open"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier of the financial period. Use as the {id} path parameter to update a single period's status via PATCH /financial_periods/periods/{id}.",
+             "example": "1"
+            },
+            "group_name": {
+             "type": "string",
+             "description": "Name of the period group this period belongs to (e.g. \"FY 2026\"). Use as the {group_name} path parameter to update or delete the whole group.",
+             "example": "FY 2026"
+            },
+            "name": {
+             "type": "string",
+             "description": "Display name of the individual period within the group (e.g. \"Q1 2026\").",
+             "example": "Q1 2026"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "First day of the period, inclusive (ISO 8601 date).",
+             "example": "2026-01-01"
+            },
+            "end_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Last day of the period, inclusive (ISO 8601 date).",
+             "example": "2026-03-31"
+            },
+            "status": {
+             "type": "string",
+             "enum": [
+              "open",
+              "closed"
+             ],
+             "description": "Lifecycle status of the period.",
+             "example": "open"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the period was created (ISO 8601).",
+             "example": "2026-05-11T13:14:15Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the period was last updated (ISO 8601).",
+             "example": "2026-05-11T13:14:15Z"
+            }
+           },
+           "required": [
+            "id",
+            "group_name",
+            "name",
+            "start_date",
+            "end_date",
+            "status",
+            "created_at",
+            "updated_at"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/periods/42',\n  headers: {'content-type': 'application/json'},\n  body: {financial_period: {status: 'open'}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"financial_period\\\":{\\\"status\\\":\\\"open\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/periods/42\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/periods/42 \\\n  --header 'content-type: application/json' \\\n  --data '{\"financial_period\":{\"status\":\"open\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/financial_periods/periods/42\"),\n    Content = new StringContent(\"{\\\"financial_period\\\":{\\\"status\\\":\\\"open\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce PATCH Financial Period Status Endpoint",
+      "description": "Update the status of a single Financial Period",
+      "endpoint": "PATCH /companies/{company_id}/financial_periods/periods/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#update-a-financial-period-status"
+     },
+     {
+      "summary": "Make Update Financial Period status publicly available in beta",
+      "description": "This endpoint is now publicly available in beta. No changes were made to its API contract.",
+      "endpoint": "PATCH /companies/{company_id}/financial_periods/periods/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-19",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#update-a-financial-period-status"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/financial_periods/open": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List open Financial Periods",
+    "description": "Returns all open Financial Periods for the company grouped by group_name. Intended for project-level consumers that need to know which periods are currently open.\n",
+    "tags": [
+     "Budget"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Financial Periods",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Financial periods grouped by group name",
+           "additionalProperties": {
+            "type": "array",
+            "description": "Periods belonging to this group",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "Unique identifier of the financial period. Use as the {id} path parameter to update a single period's status via PATCH /financial_periods/periods/{id}.",
+               "example": "1"
+              },
+              "group_name": {
+               "type": "string",
+               "description": "Name of the period group this period belongs to (e.g. \"FY 2026\"). Use as the {group_name} path parameter to update or delete the whole group.",
+               "example": "FY 2026"
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the individual period within the group (e.g. \"Q1 2026\").",
+               "example": "Q1 2026"
+              },
+              "start_date": {
+               "type": "string",
+               "format": "date",
+               "description": "First day of the period, inclusive (ISO 8601 date).",
+               "example": "2026-01-01"
+              },
+              "end_date": {
+               "type": "string",
+               "format": "date",
+               "description": "Last day of the period, inclusive (ISO 8601 date).",
+               "example": "2026-03-31"
+              },
+              "status": {
+               "type": "string",
+               "enum": [
+                "open",
+                "closed"
+               ],
+               "description": "Lifecycle status of the period.",
+               "example": "open"
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when the period was created (ISO 8601).",
+               "example": "2026-05-11T13:14:15Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when the period was last updated (ISO 8601).",
+               "example": "2026-05-11T13:14:15Z"
+              }
+             },
+             "required": [
+              "id",
+              "group_name",
+              "name",
+              "start_date",
+              "end_date",
+              "status",
+              "created_at",
+              "updated_at"
+             ]
+            },
+            "example": {
+             "FY 2026": [
+              {
+               "id": "1",
+               "group_name": "FY 2026",
+               "name": "Q1 2026",
+               "start_date": "2026-01-01",
+               "end_date": "2026-03-31",
+               "status": "open",
+               "created_at": "2026-05-11T13:14:15Z",
+               "updated_at": "2026-05-11T13:14:15Z"
+              }
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/financial_periods/open'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/financial_periods/open\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/financial_periods/open"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/financial_periods/open\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET Open Financial Periods Endpoint",
+      "description": "Fetch open Financial Periods grouped by group name (project-level)",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/financial_periods/open",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-open-financial-periods"
+     },
+     {
+      "summary": "Make List open Financial Periods publicly available in beta",
+      "description": "This endpoint is now publicly available in beta. No changes were made to its API contract.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/financial_periods/open",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-19",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "financial-periods?version=2.0#list-open-financial-periods"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

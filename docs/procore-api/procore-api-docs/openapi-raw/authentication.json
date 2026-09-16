@@ -1,0 +1,542 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Authentication",
+  "x-product-category": "Platform - Developer Tools",
+  "x-tool-category": "Authentication",
+  "x-resource-name": "Authentication",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://login.procore.com"
+  }
+ ],
+ "paths": {
+  "/oauth/authorize": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-skip-snippet-generation": true,
+    "summary": "Grant App Authorization",
+    "description": "Creates and returns a temporary authorization code with 10 minute expiration. Note that all parameters listed below are required. This endpoint\ncorresponds to the OAuth 2.0 authorization endpoint described in section 3.1 of the OAuth 2.0 RFC. See the [Authentication Guide](/documentation/oauth-introduction)\nfor additional information and authentication examples.",
+    "tags": [
+     "Authentication"
+    ],
+    "parameters": [
+     {
+      "name": "response_type",
+      "in": "query",
+      "description": "Response type. Value should be `code` for server apps, `token` for client apps.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "code",
+        "token"
+       ],
+       "example": "code"
+      }
+     },
+     {
+      "name": "client_id",
+      "in": "query",
+      "description": "Client ID you were assigned when you registered your application.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "example": "76ba4c5c75c96f6087f58a4de10be6c00b29ea1ddc3b2022ee2016d1363e3a7c"
+      }
+     },
+     {
+      "name": "redirect_uri",
+      "in": "query",
+      "description": "The URI that the user will be redirected to after they grant authorization to your application. For browser-based web applications, use a `https://` web address. For \"headless\" applications use `urn:ietf:wg:oauth:2.0:oob`.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "example": "http://localhost"
+      }
+     }
+    ],
+    "responses": {
+     "302": {
+      "description": "Redirect to the specified `redirect_uri`"
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/oauth/revoke": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Revoke Token",
+    "description": "Revoke authorization of an access token. The request must contain the body data as form-data. The authorization server responds with HTTP status code 200 if the token has been revoked successfully\nor if the client submitted an invalid token. Note that the Revoke Token endpoint revokes both the Access Token and Refresh Token. The `client_secret` param is only required for confidential\napplications. Public applications using the implicit OAuth flow do not need to provide this parameter to revoke access tokens.",
+    "tags": [
+     "Authentication"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "token",
+         "client_id",
+         "client_secret"
+        ],
+        "properties": {
+         "token": {
+          "description": "Token",
+          "type": "string",
+          "example": "dbaf9757982a9e738f05d249b7b5b4a266b3a139049317c4909f2f263572c781"
+         },
+         "client_id": {
+          "description": "Client ID",
+          "type": "string",
+          "example": "76ba4c5c75c96f6087f58a4de10be6c00b29ea1ddc3b2022ee2016d1363e3a7c"
+         },
+         "client_secret": {
+          "description": "Client Secret",
+          "type": "string",
+          "example": "83414fdb340392acbd910f6d4f2091da007cb584fd3e872df109c9e7221e2d12"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object"
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://login.procore.com/oauth/revoke',\n  headers: {'content-type': 'application/json'},\n  body: {\n    token: 'dbaf9757982a9e738f05d249b7b5b4a266b3a139049317c4909f2f263572c781',\n    client_id: '76ba4c5c75c96f6087f58a4de10be6c00b29ea1ddc3b2022ee2016d1363e3a7c',\n    client_secret: '83414fdb340392acbd910f6d4f2091da007cb584fd3e872df109c9e7221e2d12'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"login.procore.com\")\n\npayload = \"{\\\"token\\\":\\\"dbaf9757982a9e738f05d249b7b5b4a266b3a139049317c4909f2f263572c781\\\",\\\"client_id\\\":\\\"76ba4c5c75c96f6087f58a4de10be6c00b29ea1ddc3b2022ee2016d1363e3a7c\\\",\\\"client_secret\\\":\\\"83414fdb340392acbd910f6d4f2091da007cb584fd3e872df109c9e7221e2d12\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/oauth/revoke\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://login.procore.com/oauth/revoke \\\n  --header 'content-type: application/json' \\\n  --data '{\"token\":\"dbaf9757982a9e738f05d249b7b5b4a266b3a139049317c4909f2f263572c781\",\"client_id\":\"76ba4c5c75c96f6087f58a4de10be6c00b29ea1ddc3b2022ee2016d1363e3a7c\",\"client_secret\":\"83414fdb340392acbd910f6d4f2091da007cb584fd3e872df109c9e7221e2d12\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://login.procore.com/oauth/revoke\"),\n    Content = new StringContent(\"{\\\"token\\\":\\\"dbaf9757982a9e738f05d249b7b5b4a266b3a139049317c4909f2f263572c781\\\",\\\"client_id\\\":\\\"76ba4c5c75c96f6087f58a4de10be6c00b29ea1ddc3b2022ee2016d1363e3a7c\\\",\\\"client_secret\\\":\\\"83414fdb340392acbd910f6d4f2091da007cb584fd3e872df109c9e7221e2d12\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/oauth/token/info": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Token Info",
+    "description": "Return access token details. See the [Authentication Guide](/documentation/oauth-introduction)\nfor additional information and authentication examples.\nThe request must contain the access token in the Authorization header: `Authorization: Bearer <YOUR_ACCESS_TOKEN>`",
+    "security": [
+     {
+      "bearerAuth": []
+     }
+    ],
+    "tags": [
+     "Authentication"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "resource_owner_id": {
+           "type": "integer",
+           "description": "Resource owner ID",
+           "example": 1
+          },
+          "scopes": {
+           "type": "array",
+           "description": "Scopes",
+           "items": {
+            "type": "string"
+           },
+           "example": [
+            "public"
+           ]
+          },
+          "expires_in_seconds": {
+           "type": "integer",
+           "description": "Expiration time in seconds",
+           "example": 5378
+          },
+          "application": {
+           "type": "object",
+           "description": "Application information",
+           "properties": {
+            "uid": {
+             "type": "string",
+             "example": "31c385f56a9a3262789fcecab9c1d02b4bead2a56700b79cb1134bed9c276fbea757ada91a41a4502d3c9aec73aeff95"
+            }
+           }
+          },
+          "created_at": {
+           "type": "integer",
+           "description": "The integer value representing the time the access token was created.",
+           "example": 1440460991
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://login.procore.com/oauth/token/info',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"login.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/oauth/token/info\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://login.procore.com/oauth/token/info \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://login.procore.com/oauth/token/info\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/oauth/token": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get or Refresh an Access Token",
+    "description": "Used to acquire a new access token or refresh an existing access token. Certain parameter\ncombinations and values are used depending on which scenario you are handling. See the individual\nparameter descriptions for additional information. This endpoint corresponds to the token endpoint\ndescribed in section 3.2 of the OAuth 2.0 RFC. See the [Authentication Guide](/documentation/oauth-introduction)\nfor additional information and authentication examples.\nJavaScript applications cannot make this request to get the access token or refresh token.",
+    "tags": [
+     "Authentication"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "grant_type",
+         "client_id",
+         "client_secret"
+        ],
+        "properties": {
+         "grant_type": {
+          "description": "Use the value `authorization_code` when getting a new access token. Use `refresh_token` when refreshing an existing access token. Use `client_credentials` when using a Procore Service Account for authentication.",
+          "type": "string",
+          "enum": [
+           "authorization_code",
+           "refresh_token",
+           "client_credentials"
+          ],
+          "example": "authorization_code"
+         },
+         "client_id": {
+          "description": "Client ID you were assigned when you registered your application.",
+          "type": "string",
+          "example": "db0d63cfa7ac3ceed7166081542216ec99e12341300e5e879105e36bd76dbf63"
+         },
+         "client_secret": {
+          "description": "Client Secret you were assigned when you registered your application.",
+          "type": "string",
+          "example": "0b57e8d87e35370307ba5f98ad456bd155cabacea56d49994afe083e2eb04b54"
+         },
+         "code": {
+          "description": "Value of the `authorization_code` retrieved from the `/oauth/authorize` call. Only required when getting a new access code.",
+          "type": "string",
+          "example": "8957b84a67f6ae55ab79c9767836a0af30b7fb7e4c36b27434993123cce71ec7"
+         },
+         "redirect_uri": {
+          "description": "The URI that the user will be redirected to after they grant authorization to your application. For browser-based web applications, use a `https://` web address. For \"headless\" applications use `urn:ietf:wg:oauth:2.0:oob`.",
+          "type": "string",
+          "example": "http://localhost"
+         },
+         "refresh_token": {
+          "description": "The refresh token string. Only required when refreshing an access token.",
+          "type": "string"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "access_token": {
+           "type": "string",
+           "description": "Access token",
+           "example": "dbaf9757982a9e738f05d249b7b5b4a266b3a139049317c4909f2f263572c781"
+          },
+          "token_type": {
+           "type": "string",
+           "description": "Token type",
+           "example": "bearer"
+          },
+          "expires_in": {
+           "type": "integer",
+           "description": "Expires in (sec)",
+           "example": 5378
+          },
+          "refresh_token": {
+           "type": "string",
+           "description": "Refresh token",
+           "example": "76ba4c5c75c96f6087f58a4de10be6c00b29ea1ddc3b2022ee2016d1363e3a7c"
+          },
+          "created_at": {
+           "type": "integer",
+           "description": "The integer value representing the time the access token was created.",
+           "example": 1484786897
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://login.procore.com/oauth/token',\n  headers: {'content-type': 'application/json'},\n  body: {\n    grant_type: 'authorization_code',\n    client_id: 'db0d63cfa7ac3ceed7166081542216ec99e12341300e5e879105e36bd76dbf63',\n    client_secret: '0b57e8d87e35370307ba5f98ad456bd155cabacea56d49994afe083e2eb04b54',\n    code: '8957b84a67f6ae55ab79c9767836a0af30b7fb7e4c36b27434993123cce71ec7',\n    redirect_uri: 'http://localhost',\n    refresh_token: 'string'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"login.procore.com\")\n\npayload = \"{\\\"grant_type\\\":\\\"authorization_code\\\",\\\"client_id\\\":\\\"db0d63cfa7ac3ceed7166081542216ec99e12341300e5e879105e36bd76dbf63\\\",\\\"client_secret\\\":\\\"0b57e8d87e35370307ba5f98ad456bd155cabacea56d49994afe083e2eb04b54\\\",\\\"code\\\":\\\"8957b84a67f6ae55ab79c9767836a0af30b7fb7e4c36b27434993123cce71ec7\\\",\\\"redirect_uri\\\":\\\"http://localhost\\\",\\\"refresh_token\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/oauth/token\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://login.procore.com/oauth/token \\\n  --header 'content-type: application/json' \\\n  --data '{\"grant_type\":\"authorization_code\",\"client_id\":\"db0d63cfa7ac3ceed7166081542216ec99e12341300e5e879105e36bd76dbf63\",\"client_secret\":\"0b57e8d87e35370307ba5f98ad456bd155cabacea56d49994afe083e2eb04b54\",\"code\":\"8957b84a67f6ae55ab79c9767836a0af30b7fb7e4c36b27434993123cce71ec7\",\"redirect_uri\":\"http://localhost\",\"refresh_token\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://login.procore.com/oauth/token\"),\n    Content = new StringContent(\"{\\\"grant_type\\\":\\\"authorization_code\\\",\\\"client_id\\\":\\\"db0d63cfa7ac3ceed7166081542216ec99e12341300e5e879105e36bd76dbf63\\\",\\\"client_secret\\\":\\\"0b57e8d87e35370307ba5f98ad456bd155cabacea56d49994afe083e2eb04b54\\\",\\\"code\\\":\\\"8957b84a67f6ae55ab79c9767836a0af30b7fb7e4c36b27434993123cce71ec7\\\",\\\"redirect_uri\\\":\\\"http://localhost\\\",\\\"refresh_token\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

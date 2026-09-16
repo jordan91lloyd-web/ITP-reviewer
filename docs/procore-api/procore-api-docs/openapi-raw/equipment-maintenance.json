@@ -1,0 +1,1927 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Equipment Maintenance",
+  "version": "2.0",
+  "x-product-category": "Resource Management",
+  "x-resource-name": "Equipment Maintenance",
+  "x-tool-category": "Equipment",
+  "x-product-lines": [
+   "equipment-register"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/equipment_register/{equipment_id}/maintenance/records": {
+   "get": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Get all equipment maintenance records (Project)",
+    "description": "Retrieve equipment maintenance records for a specific equipment.",
+    "operationId": "getAllEquipmentMaintenance",
+    "parameters": [
+     {
+      "name": "search",
+      "in": "query",
+      "description": "Search criteria",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[type]",
+      "in": "query",
+      "description": "Filter by service type",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve. Default is 1.",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Maintenance sort",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "maintenanceType",
+        "duration",
+        "startDate",
+        "issue",
+        "notes"
+       ]
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Operation",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of records",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link to pages",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The id of the equipment maintenance.",
+              "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+             },
+             "type": {
+              "type": "string",
+              "description": "The type of maintenance.",
+              "example": "maintenance type"
+             },
+             "issue": {
+              "type": "string",
+              "description": "Description of the maintenance issue.",
+              "example": "Oil change"
+             },
+             "notes": {
+              "type": "string"
+             },
+             "start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Start date for equipment maintenance.",
+              "example": "2023-10-01T00:00:00Z"
+             },
+             "duration": {
+              "type": "integer",
+              "format": "int32",
+              "description": "Duration in days.",
+              "example": 4
+             },
+             "attachments": {
+              "type": "array",
+              "description": "List of attachments associated with the maintenance record",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "The id of the attachment",
+                 "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the attachment file",
+                 "example": "text.jpeg"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records',\n  qs: {\n    search: 'SOME_STRING_VALUE',\n    'filters[type]': 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records?search=SOME_STRING_VALUE&filters%5Btype%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records?search=SOME_STRING_VALUE&filters%5Btype%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records?search=SOME_STRING_VALUE&filters%5Btype%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Create a new maintenance record (Project)",
+    "description": "Create a new maintenance record for equipment.",
+    "operationId": "createMaintenanceRecord",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "equipment_id": {
+          "type": "string",
+          "description": "The id of the equipment.",
+          "example": "equipment_id",
+          "minLength": 1
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of maintenance.",
+          "enum": [
+           "PLANNED",
+           "UNPLANNED"
+          ],
+          "example": "maintenance type",
+          "minLength": 1
+         },
+         "issue": {
+          "type": "string",
+          "description": "Description of the maintenance issue.",
+          "example": "Oil change"
+         },
+         "notes": {
+          "type": "string",
+          "description": "Notes about the maintenance."
+         },
+         "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Start date for equipment maintenance.",
+          "example": "2025-05-21"
+         },
+         "duration": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Duration in days.",
+          "example": 4,
+          "maximum": 3650
+         }
+        },
+        "required": [
+         "equipment_id",
+         "type"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The id of the equipment maintenance.",
+             "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of maintenance.",
+             "example": "maintenance type"
+            },
+            "issue": {
+             "type": "string",
+             "description": "Description of the maintenance issue.",
+             "example": "Oil change"
+            },
+            "notes": {
+             "type": "string"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Start date for equipment maintenance.",
+             "example": "2023-10-01T00:00:00Z"
+            },
+            "duration": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Duration in days.",
+             "example": 4
+            },
+            "attachments": {
+             "type": "array",
+             "description": "List of attachments associated with the maintenance record",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The id of the attachment",
+                "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the attachment file",
+                "example": "text.jpeg"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {\n    equipment_id: 'equipment_id',\n    type: 'maintenance type',\n    issue: 'Oil change',\n    notes: 'string',\n    start_date: '2025-05-21',\n    duration: 4\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"equipment_id\\\":\\\"equipment_id\\\",\\\"type\\\":\\\"maintenance type\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":\\\"string\\\",\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"equipment_id\":\"equipment_id\",\"type\":\"maintenance type\",\"issue\":\"Oil change\",\"notes\":\"string\",\"start_date\":\"2025-05-21\",\"duration\":4}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"equipment_id\\\":\\\"equipment_id\\\",\\\"type\\\":\\\"maintenance type\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":\\\"string\\\",\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/equipment_register/{equipment_id}/maintenance/records": {
+   "get": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Get all equipment maintenance records (Company)",
+    "description": "Retrieve equipment maintenance records for a specific company.",
+    "operationId": "getAllEquipmentMaintenance_1",
+    "parameters": [
+     {
+      "name": "search",
+      "in": "query",
+      "description": "Search criteria",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[type]",
+      "in": "query",
+      "description": "Filter by service type",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve. Default is 1.",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Maintenance sort",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "maintenanceType",
+        "duration",
+        "startDate",
+        "issue",
+        "notes"
+       ]
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Operation",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of records",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link to pages",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The id of the equipment maintenance.",
+              "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+             },
+             "type": {
+              "type": "string",
+              "description": "The type of maintenance.",
+              "example": "maintenance type"
+             },
+             "issue": {
+              "type": "string",
+              "description": "Description of the maintenance issue.",
+              "example": "Oil change"
+             },
+             "notes": {
+              "type": "string"
+             },
+             "start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Start date for equipment maintenance.",
+              "example": "2023-10-01T00:00:00Z"
+             },
+             "duration": {
+              "type": "integer",
+              "format": "int32",
+              "description": "Duration in days.",
+              "example": 4
+             },
+             "attachments": {
+              "type": "array",
+              "description": "List of attachments associated with the maintenance record",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "The id of the attachment",
+                 "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the attachment file",
+                 "example": "text.jpeg"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records',\n  qs: {\n    search: 'SOME_STRING_VALUE',\n    'filters[type]': 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records?search=SOME_STRING_VALUE&filters%5Btype%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records?search=SOME_STRING_VALUE&filters%5Btype%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records?search=SOME_STRING_VALUE&filters%5Btype%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Create a new maintenance record (Company)",
+    "description": "Create a new maintenance record for equipment.",
+    "operationId": "createMaintenanceRecord_1",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "equipment_id": {
+          "type": "string",
+          "description": "The id of the equipment.",
+          "example": "equipment_id",
+          "minLength": 1
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of maintenance.",
+          "enum": [
+           "PLANNED",
+           "UNPLANNED"
+          ],
+          "example": "maintenance type",
+          "minLength": 1
+         },
+         "issue": {
+          "type": "string",
+          "description": "Description of the maintenance issue.",
+          "example": "Oil change"
+         },
+         "notes": {
+          "type": "string",
+          "description": "Notes about the maintenance."
+         },
+         "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Start date for equipment maintenance.",
+          "example": "2025-05-21"
+         },
+         "duration": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Duration in days.",
+          "example": 4,
+          "maximum": 3650
+         }
+        },
+        "required": [
+         "equipment_id",
+         "type"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The id of the equipment maintenance.",
+             "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of maintenance.",
+             "example": "maintenance type"
+            },
+            "issue": {
+             "type": "string",
+             "description": "Description of the maintenance issue.",
+             "example": "Oil change"
+            },
+            "notes": {
+             "type": "string"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Start date for equipment maintenance.",
+             "example": "2023-10-01T00:00:00Z"
+            },
+            "duration": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Duration in days.",
+             "example": 4
+            },
+            "attachments": {
+             "type": "array",
+             "description": "List of attachments associated with the maintenance record",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The id of the attachment",
+                "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the attachment file",
+                "example": "text.jpeg"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {\n    equipment_id: 'equipment_id',\n    type: 'maintenance type',\n    issue: 'Oil change',\n    notes: 'string',\n    start_date: '2025-05-21',\n    duration: 4\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"equipment_id\\\":\\\"equipment_id\\\",\\\"type\\\":\\\"maintenance type\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":\\\"string\\\",\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"equipment_id\":\"equipment_id\",\"type\":\"maintenance type\",\"issue\":\"Oil change\",\"notes\":\"string\",\"start_date\":\"2025-05-21\",\"duration\":4}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"equipment_id\\\":\\\"equipment_id\\\",\\\"type\\\":\\\"maintenance type\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":\\\"string\\\",\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/equipment_register/{equipment_id}/maintenance/records/{maintenance_id}": {
+   "get": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Get equipment maintenance record by its ID (Project)",
+    "description": "Retrieve a equipment maintenance record by its ID.",
+    "operationId": "getMaintenanceRecordById",
+    "parameters": [
+     {
+      "name": "maintenance_id",
+      "in": "path",
+      "description": "Maintenance Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The id of the equipment maintenance.",
+             "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of maintenance.",
+             "example": "maintenance type"
+            },
+            "issue": {
+             "type": "string",
+             "description": "Description of the maintenance issue.",
+             "example": "Oil change"
+            },
+            "notes": {
+             "type": "string"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Start date for equipment maintenance.",
+             "example": "2023-10-01T00:00:00Z"
+            },
+            "duration": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Duration in days.",
+             "example": 4
+            },
+            "attachments": {
+             "type": "array",
+             "description": "List of attachments associated with the maintenance record",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The id of the attachment",
+                "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the attachment file",
+                "example": "text.jpeg"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Delete a maintenance record by ID(Project)",
+    "description": "Delete a specific maintenance record by its ID.",
+    "operationId": "deleteMaintenanceRecord",
+    "parameters": [
+     {
+      "name": "maintenance_id",
+      "in": "path",
+      "description": "Maintenance Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "boolean"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Update a maintenance record (Project)",
+    "description": "Update an existing maintenance record by its ID.",
+    "operationId": "updateMaintenanceRecord",
+    "parameters": [
+     {
+      "name": "maintenance_id",
+      "in": "path",
+      "description": "Maintenance Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment Maintenance Update Request",
+        "properties": {
+         "equipment_id": {
+          "description": "The id of the equipment.",
+          "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of maintenance.",
+          "enum": [
+           "PLANNED",
+           "UNPLANNED"
+          ],
+          "example": "PLANNED"
+         },
+         "issue": {
+          "description": "Description of the maintenance issue.",
+          "example": "Oil change",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "notes": {
+          "description": "Notes about the maintenance.",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "start_date": {
+          "description": "Start date for equipment maintenance.",
+          "example": "2025-05-21",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "duration": {
+          "description": "Duration in days.",
+          "example": 4,
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         }
+        },
+        "title": "equipment_maintenance"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The id of the equipment maintenance.",
+             "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of maintenance.",
+             "example": "maintenance type"
+            },
+            "issue": {
+             "type": "string",
+             "description": "Description of the maintenance issue.",
+             "example": "Oil change"
+            },
+            "notes": {
+             "type": "string"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Start date for equipment maintenance.",
+             "example": "2023-10-01T00:00:00Z"
+            },
+            "duration": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Duration in days.",
+             "example": 4
+            },
+            "attachments": {
+             "type": "array",
+             "description": "List of attachments associated with the maintenance record",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The id of the attachment",
+                "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the attachment file",
+                "example": "text.jpeg"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {\n    equipment_id: '01FJ4G5K8Z3X1D2F6G4H5J6K7L',\n    type: 'PLANNED',\n    issue: 'Oil change',\n    notes: {present: true},\n    start_date: '2025-05-21',\n    duration: 4\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"equipment_id\\\":\\\"01FJ4G5K8Z3X1D2F6G4H5J6K7L\\\",\\\"type\\\":\\\"PLANNED\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":{\\\"present\\\":true},\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"equipment_id\":\"01FJ4G5K8Z3X1D2F6G4H5J6K7L\",\"type\":\"PLANNED\",\"issue\":\"Oil change\",\"notes\":{\"present\":true},\"start_date\":\"2025-05-21\",\"duration\":4}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"equipment_id\\\":\\\"01FJ4G5K8Z3X1D2F6G4H5J6K7L\\\",\\\"type\\\":\\\"PLANNED\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":{\\\"present\\\":true},\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/equipment_register/{equipment_id}/maintenance/records/{maintenance_id}": {
+   "get": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Get equipment maintenance record by its ID (Company)",
+    "description": "Retrieve a equipment maintenance record by its ID.",
+    "operationId": "getMaintenanceRecordById_1",
+    "parameters": [
+     {
+      "name": "maintenance_id",
+      "in": "path",
+      "description": "Maintenance Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The id of the equipment maintenance.",
+             "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of maintenance.",
+             "example": "maintenance type"
+            },
+            "issue": {
+             "type": "string",
+             "description": "Description of the maintenance issue.",
+             "example": "Oil change"
+            },
+            "notes": {
+             "type": "string"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Start date for equipment maintenance.",
+             "example": "2023-10-01T00:00:00Z"
+            },
+            "duration": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Duration in days.",
+             "example": 4
+            },
+            "attachments": {
+             "type": "array",
+             "description": "List of attachments associated with the maintenance record",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The id of the attachment",
+                "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the attachment file",
+                "example": "text.jpeg"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Delete a maintenance record by ID",
+    "description": "Delete a specific maintenance record by its ID.",
+    "operationId": "deleteMaintenanceRecord_1",
+    "parameters": [
+     {
+      "name": "maintenance_id",
+      "in": "path",
+      "description": "Maintenance Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "boolean"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "tags": [
+     "Equipment Maintenance"
+    ],
+    "summary": "Update a maintenance record",
+    "description": "Update an existing maintenance record by its ID.",
+    "operationId": "updateMaintenanceRecord_1",
+    "parameters": [
+     {
+      "name": "maintenance_id",
+      "in": "path",
+      "description": "Maintenance Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment Maintenance Update Request",
+        "properties": {
+         "equipment_id": {
+          "description": "The id of the equipment.",
+          "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of maintenance.",
+          "enum": [
+           "PLANNED",
+           "UNPLANNED"
+          ],
+          "example": "PLANNED"
+         },
+         "issue": {
+          "description": "Description of the maintenance issue.",
+          "example": "Oil change",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "notes": {
+          "description": "Notes about the maintenance.",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "start_date": {
+          "description": "Start date for equipment maintenance.",
+          "example": "2025-05-21",
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         },
+         "duration": {
+          "description": "Duration in days.",
+          "example": 4,
+          "type": "object",
+          "properties": {
+           "present": {
+            "type": "boolean"
+           }
+          }
+         }
+        },
+        "title": "equipment_maintenance"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The id of the equipment maintenance.",
+             "example": "01FJ4G5K8Z3X1D2F6G4H5J6K7L"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of maintenance.",
+             "example": "maintenance type"
+            },
+            "issue": {
+             "type": "string",
+             "description": "Description of the maintenance issue.",
+             "example": "Oil change"
+            },
+            "notes": {
+             "type": "string"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Start date for equipment maintenance.",
+             "example": "2023-10-01T00:00:00Z"
+            },
+            "duration": {
+             "type": "integer",
+             "format": "int32",
+             "description": "Duration in days.",
+             "example": 4
+            },
+            "attachments": {
+             "type": "array",
+             "description": "List of attachments associated with the maintenance record",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The id of the attachment",
+                "example": "01JX9XTJYMFYJXJJP6VVF8WKTK"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the attachment file",
+                "example": "text.jpeg"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {\n    equipment_id: '01FJ4G5K8Z3X1D2F6G4H5J6K7L',\n    type: 'PLANNED',\n    issue: 'Oil change',\n    notes: {present: true},\n    start_date: '2025-05-21',\n    duration: 4\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"equipment_id\\\":\\\"01FJ4G5K8Z3X1D2F6G4H5J6K7L\\\",\\\"type\\\":\\\"PLANNED\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":{\\\"present\\\":true},\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"equipment_id\":\"01FJ4G5K8Z3X1D2F6G4H5J6K7L\",\"type\":\"PLANNED\",\"issue\":\"Oil change\",\"notes\":{\"present\":true},\"start_date\":\"2025-05-21\",\"duration\":4}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/maintenance/records/%7Bmaintenance_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"equipment_id\\\":\\\"01FJ4G5K8Z3X1D2F6G4H5J6K7L\\\",\\\"type\\\":\\\"PLANNED\\\",\\\"issue\\\":\\\"Oil change\\\",\\\"notes\\\":{\\\"present\\\":true},\\\"start_date\\\":\\\"2025-05-21\\\",\\\"duration\\\":4}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

@@ -1,0 +1,654 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Budget View Snapshot Detail Rows",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Budget View Snapshot Detail Rows",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/budget_view_snapshots/{budget_view_snapshot_id}/detail_rows": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Budget View Snapshot Detail Rows",
+    "description": "Returns a list of all budget view snapshots detail rows for project status and ad hoc types.\n\nNote: In addition to all the fields outlined in the response, there will be an additional key for each visible\nsource and formula column created for the particular budget view. As well, when using a Forecasting View ID, additional keys\nwill be visible that give calculated forecasts for each month, as defined by the Advanced Forecasting Tool.",
+    "tags": [
+     "Budget View Snapshots"
+    ],
+    "parameters": [
+     {
+      "name": "budget_view_snapshot_id",
+      "in": "path",
+      "description": "Budget View Snapshot ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "biller[]",
+      "in": "query",
+      "description": "Return item(s) within a specific biller. Format is biller[]=id=1,type=SubJob or biller[]=id=1,type=Project",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "cost_code_id[]",
+      "in": "query",
+      "description": "Return item(s) within a specific Cost Code id or range of Cost Code IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "cost_code_name[]",
+      "in": "query",
+      "description": "Return item(s) within a specific Cost Code name or range of Cost Code names",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "root_cost_code_id[]",
+      "in": "query",
+      "description": "Return item(s) within a specific Root Cost Code id or range of Root Cost Code IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "root_cost_code_name[]",
+      "in": "query",
+      "description": "Return item(s) within a specific Root Cost Code name or range of Root Cost Code names",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "category_id[]",
+      "in": "query",
+      "description": "Return item(s) within a specific category id (line item type id) or range of category IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "budget_line_item_id[]",
+      "in": "query",
+      "description": "Return item(s) within a specific budget line item id or range of budget line item IDs",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Return item(s) with the specified sort. Default is biller_type,biller,root_cost_code,cost_code,category_id\n",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "biller_type",
+        "project",
+        "biller",
+        "category_id",
+        "cost_code",
+        "root_cost_code"
+       ]
+      }
+     },
+     {
+      "name": "budget_row_type",
+      "in": "query",
+      "required": false,
+      "description": "Return budgeted, unbudgeted or all item(s) from all budget rows for a project. Default is all. Note that when the unbudgeted or all values are supplied, the id field will be null for rows that have budgeted false",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "budgeted",
+        "unbudgeted",
+        "all"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Budget View Snapshot Detail Rows",
+         "items": {
+          "type": "object",
+          "description": "Budget View Detail Row",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier of the budget line item backing this row. May be null for unbudgeted rows.",
+            "example": 75414
+           },
+           "deletable": {
+            "type": "boolean",
+            "description": "Indicates whether the underlying budget line item can be deleted.",
+            "example": true
+           },
+           "budgeted": {
+            "type": "boolean",
+            "description": "Indicates whether this row has an associated budget line item.",
+            "example": true
+           },
+           "budgetable": {
+            "type": "boolean",
+            "description": "Indicates whether this row's cost code and cost type combination can be budgeted.",
+            "example": true
+           },
+           "company_id": {
+            "type": "integer",
+            "description": "ID of the company that owns the project this row belongs to.",
+            "example": 75414
+           },
+           "company": {
+            "type": "string",
+            "description": "Name of the company that owns the project.",
+            "example": "Acme Construction"
+           },
+           "project_id": {
+            "type": "integer",
+            "description": "ID of the project this budget row belongs to.",
+            "example": 75414
+           },
+           "wbs_code_id": {
+            "type": "integer",
+            "description": "ID of the Work Breakdown Structure (WBS) code for this row. Null when WBS information is not available.",
+            "example": 75414,
+            "nullable": true
+           },
+           "biller_id": {
+            "type": "integer",
+            "description": "ID of the biller (sub job or project) the row is attributed to.",
+            "example": 75414
+           },
+           "root_cost_code_id": {
+            "type": "integer",
+            "description": "ID of the root cost code (division) grouping this row.",
+            "example": 75414
+           },
+           "cost_code_id": {
+            "type": "integer",
+            "description": "ID of the cost code for this row.",
+            "example": 75414
+           },
+           "cost_code_origin_id": {
+            "type": "string",
+            "description": "External system identifier for the cost code, if integrated. Null when not set.",
+            "example": "abc-123",
+            "nullable": true
+           },
+           "category_id": {
+            "type": "integer",
+            "description": "ID of the line item type (cost type) category for this row.",
+            "example": 75414
+           },
+           "project": {
+            "type": "string",
+            "description": "Name of the project this row belongs to.",
+            "example": "Downtown Office Tower"
+           },
+           "biller": {
+            "type": "string",
+            "description": "Name of the biller (sub job or project) the row is attributed to.",
+            "example": "Floor 1"
+           },
+           "biller_type": {
+            "type": "string",
+            "enum": [
+             "Project",
+             "SubJob"
+            ],
+            "description": "Whether the biller is the project itself or a sub job.",
+            "example": "SubJob"
+           },
+           "root_cost_code": {
+            "type": "string",
+            "description": "Name of the root cost code (division).",
+            "example": "1"
+           },
+           "cost_code": {
+            "type": "string",
+            "description": "Name of the cost code.",
+            "example": "300"
+           },
+           "category": {
+            "type": "string",
+            "description": "Name of the line item type (cost type), such as Labor or Equipment.",
+            "example": "Labor"
+           },
+           "curve": {
+            "type": "string",
+            "description": "Distribution curve used to spread this line's budget over the schedule. Null when no curve is set.",
+            "enum": [
+             "front_loaded",
+             "bell",
+             "back_loaded",
+             "linear",
+             "manual"
+            ],
+            "example": "linear",
+            "nullable": true
+           },
+           "start_date": {
+            "type": "string",
+            "description": "Formatted start date of the line's budgeted schedule. Null when no date range is set.",
+            "example": "Jan 1, 2024",
+            "nullable": true
+           },
+           "end_date": {
+            "type": "string",
+            "description": "Formatted end date of the line's budgeted schedule. Null when no date range is set.",
+            "example": "Dec 31, 2024",
+            "nullable": true
+           },
+           "budget_modifications": {
+            "type": "string",
+            "format": "float",
+            "description": "Net amount transferred to or from this row via budget modifications.",
+            "example": "3000.00"
+           },
+           "original_budget_amount": {
+            "type": "string",
+            "format": "float",
+            "description": "Original budgeted amount for this row, before any budget changes.",
+            "example": "50000.00"
+           },
+           "budget_forecast": {
+            "type": "object",
+            "description": "Forecasted budget detail for this row.",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the budget forecast record.",
+              "example": 123
+             },
+             "manual_amount": {
+              "type": "string",
+              "format": "float",
+              "description": "Forecast amount entered manually by a user.",
+              "example": "20000.00"
+             },
+             "automatic_amount": {
+              "type": "string",
+              "format": "float",
+              "description": "Forecast amount calculated automatically by the system.",
+              "example": "20000.00"
+             },
+             "amount": {
+              "type": "string",
+              "format": "float",
+              "description": "Effective forecast amount in use, either the manual_amount or the automatic_amount.",
+              "example": "20000.00"
+             },
+             "automatically_calculated": {
+              "type": "boolean",
+              "description": "True when amount is the automatic_amount; false when amount is the manual_amount.",
+              "example": true
+             },
+             "calculation_strategy": {
+              "type": "string",
+              "description": "How the forecast amount is calculated, such as 'itemized'.",
+              "example": "itemized"
+             },
+             "notes": {
+              "type": "string",
+              "description": "Free-text notes about the budget forecast.",
+              "example": "forecast notes"
+             }
+            }
+           },
+           "currency_configuration": {
+            "type": "object",
+            "description": "Currency in which this row's monetary amounts are denominated.",
+            "properties": {
+             "currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 currency code for the row's amounts.",
+              "example": "USD"
+             }
+            }
+           },
+           "unbudgeted_reason": {
+            "type": "string",
+            "description": "Explanation of why this row has no associated budget line item. Present only for unbudgeted rows.",
+            "example": "Cost Code and Cost Type have not been budgeted."
+           }
+          },
+          "additionalProperties": true
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/budget_view_snapshots/%7Bbudget_view_snapshot_id%7D/detail_rows',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'biller[]': 'SOME_ARRAY_VALUE',\n    'cost_code_id[]': 'SOME_ARRAY_VALUE',\n    'cost_code_name[]': 'SOME_ARRAY_VALUE',\n    'root_cost_code_id[]': 'SOME_ARRAY_VALUE',\n    'root_cost_code_name[]': 'SOME_ARRAY_VALUE',\n    'category_id[]': 'SOME_ARRAY_VALUE',\n    'budget_line_item_id[]': 'SOME_ARRAY_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    budget_row_type: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/budget_view_snapshots/%7Bbudget_view_snapshot_id%7D/detail_rows?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&biller%5B%5D=SOME_ARRAY_VALUE&cost_code_id%5B%5D=SOME_ARRAY_VALUE&cost_code_name%5B%5D=SOME_ARRAY_VALUE&root_cost_code_id%5B%5D=SOME_ARRAY_VALUE&root_cost_code_name%5B%5D=SOME_ARRAY_VALUE&category_id%5B%5D=SOME_ARRAY_VALUE&budget_line_item_id%5B%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&budget_row_type=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/budget_view_snapshots/%7Bbudget_view_snapshot_id%7D/detail_rows?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&biller%5B%5D=SOME_ARRAY_VALUE&cost_code_id%5B%5D=SOME_ARRAY_VALUE&cost_code_name%5B%5D=SOME_ARRAY_VALUE&root_cost_code_id%5B%5D=SOME_ARRAY_VALUE&root_cost_code_name%5B%5D=SOME_ARRAY_VALUE&category_id%5B%5D=SOME_ARRAY_VALUE&budget_line_item_id%5B%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&budget_row_type=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/budget_view_snapshots/%7Bbudget_view_snapshot_id%7D/detail_rows?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&biller%5B%5D=SOME_ARRAY_VALUE&cost_code_id%5B%5D=SOME_ARRAY_VALUE&cost_code_name%5B%5D=SOME_ARRAY_VALUE&root_cost_code_id%5B%5D=SOME_ARRAY_VALUE&root_cost_code_name%5B%5D=SOME_ARRAY_VALUE&category_id%5B%5D=SOME_ARRAY_VALUE&budget_line_item_id%5B%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&budget_row_type=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added `wbs_code_id` to List Budget View Snapshot Detail Rows endpoint",
+      "description": "Add `wbs_code_id` field to the response. This field corresponds to the WBS code associated to the detail row.",
+      "endpoint": "GET /budget_view_snapshots/{budget_view_snapshot_id}/detail_rows",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2021-04-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshot-detail-rows?version=1.0#list-budget-view-snapshot-detail-rows"
+     },
+     {
+      "summary": "Added `unbdugeted_reason` to List Budget View Snapshot Detail Rows endpoint",
+      "description": "Add `unbdugeted_reason` field to the response. This field corresponds to why a line does not have a budget_line_item_id.",
+      "endpoint": "GET /budget_view_snapshots/{budget_view_snapshot_id}/detail_rows",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2021-05-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshot-detail-rows?version=1.0#list-budget-view-snapshot-detail-rows"
+     },
+     {
+      "summary": "Added `currency_configuration` to List Budget View Snapshot Detail Rows endpoint",
+      "description": "Add `currency_configuration` field to the response. This field corresponds to the configuration currency.",
+      "endpoint": "GET /budget_view_snapshots/{budget_view_snapshot_id}/detail_rows",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-09-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-view-snapshot-detail-rows?version=1.0#list-budget-view-snapshot-detail-rows"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

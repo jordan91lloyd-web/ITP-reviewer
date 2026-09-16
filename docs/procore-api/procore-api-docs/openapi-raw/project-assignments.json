@@ -1,0 +1,703 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Project Assignments",
+  "x-product-category": "Core",
+  "x-tool-category": "Project",
+  "x-resource-name": "Project Assignments",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/users/{user_id}/project_assignments": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Project assignments for a Company User",
+    "description": "This endpoint returns the current and potential Project assignments for the specified User. This includes Project information, as well as the Permission Template and Roles assigned to a given user when they are assigned on a Project.",
+    "tags": [
+     "Company Users"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "user_id",
+      "in": "path",
+      "description": "User ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[active]",
+      "in": "query",
+      "description": "If true, returns item(s) with a status of 'active'.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[name]",
+      "in": "query",
+      "description": "Filter item(s) with matching name.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "filters[by_stage]",
+      "in": "query",
+      "required": false,
+      "description": "Return item(s) with the specified project stage ID(s).",
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "array",
+         "items": {
+          "type": "integer"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "name": "filters[by_type]",
+      "in": "query",
+      "required": false,
+      "description": "Return item(s) with the specified project type ID(s).",
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "array",
+         "items": {
+          "type": "integer"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "name": "filters[by_program]",
+      "in": "query",
+      "required": false,
+      "description": "Return item(s) with the specified project program ID(s).",
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "array",
+         "items": {
+          "type": "integer"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "name": "filters[by_region]",
+      "in": "query",
+      "required": false,
+      "description": "Return item(s) with the specified project region ID(s).",
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "array",
+         "items": {
+          "type": "integer"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "name": "filters[by_status]",
+      "in": "query",
+      "description": "Return item(s) with the specified status value. Must be one of Active, Inactive, or All.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "All",
+        "Active",
+        "Inactive"
+       ]
+      }
+     },
+     {
+      "name": "filters[project_roles]",
+      "in": "query",
+      "description": "Return item(s) with the Project Role ID(s).",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[project_permission_templates]",
+      "in": "query",
+      "description": "Return item(s) with the Project Permissions Template ID(s).",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[assignment_status]",
+      "in": "query",
+      "description": "Filters projects to those matching the given assignment status.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "all",
+        "assigned",
+        "unassigned"
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort the results by the specified field.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "active",
+        "address",
+        "name",
+        "permission_template_name",
+        "program",
+        "project_number",
+        "project_type",
+        "region",
+        "stage",
+        "assignment_status",
+        "project_role_name"
+       ]
+      }
+     },
+     {
+      "name": "direction",
+      "in": "query",
+      "description": "Sort direction. Default is ascending, nulls first.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "asc",
+        "desc"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "title": "Project Assignment (Normal View)",
+          "type": "object",
+          "properties": {
+           "project_id": {
+            "type": "integer",
+            "description": "Unique identifier for the project.",
+            "example": 89025
+           },
+           "name": {
+            "type": "string",
+            "description": "Project name",
+            "example": "Casa de Casper"
+           },
+           "project_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "Project number",
+            "example": "A-1"
+           },
+           "address": {
+            "type": "string",
+            "nullable": true,
+            "description": "Project address",
+            "example": "500 Construction Way"
+           },
+           "stage": {
+            "type": "string",
+            "nullable": true,
+            "description": "Stage name",
+            "example": "Course of Construction"
+           },
+           "is_assigned": {
+            "type": "boolean",
+            "nullable": false,
+            "description": "Whether user is assigned to project or not",
+            "example": true
+           },
+           "active": {
+            "type": "boolean",
+            "nullable": false,
+            "description": "Whether the project is active or not",
+            "example": true
+           },
+           "roles": {
+            "type": "array",
+            "description": "Array of user project role names",
+            "items": {
+             "title": "UserProjectRoleName",
+             "type": "string",
+             "nullable": false,
+             "description": "Name of the role user is assigned to in the project",
+             "example": "Contractor"
+            }
+           },
+           "permission_template_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Project currently assigned user permission template id",
+            "example": 27
+           },
+           "permission_template_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Project currently assigned user permission template name",
+            "example": "default Eemer Oakland Project permissions"
+           },
+           "region": {
+            "type": "string",
+            "nullable": true,
+            "description": "Region assigned to the project",
+            "example": "West"
+           },
+           "program": {
+            "type": "string",
+            "nullable": true,
+            "description": "Program assigned to the project",
+            "example": "Program 1"
+           },
+           "project_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Project type assigned to the project",
+            "example": "Commercial"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Assignments endpoint",
+      "description": "Gets the list of current and potential project assignments for the user.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-04-24",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added by_status filter",
+      "description": "Added ability to filter by project status to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-05-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added region, program, and project type fields",
+      "description": "Added region, program, and project type fields to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-05-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added by_stage filter",
+      "description": "Added ability to filter by project stage id to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-05-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added by_type filter",
+      "description": "Added ability to filter by project type id to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-05-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added by_program filter",
+      "description": "Added ability to filter by project program id (group_name) to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-05-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added by_region filter",
+      "description": "Added ability to filter by project region id to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-05-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added by_status filter",
+      "description": "Added ability to filter by billing status to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-05-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added sorting",
+      "description": "Added ability to sort by active, address, name, permission template name, program, project number, project type, region, and stage to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-05-21",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added a project roles filter",
+      "description": "Added the ability to filter by project role ids to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-10-24",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added a project permission templates filter",
+      "description": "Added the ability to filter by permission template ids to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-10-24",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added a project assignment status filter",
+      "description": "Added the ability to filter by project assignment status to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-01-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added sorting",
+      "description": "Added ability to sort by assignment_status and project_role_name to the project assignments endpoint.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-06-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Expanded the audience for the managed field",
+      "description": "The managed field is now also returned for companies enrolled in the Groups Procore Explore program. Behavior is unchanged for companies where Groups is off, which continue to receive responses without the field.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-09-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     },
+     {
+      "summary": "Added permission_template_id field",
+      "description": "Added the permission template id to the project assignments endpoint, alongside the existing permission template name.",
+      "endpoint": "GET /companies/{company_id}/users/{user_id}/project_assignments",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-09-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "project-assignments?version=1.0#list-project-assignments-for-a-company-user"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

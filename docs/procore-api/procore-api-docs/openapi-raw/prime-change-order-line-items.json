@@ -1,0 +1,3805 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Prime Change Order Line Items",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Prime Contracts",
+  "x-resource-name": "Prime Change Order Line Items",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Prime Change Order Line Item",
+    "description": "Creates a line item for a given prime change order.",
+    "tags": [
+     "Line Items"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "prime_change_order_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the Prime Change Order. See `GET /rest/v1.0/projects/{project_id}/prime_change_orders`.\n",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "required": [
+         "wbs_code_id"
+        ],
+        "type": "object",
+        "title": "Body",
+        "properties": {
+         "prime_line_item_id": {
+          "type": "string",
+          "nullable": true,
+          "description": "ID of the prime contract line item associated with this line item. Pass null when updating to remove the association.",
+          "example": "12345"
+         },
+         "rate_value_id": {
+          "type": "string",
+          "nullable": true,
+          "description": "ID of the project rate value selected for this line item. Accepted only for unit-quantity schedules of values. Pass null when updating to clear the selected rate.",
+          "example": "01JFHMDB8AD4750F18KN8R2TF1"
+         },
+         "resource_id": {
+          "type": "string",
+          "nullable": true,
+          "description": "ID of the resource assigned to this line item. When provided with a rate value, the resource must match the resource associated with that rate. Accepted only for unit-quantity schedules of values. Pass null when updating to clear the assigned resource.",
+          "example": "01JFHMDB8AD4750F18KN8R2TF2"
+         },
+         "amount": {
+          "type": "string",
+          "description": "Amount - this field is nullable on unit quantity SOVs but NOT amount-based SOVs. For line item creates, if this field is omitted on unit quantity SOVs,  the amount will be calculated as quantity * unit_cost. For line item updates, if a null amount is passed in on unit quantity SOVs, it will set the line item extended type to \"calculated\".",
+          "example": "1000.0"
+         },
+         "description": {
+          "type": "string",
+          "description": "Description",
+          "example": "Cleanup"
+         },
+         "quantity": {
+          "type": "string",
+          "description": "Quantity - only accepted on unit quantity SOVs",
+          "example": "20.0"
+         },
+         "unit_cost": {
+          "type": "string",
+          "description": "Unit cost - only accepted on unit quantity SOVs",
+          "example": "50.00"
+         },
+         "uom": {
+          "type": "string",
+          "description": "Unit of measure - only accepted on unit quantity SOVs",
+          "example": "Hours",
+          "enum": [
+           "Any value present in the Company list of Units of Measure"
+          ]
+         },
+         "wbs_code_id": {
+          "type": "string",
+          "description": "WBS code ID",
+          "example": "34567"
+         },
+         "tax_code_id": {
+          "type": "string",
+          "description": "Tax code ID",
+          "example": "12345"
+         },
+         "funding_rule_id": {
+          "type": "string",
+          "description": "ID of the funding rule associated with this line item. Funding Sources must be enabled at the project level. The rule must be ACTIVE and its currency must match the contract currency. Pass null to disassociate an existing funding rule.",
+          "example": "12345"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "title": "Line Item Row",
+           "description": "A row on a schedule of values.",
+           "required": [],
+           "properties": {
+            "prime_line_item_id": {
+             "type": "string",
+             "description": "ID of the prime contract line item associated with this line item",
+             "example": "12345"
+            },
+            "funding_rule_id": {
+             "type": "string",
+             "description": "ID of the funding rule associated with this line item",
+             "example": "12345"
+            },
+            "resource": {
+             "type": "object",
+             "description": "Rate and resource selection associated with a line item.",
+             "nullable": true,
+             "required": [
+              "rate_value_id",
+              "currency_iso_code",
+              "resource_category",
+              "resource_id",
+              "resource_name"
+             ],
+             "properties": {
+              "rate_value_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "ID of the selected rate value. Null when the line item uses a manually entered rate.",
+               "example": "01JFHMDB8AD4750F18KN8R2TF1"
+              },
+              "currency_iso_code": {
+               "type": "string",
+               "description": "Three-letter ISO 4217 currency code for the selected or manually entered rate.",
+               "example": "USD"
+              },
+              "resource_category": {
+               "type": "string",
+               "nullable": true,
+               "description": "Category used to classify the selected labor, equipment, or other resource. Null when no resource is assigned.",
+               "example": "work_classification"
+              },
+              "resource_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "ID of the resource assigned to the line item. Null when no resource is assigned.",
+               "example": "01J3F3015CWKSMHKY6KPDWFFHZ"
+              },
+              "resource_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Display name of the resource assigned to the line item. Null when no resource is assigned.",
+               "example": "Carpenter"
+              }
+             }
+            },
+            "id": {
+             "type": "string",
+             "description": "ID",
+             "example": "100"
+            },
+            "description": {
+             "type": "string",
+             "description": "Line item Description",
+             "example": "Drywall for the 2nd floor"
+            },
+            "uom": {
+             "type": "string",
+             "description": "Line Item Unit of Measure",
+             "example": "m\u00b2"
+            },
+            "quantity": {
+             "type": "number",
+             "description": "Line Item Quantity",
+             "example": 100
+            },
+            "unit_cost": {
+             "type": "string",
+             "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+             "example": "-12345.6789",
+             "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+            },
+            "amount": {
+             "nullable": true,
+             "type": "string",
+             "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+             "example": "-12345.6789",
+             "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+            },
+            "extended_type": {
+             "type": "string",
+             "description": "Extended type",
+             "enum": [
+              "manual",
+              "calculated"
+             ],
+             "example": "calculated"
+            },
+            "wbs_code_id": {
+             "type": "string",
+             "description": "ID",
+             "example": "100"
+            },
+            "tax_code_id": {
+             "type": "string",
+             "description": "ID",
+             "example": "100"
+            },
+            "position": {
+             "type": "number",
+             "description": "Position of the line item within the schedule of values",
+             "example": 1
+            },
+            "wbs_code": {
+             "type": "object",
+             "description": "WBS Code details for the line item",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "WBS Code ID",
+               "example": "999"
+              },
+              "flat_code": {
+               "type": "string",
+               "description": "WBS Code flat code",
+               "example": "01-011.CT1",
+               "nullable": true
+              },
+              "description": {
+               "type": "string",
+               "description": "WBS Code description",
+               "example": "Earthwork.Equipment",
+               "nullable": true
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items',\n  headers: {'content-type': 'application/json'},\n  body: {\n    prime_line_item_id: '12345',\n    rate_value_id: '01JFHMDB8AD4750F18KN8R2TF1',\n    resource_id: '01JFHMDB8AD4750F18KN8R2TF2',\n    amount: '1000.0',\n    description: 'Cleanup',\n    quantity: '20.0',\n    unit_cost: '50.00',\n    uom: 'Hours',\n    wbs_code_id: '34567',\n    tax_code_id: '12345',\n    funding_rule_id: '12345'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"prime_line_item_id\\\":\\\"12345\\\",\\\"rate_value_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF1\\\",\\\"resource_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF2\\\",\\\"amount\\\":\\\"1000.0\\\",\\\"description\\\":\\\"Cleanup\\\",\\\"quantity\\\":\\\"20.0\\\",\\\"unit_cost\\\":\\\"50.00\\\",\\\"uom\\\":\\\"Hours\\\",\\\"wbs_code_id\\\":\\\"34567\\\",\\\"tax_code_id\\\":\\\"12345\\\",\\\"funding_rule_id\\\":\\\"12345\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items \\\n  --header 'content-type: application/json' \\\n  --data '{\"prime_line_item_id\":\"12345\",\"rate_value_id\":\"01JFHMDB8AD4750F18KN8R2TF1\",\"resource_id\":\"01JFHMDB8AD4750F18KN8R2TF2\",\"amount\":\"1000.0\",\"description\":\"Cleanup\",\"quantity\":\"20.0\",\"unit_cost\":\"50.00\",\"uom\":\"Hours\",\"wbs_code_id\":\"34567\",\"tax_code_id\":\"12345\",\"funding_rule_id\":\"12345\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items\"),\n    Content = new StringContent(\"{\\\"prime_line_item_id\\\":\\\"12345\\\",\\\"rate_value_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF1\\\",\\\"resource_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF2\\\",\\\"amount\\\":\\\"1000.0\\\",\\\"description\\\":\\\"Cleanup\\\",\\\"quantity\\\":\\\"20.0\\\",\\\"unit_cost\\\":\\\"50.00\\\",\\\"uom\\\":\\\"Hours\\\",\\\"wbs_code_id\\\":\\\"34567\\\",\\\"tax_code_id\\\":\\\"12345\\\",\\\"funding_rule_id\\\":\\\"12345\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Notice of General Availability",
+      "description": "This endpoint is now generally available (GA).",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-03-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#create-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added wbs_code field to response",
+      "description": "The response now includes a wbs_code object with id, flat_code, and description fields when the line item has an associated WBS code.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-12-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#create-prime-change-order-line-item"
+     },
+     {
+      "summary": "Tax code parameter behavior when tax is disabled",
+      "description": "If tax is disabled on the tool or on the project, the tax_code_id parameter will be ignored when creating or updating line items.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-01-27",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#create-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added funding_rule_id parameter and response field",
+      "description": "Accepts an optional funding_rule_id parameter associating the line item with a project-level funding rule, and returns funding_rule_id on the response. Funding Sources must be enabled at the project level. The rule must be ACTIVE and its currency must match the parent contract currency.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-20",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#create-prime-change-order-line-item"
+     },
+     {
+      "summary": "Remove phantom work_breakdown_structure from response schema",
+      "description": "Removed the work_breakdown_structure property from the POST response schema. This field was never returned by the API implementation. Documentation-only correction; no runtime change.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-07-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#create-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added resource data to the response",
+      "description": "The response may now include a resource object describing the line item's selected rate value, currency, and assigned resource.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-16",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#create-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added rate and resource selection parameters",
+      "description": "Accepts optional rate_value_id and resource_id parameters when creating a line item on a unit-quantity schedule of values.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#create-prime-change-order-line-item"
+     }
+    ]
+   },
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Prime Change Order Line Items",
+    "description": "List all line items for a given prime change order.",
+    "tags": [
+     "Line Items"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "prime_change_order_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the Prime Change Order. See `GET /rest/v1.0/projects/{project_id}/prime_change_orders`.\n",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "The view to use for the response. Use `extended` to include `change_event_line_item` and `external_data` (ERP origin fields).\nAn invalid value returns a 400 error.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "default": "default",
+       "enum": [
+        "default",
+        "extended"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Array of Prime Change Order Line Items",
+           "items": {
+            "oneOf": [
+             {
+              "type": "object",
+              "title": "Line Item Row",
+              "description": "A row on a schedule of values.",
+              "required": [],
+              "properties": {
+               "prime_line_item_id": {
+                "type": "string",
+                "description": "ID of the prime contract line item associated with this line item",
+                "example": "12345"
+               },
+               "funding_rule_id": {
+                "type": "string",
+                "description": "ID of the funding rule associated with this line item",
+                "example": "12345"
+               },
+               "resource": {
+                "type": "object",
+                "description": "Rate and resource selection associated with a line item.",
+                "nullable": true,
+                "required": [
+                 "rate_value_id",
+                 "currency_iso_code",
+                 "resource_category",
+                 "resource_id",
+                 "resource_name"
+                ],
+                "properties": {
+                 "rate_value_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "ID of the selected rate value. Null when the line item uses a manually entered rate.",
+                  "example": "01JFHMDB8AD4750F18KN8R2TF1"
+                 },
+                 "currency_iso_code": {
+                  "type": "string",
+                  "description": "Three-letter ISO 4217 currency code for the selected or manually entered rate.",
+                  "example": "USD"
+                 },
+                 "resource_category": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Category used to classify the selected labor, equipment, or other resource. Null when no resource is assigned.",
+                  "example": "work_classification"
+                 },
+                 "resource_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "ID of the resource assigned to the line item. Null when no resource is assigned.",
+                  "example": "01J3F3015CWKSMHKY6KPDWFFHZ"
+                 },
+                 "resource_name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Display name of the resource assigned to the line item. Null when no resource is assigned.",
+                  "example": "Carpenter"
+                 }
+                }
+               },
+               "id": {
+                "type": "string",
+                "description": "ID",
+                "example": "100"
+               },
+               "description": {
+                "type": "string",
+                "description": "Line item Description",
+                "example": "Drywall for the 2nd floor"
+               },
+               "uom": {
+                "type": "string",
+                "description": "Line Item Unit of Measure",
+                "example": "m\u00b2"
+               },
+               "quantity": {
+                "type": "number",
+                "description": "Line Item Quantity",
+                "example": 100
+               },
+               "unit_cost": {
+                "type": "string",
+                "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+                "example": "-12345.6789",
+                "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+               },
+               "amount": {
+                "nullable": true,
+                "type": "string",
+                "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+                "example": "-12345.6789",
+                "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+               },
+               "extended_type": {
+                "type": "string",
+                "description": "Extended type",
+                "enum": [
+                 "manual",
+                 "calculated"
+                ],
+                "example": "calculated"
+               },
+               "wbs_code_id": {
+                "type": "string",
+                "description": "ID",
+                "example": "100"
+               },
+               "tax_code_id": {
+                "type": "string",
+                "description": "ID",
+                "example": "100"
+               },
+               "position": {
+                "type": "number",
+                "description": "Position of the line item within the schedule of values",
+                "example": 1
+               },
+               "wbs_code": {
+                "type": "object",
+                "description": "WBS Code details for the line item",
+                "nullable": true,
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "WBS Code ID",
+                  "example": "999"
+                 },
+                 "flat_code": {
+                  "type": "string",
+                  "description": "WBS Code flat code",
+                  "example": "01-011.CT1",
+                  "nullable": true
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "WBS Code description",
+                  "example": "Earthwork.Equipment",
+                  "nullable": true
+                 }
+                }
+               }
+              }
+             },
+             {
+              "title": "extended",
+              "type": "object",
+              "description": "A row on a schedule of values (when the 'extended' view is requested)",
+              "allOf": [
+               {
+                "type": "object",
+                "title": "Line Item Row",
+                "description": "A row on a schedule of values.",
+                "required": [],
+                "properties": {
+                 "prime_line_item_id": {
+                  "type": "string",
+                  "description": "ID of the prime contract line item associated with this line item",
+                  "example": "12345"
+                 },
+                 "funding_rule_id": {
+                  "type": "string",
+                  "description": "ID of the funding rule associated with this line item",
+                  "example": "12345"
+                 },
+                 "resource": {
+                  "type": "object",
+                  "description": "Rate and resource selection associated with a line item.",
+                  "nullable": true,
+                  "required": [
+                   "rate_value_id",
+                   "currency_iso_code",
+                   "resource_category",
+                   "resource_id",
+                   "resource_name"
+                  ],
+                  "properties": {
+                   "rate_value_id": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "ID of the selected rate value. Null when the line item uses a manually entered rate.",
+                    "example": "01JFHMDB8AD4750F18KN8R2TF1"
+                   },
+                   "currency_iso_code": {
+                    "type": "string",
+                    "description": "Three-letter ISO 4217 currency code for the selected or manually entered rate.",
+                    "example": "USD"
+                   },
+                   "resource_category": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Category used to classify the selected labor, equipment, or other resource. Null when no resource is assigned.",
+                    "example": "work_classification"
+                   },
+                   "resource_id": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "ID of the resource assigned to the line item. Null when no resource is assigned.",
+                    "example": "01J3F3015CWKSMHKY6KPDWFFHZ"
+                   },
+                   "resource_name": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Display name of the resource assigned to the line item. Null when no resource is assigned.",
+                    "example": "Carpenter"
+                   }
+                  }
+                 },
+                 "id": {
+                  "type": "string",
+                  "description": "ID",
+                  "example": "100"
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Line item Description",
+                  "example": "Drywall for the 2nd floor"
+                 },
+                 "uom": {
+                  "type": "string",
+                  "description": "Line Item Unit of Measure",
+                  "example": "m\u00b2"
+                 },
+                 "quantity": {
+                  "type": "number",
+                  "description": "Line Item Quantity",
+                  "example": 100
+                 },
+                 "unit_cost": {
+                  "type": "string",
+                  "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+                  "example": "-12345.6789",
+                  "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+                 },
+                 "amount": {
+                  "nullable": true,
+                  "type": "string",
+                  "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+                  "example": "-12345.6789",
+                  "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+                 },
+                 "extended_type": {
+                  "type": "string",
+                  "description": "Extended type",
+                  "enum": [
+                   "manual",
+                   "calculated"
+                  ],
+                  "example": "calculated"
+                 },
+                 "wbs_code_id": {
+                  "type": "string",
+                  "description": "ID",
+                  "example": "100"
+                 },
+                 "tax_code_id": {
+                  "type": "string",
+                  "description": "ID",
+                  "example": "100"
+                 },
+                 "position": {
+                  "type": "number",
+                  "description": "Position of the line item within the schedule of values",
+                  "example": 1
+                 },
+                 "wbs_code": {
+                  "type": "object",
+                  "description": "WBS Code details for the line item",
+                  "nullable": true,
+                  "properties": {
+                   "id": {
+                    "type": "string",
+                    "description": "WBS Code ID",
+                    "example": "999"
+                   },
+                   "flat_code": {
+                    "type": "string",
+                    "description": "WBS Code flat code",
+                    "example": "01-011.CT1",
+                    "nullable": true
+                   },
+                   "description": {
+                    "type": "string",
+                    "description": "WBS Code description",
+                    "example": "Earthwork.Equipment",
+                    "nullable": true
+                   }
+                  }
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "change_event_line_item": {
+                  "type": "object",
+                  "title": "Change Event Line Item",
+                  "description": "The change event line item associated with this line item (only returned in the extended view).",
+                  "nullable": true,
+                  "properties": {
+                   "id": {
+                    "type": "string",
+                    "description": "ID of the change event line item",
+                    "example": "42"
+                   },
+                   "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Description of the change event line item",
+                    "example": "Additional excavation work"
+                   },
+                   "event_id": {
+                    "type": "string",
+                    "description": "ID of the parent change event",
+                    "example": "7"
+                   },
+                   "wbs_code": {
+                    "type": "object",
+                    "nullable": true,
+                    "description": "WBS code associated with this change event line item",
+                    "properties": {
+                     "id": {
+                      "type": "string",
+                      "description": "ID of the WBS code",
+                      "example": "101"
+                     },
+                     "flat_code": {
+                      "type": "string",
+                      "description": "Flat code of the WBS code",
+                      "example": "01-0100"
+                     },
+                     "description": {
+                      "type": "string",
+                      "description": "Description of the WBS code",
+                      "example": "Concrete Work"
+                     }
+                    }
+                   },
+                   "event": {
+                    "type": "object",
+                    "nullable": true,
+                    "description": "The parent change event",
+                    "properties": {
+                     "id": {
+                      "type": "string",
+                      "description": "ID of the change event",
+                      "example": "7"
+                     },
+                     "title": {
+                      "type": "string",
+                      "description": "Title of the change event",
+                      "example": "Foundation scope change"
+                     },
+                     "number": {
+                      "type": "string",
+                      "description": "Number of the change event",
+                      "example": "001"
+                     }
+                    }
+                   }
+                  }
+                 },
+                 "external_data": {
+                  "type": "object",
+                  "description": "External Data",
+                  "properties": {
+                   "origin_id": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "123"
+                   },
+                   "origin_code": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "ABC"
+                   },
+                   "origin_data": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "ABC"
+                   }
+                  }
+                 }
+                }
+               }
+              ]
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    view: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Notice of General Availability",
+      "description": "This endpoint is now generally available (GA).",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-03-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#list-prime-change-order-line-items"
+     },
+     {
+      "summary": "Added wbs_code field to response",
+      "description": "The response now includes a wbs_code object with id, flat_code, and description fields when the line item has an associated WBS code.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-12-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#list-prime-change-order-line-items"
+     },
+     {
+      "summary": "Added change_event_line_item to extended view",
+      "description": "The extended view now includes a change_event_line_item object containing the associated change event line item data with id, description, event_id, wbs_code, and event fields.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-24",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#list-prime-change-order-line-items"
+     },
+     {
+      "summary": "Added funding_rule_id field to response",
+      "description": "The response now includes a funding_rule_id field with the ID of the funding rule associated with the line item, or null when unassociated.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-20",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#list-prime-change-order-line-items"
+     },
+     {
+      "summary": "Correct GET response schema to document existing default/extended views",
+      "description": "The GET list response schema changed from a single inline object to a oneOf with default and extended subschemas. This documents the existing ?view=extended query parameter that was already supported in code. No runtime API change. Consumers using strict OAS-schema validators pinned to the previous inline-object shape should update to accept the oneOf structure; either subschema is valid on any response.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-07-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#list-prime-change-order-line-items"
+     },
+     {
+      "summary": "Added external_data to the extended view",
+      "description": "When requested with view=extended, the response now includes a nested external_data object with origin_id, origin_code, and origin_data (ERP integration origin fields). Default responses are unchanged.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-22",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#list-prime-change-order-line-items"
+     },
+     {
+      "summary": "Added resource data to the response",
+      "description": "The response may now include a resource object describing the line item's selected rate value, currency, and assigned resource.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-16",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#list-prime-change-order-line-items"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Prime Change Order Line Item",
+    "description": "Deletes a specified prime change order line item.",
+    "tags": [
+     "Line Item"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "prime_change_order_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the Prime Change Order. See `GET /rest/v1.0/projects/{project_id}/prime_change_orders`.\n",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "id",
+      "in": "path",
+      "description": "ID of the line item",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Notice of General Availability",
+      "description": "This endpoint is now generally available (GA).",
+      "endpoint": "DELETE /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-03-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#delete-prime-change-order-line-item"
+     }
+    ]
+   },
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Prime Change Order Line Item",
+    "description": "Get a specified line item for a given prime change order.",
+    "tags": [
+     "Line Item"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "prime_change_order_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the Prime Change Order. See `GET /rest/v1.0/projects/{project_id}/prime_change_orders`.\n",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "id",
+      "in": "path",
+      "description": "ID of the line item",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "The view to use for the response. Use `extended` to include `change_event_line_item` and `external_data` (ERP origin fields).\nAn invalid value returns a 400 error.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "default": "default",
+       "enum": [
+        "default",
+        "extended"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "oneOf": [
+            {
+             "type": "object",
+             "title": "Line Item Row",
+             "description": "A row on a schedule of values.",
+             "required": [],
+             "properties": {
+              "prime_line_item_id": {
+               "type": "string",
+               "description": "ID of the prime contract line item associated with this line item",
+               "example": "12345"
+              },
+              "funding_rule_id": {
+               "type": "string",
+               "description": "ID of the funding rule associated with this line item",
+               "example": "12345"
+              },
+              "resource": {
+               "type": "object",
+               "description": "Rate and resource selection associated with a line item.",
+               "nullable": true,
+               "required": [
+                "rate_value_id",
+                "currency_iso_code",
+                "resource_category",
+                "resource_id",
+                "resource_name"
+               ],
+               "properties": {
+                "rate_value_id": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "ID of the selected rate value. Null when the line item uses a manually entered rate.",
+                 "example": "01JFHMDB8AD4750F18KN8R2TF1"
+                },
+                "currency_iso_code": {
+                 "type": "string",
+                 "description": "Three-letter ISO 4217 currency code for the selected or manually entered rate.",
+                 "example": "USD"
+                },
+                "resource_category": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "Category used to classify the selected labor, equipment, or other resource. Null when no resource is assigned.",
+                 "example": "work_classification"
+                },
+                "resource_id": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "ID of the resource assigned to the line item. Null when no resource is assigned.",
+                 "example": "01J3F3015CWKSMHKY6KPDWFFHZ"
+                },
+                "resource_name": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "Display name of the resource assigned to the line item. Null when no resource is assigned.",
+                 "example": "Carpenter"
+                }
+               }
+              },
+              "id": {
+               "type": "string",
+               "description": "ID",
+               "example": "100"
+              },
+              "description": {
+               "type": "string",
+               "description": "Line item Description",
+               "example": "Drywall for the 2nd floor"
+              },
+              "uom": {
+               "type": "string",
+               "description": "Line Item Unit of Measure",
+               "example": "m\u00b2"
+              },
+              "quantity": {
+               "type": "number",
+               "description": "Line Item Quantity",
+               "example": 100
+              },
+              "unit_cost": {
+               "type": "string",
+               "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+               "example": "-12345.6789",
+               "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+              },
+              "amount": {
+               "nullable": true,
+               "type": "string",
+               "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+               "example": "-12345.6789",
+               "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+              },
+              "extended_type": {
+               "type": "string",
+               "description": "Extended type",
+               "enum": [
+                "manual",
+                "calculated"
+               ],
+               "example": "calculated"
+              },
+              "wbs_code_id": {
+               "type": "string",
+               "description": "ID",
+               "example": "100"
+              },
+              "tax_code_id": {
+               "type": "string",
+               "description": "ID",
+               "example": "100"
+              },
+              "position": {
+               "type": "number",
+               "description": "Position of the line item within the schedule of values",
+               "example": 1
+              },
+              "wbs_code": {
+               "type": "object",
+               "description": "WBS Code details for the line item",
+               "nullable": true,
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "WBS Code ID",
+                 "example": "999"
+                },
+                "flat_code": {
+                 "type": "string",
+                 "description": "WBS Code flat code",
+                 "example": "01-011.CT1",
+                 "nullable": true
+                },
+                "description": {
+                 "type": "string",
+                 "description": "WBS Code description",
+                 "example": "Earthwork.Equipment",
+                 "nullable": true
+                }
+               }
+              }
+             }
+            },
+            {
+             "title": "extended",
+             "type": "object",
+             "description": "A row on a schedule of values (when the 'extended' view is requested)",
+             "allOf": [
+              {
+               "type": "object",
+               "title": "Line Item Row",
+               "description": "A row on a schedule of values.",
+               "required": [],
+               "properties": {
+                "prime_line_item_id": {
+                 "type": "string",
+                 "description": "ID of the prime contract line item associated with this line item",
+                 "example": "12345"
+                },
+                "funding_rule_id": {
+                 "type": "string",
+                 "description": "ID of the funding rule associated with this line item",
+                 "example": "12345"
+                },
+                "resource": {
+                 "type": "object",
+                 "description": "Rate and resource selection associated with a line item.",
+                 "nullable": true,
+                 "required": [
+                  "rate_value_id",
+                  "currency_iso_code",
+                  "resource_category",
+                  "resource_id",
+                  "resource_name"
+                 ],
+                 "properties": {
+                  "rate_value_id": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "ID of the selected rate value. Null when the line item uses a manually entered rate.",
+                   "example": "01JFHMDB8AD4750F18KN8R2TF1"
+                  },
+                  "currency_iso_code": {
+                   "type": "string",
+                   "description": "Three-letter ISO 4217 currency code for the selected or manually entered rate.",
+                   "example": "USD"
+                  },
+                  "resource_category": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Category used to classify the selected labor, equipment, or other resource. Null when no resource is assigned.",
+                   "example": "work_classification"
+                  },
+                  "resource_id": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "ID of the resource assigned to the line item. Null when no resource is assigned.",
+                   "example": "01J3F3015CWKSMHKY6KPDWFFHZ"
+                  },
+                  "resource_name": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Display name of the resource assigned to the line item. Null when no resource is assigned.",
+                   "example": "Carpenter"
+                  }
+                 }
+                },
+                "id": {
+                 "type": "string",
+                 "description": "ID",
+                 "example": "100"
+                },
+                "description": {
+                 "type": "string",
+                 "description": "Line item Description",
+                 "example": "Drywall for the 2nd floor"
+                },
+                "uom": {
+                 "type": "string",
+                 "description": "Line Item Unit of Measure",
+                 "example": "m\u00b2"
+                },
+                "quantity": {
+                 "type": "number",
+                 "description": "Line Item Quantity",
+                 "example": 100
+                },
+                "unit_cost": {
+                 "type": "string",
+                 "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+                 "example": "-12345.6789",
+                 "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+                },
+                "amount": {
+                 "nullable": true,
+                 "type": "string",
+                 "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+                 "example": "-12345.6789",
+                 "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+                },
+                "extended_type": {
+                 "type": "string",
+                 "description": "Extended type",
+                 "enum": [
+                  "manual",
+                  "calculated"
+                 ],
+                 "example": "calculated"
+                },
+                "wbs_code_id": {
+                 "type": "string",
+                 "description": "ID",
+                 "example": "100"
+                },
+                "tax_code_id": {
+                 "type": "string",
+                 "description": "ID",
+                 "example": "100"
+                },
+                "position": {
+                 "type": "number",
+                 "description": "Position of the line item within the schedule of values",
+                 "example": 1
+                },
+                "wbs_code": {
+                 "type": "object",
+                 "description": "WBS Code details for the line item",
+                 "nullable": true,
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "WBS Code ID",
+                   "example": "999"
+                  },
+                  "flat_code": {
+                   "type": "string",
+                   "description": "WBS Code flat code",
+                   "example": "01-011.CT1",
+                   "nullable": true
+                  },
+                  "description": {
+                   "type": "string",
+                   "description": "WBS Code description",
+                   "example": "Earthwork.Equipment",
+                   "nullable": true
+                  }
+                 }
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "change_event_line_item": {
+                 "type": "object",
+                 "title": "Change Event Line Item",
+                 "description": "The change event line item associated with this line item (only returned in the extended view).",
+                 "nullable": true,
+                 "properties": {
+                  "id": {
+                   "type": "string",
+                   "description": "ID of the change event line item",
+                   "example": "42"
+                  },
+                  "description": {
+                   "type": "string",
+                   "nullable": true,
+                   "description": "Description of the change event line item",
+                   "example": "Additional excavation work"
+                  },
+                  "event_id": {
+                   "type": "string",
+                   "description": "ID of the parent change event",
+                   "example": "7"
+                  },
+                  "wbs_code": {
+                   "type": "object",
+                   "nullable": true,
+                   "description": "WBS code associated with this change event line item",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "description": "ID of the WBS code",
+                     "example": "101"
+                    },
+                    "flat_code": {
+                     "type": "string",
+                     "description": "Flat code of the WBS code",
+                     "example": "01-0100"
+                    },
+                    "description": {
+                     "type": "string",
+                     "description": "Description of the WBS code",
+                     "example": "Concrete Work"
+                    }
+                   }
+                  },
+                  "event": {
+                   "type": "object",
+                   "nullable": true,
+                   "description": "The parent change event",
+                   "properties": {
+                    "id": {
+                     "type": "string",
+                     "description": "ID of the change event",
+                     "example": "7"
+                    },
+                    "title": {
+                     "type": "string",
+                     "description": "Title of the change event",
+                     "example": "Foundation scope change"
+                    },
+                    "number": {
+                     "type": "string",
+                     "description": "Number of the change event",
+                     "example": "001"
+                    }
+                   }
+                  }
+                 }
+                },
+                "external_data": {
+                 "type": "object",
+                 "description": "External Data",
+                 "properties": {
+                  "origin_id": {
+                   "type": "string",
+                   "nullable": true,
+                   "example": "123"
+                  },
+                  "origin_code": {
+                   "type": "string",
+                   "nullable": true,
+                   "example": "ABC"
+                  },
+                  "origin_data": {
+                   "type": "string",
+                   "nullable": true,
+                   "example": "ABC"
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D',\n  qs: {view: 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D?view=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D?view=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D?view=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Notice of General Availability",
+      "description": "This endpoint is now generally available (GA).",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-03-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#show-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added wbs_code field to response",
+      "description": "The response now includes a wbs_code object with id, flat_code, and description fields when the line item has an associated WBS code.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-12-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#show-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added change_event_line_item to extended view",
+      "description": "The extended view now includes a change_event_line_item object containing the associated change event line item data with id, description, event_id, wbs_code, and event fields.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-24",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#show-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added funding_rule_id field to response",
+      "description": "The response now includes a funding_rule_id field with the ID of the funding rule associated with the line item, or null when unassociated.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-20",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#show-prime-change-order-line-item"
+     },
+     {
+      "summary": "Correct GET response schema to document existing default/extended views",
+      "description": "The GET show response schema changed from a single inline object to a oneOf with default and extended subschemas. This documents the existing ?view=extended query parameter that was already supported in code. No runtime API change. Consumers using strict OAS-schema validators pinned to the previous inline-object shape should update to accept the oneOf structure; either subschema is valid on any response.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-07-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#show-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added external_data to the extended view",
+      "description": "When requested with view=extended, the response now includes a nested external_data object with origin_id, origin_code, and origin_data (ERP integration origin fields). Default responses are unchanged.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-07-22",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#show-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added resource data to the response",
+      "description": "The response may now include a resource object describing the line item's selected rate value, currency, and assigned resource.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-16",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#show-prime-change-order-line-item"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Prime Change Order Line Item",
+    "description": "Updates a line item for a given prime change order.",
+    "tags": [
+     "Line Item"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "prime_change_order_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the Prime Change Order. See `GET /rest/v1.0/projects/{project_id}/prime_change_orders`.\n",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "id",
+      "in": "path",
+      "description": "ID of the line item",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "title": "Body",
+        "properties": {
+         "prime_line_item_id": {
+          "type": "string",
+          "nullable": true,
+          "description": "ID of the prime contract line item associated with this line item. Pass null when updating to remove the association.",
+          "example": "12345"
+         },
+         "rate_value_id": {
+          "type": "string",
+          "nullable": true,
+          "description": "ID of the project rate value selected for this line item. Accepted only for unit-quantity schedules of values. Pass null when updating to clear the selected rate.",
+          "example": "01JFHMDB8AD4750F18KN8R2TF1"
+         },
+         "resource_id": {
+          "type": "string",
+          "nullable": true,
+          "description": "ID of the resource assigned to this line item. When provided with a rate value, the resource must match the resource associated with that rate. Accepted only for unit-quantity schedules of values. Pass null when updating to clear the assigned resource.",
+          "example": "01JFHMDB8AD4750F18KN8R2TF2"
+         },
+         "amount": {
+          "type": "string",
+          "description": "Amount - this field is nullable on unit quantity SOVs but NOT amount-based SOVs. For line item creates, if this field is omitted on unit quantity SOVs,  the amount will be calculated as quantity * unit_cost. For line item updates, if a null amount is passed in on unit quantity SOVs, it will set the line item extended type to \"calculated\".",
+          "example": "1000.0"
+         },
+         "description": {
+          "type": "string",
+          "description": "Description",
+          "example": "Cleanup"
+         },
+         "quantity": {
+          "type": "string",
+          "description": "Quantity - only accepted on unit quantity SOVs",
+          "example": "20.0"
+         },
+         "unit_cost": {
+          "type": "string",
+          "description": "Unit cost - only accepted on unit quantity SOVs",
+          "example": "50.00"
+         },
+         "uom": {
+          "type": "string",
+          "description": "Unit of measure - only accepted on unit quantity SOVs",
+          "example": "Hours",
+          "enum": [
+           "Any value present in the Company list of Units of Measure"
+          ]
+         },
+         "wbs_code_id": {
+          "type": "string",
+          "description": "WBS code ID",
+          "example": "34567"
+         },
+         "tax_code_id": {
+          "type": "string",
+          "description": "Tax code ID",
+          "example": "12345"
+         },
+         "funding_rule_id": {
+          "type": "string",
+          "description": "ID of the funding rule associated with this line item. Funding Sources must be enabled at the project level. The rule must be ACTIVE and its currency must match the contract currency. Pass null to disassociate an existing funding rule.",
+          "example": "12345"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "title": "Line Item Row",
+           "description": "A row on a schedule of values.",
+           "required": [],
+           "properties": {
+            "prime_line_item_id": {
+             "type": "string",
+             "description": "ID of the prime contract line item associated with this line item",
+             "example": "12345"
+            },
+            "funding_rule_id": {
+             "type": "string",
+             "description": "ID of the funding rule associated with this line item",
+             "example": "12345"
+            },
+            "resource": {
+             "type": "object",
+             "description": "Rate and resource selection associated with a line item.",
+             "nullable": true,
+             "required": [
+              "rate_value_id",
+              "currency_iso_code",
+              "resource_category",
+              "resource_id",
+              "resource_name"
+             ],
+             "properties": {
+              "rate_value_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "ID of the selected rate value. Null when the line item uses a manually entered rate.",
+               "example": "01JFHMDB8AD4750F18KN8R2TF1"
+              },
+              "currency_iso_code": {
+               "type": "string",
+               "description": "Three-letter ISO 4217 currency code for the selected or manually entered rate.",
+               "example": "USD"
+              },
+              "resource_category": {
+               "type": "string",
+               "nullable": true,
+               "description": "Category used to classify the selected labor, equipment, or other resource. Null when no resource is assigned.",
+               "example": "work_classification"
+              },
+              "resource_id": {
+               "type": "string",
+               "nullable": true,
+               "description": "ID of the resource assigned to the line item. Null when no resource is assigned.",
+               "example": "01J3F3015CWKSMHKY6KPDWFFHZ"
+              },
+              "resource_name": {
+               "type": "string",
+               "nullable": true,
+               "description": "Display name of the resource assigned to the line item. Null when no resource is assigned.",
+               "example": "Carpenter"
+              }
+             }
+            },
+            "id": {
+             "type": "string",
+             "description": "ID",
+             "example": "100"
+            },
+            "description": {
+             "type": "string",
+             "description": "Line item Description",
+             "example": "Drywall for the 2nd floor"
+            },
+            "uom": {
+             "type": "string",
+             "description": "Line Item Unit of Measure",
+             "example": "m\u00b2"
+            },
+            "quantity": {
+             "type": "number",
+             "description": "Line Item Quantity",
+             "example": 100
+            },
+            "unit_cost": {
+             "type": "string",
+             "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+             "example": "-12345.6789",
+             "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+            },
+            "amount": {
+             "nullable": true,
+             "type": "string",
+             "pattern": "^[-+]?[0-9]*\\.?[0-9]+$",
+             "example": "-12345.6789",
+             "description": "An \"unformatted\" decimal number. Specifically a number with a period as the decimal separator, without a thousands separator, and with an optional sign. It should be assumed that this number includes arbitrary precision and scale, however, the API may not store or process the number with infinite precision and scale.\n"
+            },
+            "extended_type": {
+             "type": "string",
+             "description": "Extended type",
+             "enum": [
+              "manual",
+              "calculated"
+             ],
+             "example": "calculated"
+            },
+            "wbs_code_id": {
+             "type": "string",
+             "description": "ID",
+             "example": "100"
+            },
+            "tax_code_id": {
+             "type": "string",
+             "description": "ID",
+             "example": "100"
+            },
+            "position": {
+             "type": "number",
+             "description": "Position of the line item within the schedule of values",
+             "example": 1
+            },
+            "wbs_code": {
+             "type": "object",
+             "description": "WBS Code details for the line item",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "string",
+               "description": "WBS Code ID",
+               "example": "999"
+              },
+              "flat_code": {
+               "type": "string",
+               "description": "WBS Code flat code",
+               "example": "01-011.CT1",
+               "nullable": true
+              },
+              "description": {
+               "type": "string",
+               "description": "WBS Code description",
+               "example": "Earthwork.Equipment",
+               "nullable": true
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    prime_line_item_id: '12345',\n    rate_value_id: '01JFHMDB8AD4750F18KN8R2TF1',\n    resource_id: '01JFHMDB8AD4750F18KN8R2TF2',\n    amount: '1000.0',\n    description: 'Cleanup',\n    quantity: '20.0',\n    unit_cost: '50.00',\n    uom: 'Hours',\n    wbs_code_id: '34567',\n    tax_code_id: '12345',\n    funding_rule_id: '12345'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"prime_line_item_id\\\":\\\"12345\\\",\\\"rate_value_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF1\\\",\\\"resource_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF2\\\",\\\"amount\\\":\\\"1000.0\\\",\\\"description\\\":\\\"Cleanup\\\",\\\"quantity\\\":\\\"20.0\\\",\\\"unit_cost\\\":\\\"50.00\\\",\\\"uom\\\":\\\"Hours\\\",\\\"wbs_code_id\\\":\\\"34567\\\",\\\"tax_code_id\\\":\\\"12345\\\",\\\"funding_rule_id\\\":\\\"12345\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"prime_line_item_id\":\"12345\",\"rate_value_id\":\"01JFHMDB8AD4750F18KN8R2TF1\",\"resource_id\":\"01JFHMDB8AD4750F18KN8R2TF2\",\"amount\":\"1000.0\",\"description\":\"Cleanup\",\"quantity\":\"20.0\",\"unit_cost\":\"50.00\",\"uom\":\"Hours\",\"wbs_code_id\":\"34567\",\"tax_code_id\":\"12345\",\"funding_rule_id\":\"12345\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/prime_change_orders/%7Bprime_change_order_id%7D/line_items/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"prime_line_item_id\\\":\\\"12345\\\",\\\"rate_value_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF1\\\",\\\"resource_id\\\":\\\"01JFHMDB8AD4750F18KN8R2TF2\\\",\\\"amount\\\":\\\"1000.0\\\",\\\"description\\\":\\\"Cleanup\\\",\\\"quantity\\\":\\\"20.0\\\",\\\"unit_cost\\\":\\\"50.00\\\",\\\"uom\\\":\\\"Hours\\\",\\\"wbs_code_id\\\":\\\"34567\\\",\\\"tax_code_id\\\":\\\"12345\\\",\\\"funding_rule_id\\\":\\\"12345\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Notice of General Availability",
+      "description": "This endpoint is now generally available (GA).",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-03-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#update-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added wbs_code field to response",
+      "description": "The response now includes a wbs_code object with id, flat_code, and description fields when the line item has an associated WBS code.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-12-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#update-prime-change-order-line-item"
+     },
+     {
+      "summary": "Tax code parameter behavior when tax is disabled",
+      "description": "If tax is disabled on the tool or on the project, the tax_code_id parameter will be ignored when creating or updating line items.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-01-27",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#update-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added funding_rule_id parameter and response field",
+      "description": "Accepts an optional funding_rule_id parameter associating the line item with a project-level funding rule, and returns funding_rule_id on the response. Funding Sources must be enabled at the project level. The rule must be ACTIVE and its currency must match the parent contract currency. Pass null to disassociate.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-20",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#update-prime-change-order-line-item"
+     },
+     {
+      "summary": "Remove phantom work_breakdown_structure from response schema",
+      "description": "Removed the work_breakdown_structure property from the PATCH response schema. This field was never returned by the API implementation. Documentation-only correction; no runtime change.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-07-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#update-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added resource data to the response",
+      "description": "The response may now include a resource object describing the line item's selected rate value, currency, and assigned resource.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-16",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#update-prime-change-order-line-item"
+     },
+     {
+      "summary": "Added rate and resource selection parameters",
+      "description": "Accepts optional rate_value_id and resource_id parameters when updating a line item on a unit-quantity schedule of values. Pass null to clear the selected rate or assigned resource.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/prime_change_orders/{prime_change_order_id}/line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "prime-change-order-line-items?version=2.0#update-prime-change-order-line-item"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

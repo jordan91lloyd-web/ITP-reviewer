@@ -1,0 +1,515 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Markup Groups",
+  "version": "2.0",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Markup Groups",
+  "x-tool-category": "Document Markup"
+ },
+ "servers": [
+  {
+   "url": "http://localhost:8080",
+   "description": "Generated server url"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/viewer_documents/{viewer_doc_id}/markups/groups": {
+   "post": {
+    "tags": [
+     "markup-v-2-controller"
+    ],
+    "summary": "Create Group and Move Markups",
+    "description": "Creates a new group and moves specified markups to it.",
+    "operationId": "moveMarkupsToNewGroup",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier of the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier of the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "viewer_doc_id",
+      "in": "path",
+      "description": "Unique identifier of the viewer document",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body with markups to move and new group details",
+        "properties": {
+         "markup_ids": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         },
+         "source_group_id": {
+          "type": "string",
+          "minLength": 1
+         },
+         "action": {
+          "type": "string"
+         },
+         "pin_id": {
+          "type": "string"
+         },
+         "escalate_to_pin": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "source_group_id"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "*/*": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "markups": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string"
+               },
+               "xfdf_id": {
+                "type": "string"
+               },
+               "markup_type": {
+                "type": "string"
+               },
+               "viewer_doc_id": {
+                "type": "string"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time"
+               },
+               "created_by_id": {
+                "type": "string"
+               },
+               "updated_by_id": {
+                "type": "string"
+               },
+               "company_id": {
+                "type": "string"
+               },
+               "project_id": {
+                "type": "string"
+               },
+               "deleted": {
+                "type": "boolean"
+               },
+               "editable": {
+                "type": "boolean"
+               },
+               "xfdf": {
+                "type": "string"
+               },
+               "created_by_name": {
+                "type": "string"
+               },
+               "updated_by_name": {
+                "type": "string"
+               },
+               "created_by_vendor_id": {
+                "type": "string"
+               },
+               "created_by_vendor_name": {
+                "type": "string"
+               },
+               "page_number": {
+                "type": "integer",
+                "format": "int32"
+               },
+               "audit_transaction_timestamp": {
+                "type": "string",
+                "format": "date-time"
+               },
+               "markup_context": {
+                "type": "string",
+                "enum": [
+                 "WORKFLOW",
+                 "WORKSPACE",
+                 "PIN",
+                 "NO_CONTEXT"
+                ]
+               },
+               "group_id": {
+                "type": "string"
+               },
+               "pin_id": {
+                "type": "string"
+               },
+               "comment_id": {
+                "type": "string"
+               },
+               "document": {
+                "type": "object",
+                "properties": {
+                 "external_document_id": {
+                  "type": "string"
+                 },
+                 "document_type": {
+                  "type": "string"
+                 }
+                }
+               },
+               "markup_source": {
+                "type": "string"
+               }
+              }
+             }
+            },
+            "failed_markups": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "xfdf_id": {
+                "type": "string"
+               },
+               "reason": {
+                "type": "string"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'http://localhost:8080/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups',\n  headers: {'content-type': 'application/json'},\n  body: {\n    markup_ids: ['string'],\n    source_group_id: 'string',\n    action: 'string',\n    pin_id: 'string',\n    escalate_to_pin: true\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\npayload = \"{\\\"markup_ids\\\":[\\\"string\\\"],\\\"source_group_id\\\":\\\"string\\\",\\\"action\\\":\\\"string\\\",\\\"pin_id\\\":\\\"string\\\",\\\"escalate_to_pin\\\":true}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url http://localhost:8080/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups \\\n  --header 'content-type: application/json' \\\n  --data '{\"markup_ids\":[\"string\"],\"source_group_id\":\"string\",\"action\":\"string\",\"pin_id\":\"string\",\"escalate_to_pin\":true}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups\"),\n    Content = new StringContent(\"{\\\"markup_ids\\\":[\\\"string\\\"],\\\"source_group_id\\\":\\\"string\\\",\\\"action\\\":\\\"string\\\",\\\"pin_id\\\":\\\"string\\\",\\\"escalate_to_pin\\\":true}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/companies/{company_id}/projects/{project_id}/viewer_documents/{viewer_doc_id}/markups/groups": {
+   "post": {
+    "tags": [
+     "markup-save-controller"
+    ],
+    "summary": "Create Group and Move Markups",
+    "description": "Creates a new group in the same layer as the source group and moves the specified markups to it.",
+    "operationId": "moveMarkupsToNewGroup_1",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "viewer_doc_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body with markups to move and new group details",
+        "properties": {
+         "markup_ids": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         },
+         "source_group_id": {
+          "type": "string",
+          "minLength": 1
+         },
+         "action": {
+          "type": "string"
+         },
+         "pin_id": {
+          "type": "string"
+         },
+         "escalate_to_pin": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "source_group_id"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "*/*": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "markups": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string"
+             },
+             "xfdf_id": {
+              "type": "string"
+             },
+             "markup_type": {
+              "type": "string"
+             },
+             "viewer_doc_id": {
+              "type": "string"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time"
+             },
+             "created_by_id": {
+              "type": "string"
+             },
+             "updated_by_id": {
+              "type": "string"
+             },
+             "company_id": {
+              "type": "string"
+             },
+             "project_id": {
+              "type": "string"
+             },
+             "deleted": {
+              "type": "boolean"
+             },
+             "editable": {
+              "type": "boolean"
+             },
+             "xfdf": {
+              "type": "string"
+             },
+             "created_by_name": {
+              "type": "string"
+             },
+             "updated_by_name": {
+              "type": "string"
+             },
+             "created_by_vendor_id": {
+              "type": "string"
+             },
+             "created_by_vendor_name": {
+              "type": "string"
+             },
+             "page_number": {
+              "type": "integer",
+              "format": "int32"
+             },
+             "audit_transaction_timestamp": {
+              "type": "string",
+              "format": "date-time"
+             },
+             "markup_context": {
+              "type": "string",
+              "enum": [
+               "WORKFLOW",
+               "WORKSPACE",
+               "PIN",
+               "NO_CONTEXT"
+              ]
+             },
+             "group_id": {
+              "type": "string"
+             },
+             "pin_id": {
+              "type": "string"
+             },
+             "comment_id": {
+              "type": "string"
+             },
+             "document": {
+              "type": "object",
+              "properties": {
+               "external_document_id": {
+                "type": "string"
+               },
+               "document_type": {
+                "type": "string"
+               }
+              }
+             },
+             "markup_source": {
+              "type": "string"
+             }
+            }
+           }
+          },
+          "failed_markups": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "xfdf_id": {
+              "type": "string"
+             },
+             "reason": {
+              "type": "string"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'http://localhost:8080/rest/v1.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups',\n  headers: {'content-type': 'application/json'},\n  body: {\n    markup_ids: ['string'],\n    source_group_id: 'string',\n    action: 'string',\n    pin_id: 'string',\n    escalate_to_pin: true\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\npayload = \"{\\\"markup_ids\\\":[\\\"string\\\"],\\\"source_group_id\\\":\\\"string\\\",\\\"action\\\":\\\"string\\\",\\\"pin_id\\\":\\\"string\\\",\\\"escalate_to_pin\\\":true}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url http://localhost:8080/rest/v1.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups \\\n  --header 'content-type: application/json' \\\n  --data '{\"markup_ids\":[\"string\"],\"source_group_id\":\"string\",\"action\":\"string\",\"pin_id\":\"string\",\"escalate_to_pin\":true}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v1.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/viewer_documents/%7Bviewer_doc_id%7D/markups/groups\"),\n    Content = new StringContent(\"{\\\"markup_ids\\\":[\\\"string\\\"],\\\"source_group_id\\\":\\\"string\\\",\\\"action\\\":\\\"string\\\",\\\"pin_id\\\":\\\"string\\\",\\\"escalate_to_pin\\\":true}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-superseded": true
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

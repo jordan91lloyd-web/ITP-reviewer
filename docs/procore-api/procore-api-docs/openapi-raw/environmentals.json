@@ -1,0 +1,4188 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Environmentals",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Incidents",
+  "x-resource-name": "Environmentals",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/incidents/environmentals": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Environmentals",
+    "description": "Returns a paginated list of environmental records for the specified project. Optionally scope to a single incident by passing incident_id.",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "incident_id",
+      "in": "query",
+      "required": false,
+      "description": "Incident ID. When provided, the list will be scoped to only the Environmentals for a given Incident.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[environmental_type_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Environmental Type ID.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[query]",
+      "in": "query",
+      "description": "Return item(s) containing search query",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort direction. Use the value to sort ascending, or prefix with a hyphen (e.g. -full_number) to sort descending.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "affected_company",
+        "created_at",
+        "environmental_type",
+        "managed_equipment",
+        "full_number",
+        "number",
+        "work_activity"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "allOf": [
+           {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "description": "The record type, i.e. 'injury', 'near_miss', 'environmental', or 'property_damage'",
+              "example": "environmental"
+             },
+             "environmental_type": {
+              "type": "object",
+              "title": "Environmental Type",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the environmental type. Use as the environmental_type_id parameter when creating or updating environmental records.",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Translated display name of the environmental type.",
+                "example": "Air Quality"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Whether this environmental type is available for selection on environmental records.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Whether this environmental type is a Procore-provided default.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp when this environmental type was created, in ISO 8601 format.",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp when this environmental type was last modified, in ISO 8601 format.",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               }
+              }
+             },
+             "estimated_cost_impact": {
+              "type": "string",
+              "description": "Estimated monetary cost impact of this environmental event, formatted as a decimal string.",
+              "example": "20000.00"
+             },
+             "quantity_value": {
+              "type": "string",
+              "description": "Numeric quantity associated with this environmental event, formatted as a decimal string.",
+              "example": "1000.0"
+             },
+             "quantity_unit_of_measure": {
+              "type": "string",
+              "description": "Unit of measure for the quantity_value field.",
+              "example": "lbs",
+              "enum": [
+               "hours",
+               "days",
+               "weeks",
+               "months",
+               "years",
+               "ea",
+               "ls",
+               "lf",
+               "sf",
+               "sy",
+               "cy",
+               "lbs",
+               "ton",
+               "mm",
+               "m",
+               "m^2",
+               "m^3",
+               "kg",
+               "t"
+              ]
+             },
+             "custom_fields": {
+              "type": "object",
+              "properties": {
+               "custom_field_%{custom_field_string_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "string"
+                 },
+                 "value": {
+                  "type": "string",
+                  "description": "The value of the custom field.",
+                  "example": "custom field value"
+                 }
+                }
+               },
+               "custom_field_%{custom_field_decimal_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "decimal"
+                 },
+                 "value": {
+                  "type": "number",
+                  "description": "The value of the custom field.",
+                  "example": 2.2
+                 }
+                }
+               },
+               "custom_field_%{custom_field_boolean_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "boolean"
+                 },
+                 "value": {
+                  "type": "boolean",
+                  "description": "The value of the custom field.",
+                  "example": true
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entry_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entry"
+                 },
+                 "value": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "Label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entries_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entries"
+                 },
+                 "value": {
+                  "type": "array",
+                  "items": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "The unique identifier of the list of values (LOV) entry.",
+                     "example": 2
+                    },
+                    "label": {
+                     "type": "string",
+                     "description": "The label of the list of values (LOV) entry.",
+                     "example": "Open"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           {
+            "title": "IncidentRecordBaseNormal",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of this environmental record.",
+              "example": 9
+             },
+             "number": {
+              "type": "integer",
+              "description": "Sequential record number within the parent incident.",
+              "example": 4
+             },
+             "full_number": {
+              "type": "string",
+              "description": "Composite identifier combining the incident number and record number (e.g. \"16.4\").",
+              "example": 16.4
+             },
+             "incident_id": {
+              "type": "integer",
+              "description": "Unique identifier of the parent incident. Use as the incident_id query parameter to scope list requests.",
+              "example": 16
+             },
+             "recordable": {
+              "type": "boolean",
+              "description": "Whether this record is classified as OSHA-recordable. Note: this field may not be applicable to environmental records.",
+              "example": true
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "incident_title": {
+              "type": "string",
+              "description": "The title of the Incident to which the record belongs",
+              "example": "HAZMAT Spill"
+             },
+             "incident_private": {
+              "type": "boolean",
+              "description": "Indicates whether the Incident to which the record belongs is private",
+              "example": false
+             },
+             "summary": {
+              "type": "string",
+              "description": "Summary combining the affliction type, body part affected, and source of harm.",
+              "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+             },
+             "description_plain_text": {
+              "type": "string",
+              "description": "Plain-text version of the event description, with HTML tags stripped.",
+              "example": "Sprain to Hand by Ground"
+             },
+             "description": {
+              "type": "string",
+              "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+              "description": "Description of the environmental event in Rich Text (HTML) format."
+             },
+             "affected_company": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the affected vendor company.",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the affected vendor company.",
+                "example": "SID Architecture"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp when this environmental record was created, in ISO 8601 format.",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "deleted_at": {
+              "type": "string",
+              "description": "Timestamp when this record was soft-deleted (sent to Recycle Bin), in ISO 8601 format. Null if the record is active.",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z",
+              "nullable": true
+             },
+             "managed_equipment": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the managed equipment item.",
+                "example": 15504
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the managed equipment item.",
+                "example": "Jackhammer"
+               }
+              }
+             },
+             "incident_created_by": {
+              "allOf": [
+               {
+                "type": "object",
+                "properties": {
+                 "login": {
+                  "type": "string",
+                  "description": "Email address the incident creator uses to log in to Procore.",
+                  "example": "carl.contractor@example.com"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Unique identifier of the user who created the parent incident.",
+                  "example": 161072
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Full name of the user who created the parent incident.",
+                  "example": "Carl the Contractor"
+                 }
+                }
+               }
+              ]
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "Timestamp when this environmental record was last modified, in ISO 8601 format.",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "equipment_register": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the equipment register entry.",
+                "example": 4521
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the equipment register entry.",
+                "example": "Excavator CAT 320"
+               }
+              }
+             },
+             "work_activity": {
+              "type": "object",
+              "title": "Work Activity",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the work activity.",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Translated display name of the work activity.",
+                "example": "Earthwork"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Whether this work activity is available for selection.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Whether this work activity is a Procore-provided default.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp when this work activity was created, in ISO 8601 format.",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when this work activity was last modified, in ISO 8601 format.",
+                "example": "2015-11-12T21:26:28Z"
+               }
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[environmental_type_id]': 'SOME_ARRAY_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Benvironmental_type_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Benvironmental_type_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Benvironmental_type_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users unless granted a view environmental granular permission.",
+      "description": "Users with a readonly role will now be restricted from accessing environmental endpoints unless they have been granted a view environmental granular permission.",
+      "endpoint": "GET /projects/{project_id}/incidents/environmentals",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-11-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "environmentals?version=1.0#list-environmentals"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Environmental",
+    "description": "Creates a new environmental record and associates it with the specified incident.",
+    "tags": [
+     "Incidents"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "environmental"
+        ],
+        "properties": {
+         "environmental": {
+          "title": "IncidentEnvironmentalCreateParameters",
+          "type": "object",
+          "required": [
+           "incident_id"
+          ],
+          "properties": {
+           "incident_id": {
+            "type": "integer",
+            "description": "Unique identifier of the incident to associate this environmental record with. Required on create."
+           },
+           "environmental_type_id": {
+            "type": "integer",
+            "description": "Unique identifier of the environmental type classifying this record. Retrieve valid IDs from GET /rest/v1.0/companies/{company_id}/incidents/environmental_types."
+           },
+           "description": {
+            "type": "string",
+            "description": "Description of event in Rich Text format",
+            "example": "<p>Sprain to <b>Hand</b> by Ground</p>"
+           },
+           "estimated_cost_impact": {
+            "type": "number",
+            "format": "float",
+            "description": "Estimated monetary cost impact of this environmental event.",
+            "example": 20000
+           },
+           "quantity_value": {
+            "type": "number",
+            "format": "float",
+            "description": "Numeric portion of the \"quantity\" field",
+            "example": 1000
+           },
+           "quantity_unit_of_measure": {
+            "type": "string",
+            "description": "Unit of measure for the \"quantity\" field",
+            "example": "lbs",
+            "enum": [
+             "hours",
+             "days",
+             "weeks",
+             "months",
+             "years",
+             "ea",
+             "ls",
+             "lf",
+             "sf",
+             "sy",
+             "cy",
+             "lbs",
+             "ton",
+             "mm",
+             "m",
+             "m^2",
+             "m^3",
+             "kg",
+             "t"
+            ]
+           },
+           "affected_company_id": {
+            "type": "integer",
+            "description": "Unique identifier of the vendor company affected by this environmental event."
+           },
+           "managed_equipment_id": {
+            "type": "integer",
+            "description": "Unique identifier of the managed equipment involved in this environmental event."
+           },
+           "work_activity_id": {
+            "type": "integer",
+            "description": "Unique identifier of the work activity during which this environmental event occurred."
+           },
+           "custom_field_%{custom_field_definition_id}": {
+            "description": "Value of the custom field. The data type of the value passed in corresponds with the data_type of the Custom Field Definition.\nFor a lov_entry data_type the value passed in should be the ID of one of the Custom Field Definition's LOV Entries. For a lov_entries data_type the value passed in should be an array of IDs of the Custom Field Definition's LOV Entries.",
+            "example": "custom field value",
+            "oneOf": [
+             {
+              "type": "string",
+              "title": "string"
+             },
+             {
+              "type": "number",
+              "title": "number"
+             },
+             {
+              "type": "boolean",
+              "title": "boolean"
+             },
+             {
+              "type": "array",
+              "title": "array",
+              "items": {
+               "type": "integer"
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "type": "object",
+           "properties": {
+            "type": {
+             "type": "string",
+             "description": "The record type, i.e. 'injury', 'near_miss', 'environmental', or 'property_damage'",
+             "example": "environmental"
+            },
+            "environmental_type": {
+             "type": "object",
+             "title": "Environmental Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the environmental type. Use as the environmental_type_id parameter when creating or updating environmental records.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the environmental type.",
+               "example": "Air Quality"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this environmental type is available for selection on environmental records.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this environmental type is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was last modified, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "estimated_cost_impact": {
+             "type": "string",
+             "description": "Estimated monetary cost impact of this environmental event, formatted as a decimal string.",
+             "example": "20000.00"
+            },
+            "quantity_value": {
+             "type": "string",
+             "description": "Numeric quantity associated with this environmental event, formatted as a decimal string.",
+             "example": "1000.0"
+            },
+            "quantity_unit_of_measure": {
+             "type": "string",
+             "description": "Unit of measure for the quantity_value field.",
+             "example": "lbs",
+             "enum": [
+              "hours",
+              "days",
+              "weeks",
+              "months",
+              "years",
+              "ea",
+              "ls",
+              "lf",
+              "sf",
+              "sy",
+              "cy",
+              "lbs",
+              "ton",
+              "mm",
+              "m",
+              "m^2",
+              "m^3",
+              "kg",
+              "t"
+             ]
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of this environmental record.",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "Sequential record number within the parent incident.",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "Composite identifier combining the incident number and record number (e.g. \"16.4\").",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "Unique identifier of the parent incident. Use as the incident_id query parameter to scope list requests.",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Whether this record is classified as OSHA-recordable. Note: this field may not be applicable to environmental records.",
+             "example": true
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Plain-text version of the event description, with HTML tags stripped.",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of the environmental event in Rich Text (HTML) format."
+            },
+            "affected_company": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the affected vendor company.",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the affected vendor company.",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was created, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp when this record was soft-deleted (sent to Recycle Bin), in ISO 8601 format. Null if the record is active.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the managed equipment item.",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the managed equipment item.",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email address the incident creator uses to log in to Procore.",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Unique identifier of the user who created the parent incident.",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Full name of the user who created the parent incident.",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was last modified, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "equipment_register": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the equipment register entry.",
+               "example": 4521
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the equipment register entry.",
+               "example": "Excavator CAT 320"
+              }
+             }
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the work activity.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the work activity.",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this work activity is available for selection.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this work activity is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this work activity was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when this work activity was last modified, in ISO 8601 format.",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    environmental: {\n      incident_id: 0,\n      environmental_type_id: 0,\n      description: '<p>Sprain to <b>Hand</b> by Ground</p>',\n      estimated_cost_impact: 20000,\n      quantity_value: 1000,\n      quantity_unit_of_measure: 'lbs',\n      affected_company_id: 0,\n      managed_equipment_id: 0,\n      work_activity_id: 0,\n      'custom_field_%{custom_field_definition_id}': 'custom field value'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"environmental\\\":{\\\"incident_id\\\":0,\\\"environmental_type_id\\\":0,\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"estimated_cost_impact\\\":20000,\\\"quantity_value\\\":1000,\\\"quantity_unit_of_measure\\\":\\\"lbs\\\",\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"environmental\":{\"incident_id\":0,\"environmental_type_id\":0,\"description\":\"<p>Sprain to <b>Hand</b> by Ground</p>\",\"estimated_cost_impact\":20000,\"quantity_value\":1000,\"quantity_unit_of_measure\":\"lbs\",\"affected_company_id\":0,\"managed_equipment_id\":0,\"work_activity_id\":0,\"custom_field_%{custom_field_definition_id}\":\"custom field value\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"environmental\\\":{\\\"incident_id\\\":0,\\\"environmental_type_id\\\":0,\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"estimated_cost_impact\\\":20000,\\\"quantity_value\\\":1000,\\\"quantity_unit_of_measure\\\":\\\"lbs\\\",\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/incidents/environmentals/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier of the environmental record. Returned as id in List and Show responses.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Environmental",
+    "description": "Returns the details of a single environmental record identified by its ID.",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "type": "object",
+           "properties": {
+            "type": {
+             "type": "string",
+             "description": "The record type, i.e. 'injury', 'near_miss', 'environmental', or 'property_damage'",
+             "example": "environmental"
+            },
+            "environmental_type": {
+             "type": "object",
+             "title": "Environmental Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the environmental type. Use as the environmental_type_id parameter when creating or updating environmental records.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the environmental type.",
+               "example": "Air Quality"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this environmental type is available for selection on environmental records.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this environmental type is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was last modified, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "estimated_cost_impact": {
+             "type": "string",
+             "description": "Estimated monetary cost impact of this environmental event, formatted as a decimal string.",
+             "example": "20000.00"
+            },
+            "quantity_value": {
+             "type": "string",
+             "description": "Numeric quantity associated with this environmental event, formatted as a decimal string.",
+             "example": "1000.0"
+            },
+            "quantity_unit_of_measure": {
+             "type": "string",
+             "description": "Unit of measure for the quantity_value field.",
+             "example": "lbs",
+             "enum": [
+              "hours",
+              "days",
+              "weeks",
+              "months",
+              "years",
+              "ea",
+              "ls",
+              "lf",
+              "sf",
+              "sy",
+              "cy",
+              "lbs",
+              "ton",
+              "mm",
+              "m",
+              "m^2",
+              "m^3",
+              "kg",
+              "t"
+             ]
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of this environmental record.",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "Sequential record number within the parent incident.",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "Composite identifier combining the incident number and record number (e.g. \"16.4\").",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "Unique identifier of the parent incident. Use as the incident_id query parameter to scope list requests.",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Whether this record is classified as OSHA-recordable. Note: this field may not be applicable to environmental records.",
+             "example": true
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Plain-text version of the event description, with HTML tags stripped.",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of the environmental event in Rich Text (HTML) format."
+            },
+            "affected_company": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the affected vendor company.",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the affected vendor company.",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was created, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp when this record was soft-deleted (sent to Recycle Bin), in ISO 8601 format. Null if the record is active.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the managed equipment item.",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the managed equipment item.",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email address the incident creator uses to log in to Procore.",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Unique identifier of the user who created the parent incident.",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Full name of the user who created the parent incident.",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was last modified, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "equipment_register": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the equipment register entry.",
+               "example": 4521
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the equipment register entry.",
+               "example": "Excavator CAT 320"
+              }
+             }
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the work activity.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the work activity.",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this work activity is available for selection.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this work activity is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this work activity was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when this work activity was last modified, in ISO 8601 format.",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users unless granted a view environmental granular permission.",
+      "description": "Users with a readonly role will now be restricted from accessing environmental endpoints unless they have been granted a view environmental granular permission.",
+      "endpoint": "GET /projects/{project_id}/incidents/environmentals/{id}",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-11-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "environmentals?version=1.0#show-environmental"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Environmental",
+    "description": "Updates the specified environmental record with the provided attributes.",
+    "tags": [
+     "Incidents"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "environmental"
+        ],
+        "properties": {
+         "environmental": {
+          "title": "IncidentEnvironmentalUpdateParameters",
+          "type": "object",
+          "properties": {
+           "environmental_type_id": {
+            "type": "integer",
+            "description": "Unique identifier of the environmental type classifying this record. Retrieve valid IDs from GET /rest/v1.0/companies/{company_id}/incidents/environmental_types."
+           },
+           "description": {
+            "type": "string",
+            "description": "Description of event in Rich Text format",
+            "example": "<p>Sprain to <b>Hand</b> by Ground</p>"
+           },
+           "estimated_cost_impact": {
+            "type": "number",
+            "format": "float",
+            "description": "Estimated monetary cost impact of this environmental event.",
+            "example": 20000
+           },
+           "quantity_value": {
+            "type": "number",
+            "format": "float",
+            "description": "Numeric portion of the \"quantity\" field",
+            "example": 1000
+           },
+           "quantity_unit_of_measure": {
+            "type": "string",
+            "description": "Unit of measure for the \"quantity\" field",
+            "example": "lbs",
+            "enum": [
+             "hours",
+             "days",
+             "weeks",
+             "months",
+             "years",
+             "ea",
+             "ls",
+             "lf",
+             "sf",
+             "sy",
+             "cy",
+             "lbs",
+             "ton",
+             "mm",
+             "m",
+             "m^2",
+             "m^3",
+             "kg",
+             "t"
+            ]
+           },
+           "affected_company_id": {
+            "type": "integer",
+            "description": "Unique identifier of the vendor company affected by this environmental event."
+           },
+           "managed_equipment_id": {
+            "type": "integer",
+            "description": "Unique identifier of the managed equipment involved in this environmental event."
+           },
+           "work_activity_id": {
+            "type": "integer",
+            "description": "Unique identifier of the work activity during which this environmental event occurred."
+           },
+           "custom_field_%{custom_field_definition_id}": {
+            "description": "Value of the custom field. The data type of the value passed in corresponds with the data_type of the Custom Field Definition.\nFor a lov_entry data_type the value passed in should be the ID of one of the Custom Field Definition's LOV Entries. For a lov_entries data_type the value passed in should be an array of IDs of the Custom Field Definition's LOV Entries.",
+            "example": "custom field value",
+            "oneOf": [
+             {
+              "type": "string",
+              "title": "string"
+             },
+             {
+              "type": "number",
+              "title": "number"
+             },
+             {
+              "type": "boolean",
+              "title": "boolean"
+             },
+             {
+              "type": "array",
+              "title": "array",
+              "items": {
+               "type": "integer"
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "type": "object",
+           "properties": {
+            "type": {
+             "type": "string",
+             "description": "The record type, i.e. 'injury', 'near_miss', 'environmental', or 'property_damage'",
+             "example": "environmental"
+            },
+            "environmental_type": {
+             "type": "object",
+             "title": "Environmental Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the environmental type. Use as the environmental_type_id parameter when creating or updating environmental records.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the environmental type.",
+               "example": "Air Quality"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this environmental type is available for selection on environmental records.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this environmental type is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was last modified, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "estimated_cost_impact": {
+             "type": "string",
+             "description": "Estimated monetary cost impact of this environmental event, formatted as a decimal string.",
+             "example": "20000.00"
+            },
+            "quantity_value": {
+             "type": "string",
+             "description": "Numeric quantity associated with this environmental event, formatted as a decimal string.",
+             "example": "1000.0"
+            },
+            "quantity_unit_of_measure": {
+             "type": "string",
+             "description": "Unit of measure for the quantity_value field.",
+             "example": "lbs",
+             "enum": [
+              "hours",
+              "days",
+              "weeks",
+              "months",
+              "years",
+              "ea",
+              "ls",
+              "lf",
+              "sf",
+              "sy",
+              "cy",
+              "lbs",
+              "ton",
+              "mm",
+              "m",
+              "m^2",
+              "m^3",
+              "kg",
+              "t"
+             ]
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of this environmental record.",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "Sequential record number within the parent incident.",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "Composite identifier combining the incident number and record number (e.g. \"16.4\").",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "Unique identifier of the parent incident. Use as the incident_id query parameter to scope list requests.",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Whether this record is classified as OSHA-recordable. Note: this field may not be applicable to environmental records.",
+             "example": true
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Plain-text version of the event description, with HTML tags stripped.",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of the environmental event in Rich Text (HTML) format."
+            },
+            "affected_company": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the affected vendor company.",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the affected vendor company.",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was created, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp when this record was soft-deleted (sent to Recycle Bin), in ISO 8601 format. Null if the record is active.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the managed equipment item.",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the managed equipment item.",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email address the incident creator uses to log in to Procore.",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Unique identifier of the user who created the parent incident.",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Full name of the user who created the parent incident.",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was last modified, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "equipment_register": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the equipment register entry.",
+               "example": 4521
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the equipment register entry.",
+               "example": "Excavator CAT 320"
+              }
+             }
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the work activity.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the work activity.",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this work activity is available for selection.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this work activity is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this work activity was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when this work activity was last modified, in ISO 8601 format.",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    environmental: {\n      environmental_type_id: 0,\n      description: '<p>Sprain to <b>Hand</b> by Ground</p>',\n      estimated_cost_impact: 20000,\n      quantity_value: 1000,\n      quantity_unit_of_measure: 'lbs',\n      affected_company_id: 0,\n      managed_equipment_id: 0,\n      work_activity_id: 0,\n      'custom_field_%{custom_field_definition_id}': 'custom field value'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"environmental\\\":{\\\"environmental_type_id\\\":0,\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"estimated_cost_impact\\\":20000,\\\"quantity_value\\\":1000,\\\"quantity_unit_of_measure\\\":\\\"lbs\\\",\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"environmental\":{\"environmental_type_id\":0,\"description\":\"<p>Sprain to <b>Hand</b> by Ground</p>\",\"estimated_cost_impact\":20000,\"quantity_value\":1000,\"quantity_unit_of_measure\":\"lbs\",\"affected_company_id\":0,\"managed_equipment_id\":0,\"work_activity_id\":0,\"custom_field_%{custom_field_definition_id}\":\"custom field value\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"environmental\\\":{\\\"environmental_type_id\\\":0,\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"estimated_cost_impact\\\":20000,\\\"quantity_value\\\":1000,\\\"quantity_unit_of_measure\\\":\\\"lbs\\\",\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Destroy Environmental",
+    "description": "Soft-deletes the specified environmental record by sending it to the Recycle Bin. Use the restore endpoint to recover it.",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/environmentals": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Recycled Environmentals",
+    "description": "Returns a paginated list of soft-deleted environmental records in the Recycle Bin for the specified project.",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "incident_id",
+      "in": "query",
+      "required": false,
+      "description": "Incident ID. When provided, the list will be scoped to only the Environmentals for a given Incident.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[environmental_type_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Environmental Type ID.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[query]",
+      "in": "query",
+      "description": "Return item(s) containing search query",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort direction. Use the value to sort ascending, or prefix with a hyphen (e.g. -full_number) to sort descending.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "affected_company",
+        "created_at",
+        "managed_equipment",
+        "full_number",
+        "number",
+        "work_activity"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "allOf": [
+           {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "description": "The record type, i.e. 'injury', 'near_miss', 'environmental', or 'property_damage'",
+              "example": "environmental"
+             },
+             "environmental_type": {
+              "type": "object",
+              "title": "Environmental Type",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the environmental type. Use as the environmental_type_id parameter when creating or updating environmental records.",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Translated display name of the environmental type.",
+                "example": "Air Quality"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Whether this environmental type is available for selection on environmental records.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Whether this environmental type is a Procore-provided default.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp when this environmental type was created, in ISO 8601 format.",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp when this environmental type was last modified, in ISO 8601 format.",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               }
+              }
+             },
+             "estimated_cost_impact": {
+              "type": "string",
+              "description": "Estimated monetary cost impact of this environmental event, formatted as a decimal string.",
+              "example": "20000.00"
+             },
+             "quantity_value": {
+              "type": "string",
+              "description": "Numeric quantity associated with this environmental event, formatted as a decimal string.",
+              "example": "1000.0"
+             },
+             "quantity_unit_of_measure": {
+              "type": "string",
+              "description": "Unit of measure for the quantity_value field.",
+              "example": "lbs",
+              "enum": [
+               "hours",
+               "days",
+               "weeks",
+               "months",
+               "years",
+               "ea",
+               "ls",
+               "lf",
+               "sf",
+               "sy",
+               "cy",
+               "lbs",
+               "ton",
+               "mm",
+               "m",
+               "m^2",
+               "m^3",
+               "kg",
+               "t"
+              ]
+             },
+             "custom_fields": {
+              "type": "object",
+              "properties": {
+               "custom_field_%{custom_field_string_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "string"
+                 },
+                 "value": {
+                  "type": "string",
+                  "description": "The value of the custom field.",
+                  "example": "custom field value"
+                 }
+                }
+               },
+               "custom_field_%{custom_field_decimal_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "decimal"
+                 },
+                 "value": {
+                  "type": "number",
+                  "description": "The value of the custom field.",
+                  "example": 2.2
+                 }
+                }
+               },
+               "custom_field_%{custom_field_boolean_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "boolean"
+                 },
+                 "value": {
+                  "type": "boolean",
+                  "description": "The value of the custom field.",
+                  "example": true
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entry_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entry"
+                 },
+                 "value": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "Label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entries_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entries"
+                 },
+                 "value": {
+                  "type": "array",
+                  "items": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "The unique identifier of the list of values (LOV) entry.",
+                     "example": 2
+                    },
+                    "label": {
+                     "type": "string",
+                     "description": "The label of the list of values (LOV) entry.",
+                     "example": "Open"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           {
+            "title": "IncidentRecordBaseNormal",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of this environmental record.",
+              "example": 9
+             },
+             "number": {
+              "type": "integer",
+              "description": "Sequential record number within the parent incident.",
+              "example": 4
+             },
+             "full_number": {
+              "type": "string",
+              "description": "Composite identifier combining the incident number and record number (e.g. \"16.4\").",
+              "example": 16.4
+             },
+             "incident_id": {
+              "type": "integer",
+              "description": "Unique identifier of the parent incident. Use as the incident_id query parameter to scope list requests.",
+              "example": 16
+             },
+             "recordable": {
+              "type": "boolean",
+              "description": "Whether this record is classified as OSHA-recordable. Note: this field may not be applicable to environmental records.",
+              "example": true
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "incident_title": {
+              "type": "string",
+              "description": "The title of the Incident to which the record belongs",
+              "example": "HAZMAT Spill"
+             },
+             "incident_private": {
+              "type": "boolean",
+              "description": "Indicates whether the Incident to which the record belongs is private",
+              "example": false
+             },
+             "summary": {
+              "type": "string",
+              "description": "Summary combining the affliction type, body part affected, and source of harm.",
+              "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+             },
+             "description_plain_text": {
+              "type": "string",
+              "description": "Plain-text version of the event description, with HTML tags stripped.",
+              "example": "Sprain to Hand by Ground"
+             },
+             "description": {
+              "type": "string",
+              "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+              "description": "Description of the environmental event in Rich Text (HTML) format."
+             },
+             "affected_company": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the affected vendor company.",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the affected vendor company.",
+                "example": "SID Architecture"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp when this environmental record was created, in ISO 8601 format.",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "deleted_at": {
+              "type": "string",
+              "description": "Timestamp when this record was soft-deleted (sent to Recycle Bin), in ISO 8601 format. Null if the record is active.",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z",
+              "nullable": true
+             },
+             "managed_equipment": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the managed equipment item.",
+                "example": 15504
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the managed equipment item.",
+                "example": "Jackhammer"
+               }
+              }
+             },
+             "incident_created_by": {
+              "allOf": [
+               {
+                "type": "object",
+                "properties": {
+                 "login": {
+                  "type": "string",
+                  "description": "Email address the incident creator uses to log in to Procore.",
+                  "example": "carl.contractor@example.com"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Unique identifier of the user who created the parent incident.",
+                  "example": 161072
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Full name of the user who created the parent incident.",
+                  "example": "Carl the Contractor"
+                 }
+                }
+               }
+              ]
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "Timestamp when this environmental record was last modified, in ISO 8601 format.",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "equipment_register": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the equipment register entry.",
+                "example": 4521
+               },
+               "name": {
+                "type": "string",
+                "description": "Display name of the equipment register entry.",
+                "example": "Excavator CAT 320"
+               }
+              }
+             },
+             "work_activity": {
+              "type": "object",
+              "title": "Work Activity",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier of the work activity.",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Translated display name of the work activity.",
+                "example": "Earthwork"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Whether this work activity is available for selection.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Whether this work activity is a Procore-provided default.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp when this work activity was created, in ISO 8601 format.",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when this work activity was last modified, in ISO 8601 format.",
+                "example": "2015-11-12T21:26:28Z"
+               }
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[environmental_type_id]': 'SOME_ARRAY_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Benvironmental_type_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Benvironmental_type_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Benvironmental_type_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/environmentals/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier of the recycled environmental record.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Recycled Environmental",
+    "description": "Returns the details of a single soft-deleted environmental record from the Recycle Bin.",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "type": "object",
+           "properties": {
+            "type": {
+             "type": "string",
+             "description": "The record type, i.e. 'injury', 'near_miss', 'environmental', or 'property_damage'",
+             "example": "environmental"
+            },
+            "environmental_type": {
+             "type": "object",
+             "title": "Environmental Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the environmental type. Use as the environmental_type_id parameter when creating or updating environmental records.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the environmental type.",
+               "example": "Air Quality"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this environmental type is available for selection on environmental records.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this environmental type is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp when this environmental type was last modified, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "estimated_cost_impact": {
+             "type": "string",
+             "description": "Estimated monetary cost impact of this environmental event, formatted as a decimal string.",
+             "example": "20000.00"
+            },
+            "quantity_value": {
+             "type": "string",
+             "description": "Numeric quantity associated with this environmental event, formatted as a decimal string.",
+             "example": "1000.0"
+            },
+            "quantity_unit_of_measure": {
+             "type": "string",
+             "description": "Unit of measure for the quantity_value field.",
+             "example": "lbs",
+             "enum": [
+              "hours",
+              "days",
+              "weeks",
+              "months",
+              "years",
+              "ea",
+              "ls",
+              "lf",
+              "sf",
+              "sy",
+              "cy",
+              "lbs",
+              "ton",
+              "mm",
+              "m",
+              "m^2",
+              "m^3",
+              "kg",
+              "t"
+             ]
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of this environmental record.",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "Sequential record number within the parent incident.",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "Composite identifier combining the incident number and record number (e.g. \"16.4\").",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "Unique identifier of the parent incident. Use as the incident_id query parameter to scope list requests.",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Whether this record is classified as OSHA-recordable. Note: this field may not be applicable to environmental records.",
+             "example": true
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Plain-text version of the event description, with HTML tags stripped.",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of the environmental event in Rich Text (HTML) format."
+            },
+            "affected_company": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the affected vendor company.",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the affected vendor company.",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was created, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp when this record was soft-deleted (sent to Recycle Bin), in ISO 8601 format. Null if the record is active.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the managed equipment item.",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the managed equipment item.",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email address the incident creator uses to log in to Procore.",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Unique identifier of the user who created the parent incident.",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Full name of the user who created the parent incident.",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp when this environmental record was last modified, in ISO 8601 format.",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "equipment_register": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the equipment register entry.",
+               "example": 4521
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the equipment register entry.",
+               "example": "Excavator CAT 320"
+              }
+             }
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the work activity.",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Translated display name of the work activity.",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Whether this work activity is available for selection.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Whether this work activity is a Procore-provided default.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp when this work activity was created, in ISO 8601 format.",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp when this work activity was last modified, in ISO 8601 format.",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/environmentals/{id}/restore": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier of the recycled environmental record to restore.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Restore Environmental",
+    "description": "Restores the specified environmental record from the Recycle Bin back to active status.",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "incident_id",
+      "in": "query",
+      "required": false,
+      "description": "Incident ID",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier of the recycled environmental record to restore.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D/restore',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/environmentals/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

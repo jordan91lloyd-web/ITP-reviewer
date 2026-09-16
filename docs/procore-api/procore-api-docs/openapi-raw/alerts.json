@@ -1,0 +1,2734 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Alerts",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Incidents",
+  "x-resource-name": "Alerts",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/incidents/alerts": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Incident Alerts",
+    "description": "Returns a paginated list of all incident alerts for the specified project. Optionally scope to a single incident by providing incident_id.",
+    "tags": [
+     "Alerts"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[incident_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Incident IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[injury_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Injury IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[recipient_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified recipient (User) IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer",
+        "example": 1
+       }
+      }
+     },
+     {
+      "name": "filters[severity_level_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Incident Severity Level IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[triggered_by_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified triggered by (User) IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer",
+        "example": 1
+       }
+      }
+     },
+     {
+      "name": "filters[filing_type_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Incident Filing Type IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort results by the specified field.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "created_at",
+        "updated_at"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Alerts",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this incident alert.",
+            "example": 1
+           },
+           "event_id": {
+            "type": "integer",
+            "description": "Identifier of the alert event that triggered this alert notification.",
+            "example": 1
+           },
+           "emailed_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the alert email was delivered to the recipient. Null if the email has not been sent.",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "filing_type": {
+            "type": "object",
+            "title": "Incident Filing Type",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the filing type classification for this incident record.",
+              "example": 999
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the filing type (e.g. report_only, first_aid, fatality).",
+              "example": "report_only"
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp of creation",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "severity_level": {
+              "title": "SeverityLevel",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for this severity level.",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "Name of the Incident Severity Level",
+                "example": "major"
+               },
+               "procore_default_name": {
+                "type": "string",
+                "description": "Procore default name of the Incident Severity Level",
+                "example": "major",
+                "enum": [
+                 "insignificant",
+                 "minor",
+                 "major",
+                 "critical",
+                 "moderate"
+                ]
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Denotes whether the Incident Severity Level is active",
+                "example": false
+               },
+               "email_trigger": {
+                "type": "boolean",
+                "description": "Denotes whether an email should be sent",
+                "example": false
+               },
+               "push_notification_trigger": {
+                "type": "boolean",
+                "description": "Denotes whether a push notification should be sent",
+                "example": false
+               },
+               "order": {
+                "type": "integer",
+                "description": "Ranking order of the Incident Severity Level"
+               },
+               "created_at": {
+                "type": "string",
+                "description": "iso8601 timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "iso8601 timestamp of last update",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               }
+              }
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "Timestamp of last update",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             }
+            }
+           },
+           "injury": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Incident Record ID",
+              "example": 9
+             },
+             "number": {
+              "type": "integer",
+              "description": "The number of the Record",
+              "example": 4
+             },
+             "full_number": {
+              "type": "string",
+              "description": "The Incident Number combined with the Record Number",
+              "example": 16.4
+             },
+             "incident_id": {
+              "type": "integer",
+              "description": "The id of the Incident to which the record belongs",
+              "example": 16
+             },
+             "recordable": {
+              "type": "boolean",
+              "description": "Indicates whether the Incident Record is recordable",
+              "example": true
+             },
+             "type": {
+              "type": "string",
+              "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+              "example": "injury"
+             },
+             "date_returned_to_work": {
+              "type": "string",
+              "description": "Date returned to work",
+              "format": "date",
+              "example": "2018-10-31"
+             },
+             "affected_party": {
+              "type": "object",
+              "title": "Party",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Timecard entry id",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "Party Name",
+                "example": "Dolores Umbridge"
+               }
+              }
+             },
+             "affected_person": {
+              "allOf": [
+               {
+                "type": "object",
+                "properties": {
+                 "login": {
+                  "type": "string",
+                  "description": "Email",
+                  "example": "exampleuser@example.com"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "example": 161072
+                 },
+                 "name": {
+                  "type": "string",
+                  "example": "Carl the Contractor"
+                 }
+                }
+               }
+              ]
+             },
+             "harm_source": {
+              "type": "object",
+              "title": "Harm Source",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Harm Source ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Harm Source Name",
+                "example": "Material"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Represents whether a Harm Source is available for use.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Represents whether a Harm Source has been provided by Procore.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp of last update",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               }
+              }
+             },
+             "date_of_death": {
+              "type": "string",
+              "description": "Date of death",
+              "format": "date",
+              "example": "2018-11-10"
+             },
+             "filing_type": {
+              "type": "string",
+              "description": "Filing Type",
+              "example": "first_aid",
+              "enum": [
+               "fatality",
+               "first_aid",
+               "lost_time",
+               "medically_treated",
+               "refused_care",
+               "report_only",
+               "restricted_work"
+              ]
+             },
+             "hospitalized_overnight": {
+              "type": "boolean",
+              "description": "Represents whether the injured person was hospitalized overnight",
+              "example": true
+             },
+             "treated_in_er": {
+              "type": "boolean",
+              "description": "Represents whether the injured person was treated in the ER",
+              "example": true
+             },
+             "treatment_facility_address": {
+              "type": "string",
+              "description": "The street address of the treatment facility",
+              "example": "6309 Carpinteria Ave."
+             },
+             "treatment_facility": {
+              "type": "string",
+              "description": "The name of the treatment facility",
+              "example": "Procore Hospital"
+             },
+             "treatment_provider": {
+              "type": "string",
+              "description": "The name of the treatment provider",
+              "example": "Dr. Doctor"
+             },
+             "work_days_absent": {
+              "type": "integer",
+              "description": "The number of days absent from work",
+              "example": 1
+             },
+             "work_days_restricted": {
+              "type": "integer",
+              "description": "The number of days on restricted work",
+              "example": 3
+             },
+             "work_days_transferred": {
+              "type": "integer",
+              "description": "The number of days transferred",
+              "example": 4
+             },
+             "body_diagram_type": {
+              "type": "string",
+              "description": "Body Type displayed in Body Diagram",
+              "example": "feminine",
+              "enum": [
+               "feminine",
+               "masculine"
+              ]
+             },
+             "affliction_type": {
+              "type": "object",
+              "title": "Affliction Type",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Affliction Type ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Affliction Type Name",
+                "example": "Sprain"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Represents whether a Affliction Type is available for use.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Represents whether a Affliction Type has been provided by Procore.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp of last update",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               }
+              }
+             },
+             "affected_body_part": {
+              "type": "string",
+              "description": "DEPRECATED. The body part affected by the affliction",
+              "example": "ankle",
+              "enum": [
+               "abdomen",
+               "ankle",
+               "ankle_left",
+               "ankle_right",
+               "arm",
+               "arm_left",
+               "arm_right",
+               "back",
+               "body_systems",
+               "breast",
+               "breast_left",
+               "breast_right",
+               "buttock",
+               "chest",
+               "circulatory_system",
+               "cranium",
+               "digestive_system",
+               "ear",
+               "ear_left",
+               "ear_right",
+               "elbow",
+               "elbow_left",
+               "elbow_right",
+               "entire_body_systemic",
+               "eye",
+               "eye_left",
+               "eye_right",
+               "face",
+               "finger",
+               "finger_index",
+               "finger_index_left",
+               "finger_index_right",
+               "finger_middle",
+               "finger_middle_left",
+               "finger_middle_right",
+               "finger_pinky",
+               "finger_pinky_left",
+               "finger_pinky_right",
+               "finger_ring",
+               "finger_ring_left",
+               "finger_ring_right",
+               "foot",
+               "foot_left",
+               "foot_right",
+               "foot_top_left",
+               "foot_top_right",
+               "forearm",
+               "forearm_left",
+               "forearm_right",
+               "groin",
+               "hand",
+               "hand_back_left",
+               "hand_back_right",
+               "hand_left",
+               "hand_right",
+               "head",
+               "head_back",
+               "heart",
+               "heel_left",
+               "heel_right",
+               "hip",
+               "hip_left",
+               "hip_right",
+               "internal_organs",
+               "knee",
+               "knee_left",
+               "knee_right",
+               "leg",
+               "leg_left",
+               "leg_right",
+               "lower_back",
+               "lower_back_left",
+               "lower_back_right",
+               "lower_leg",
+               "lower_leg_left",
+               "lower_leg_right",
+               "lungs",
+               "mouth",
+               "neck",
+               "neck_back",
+               "neck_left",
+               "neck_right",
+               "nervous_system",
+               "nose",
+               "palm_left",
+               "palm_right",
+               "pec",
+               "pec_left",
+               "pec_right",
+               "pelvis",
+               "pelvis_front",
+               "psychological",
+               "reproductive_system",
+               "respiratory_system",
+               "ribs",
+               "ribs_left",
+               "ribs_right",
+               "shoulder",
+               "shoulder_left",
+               "shoulder_right",
+               "skin",
+               "tailbone",
+               "teeth",
+               "throat",
+               "thumb",
+               "thumb_left",
+               "thumb_right",
+               "toe",
+               "toe_fifth",
+               "toe_fifth_left",
+               "toe_fifth_right",
+               "toe_first",
+               "toe_first_left",
+               "toe_first_right",
+               "toe_fourth",
+               "toe_fourth_left",
+               "toe_fourth_right",
+               "toe_second",
+               "toe_second_left",
+               "toe_second_right",
+               "toe_third",
+               "toe_third_left",
+               "toe_third_right",
+               "torso",
+               "upper_arm",
+               "upper_arm_left",
+               "upper_arm_right",
+               "upper_back",
+               "upper_back_left",
+               "upper_back_right",
+               "upper_leg",
+               "upper_leg_left",
+               "upper_leg_right",
+               "urinary_system",
+               "vertebrae",
+               "wrist",
+               "wrist_left",
+               "wrist_right"
+              ]
+             },
+             "affected_body_parts": {
+              "type": "array",
+              "description": "Array of body parts affected by the affliction",
+              "items": {
+               "type": "string",
+               "example": "ankle",
+               "enum": [
+                "abdomen",
+                "ankle",
+                "ankle_left",
+                "ankle_right",
+                "arm",
+                "arm_left",
+                "arm_right",
+                "back",
+                "body_systems",
+                "breast",
+                "breast_left",
+                "breast_right",
+                "buttock",
+                "chest",
+                "circulatory_system",
+                "cranium",
+                "digestive_system",
+                "ear",
+                "ear_left",
+                "ear_right",
+                "elbow",
+                "elbow_left",
+                "elbow_right",
+                "entire_body_systemic",
+                "eye",
+                "eye_left",
+                "eye_right",
+                "face",
+                "finger",
+                "finger_index",
+                "finger_index_left",
+                "finger_index_right",
+                "finger_middle",
+                "finger_middle_left",
+                "finger_middle_right",
+                "finger_pinky",
+                "finger_pinky_left",
+                "finger_pinky_right",
+                "finger_ring",
+                "finger_ring_left",
+                "finger_ring_right",
+                "foot",
+                "foot_left",
+                "foot_right",
+                "foot_top_left",
+                "foot_top_right",
+                "forearm",
+                "forearm_left",
+                "forearm_right",
+                "groin",
+                "hand",
+                "hand_back_left",
+                "hand_back_right",
+                "hand_left",
+                "hand_right",
+                "head",
+                "head_back",
+                "heart",
+                "heel_left",
+                "heel_right",
+                "hip",
+                "hip_left",
+                "hip_right",
+                "internal_organs",
+                "knee",
+                "knee_left",
+                "knee_right",
+                "leg",
+                "leg_left",
+                "leg_right",
+                "lower_back",
+                "lower_back_left",
+                "lower_back_right",
+                "lower_leg",
+                "lower_leg_left",
+                "lower_leg_right",
+                "lungs",
+                "mouth",
+                "neck",
+                "neck_back",
+                "neck_left",
+                "neck_right",
+                "nervous_system",
+                "nose",
+                "palm_left",
+                "palm_right",
+                "pec",
+                "pec_left",
+                "pec_right",
+                "pelvis",
+                "pelvis_front",
+                "psychological",
+                "reproductive_system",
+                "respiratory_system",
+                "ribs",
+                "ribs_left",
+                "ribs_right",
+                "shoulder",
+                "shoulder_left",
+                "shoulder_right",
+                "skin",
+                "tailbone",
+                "teeth",
+                "throat",
+                "thumb",
+                "thumb_left",
+                "thumb_right",
+                "toe",
+                "toe_fifth",
+                "toe_fifth_left",
+                "toe_fifth_right",
+                "toe_first",
+                "toe_first_left",
+                "toe_first_right",
+                "toe_fourth",
+                "toe_fourth_left",
+                "toe_fourth_right",
+                "toe_second",
+                "toe_second_left",
+                "toe_second_right",
+                "toe_third",
+                "toe_third_left",
+                "toe_third_right",
+                "torso",
+                "upper_arm",
+                "upper_arm_left",
+                "upper_arm_right",
+                "upper_back",
+                "upper_back_left",
+                "upper_back_right",
+                "upper_leg",
+                "upper_leg_left",
+                "upper_leg_right",
+                "urinary_system",
+                "vertebrae",
+                "wrist",
+                "wrist_left",
+                "wrist_right"
+               ]
+              }
+             },
+             "afflictions": {
+              "type": "array",
+              "description": "DEPRECATED. Array of afflictions affecting the injured person. Currently this is limited to one.",
+              "items": {
+               "type": "object",
+               "title": "IncidentAffliction",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Affliction ID",
+                 "example": 999
+                },
+                "affliction_type": {
+                 "type": "object",
+                 "title": "Affliction Type",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "Affliction Type ID",
+                   "example": 999
+                  },
+                  "name": {
+                   "type": "string",
+                   "description": "Affliction Type Name",
+                   "example": "Sprain"
+                  },
+                  "active": {
+                   "type": "boolean",
+                   "description": "Represents whether a Affliction Type is available for use.",
+                   "example": true
+                  },
+                  "global": {
+                   "type": "boolean",
+                   "description": "Represents whether a Affliction Type has been provided by Procore.",
+                   "example": true
+                  },
+                  "created_at": {
+                   "type": "string",
+                   "description": "Timestamp of creation",
+                   "format": "date-time",
+                   "example": "2016-10-25T17:53:35Z"
+                  },
+                  "updated_at": {
+                   "type": "string",
+                   "description": "Timestamp of last update",
+                   "format": "date-time",
+                   "example": "2016-10-25T17:53:35Z"
+                  }
+                 }
+                },
+                "affected_body_part": {
+                 "type": "string",
+                 "description": "The body part affected by the affliction",
+                 "example": "ankle",
+                 "enum": [
+                  "abdomen",
+                  "ankle",
+                  "ankle_left",
+                  "ankle_right",
+                  "arm",
+                  "arm_left",
+                  "arm_right",
+                  "back",
+                  "body_systems",
+                  "breast",
+                  "breast_left",
+                  "breast_right",
+                  "buttock",
+                  "chest",
+                  "circulatory_system",
+                  "cranium",
+                  "digestive_system",
+                  "ear",
+                  "ear_left",
+                  "ear_right",
+                  "elbow",
+                  "elbow_left",
+                  "elbow_right",
+                  "entire_body_systemic",
+                  "eye",
+                  "eye_left",
+                  "eye_right",
+                  "face",
+                  "finger",
+                  "finger_index",
+                  "finger_index_left",
+                  "finger_index_right",
+                  "finger_middle",
+                  "finger_middle_left",
+                  "finger_middle_right",
+                  "finger_pinky",
+                  "finger_pinky_left",
+                  "finger_pinky_right",
+                  "finger_ring",
+                  "finger_ring_left",
+                  "finger_ring_right",
+                  "foot",
+                  "foot_left",
+                  "foot_right",
+                  "foot_top_left",
+                  "foot_top_right",
+                  "forearm",
+                  "forearm_left",
+                  "forearm_right",
+                  "groin",
+                  "hand",
+                  "hand_back_left",
+                  "hand_back_right",
+                  "hand_left",
+                  "hand_right",
+                  "head",
+                  "head_back",
+                  "heart",
+                  "heel_left",
+                  "heel_right",
+                  "hip",
+                  "hip_left",
+                  "hip_right",
+                  "internal_organs",
+                  "knee",
+                  "knee_left",
+                  "knee_right",
+                  "leg",
+                  "leg_left",
+                  "leg_right",
+                  "lower_back",
+                  "lower_back_left",
+                  "lower_back_right",
+                  "lower_leg",
+                  "lower_leg_left",
+                  "lower_leg_right",
+                  "lungs",
+                  "mouth",
+                  "neck",
+                  "neck_back",
+                  "neck_left",
+                  "neck_right",
+                  "nervous_system",
+                  "nose",
+                  "palm_left",
+                  "palm_right",
+                  "pec",
+                  "pec_left",
+                  "pec_right",
+                  "pelvis",
+                  "pelvis_front",
+                  "psychological",
+                  "reproductive_system",
+                  "respiratory_system",
+                  "ribs",
+                  "ribs_left",
+                  "ribs_right",
+                  "shoulder",
+                  "shoulder_left",
+                  "shoulder_right",
+                  "skin",
+                  "tailbone",
+                  "teeth",
+                  "throat",
+                  "thumb",
+                  "thumb_left",
+                  "thumb_right",
+                  "toe",
+                  "toe_fifth",
+                  "toe_fifth_left",
+                  "toe_fifth_right",
+                  "toe_first",
+                  "toe_first_left",
+                  "toe_first_right",
+                  "toe_fourth",
+                  "toe_fourth_left",
+                  "toe_fourth_right",
+                  "toe_second",
+                  "toe_second_left",
+                  "toe_second_right",
+                  "toe_third",
+                  "toe_third_left",
+                  "toe_third_right",
+                  "torso",
+                  "upper_arm",
+                  "upper_arm_left",
+                  "upper_arm_right",
+                  "upper_back",
+                  "upper_back_left",
+                  "upper_back_right",
+                  "upper_leg",
+                  "upper_leg_left",
+                  "upper_leg_right",
+                  "urinary_system",
+                  "vertebrae",
+                  "wrist",
+                  "wrist_left",
+                  "wrist_right"
+                 ]
+                }
+               }
+              }
+             },
+             "custom_fields": {
+              "type": "object",
+              "properties": {
+               "custom_field_%{custom_field_string_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "string"
+                 },
+                 "value": {
+                  "type": "string",
+                  "description": "The value of the custom field.",
+                  "example": "custom field value"
+                 }
+                }
+               },
+               "custom_field_%{custom_field_decimal_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "decimal"
+                 },
+                 "value": {
+                  "type": "number",
+                  "description": "The value of the custom field.",
+                  "example": 2.2
+                 }
+                }
+               },
+               "custom_field_%{custom_field_boolean_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "boolean"
+                 },
+                 "value": {
+                  "type": "boolean",
+                  "description": "The value of the custom field.",
+                  "example": true
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entry_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entry"
+                 },
+                 "value": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "Label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entries_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entries"
+                 },
+                 "value": {
+                  "type": "array",
+                  "items": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "The unique identifier of the list of values (LOV) entry.",
+                     "example": 2
+                    },
+                    "label": {
+                     "type": "string",
+                     "description": "The label of the list of values (LOV) entry.",
+                     "example": "Open"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             "body_parts": {
+              "type": "array",
+              "description": "Body parts affected by the injury",
+              "items": {
+               "type": "object",
+               "title": "Body Part",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Body Part ID",
+                 "example": 999
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Body Part Name",
+                 "example": "finger_index_right"
+                },
+                "selectable": {
+                 "type": "boolean",
+                 "description": "Represents whether a Body Part can be associated to an injury.",
+                 "example": true
+                },
+                "created_at": {
+                 "type": "string",
+                 "description": "Timestamp of creation",
+                 "format": "date-time",
+                 "example": "2016-10-25T17:53:35Z"
+                },
+                "updated_at": {
+                 "type": "string",
+                 "description": "Timestamp of last update",
+                 "format": "date-time",
+                 "example": "2016-10-25T17:53:35Z"
+                },
+                "parent_id": {
+                 "type": "integer",
+                 "description": "Parent Body Part ID",
+                 "example": 999
+                }
+               }
+              }
+             }
+            },
+            "nullable": true
+           },
+           "pushed_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the push notification was delivered. Null if no push notification was sent.",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "recipient": {
+            "allOf": [
+             {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "The unique identifier of the user.",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "The email address of the user that is used to log in.",
+                "example": "carl.contractor@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the user.",
+                "example": "Carl the Contractor"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "company_name": {
+                "type": "string",
+                "description": "User's Company Name",
+                "example": "Company ABC"
+               }
+              }
+             }
+            ]
+           },
+           "severity_level": {
+            "title": "SeverityLevel",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for this severity level.",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the Incident Severity Level",
+              "example": "major"
+             },
+             "procore_default_name": {
+              "type": "string",
+              "description": "Procore default name of the Incident Severity Level",
+              "example": "major",
+              "enum": [
+               "insignificant",
+               "minor",
+               "major",
+               "critical",
+               "moderate"
+              ]
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Denotes whether the Incident Severity Level is active",
+              "example": false
+             },
+             "email_trigger": {
+              "type": "boolean",
+              "description": "Denotes whether an email should be sent",
+              "example": false
+             },
+             "push_notification_trigger": {
+              "type": "boolean",
+              "description": "Denotes whether a push notification should be sent",
+              "example": false
+             },
+             "order": {
+              "type": "integer",
+              "description": "Ranking order of the Incident Severity Level"
+             },
+             "created_at": {
+              "type": "string",
+              "description": "iso8601 timestamp of creation",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "iso8601 timestamp of last update",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             }
+            }
+           },
+           "triggered_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of when the alert was triggered by an incident event.",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "triggered_by": {
+            "allOf": [
+             {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "The unique identifier of the user.",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "The email address of the user that is used to log in.",
+                "example": "carl.contractor@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the user.",
+                "example": "Carl the Contractor"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "company_name": {
+                "type": "string",
+                "description": "User's Company Name",
+                "example": "Company ABC"
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[incident_id]': 'SOME_ARRAY_VALUE',\n    'filters[injury_id]': 'SOME_ARRAY_VALUE',\n    'filters[recipient_id]': 'SOME_ARRAY_VALUE',\n    'filters[severity_level_id]': 'SOME_ARRAY_VALUE',\n    'filters[triggered_by_id]': 'SOME_ARRAY_VALUE',\n    'filters[filing_type_id]': 'SOME_ARRAY_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bincident_id%5D=SOME_ARRAY_VALUE&filters%5Binjury_id%5D=SOME_ARRAY_VALUE&filters%5Brecipient_id%5D=SOME_ARRAY_VALUE&filters%5Bseverity_level_id%5D=SOME_ARRAY_VALUE&filters%5Btriggered_by_id%5D=SOME_ARRAY_VALUE&filters%5Bfiling_type_id%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bincident_id%5D=SOME_ARRAY_VALUE&filters%5Binjury_id%5D=SOME_ARRAY_VALUE&filters%5Brecipient_id%5D=SOME_ARRAY_VALUE&filters%5Bseverity_level_id%5D=SOME_ARRAY_VALUE&filters%5Btriggered_by_id%5D=SOME_ARRAY_VALUE&filters%5Bfiling_type_id%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bincident_id%5D=SOME_ARRAY_VALUE&filters%5Binjury_id%5D=SOME_ARRAY_VALUE&filters%5Brecipient_id%5D=SOME_ARRAY_VALUE&filters%5Bseverity_level_id%5D=SOME_ARRAY_VALUE&filters%5Btriggered_by_id%5D=SOME_ARRAY_VALUE&filters%5Bfiling_type_id%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users.",
+      "description": "Users with a readonly role will now be restricted from accessing Alerts endpoints.",
+      "endpoint": "GET /projects/{project_id}/incidents/alerts",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-12-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "alerts?version=1.0#list-incident-alerts"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/incidents/alerts/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier of the incident alert.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Incident Alert",
+    "description": "Returns the details of a single incident alert, including the associated injury, severity level, and recipient.",
+    "tags": [
+     "Alerts"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this incident alert.",
+           "example": 1
+          },
+          "event_id": {
+           "type": "integer",
+           "description": "Identifier of the alert event that triggered this alert notification.",
+           "example": 1
+          },
+          "emailed_at": {
+           "type": "string",
+           "description": "ISO 8601 timestamp of when the alert email was delivered to the recipient. Null if the email has not been sent.",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "filing_type": {
+           "type": "object",
+           "title": "Incident Filing Type",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the filing type classification for this incident record.",
+             "example": 999
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the filing type (e.g. report_only, first_aid, fatality).",
+             "example": "report_only"
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "severity_level": {
+             "title": "SeverityLevel",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier for this severity level.",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the Incident Severity Level",
+               "example": "major"
+              },
+              "procore_default_name": {
+               "type": "string",
+               "description": "Procore default name of the Incident Severity Level",
+               "example": "major",
+               "enum": [
+                "insignificant",
+                "minor",
+                "major",
+                "critical",
+                "moderate"
+               ]
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Denotes whether the Incident Severity Level is active",
+               "example": false
+              },
+              "email_trigger": {
+               "type": "boolean",
+               "description": "Denotes whether an email should be sent",
+               "example": false
+              },
+              "push_notification_trigger": {
+               "type": "boolean",
+               "description": "Denotes whether a push notification should be sent",
+               "example": false
+              },
+              "order": {
+               "type": "integer",
+               "description": "Ranking order of the Incident Severity Level"
+              },
+              "created_at": {
+               "type": "string",
+               "description": "iso8601 timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "iso8601 timestamp of last update",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp of last update",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            }
+           }
+          },
+          "injury": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Incident Record ID",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "The number of the Record",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "The Incident Number combined with the Record Number",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "The id of the Incident to which the record belongs",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident Record is recordable",
+             "example": true
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+             "example": "injury"
+            },
+            "date_returned_to_work": {
+             "type": "string",
+             "description": "Date returned to work",
+             "format": "date",
+             "example": "2018-10-31"
+            },
+            "affected_party": {
+             "type": "object",
+             "title": "Party",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Timecard entry id",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Party Name",
+               "example": "Dolores Umbridge"
+              }
+             }
+            },
+            "affected_person": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email",
+                 "example": "exampleuser@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "harm_source": {
+             "type": "object",
+             "title": "Harm Source",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Harm Source ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Harm Source Name",
+               "example": "Material"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp of last update",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "date_of_death": {
+             "type": "string",
+             "description": "Date of death",
+             "format": "date",
+             "example": "2018-11-10"
+            },
+            "filing_type": {
+             "type": "string",
+             "description": "Filing Type",
+             "example": "first_aid",
+             "enum": [
+              "fatality",
+              "first_aid",
+              "lost_time",
+              "medically_treated",
+              "refused_care",
+              "report_only",
+              "restricted_work"
+             ]
+            },
+            "hospitalized_overnight": {
+             "type": "boolean",
+             "description": "Represents whether the injured person was hospitalized overnight",
+             "example": true
+            },
+            "treated_in_er": {
+             "type": "boolean",
+             "description": "Represents whether the injured person was treated in the ER",
+             "example": true
+            },
+            "treatment_facility_address": {
+             "type": "string",
+             "description": "The street address of the treatment facility",
+             "example": "6309 Carpinteria Ave."
+            },
+            "treatment_facility": {
+             "type": "string",
+             "description": "The name of the treatment facility",
+             "example": "Procore Hospital"
+            },
+            "treatment_provider": {
+             "type": "string",
+             "description": "The name of the treatment provider",
+             "example": "Dr. Doctor"
+            },
+            "work_days_absent": {
+             "type": "integer",
+             "description": "The number of days absent from work",
+             "example": 1
+            },
+            "work_days_restricted": {
+             "type": "integer",
+             "description": "The number of days on restricted work",
+             "example": 3
+            },
+            "work_days_transferred": {
+             "type": "integer",
+             "description": "The number of days transferred",
+             "example": 4
+            },
+            "body_diagram_type": {
+             "type": "string",
+             "description": "Body Type displayed in Body Diagram",
+             "example": "feminine",
+             "enum": [
+              "feminine",
+              "masculine"
+             ]
+            },
+            "affliction_type": {
+             "type": "object",
+             "title": "Affliction Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Affliction Type ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Affliction Type Name",
+               "example": "Sprain"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Affliction Type is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Affliction Type has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp of last update",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "affected_body_part": {
+             "type": "string",
+             "description": "DEPRECATED. The body part affected by the affliction",
+             "example": "ankle",
+             "enum": [
+              "abdomen",
+              "ankle",
+              "ankle_left",
+              "ankle_right",
+              "arm",
+              "arm_left",
+              "arm_right",
+              "back",
+              "body_systems",
+              "breast",
+              "breast_left",
+              "breast_right",
+              "buttock",
+              "chest",
+              "circulatory_system",
+              "cranium",
+              "digestive_system",
+              "ear",
+              "ear_left",
+              "ear_right",
+              "elbow",
+              "elbow_left",
+              "elbow_right",
+              "entire_body_systemic",
+              "eye",
+              "eye_left",
+              "eye_right",
+              "face",
+              "finger",
+              "finger_index",
+              "finger_index_left",
+              "finger_index_right",
+              "finger_middle",
+              "finger_middle_left",
+              "finger_middle_right",
+              "finger_pinky",
+              "finger_pinky_left",
+              "finger_pinky_right",
+              "finger_ring",
+              "finger_ring_left",
+              "finger_ring_right",
+              "foot",
+              "foot_left",
+              "foot_right",
+              "foot_top_left",
+              "foot_top_right",
+              "forearm",
+              "forearm_left",
+              "forearm_right",
+              "groin",
+              "hand",
+              "hand_back_left",
+              "hand_back_right",
+              "hand_left",
+              "hand_right",
+              "head",
+              "head_back",
+              "heart",
+              "heel_left",
+              "heel_right",
+              "hip",
+              "hip_left",
+              "hip_right",
+              "internal_organs",
+              "knee",
+              "knee_left",
+              "knee_right",
+              "leg",
+              "leg_left",
+              "leg_right",
+              "lower_back",
+              "lower_back_left",
+              "lower_back_right",
+              "lower_leg",
+              "lower_leg_left",
+              "lower_leg_right",
+              "lungs",
+              "mouth",
+              "neck",
+              "neck_back",
+              "neck_left",
+              "neck_right",
+              "nervous_system",
+              "nose",
+              "palm_left",
+              "palm_right",
+              "pec",
+              "pec_left",
+              "pec_right",
+              "pelvis",
+              "pelvis_front",
+              "psychological",
+              "reproductive_system",
+              "respiratory_system",
+              "ribs",
+              "ribs_left",
+              "ribs_right",
+              "shoulder",
+              "shoulder_left",
+              "shoulder_right",
+              "skin",
+              "tailbone",
+              "teeth",
+              "throat",
+              "thumb",
+              "thumb_left",
+              "thumb_right",
+              "toe",
+              "toe_fifth",
+              "toe_fifth_left",
+              "toe_fifth_right",
+              "toe_first",
+              "toe_first_left",
+              "toe_first_right",
+              "toe_fourth",
+              "toe_fourth_left",
+              "toe_fourth_right",
+              "toe_second",
+              "toe_second_left",
+              "toe_second_right",
+              "toe_third",
+              "toe_third_left",
+              "toe_third_right",
+              "torso",
+              "upper_arm",
+              "upper_arm_left",
+              "upper_arm_right",
+              "upper_back",
+              "upper_back_left",
+              "upper_back_right",
+              "upper_leg",
+              "upper_leg_left",
+              "upper_leg_right",
+              "urinary_system",
+              "vertebrae",
+              "wrist",
+              "wrist_left",
+              "wrist_right"
+             ]
+            },
+            "affected_body_parts": {
+             "type": "array",
+             "description": "Array of body parts affected by the affliction",
+             "items": {
+              "type": "string",
+              "example": "ankle",
+              "enum": [
+               "abdomen",
+               "ankle",
+               "ankle_left",
+               "ankle_right",
+               "arm",
+               "arm_left",
+               "arm_right",
+               "back",
+               "body_systems",
+               "breast",
+               "breast_left",
+               "breast_right",
+               "buttock",
+               "chest",
+               "circulatory_system",
+               "cranium",
+               "digestive_system",
+               "ear",
+               "ear_left",
+               "ear_right",
+               "elbow",
+               "elbow_left",
+               "elbow_right",
+               "entire_body_systemic",
+               "eye",
+               "eye_left",
+               "eye_right",
+               "face",
+               "finger",
+               "finger_index",
+               "finger_index_left",
+               "finger_index_right",
+               "finger_middle",
+               "finger_middle_left",
+               "finger_middle_right",
+               "finger_pinky",
+               "finger_pinky_left",
+               "finger_pinky_right",
+               "finger_ring",
+               "finger_ring_left",
+               "finger_ring_right",
+               "foot",
+               "foot_left",
+               "foot_right",
+               "foot_top_left",
+               "foot_top_right",
+               "forearm",
+               "forearm_left",
+               "forearm_right",
+               "groin",
+               "hand",
+               "hand_back_left",
+               "hand_back_right",
+               "hand_left",
+               "hand_right",
+               "head",
+               "head_back",
+               "heart",
+               "heel_left",
+               "heel_right",
+               "hip",
+               "hip_left",
+               "hip_right",
+               "internal_organs",
+               "knee",
+               "knee_left",
+               "knee_right",
+               "leg",
+               "leg_left",
+               "leg_right",
+               "lower_back",
+               "lower_back_left",
+               "lower_back_right",
+               "lower_leg",
+               "lower_leg_left",
+               "lower_leg_right",
+               "lungs",
+               "mouth",
+               "neck",
+               "neck_back",
+               "neck_left",
+               "neck_right",
+               "nervous_system",
+               "nose",
+               "palm_left",
+               "palm_right",
+               "pec",
+               "pec_left",
+               "pec_right",
+               "pelvis",
+               "pelvis_front",
+               "psychological",
+               "reproductive_system",
+               "respiratory_system",
+               "ribs",
+               "ribs_left",
+               "ribs_right",
+               "shoulder",
+               "shoulder_left",
+               "shoulder_right",
+               "skin",
+               "tailbone",
+               "teeth",
+               "throat",
+               "thumb",
+               "thumb_left",
+               "thumb_right",
+               "toe",
+               "toe_fifth",
+               "toe_fifth_left",
+               "toe_fifth_right",
+               "toe_first",
+               "toe_first_left",
+               "toe_first_right",
+               "toe_fourth",
+               "toe_fourth_left",
+               "toe_fourth_right",
+               "toe_second",
+               "toe_second_left",
+               "toe_second_right",
+               "toe_third",
+               "toe_third_left",
+               "toe_third_right",
+               "torso",
+               "upper_arm",
+               "upper_arm_left",
+               "upper_arm_right",
+               "upper_back",
+               "upper_back_left",
+               "upper_back_right",
+               "upper_leg",
+               "upper_leg_left",
+               "upper_leg_right",
+               "urinary_system",
+               "vertebrae",
+               "wrist",
+               "wrist_left",
+               "wrist_right"
+              ]
+             }
+            },
+            "afflictions": {
+             "type": "array",
+             "description": "DEPRECATED. Array of afflictions affecting the injured person. Currently this is limited to one.",
+             "items": {
+              "type": "object",
+              "title": "IncidentAffliction",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Affliction ID",
+                "example": 999
+               },
+               "affliction_type": {
+                "type": "object",
+                "title": "Affliction Type",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Affliction Type ID",
+                  "example": 999
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Affliction Type Name",
+                  "example": "Sprain"
+                 },
+                 "active": {
+                  "type": "boolean",
+                  "description": "Represents whether a Affliction Type is available for use.",
+                  "example": true
+                 },
+                 "global": {
+                  "type": "boolean",
+                  "description": "Represents whether a Affliction Type has been provided by Procore.",
+                  "example": true
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "description": "Timestamp of creation",
+                  "format": "date-time",
+                  "example": "2016-10-25T17:53:35Z"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "description": "Timestamp of last update",
+                  "format": "date-time",
+                  "example": "2016-10-25T17:53:35Z"
+                 }
+                }
+               },
+               "affected_body_part": {
+                "type": "string",
+                "description": "The body part affected by the affliction",
+                "example": "ankle",
+                "enum": [
+                 "abdomen",
+                 "ankle",
+                 "ankle_left",
+                 "ankle_right",
+                 "arm",
+                 "arm_left",
+                 "arm_right",
+                 "back",
+                 "body_systems",
+                 "breast",
+                 "breast_left",
+                 "breast_right",
+                 "buttock",
+                 "chest",
+                 "circulatory_system",
+                 "cranium",
+                 "digestive_system",
+                 "ear",
+                 "ear_left",
+                 "ear_right",
+                 "elbow",
+                 "elbow_left",
+                 "elbow_right",
+                 "entire_body_systemic",
+                 "eye",
+                 "eye_left",
+                 "eye_right",
+                 "face",
+                 "finger",
+                 "finger_index",
+                 "finger_index_left",
+                 "finger_index_right",
+                 "finger_middle",
+                 "finger_middle_left",
+                 "finger_middle_right",
+                 "finger_pinky",
+                 "finger_pinky_left",
+                 "finger_pinky_right",
+                 "finger_ring",
+                 "finger_ring_left",
+                 "finger_ring_right",
+                 "foot",
+                 "foot_left",
+                 "foot_right",
+                 "foot_top_left",
+                 "foot_top_right",
+                 "forearm",
+                 "forearm_left",
+                 "forearm_right",
+                 "groin",
+                 "hand",
+                 "hand_back_left",
+                 "hand_back_right",
+                 "hand_left",
+                 "hand_right",
+                 "head",
+                 "head_back",
+                 "heart",
+                 "heel_left",
+                 "heel_right",
+                 "hip",
+                 "hip_left",
+                 "hip_right",
+                 "internal_organs",
+                 "knee",
+                 "knee_left",
+                 "knee_right",
+                 "leg",
+                 "leg_left",
+                 "leg_right",
+                 "lower_back",
+                 "lower_back_left",
+                 "lower_back_right",
+                 "lower_leg",
+                 "lower_leg_left",
+                 "lower_leg_right",
+                 "lungs",
+                 "mouth",
+                 "neck",
+                 "neck_back",
+                 "neck_left",
+                 "neck_right",
+                 "nervous_system",
+                 "nose",
+                 "palm_left",
+                 "palm_right",
+                 "pec",
+                 "pec_left",
+                 "pec_right",
+                 "pelvis",
+                 "pelvis_front",
+                 "psychological",
+                 "reproductive_system",
+                 "respiratory_system",
+                 "ribs",
+                 "ribs_left",
+                 "ribs_right",
+                 "shoulder",
+                 "shoulder_left",
+                 "shoulder_right",
+                 "skin",
+                 "tailbone",
+                 "teeth",
+                 "throat",
+                 "thumb",
+                 "thumb_left",
+                 "thumb_right",
+                 "toe",
+                 "toe_fifth",
+                 "toe_fifth_left",
+                 "toe_fifth_right",
+                 "toe_first",
+                 "toe_first_left",
+                 "toe_first_right",
+                 "toe_fourth",
+                 "toe_fourth_left",
+                 "toe_fourth_right",
+                 "toe_second",
+                 "toe_second_left",
+                 "toe_second_right",
+                 "toe_third",
+                 "toe_third_left",
+                 "toe_third_right",
+                 "torso",
+                 "upper_arm",
+                 "upper_arm_left",
+                 "upper_arm_right",
+                 "upper_back",
+                 "upper_back_left",
+                 "upper_back_right",
+                 "upper_leg",
+                 "upper_leg_left",
+                 "upper_leg_right",
+                 "urinary_system",
+                 "vertebrae",
+                 "wrist",
+                 "wrist_left",
+                 "wrist_right"
+                ]
+               }
+              }
+             }
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "body_parts": {
+             "type": "array",
+             "description": "Body parts affected by the injury",
+             "items": {
+              "type": "object",
+              "title": "Body Part",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Body Part ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Body Part Name",
+                "example": "finger_index_right"
+               },
+               "selectable": {
+                "type": "boolean",
+                "description": "Represents whether a Body Part can be associated to an injury.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp of last update",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "parent_id": {
+                "type": "integer",
+                "description": "Parent Body Part ID",
+                "example": 999
+               }
+              }
+             }
+            }
+           },
+           "nullable": true
+          },
+          "pushed_at": {
+           "type": "string",
+           "description": "ISO 8601 timestamp of when the push notification was delivered. Null if no push notification was sent.",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "recipient": {
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "The unique identifier of the user.",
+               "example": 160586
+              },
+              "login": {
+               "type": "string",
+               "description": "The email address of the user that is used to log in.",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "The name of the user.",
+               "example": "Carl the Contractor"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "company_name": {
+               "type": "string",
+               "description": "User's Company Name",
+               "example": "Company ABC"
+              }
+             }
+            }
+           ]
+          },
+          "severity_level": {
+           "title": "SeverityLevel",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for this severity level.",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the Incident Severity Level",
+             "example": "major"
+            },
+            "procore_default_name": {
+             "type": "string",
+             "description": "Procore default name of the Incident Severity Level",
+             "example": "major",
+             "enum": [
+              "insignificant",
+              "minor",
+              "major",
+              "critical",
+              "moderate"
+             ]
+            },
+            "active": {
+             "type": "boolean",
+             "description": "Denotes whether the Incident Severity Level is active",
+             "example": false
+            },
+            "email_trigger": {
+             "type": "boolean",
+             "description": "Denotes whether an email should be sent",
+             "example": false
+            },
+            "push_notification_trigger": {
+             "type": "boolean",
+             "description": "Denotes whether a push notification should be sent",
+             "example": false
+            },
+            "order": {
+             "type": "integer",
+             "description": "Ranking order of the Incident Severity Level"
+            },
+            "created_at": {
+             "type": "string",
+             "description": "iso8601 timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "iso8601 timestamp of last update",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            }
+           }
+          },
+          "triggered_at": {
+           "type": "string",
+           "description": "ISO 8601 timestamp of when the alert was triggered by an incident event.",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "triggered_by": {
+           "allOf": [
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "The unique identifier of the user.",
+               "example": 160586
+              },
+              "login": {
+               "type": "string",
+               "description": "The email address of the user that is used to log in.",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "The name of the user.",
+               "example": "Carl the Contractor"
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "company_name": {
+               "type": "string",
+               "description": "User's Company Name",
+               "example": "Company ABC"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts/%7Bid%7D',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/alerts/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users.",
+      "description": "Users with a readonly role will now be restricted from accessing Alerts endpoints.",
+      "endpoint": "GET /projects/{project_id}/incidents/alerts/{id}",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-12-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "alerts?version=1.0#show-incident-alert"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

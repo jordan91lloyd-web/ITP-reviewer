@@ -1,0 +1,201 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Daily Logs",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Daily Log",
+  "x-resource-name": "Daily Logs",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/daily_logs/count": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Counts of Daily Logs",
+    "description": "Returns counts of all daily logs arranged by type, given the current user permissions. Read Only/Standard users will\nsee only counts of approved logs, Collaborator users will see only counts of logs created by themselves, Admins\ncan use filter options to see all logs, or only a specific approval status (defaulting to approved).\n\nSee [Working with Daily Logs](https://developers.procore.com/documentation/daily-logs) for information on filtering the response using the log\\_date, start\\_date, and end\\_date parameters. Note that if none of the date parameters are provided in the call, only logs from the current date are returned.\n\nThis is a deprecated endpoint, please use [/rest/v1.1/projects/{project_id}/daily_logs/counts](daily_logs#counts)",
+    "x-deprecated-at": "2021-01-25",
+    "deprecated": true,
+    "tags": [
+     "Daily Logs",
+     "Count"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "log_date",
+      "in": "query",
+      "description": "Date of specific logs desired in YYYY-MM-DD format",
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "start_date",
+      "in": "query",
+      "description": "Start date of specific logs desired in YYYY-MM-DD format (use together with end_date)",
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "end_date",
+      "in": "query",
+      "description": "End date of specific logs desired in YYYY-MM-DD format (use together with start_date)",
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[status]",
+      "in": "query",
+      "description": "Filter on status for \"pending\" or \"approved\" or \"all\"",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[created_by_id]",
+      "in": "query",
+      "description": "Returns item(s) created by the specified User IDs.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Meta data about a daily log module",
+          "properties": {
+           "module_name": {
+            "type": "string",
+            "description": "The name of the log type",
+            "example": "manpower_log"
+           },
+           "count": {
+            "type": "integer",
+            "description": "The number of logs that match the current date and permissions filters for this module",
+            "example": 11
+           },
+           "position": {
+            "type": "integer",
+            "description": "The position this module is shown at, on the web",
+            "example": 6
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/count',\n  qs: {\n    log_date: 'SOME_STRING_VALUE',\n    start_date: 'SOME_STRING_VALUE',\n    end_date: 'SOME_STRING_VALUE',\n    'filters[status]': 'SOME_STRING_VALUE',\n    'filters[created_by_id]': 'SOME_ARRAY_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/count?log_date=SOME_STRING_VALUE&start_date=SOME_STRING_VALUE&end_date=SOME_STRING_VALUE&filters%5Bstatus%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_ARRAY_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/count?log_date=SOME_STRING_VALUE&start_date=SOME_STRING_VALUE&end_date=SOME_STRING_VALUE&filters%5Bstatus%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_ARRAY_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_logs/count?log_date=SOME_STRING_VALUE&start_date=SOME_STRING_VALUE&end_date=SOME_STRING_VALUE&filters%5Bstatus%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_ARRAY_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

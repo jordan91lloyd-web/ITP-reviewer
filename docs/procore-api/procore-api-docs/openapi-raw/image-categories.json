@@ -1,0 +1,1433 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Image Categories",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Photos",
+  "x-resource-name": "Image Categories",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/image_categories": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List image categories",
+    "description": "Return a list of all Photo Albums (Image Categories) in a specified project.",
+    "tags": [
+     "Image Categories"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of image categories",
+         "items": {
+          "title": "ImageCategory",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier of the photo album (image category). Pass as the {id} path parameter to GET/PATCH/DELETE /rest/v1.0/image_categories/{id}."
+           },
+           "count": {
+            "type": "integer",
+            "description": "Number of images in the album visible to the requesting user; private images are excluded unless the user has private-photo access."
+           },
+           "cover_photo": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL of the album's cover thumbnail. Null when the album has no cover image visible to the user."
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the album was created, in ISO 8601 format."
+           },
+           "links": {
+            "type": "object",
+            "description": "Action URLs for this album.",
+            "properties": {
+             "show": {
+              "type": "string",
+              "description": "Web URL to view the album's images."
+             },
+             "delete": {
+              "type": "string",
+              "description": "REST URL to delete the album via DELETE. Present only when the user may delete the album and it is not the default 'Unclassified' album."
+             },
+             "update": {
+              "type": "string",
+              "description": "REST URL to update the album via PATCH. Present only when the user may modify the album and it is not the default 'Unclassified' album."
+             }
+            }
+           },
+           "name": {
+            "type": "string",
+            "description": "Display name of the album, e.g. 'Site Progress - March'."
+           },
+           "private": {
+            "type": "boolean",
+            "description": "Whether the album and its images are restricted to users with private-photo access."
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the album was last modified, in ISO 8601 format."
+           },
+           "position": {
+            "type": "integer",
+            "description": "Sort order of the album within the project's album list; lower values appear first."
+           }
+          },
+          "example": {
+           "id": 51065,
+           "count": 3,
+           "cover_photo": "https://s3.amazonaws.com/pro-core.com/prostore/20141028153752_production_28603561.jpg?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=M7gx3Hp9q7xg7PyM87oJW%2BDOvr4%3D",
+           "created_at": "2013-11-08T00:00:00Z",
+           "links": {
+            "show": "/22585/project/images/show_album?id=51065",
+            "update": "/rest/v1.0/image_categories/1301434?project_id=173074",
+            "delete": "/rest/v1.0/image_categories/51065?project_id=22585"
+           },
+           "name": "Test",
+           "private": false,
+           "updated_at": "2016-04-27T17:45:18Z",
+           "position": 1
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/image_categories',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/image_categories?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/image_categories?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/image_categories?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create image category",
+    "description": "Create a new Photo Album (Category) for Images.",
+    "tags": [
+     "Image Categories"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "image_category"
+        ],
+        "properties": {
+         "image_category": {
+          "title": "ImageCategory",
+          "type": "object",
+          "required": [
+           "name"
+          ],
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "The Name of the Image Category",
+            "example": "1/1/17 album"
+           },
+           "private": {
+            "type": "boolean",
+            "description": "The Private status of the Image Category",
+            "default": false,
+            "example": false
+           },
+           "album_cover_id": {
+            "type": "integer",
+            "description": "ID of an Image that is the cover Image of the Image Category.",
+            "example": 1
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ImageCategory",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier of the photo album (image category). Pass as the {id} path parameter to GET/PATCH/DELETE /rest/v1.0/image_categories/{id}."
+          },
+          "name": {
+           "type": "string",
+           "description": "Display name of the album, e.g. 'Site Progress - March'."
+          },
+          "position": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Sort order of the album within the project's album list; lower values appear first."
+          },
+          "album_cover_id": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Identifier of the Image set as this album's cover, referencing an Image in this album. Null when no cover has been set."
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the album was created, in ISO 8601 format."
+          },
+          "private": {
+           "type": "boolean",
+           "description": "Whether the album and its images are restricted to users with private-photo access."
+          },
+          "count": {
+           "type": "integer",
+           "description": "Number of images in the album visible to the requesting user; private images are excluded unless the user has private-photo access."
+          }
+         },
+         "example": {
+          "id": 51065,
+          "count": 3,
+          "cover_photo": "https://s3.amazonaws.com/pro-core.com/prostore/20141028153752_production_28603561.jpg?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=M7gx3Hp9q7xg7PyM87oJW%2BDOvr4%3D",
+          "created_at": "2013-11-08T00:00:00Z",
+          "links": {
+           "show": "/22585/project/images/show_album?id=51065",
+           "update": "/rest/v1.0/image_categories/1301434?project_id=173074",
+           "delete": "/rest/v1.0/image_categories/51065?project_id=22585"
+          },
+          "name": "Test",
+          "private": false,
+          "updated_at": "2016-04-27T17:45:18Z",
+          "position": 1
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/image_categories',\n  qs: {project_id: 'SOME_INTEGER_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {image_category: {name: '1/1/17 album', private: false, album_cover_id: 1}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"image_category\\\":{\\\"name\\\":\\\"1/1/17 album\\\",\\\"private\\\":false,\\\"album_cover_id\\\":1}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/image_categories?project_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/image_categories?project_id=SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"image_category\":{\"name\":\"1/1/17 album\",\"private\":false,\"album_cover_id\":1}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/image_categories?project_id=SOME_INTEGER_VALUE\"),\n    Content = new StringContent(\"{\\\"image_category\\\":{\\\"name\\\":\\\"1/1/17 album\\\",\\\"private\\\":false,\\\"album_cover_id\\\":1}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/image_categories/ids_with_images": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Image Category IDs That Contain Images",
+    "description": "Return an array of Image Category IDs for a specified Project that contain Images\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "tags": [
+     "Image Categories"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return Image Categories that contain Images that are within a specific updated_at date-time range.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Drawing Revision IDs",
+         "items": {
+          "type": "integer"
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/image_categories/ids_with_images',\n  qs: {project_id: 'SOME_INTEGER_VALUE', 'filters[updated_at]': 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/image_categories/ids_with_images?project_id=SOME_INTEGER_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/image_categories/ids_with_images?project_id=SOME_INTEGER_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/image_categories/ids_with_images?project_id=SOME_INTEGER_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/image_categories/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the image category",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show image category",
+    "description": "Return detail information about the specified Photo Album (Image Category).",
+    "tags": [
+     "Image Categories"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ImageCategory",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier of the photo album (image category). Pass as the {id} path parameter to GET/PATCH/DELETE /rest/v1.0/image_categories/{id}."
+          },
+          "name": {
+           "type": "string",
+           "description": "Display name of the album, e.g. 'Site Progress - March'."
+          },
+          "position": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Sort order of the album within the project's album list; lower values appear first."
+          },
+          "album_cover_id": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Identifier of the Image set as this album's cover, referencing an Image in this album. Null when no cover has been set."
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the album was created, in ISO 8601 format."
+          },
+          "private": {
+           "type": "boolean",
+           "description": "Whether the album and its images are restricted to users with private-photo access."
+          },
+          "count": {
+           "type": "integer",
+           "description": "Number of images in the album visible to the requesting user; private images are excluded unless the user has private-photo access."
+          }
+         },
+         "example": {
+          "id": 51065,
+          "count": 3,
+          "cover_photo": "https://s3.amazonaws.com/pro-core.com/prostore/20141028153752_production_28603561.jpg?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=M7gx3Hp9q7xg7PyM87oJW%2BDOvr4%3D",
+          "created_at": "2013-11-08T00:00:00Z",
+          "links": {
+           "show": "/22585/project/images/show_album?id=51065",
+           "update": "/rest/v1.0/image_categories/1301434?project_id=173074",
+           "delete": "/rest/v1.0/image_categories/51065?project_id=22585"
+          },
+          "name": "Test",
+          "private": false,
+          "updated_at": "2016-04-27T17:45:18Z",
+          "position": 1
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update image category",
+    "description": "Update a Photo Album (Image Category) in a specified Project.",
+    "tags": [
+     "Image Categories"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "image_category"
+        ],
+        "properties": {
+         "image_category": {
+          "title": "ImageCategory",
+          "type": "object",
+          "required": [
+           "name"
+          ],
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "The Name of the Image Category",
+            "example": "1/1/17 album"
+           },
+           "private": {
+            "type": "boolean",
+            "description": "The Private status of the Image Category",
+            "default": false,
+            "example": false
+           },
+           "album_cover_id": {
+            "type": "integer",
+            "description": "ID of an Image that is the cover Image of the Image Category.",
+            "example": 1
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ImageCategory",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier of the photo album (image category). Pass as the {id} path parameter to GET/PATCH/DELETE /rest/v1.0/image_categories/{id}."
+          },
+          "name": {
+           "type": "string",
+           "description": "Display name of the album, e.g. 'Site Progress - March'."
+          },
+          "position": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Sort order of the album within the project's album list; lower values appear first."
+          },
+          "album_cover_id": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Identifier of the Image set as this album's cover, referencing an Image in this album. Null when no cover has been set."
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the album was created, in ISO 8601 format."
+          },
+          "private": {
+           "type": "boolean",
+           "description": "Whether the album and its images are restricted to users with private-photo access."
+          },
+          "count": {
+           "type": "integer",
+           "description": "Number of images in the album visible to the requesting user; private images are excluded unless the user has private-photo access."
+          }
+         },
+         "example": {
+          "id": 51065,
+          "count": 3,
+          "cover_photo": "https://s3.amazonaws.com/pro-core.com/prostore/20141028153752_production_28603561.jpg?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=M7gx3Hp9q7xg7PyM87oJW%2BDOvr4%3D",
+          "created_at": "2013-11-08T00:00:00Z",
+          "links": {
+           "show": "/22585/project/images/show_album?id=51065",
+           "update": "/rest/v1.0/image_categories/1301434?project_id=173074",
+           "delete": "/rest/v1.0/image_categories/51065?project_id=22585"
+          },
+          "name": "Test",
+          "private": false,
+          "updated_at": "2016-04-27T17:45:18Z",
+          "position": 1
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {image_category: {name: '1/1/17 album', private: false, album_cover_id: 1}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"image_category\\\":{\\\"name\\\":\\\"1/1/17 album\\\",\\\"private\\\":false,\\\"album_cover_id\\\":1}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"image_category\":{\"name\":\"1/1/17 album\",\"private\":false,\"album_cover_id\":1}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n    Content = new StringContent(\"{\\\"image_category\\\":{\\\"name\\\":\\\"1/1/17 album\\\",\\\"private\\\":false,\\\"album_cover_id\\\":1}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete image category",
+    "description": "Delete a Photo Album (Image Category) from a specified Project.",
+    "tags": [
+     "Image Categories"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url 'https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/image_categories/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

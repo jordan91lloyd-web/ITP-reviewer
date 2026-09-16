@@ -1,0 +1,5100 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Witness Statements",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Incidents",
+  "x-resource-name": "Witness Statements",
+  "version": "1.1",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.1/projects/{project_id}/recycle_bin/incidents/witness_statements": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Recycled Witness Statements",
+    "description": "Returns a list of Recycled Witness Statements for a given project (or Incident, if incident_id is present).",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "incident_id",
+      "in": "query",
+      "required": false,
+      "description": "Incident ID. When provided, the list will be scoped to only the Recycled Witness Statements for a given Incident.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[date_received]",
+      "in": "query",
+      "description": "Return item(s) within the specified date received date range. This assumes the dates provided are in the project time zone.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[witness_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Witness (Party) ID.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[query]",
+      "in": "query",
+      "description": "Return item(s) containing query",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "created_at",
+        "date_received",
+        "witness"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Witness Statement ID",
+            "example": 99
+           },
+           "incident_id": {
+            "type": "integer",
+            "description": "Incident ID",
+            "example": 42
+           },
+           "attachments": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "title": "Incident Attachment",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 5324
+              },
+              "url": {
+               "type": "string",
+               "description": "URL",
+               "example": "http://www.example.com/"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "URL",
+               "example": "http://www.example.com/"
+              },
+              "name": {
+               "type": "string",
+               "description": "Filename",
+               "example": "january_receipt_copy.jpg"
+              },
+              "content_type": {
+               "type": "string",
+               "example": "application/pdf"
+              },
+              "viewable": {
+               "type": "boolean",
+               "example": true
+              },
+              "can_be_viewed": {
+               "type": "boolean",
+               "example": true
+              }
+             }
+            }
+           },
+           "statement": {
+            "type": "string",
+            "description": "The account of the event by the witness in rich text form.",
+            "example": "<p>I witnessed what happened.</p>"
+           },
+           "statement_plain_text": {
+            "type": "string",
+            "description": "The account of the event by the witness in plain text form.",
+            "example": "I witnessed what happened."
+           },
+           "date_received": {
+            "type": "string",
+            "description": "Date that the Witness Statement was received.",
+            "format": "date",
+            "example": "2016-10-25"
+           },
+           "created_at": {
+            "type": "string",
+            "description": "Timestamp of creation",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "deleted_at": {
+            "type": "string",
+            "description": "Timestamp of deletion",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z",
+            "nullable": true
+           },
+           "updated_at": {
+            "type": "string",
+            "description": "Timestamp of last update",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "witness": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "example": "John Doe"
+             }
+            }
+           },
+           "custom_fields": {
+            "type": "object",
+            "properties": {
+             "custom_field_%{custom_field_string_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "string"
+               },
+               "value": {
+                "type": "string",
+                "description": "The value of the custom field.",
+                "example": "custom field value"
+               }
+              }
+             },
+             "custom_field_%{custom_field_decimal_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "decimal"
+               },
+               "value": {
+                "type": "number",
+                "description": "The value of the custom field.",
+                "example": 2.2
+               }
+              }
+             },
+             "custom_field_%{custom_field_boolean_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "boolean"
+               },
+               "value": {
+                "type": "boolean",
+                "description": "The value of the custom field.",
+                "example": true
+               }
+              }
+             },
+             "custom_field_%{custom_field_lov_entry_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "lov_entry"
+               },
+               "value": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 1
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "Label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             },
+             "custom_field_%{custom_field_lov_entries_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "lov_entries"
+               },
+               "value": {
+                "type": "array",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 2
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "The label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "recording": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Recording ID",
+              "example": 1
+             },
+             "witness_statement_id": {
+              "type": "integer",
+              "description": "Witeness Statement ID",
+              "example": 8
+             },
+             "attachment": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Attachment ID",
+                "example": 30
+               },
+               "content_type": {
+                "type": "string",
+                "description": "Attachment Content Type",
+                "example": "audio/mp4"
+               },
+               "name": {
+                "type": "string",
+                "description": "Attachment name",
+                "example": "attachment.mp4"
+               },
+               "thumbnail_url": {
+                "type": "string",
+                "description": "Attachment thumbnail URL",
+                "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+                "nullable": true
+               },
+               "url": {
+                "type": "string",
+                "description": "Attachment URL",
+                "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+               },
+               "viewable_document_id": {
+                "type": "integer",
+                "description": "Attachment viewable document ID",
+                "example": 4,
+                "nullable": true
+               }
+              }
+             },
+             "captured_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "example": "John Doe"
+               },
+               "locale": {
+                "type": "string",
+                "example": "en-GB",
+                "nullable": true
+               },
+               "login": {
+                "type": "string",
+                "example": "test@example.com"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp of creation",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[date_received]': 'SOME_STRING_VALUE',\n    'filters[witness_id]': 'SOME_ARRAY_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Witness Statements list endpoint",
+      "description": "Get a list of Recycled Witness Statements for a given project.",
+      "endpoint": "GET /projects/{project_id}/recycle_bin/incidents/witness_statements",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-02-09",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.1#list-recycled-witness-statements"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/projects/{project_id}/recycle_bin/incidents/witness_statements/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Witness Statement ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Recycled Witness Statement",
+    "description": "Returns a specific Recycled Witness Statement",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Witness Statement ID",
+           "example": 99
+          },
+          "incident_id": {
+           "type": "integer",
+           "description": "Incident ID",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "title": "Incident Attachment",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "thumbnail_url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "name": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "example": "application/pdf"
+             },
+             "viewable": {
+              "type": "boolean",
+              "example": true
+             },
+             "can_be_viewed": {
+              "type": "boolean",
+              "example": true
+             }
+            }
+           }
+          },
+          "statement": {
+           "type": "string",
+           "description": "The account of the event by the witness in rich text form.",
+           "example": "<p>I witnessed what happened.</p>"
+          },
+          "statement_plain_text": {
+           "type": "string",
+           "description": "The account of the event by the witness in plain text form.",
+           "example": "I witnessed what happened."
+          },
+          "date_received": {
+           "type": "string",
+           "description": "Date that the Witness Statement was received.",
+           "format": "date",
+           "example": "2016-10-25"
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp of creation",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "deleted_at": {
+           "type": "string",
+           "description": "Timestamp of deletion",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z",
+           "nullable": true
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp of last update",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "witness": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "example": "John Doe"
+            }
+           }
+          },
+          "custom_fields": {
+           "type": "object",
+           "properties": {
+            "custom_field_%{custom_field_string_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "string"
+              },
+              "value": {
+               "type": "string",
+               "description": "The value of the custom field.",
+               "example": "custom field value"
+              }
+             }
+            },
+            "custom_field_%{custom_field_decimal_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "decimal"
+              },
+              "value": {
+               "type": "number",
+               "description": "The value of the custom field.",
+               "example": 2.2
+              }
+             }
+            },
+            "custom_field_%{custom_field_boolean_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "boolean"
+              },
+              "value": {
+               "type": "boolean",
+               "description": "The value of the custom field.",
+               "example": true
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entry_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entry"
+              },
+              "value": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "The unique identifier of the list of values (LOV) entry.",
+                 "example": 1
+                },
+                "label": {
+                 "type": "string",
+                 "description": "Label of the list of values (LOV) entry.",
+                 "example": "Open"
+                }
+               }
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entries_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entries"
+              },
+              "value": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 2
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "The label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "recording": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Recording ID",
+             "example": 1
+            },
+            "witness_statement_id": {
+             "type": "integer",
+             "description": "Witeness Statement ID",
+             "example": 8
+            },
+            "attachment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Attachment ID",
+               "example": 30
+              },
+              "content_type": {
+               "type": "string",
+               "description": "Attachment Content Type",
+               "example": "audio/mp4"
+              },
+              "name": {
+               "type": "string",
+               "description": "Attachment name",
+               "example": "attachment.mp4"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "Attachment thumbnail URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+               "nullable": true
+              },
+              "url": {
+               "type": "string",
+               "description": "Attachment URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+              },
+              "viewable_document_id": {
+               "type": "integer",
+               "description": "Attachment viewable document ID",
+               "example": 4,
+               "nullable": true
+              }
+             }
+            },
+            "captured_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "example": "John Doe"
+              },
+              "locale": {
+               "type": "string",
+               "example": "en-GB",
+               "nullable": true
+              },
+              "login": {
+               "type": "string",
+               "example": "test@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Recycled Witness Statement show endpoint",
+      "description": "Get a Recycled Witness Statement for a given project.",
+      "endpoint": "GET /projects/{project_id}/recycle_bin/incidents/witness_statements/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-02-09",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.1#show-recycled-witness-statement"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/projects/{project_id}/recycle_bin/incidents/witness_statements/{id}/restore": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Witness Statement ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Retrieve Recycled Witness Statement",
+    "description": "Retrieves a specific Recycled Witness Statement from the recycle bin",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"PATCH\", \"/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Updated Retrieve Recycled Witness Statement response status code",
+      "description": "When attempting to retrieve a recycled witness statement from a deleted incident, the response status\nwill be 409 instead of 403",
+      "endpoint": "PATCH /projects/{project_id}/recycle_bin/incidents/witness_statements/{id}/restore",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-02-09",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.1#retrieve-recycled-witness-statement"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/incidents/witness_statements": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Witness Statements",
+    "description": "Returns a list of Witness Statements for a given project.",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "incident_id",
+      "in": "query",
+      "required": false,
+      "description": "Incident ID. When provided, the list will be scoped to only the Witness Statements for a given Incident.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[date_received]",
+      "in": "query",
+      "description": "Return item(s) within the specified date received date range. This assumes the dates provided are in the project time zone.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[witness_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Witness (Party) ID.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[query]",
+      "in": "query",
+      "description": "Return item(s) containing query",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "created_at",
+        "date_received",
+        "witness"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Witness Statement ID",
+            "example": 99
+           },
+           "incident_id": {
+            "type": "integer",
+            "description": "Incident ID",
+            "example": 42
+           },
+           "attachments": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "title": "Incident Attachment",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 5324
+              },
+              "url": {
+               "type": "string",
+               "description": "URL",
+               "example": "http://www.example.com/"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "URL",
+               "example": "http://www.example.com/"
+              },
+              "name": {
+               "type": "string",
+               "description": "Filename",
+               "example": "january_receipt_copy.jpg"
+              },
+              "content_type": {
+               "type": "string",
+               "example": "application/pdf"
+              },
+              "viewable": {
+               "type": "boolean",
+               "example": true
+              },
+              "can_be_viewed": {
+               "type": "boolean",
+               "example": true
+              }
+             }
+            }
+           },
+           "statement": {
+            "type": "string",
+            "description": "The account of the event by the witness in rich text form.",
+            "example": "<p>I witnessed what happened.</p>"
+           },
+           "statement_plain_text": {
+            "type": "string",
+            "description": "The account of the event by the witness in plain text form.",
+            "example": "I witnessed what happened."
+           },
+           "date_received": {
+            "type": "string",
+            "description": "Date that the Witness Statement was received.",
+            "format": "date",
+            "example": "2016-10-25"
+           },
+           "created_at": {
+            "type": "string",
+            "description": "Timestamp of creation",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "deleted_at": {
+            "type": "string",
+            "description": "Timestamp of deletion",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z",
+            "nullable": true
+           },
+           "updated_at": {
+            "type": "string",
+            "description": "Timestamp of last update",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "witness": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "example": "John Doe"
+             }
+            }
+           },
+           "custom_fields": {
+            "type": "object",
+            "properties": {
+             "custom_field_%{custom_field_string_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "string"
+               },
+               "value": {
+                "type": "string",
+                "description": "The value of the custom field.",
+                "example": "custom field value"
+               }
+              }
+             },
+             "custom_field_%{custom_field_decimal_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "decimal"
+               },
+               "value": {
+                "type": "number",
+                "description": "The value of the custom field.",
+                "example": 2.2
+               }
+              }
+             },
+             "custom_field_%{custom_field_boolean_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "boolean"
+               },
+               "value": {
+                "type": "boolean",
+                "description": "The value of the custom field.",
+                "example": true
+               }
+              }
+             },
+             "custom_field_%{custom_field_lov_entry_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "lov_entry"
+               },
+               "value": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 1
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "Label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             },
+             "custom_field_%{custom_field_lov_entries_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "lov_entries"
+               },
+               "value": {
+                "type": "array",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 2
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "The label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "recording": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Recording ID",
+              "example": 1
+             },
+             "witness_statement_id": {
+              "type": "integer",
+              "description": "Witeness Statement ID",
+              "example": 8
+             },
+             "attachment": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Attachment ID",
+                "example": 30
+               },
+               "content_type": {
+                "type": "string",
+                "description": "Attachment Content Type",
+                "example": "audio/mp4"
+               },
+               "name": {
+                "type": "string",
+                "description": "Attachment name",
+                "example": "attachment.mp4"
+               },
+               "thumbnail_url": {
+                "type": "string",
+                "description": "Attachment thumbnail URL",
+                "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+                "nullable": true
+               },
+               "url": {
+                "type": "string",
+                "description": "Attachment URL",
+                "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+               },
+               "viewable_document_id": {
+                "type": "integer",
+                "description": "Attachment viewable document ID",
+                "example": 4,
+                "nullable": true
+               }
+              }
+             },
+             "captured_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "example": "John Doe"
+               },
+               "locale": {
+                "type": "string",
+                "example": "en-GB",
+                "nullable": true
+               },
+               "login": {
+                "type": "string",
+                "example": "test@example.com"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp of creation",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[date_received]': 'SOME_STRING_VALUE',\n    'filters[witness_id]': 'SOME_ARRAY_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users unless granted a view witness statements granular permission.",
+      "description": "Users with a readonly role will now be restricted from accessing witness statements endpoints unless they have been granted a view witness statements granular permission.",
+      "endpoint": "GET /projects/{project_id}/incidents/witness_statements",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-12-21",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#list-witness-statements"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Witness Statement",
+    "description": "Creates a Witness Statement.",
+    "tags": [
+     "Incidents"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "witness_statement"
+        ],
+        "properties": {
+         "witness_statement": {
+          "title": "IncidentWitnessStatementCreateParameters",
+          "type": "object",
+          "required": [
+           "incident_id",
+           "witness_id"
+          ],
+          "properties": {
+           "incident_id": {
+            "type": "integer",
+            "description": "The ID of the Incident"
+           },
+           "statement": {
+            "type": "string",
+            "description": "The account of the event by the witness in rich text form.",
+            "example": "<p>I witnessed what happened.</p>"
+           },
+           "date_received": {
+            "type": "string",
+            "description": "Date that the Witness Statement was received. This assumes the dates provided are in the project timezone.",
+            "format": "date",
+            "example": "2016-10-25"
+           },
+           "witness_id": {
+            "type": "integer",
+            "description": "Witness ID",
+            "example": 1
+           },
+           "upload_uuids": {
+            "type": "array",
+            "description": "Array of uploaded file UUIDs.",
+            "items": {
+             "type": "string",
+             "description": "UUID of uploaded file",
+             "example": "1ZE258W9K804SAJJZX19JVAB3R"
+            }
+           },
+           "drawing_revision_ids": {
+            "type": "array",
+            "description": "Drawing Revisions to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             4,
+             5
+            ]
+           },
+           "file_version_ids": {
+            "type": "array",
+            "description": "File Versions to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             6,
+             7
+            ]
+           },
+           "form_ids": {
+            "type": "array",
+            "description": "Forms to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             7,
+             8
+            ]
+           },
+           "image_ids": {
+            "type": "array",
+            "description": "Images to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             9,
+             10
+            ]
+           },
+           "custom_field_%{custom_field_definition_id}": {
+            "description": "Value of the custom field. The data type of the value passed in corresponds with the data_type of the Custom Field Definition.\nFor a lov_entry data_type the value passed in should be the ID of one of the Custom Field Definition's LOV Entries. For a lov_entries data_type the value passed in should be an array of IDs of the Custom Field Definition's LOV Entries.",
+            "example": "custom field value",
+            "oneOf": [
+             {
+              "type": "string",
+              "title": "string"
+             },
+             {
+              "type": "number",
+              "title": "number"
+             },
+             {
+              "type": "boolean",
+              "title": "boolean"
+             },
+             {
+              "type": "array",
+              "title": "array",
+              "items": {
+               "type": "integer"
+              }
+             }
+            ]
+           },
+           "recording": {
+            "type": "object",
+            "properties": {
+             "upload_id": {
+              "type": "string",
+              "description": "Recording Upload ID",
+              "example": "01JBD3HF2SA3JZ5AR107GTWF4E"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Witness Statement ID",
+           "example": 99
+          },
+          "incident_id": {
+           "type": "integer",
+           "description": "Incident ID",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "title": "Incident Attachment",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "thumbnail_url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "name": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "example": "application/pdf"
+             },
+             "viewable": {
+              "type": "boolean",
+              "example": true
+             },
+             "can_be_viewed": {
+              "type": "boolean",
+              "example": true
+             }
+            }
+           }
+          },
+          "statement": {
+           "type": "string",
+           "description": "The account of the event by the witness in rich text form.",
+           "example": "<p>I witnessed what happened.</p>"
+          },
+          "statement_plain_text": {
+           "type": "string",
+           "description": "The account of the event by the witness in plain text form.",
+           "example": "I witnessed what happened."
+          },
+          "date_received": {
+           "type": "string",
+           "description": "Date that the Witness Statement was received.",
+           "format": "date",
+           "example": "2016-10-25"
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp of creation",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "deleted_at": {
+           "type": "string",
+           "description": "Timestamp of deletion",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z",
+           "nullable": true
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp of last update",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "witness": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "example": "John Doe"
+            }
+           }
+          },
+          "custom_fields": {
+           "type": "object",
+           "properties": {
+            "custom_field_%{custom_field_string_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "string"
+              },
+              "value": {
+               "type": "string",
+               "description": "The value of the custom field.",
+               "example": "custom field value"
+              }
+             }
+            },
+            "custom_field_%{custom_field_decimal_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "decimal"
+              },
+              "value": {
+               "type": "number",
+               "description": "The value of the custom field.",
+               "example": 2.2
+              }
+             }
+            },
+            "custom_field_%{custom_field_boolean_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "boolean"
+              },
+              "value": {
+               "type": "boolean",
+               "description": "The value of the custom field.",
+               "example": true
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entry_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entry"
+              },
+              "value": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "The unique identifier of the list of values (LOV) entry.",
+                 "example": 1
+                },
+                "label": {
+                 "type": "string",
+                 "description": "Label of the list of values (LOV) entry.",
+                 "example": "Open"
+                }
+               }
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entries_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entries"
+              },
+              "value": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 2
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "The label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "recording": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Recording ID",
+             "example": 1
+            },
+            "witness_statement_id": {
+             "type": "integer",
+             "description": "Witeness Statement ID",
+             "example": 8
+            },
+            "attachment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Attachment ID",
+               "example": 30
+              },
+              "content_type": {
+               "type": "string",
+               "description": "Attachment Content Type",
+               "example": "audio/mp4"
+              },
+              "name": {
+               "type": "string",
+               "description": "Attachment name",
+               "example": "attachment.mp4"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "Attachment thumbnail URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+               "nullable": true
+              },
+              "url": {
+               "type": "string",
+               "description": "Attachment URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+              },
+              "viewable_document_id": {
+               "type": "integer",
+               "description": "Attachment viewable document ID",
+               "example": 4,
+               "nullable": true
+              }
+             }
+            },
+            "captured_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "example": "John Doe"
+              },
+              "locale": {
+               "type": "string",
+               "example": "en-GB",
+               "nullable": true
+              },
+              "login": {
+               "type": "string",
+               "example": "test@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    witness_statement: {\n      incident_id: 0,\n      statement: '<p>I witnessed what happened.</p>',\n      date_received: '2016-10-25',\n      witness_id: 1,\n      signature_attachment_id: 21,\n      signature_upload_id: '1ZE258W9K804SAJJZX19JVAB3R',\n      upload_uuids: ['1ZE258W9K804SAJJZX19JVAB3R'],\n      drawing_revision_ids: [4, 5],\n      file_version_ids: [6, 7],\n      form_ids: [7, 8],\n      image_ids: [9, 10],\n      'custom_field_%{custom_field_definition_id}': 'custom field value',\n      recording: {upload_id: '01JBD3HF2SA3JZ5AR107GTWF4E'}\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"witness_statement\\\":{\\\"incident_id\\\":0,\\\"statement\\\":\\\"<p>I witnessed what happened.</p>\\\",\\\"date_received\\\":\\\"2016-10-25\\\",\\\"witness_id\\\":1,\\\"signature_attachment_id\\\":21,\\\"signature_upload_id\\\":\\\"1ZE258W9K804SAJJZX19JVAB3R\\\",\\\"upload_uuids\\\":[\\\"1ZE258W9K804SAJJZX19JVAB3R\\\"],\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\",\\\"recording\\\":{\\\"upload_id\\\":\\\"01JBD3HF2SA3JZ5AR107GTWF4E\\\"}}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"witness_statement\":{\"incident_id\":0,\"statement\":\"<p>I witnessed what happened.</p>\",\"date_received\":\"2016-10-25\",\"witness_id\":1,\"signature_attachment_id\":21,\"signature_upload_id\":\"1ZE258W9K804SAJJZX19JVAB3R\",\"upload_uuids\":[\"1ZE258W9K804SAJJZX19JVAB3R\"],\"drawing_revision_ids\":[4,5],\"file_version_ids\":[6,7],\"form_ids\":[7,8],\"image_ids\":[9,10],\"custom_field_%{custom_field_definition_id}\":\"custom field value\",\"recording\":{\"upload_id\":\"01JBD3HF2SA3JZ5AR107GTWF4E\"}}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"witness_statement\\\":{\\\"incident_id\\\":0,\\\"statement\\\":\\\"<p>I witnessed what happened.</p>\\\",\\\"date_received\\\":\\\"2016-10-25\\\",\\\"witness_id\\\":1,\\\"signature_attachment_id\\\":21,\\\"signature_upload_id\\\":\\\"1ZE258W9K804SAJJZX19JVAB3R\\\",\\\"upload_uuids\\\":[\\\"1ZE258W9K804SAJJZX19JVAB3R\\\"],\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\",\\\"recording\\\":{\\\"upload_id\\\":\\\"01JBD3HF2SA3JZ5AR107GTWF4E\\\"}}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add Attachments by Reference",
+      "description": "Add attachments by image, drawing revision, file version, or form.",
+      "endpoint": "POST /projects/{project_id}/incidents/witness_statements",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-10-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#create-witness-statement"
+     },
+     {
+      "summary": "Add upload_id as a new parameter for Witness Statements' Recording on create",
+      "description": "Add upload_id as a new parameter for Witness Statements' Recording on create",
+      "endpoint": "POST /projects/{project_id}/incidents/witness_statements",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-02-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#create-witness-statement"
+     },
+     {
+      "summary": "Add signature attachment support to Witness Statement creation",
+      "description": "Added support for attaching a signature to a witness statement on create via signature_attachment_id, or the mobile-only signature_upload_id. When a signature is provided, captured_by is set to the current user.",
+      "endpoint": "POST /projects/{project_id}/incidents/witness_statements",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-21",
+      "versions": [
+       "1.0"
+      ],
+      "visibility": "private",
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#create-witness-statement"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/incidents/witness_statements/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Witness Statement ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Witness Statement",
+    "description": "Returns the specified Witness Statement",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Witness Statement ID",
+           "example": 99
+          },
+          "incident_id": {
+           "type": "integer",
+           "description": "Incident ID",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "title": "Incident Attachment",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "thumbnail_url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "name": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "example": "application/pdf"
+             },
+             "viewable": {
+              "type": "boolean",
+              "example": true
+             },
+             "can_be_viewed": {
+              "type": "boolean",
+              "example": true
+             }
+            }
+           }
+          },
+          "statement": {
+           "type": "string",
+           "description": "The account of the event by the witness in rich text form.",
+           "example": "<p>I witnessed what happened.</p>"
+          },
+          "statement_plain_text": {
+           "type": "string",
+           "description": "The account of the event by the witness in plain text form.",
+           "example": "I witnessed what happened."
+          },
+          "date_received": {
+           "type": "string",
+           "description": "Date that the Witness Statement was received.",
+           "format": "date",
+           "example": "2016-10-25"
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp of creation",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "deleted_at": {
+           "type": "string",
+           "description": "Timestamp of deletion",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z",
+           "nullable": true
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp of last update",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "witness": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "example": "John Doe"
+            }
+           }
+          },
+          "custom_fields": {
+           "type": "object",
+           "properties": {
+            "custom_field_%{custom_field_string_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "string"
+              },
+              "value": {
+               "type": "string",
+               "description": "The value of the custom field.",
+               "example": "custom field value"
+              }
+             }
+            },
+            "custom_field_%{custom_field_decimal_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "decimal"
+              },
+              "value": {
+               "type": "number",
+               "description": "The value of the custom field.",
+               "example": 2.2
+              }
+             }
+            },
+            "custom_field_%{custom_field_boolean_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "boolean"
+              },
+              "value": {
+               "type": "boolean",
+               "description": "The value of the custom field.",
+               "example": true
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entry_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entry"
+              },
+              "value": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "The unique identifier of the list of values (LOV) entry.",
+                 "example": 1
+                },
+                "label": {
+                 "type": "string",
+                 "description": "Label of the list of values (LOV) entry.",
+                 "example": "Open"
+                }
+               }
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entries_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entries"
+              },
+              "value": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 2
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "The label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "recording": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Recording ID",
+             "example": 1
+            },
+            "witness_statement_id": {
+             "type": "integer",
+             "description": "Witeness Statement ID",
+             "example": 8
+            },
+            "attachment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Attachment ID",
+               "example": 30
+              },
+              "content_type": {
+               "type": "string",
+               "description": "Attachment Content Type",
+               "example": "audio/mp4"
+              },
+              "name": {
+               "type": "string",
+               "description": "Attachment name",
+               "example": "attachment.mp4"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "Attachment thumbnail URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+               "nullable": true
+              },
+              "url": {
+               "type": "string",
+               "description": "Attachment URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+              },
+              "viewable_document_id": {
+               "type": "integer",
+               "description": "Attachment viewable document ID",
+               "example": 4,
+               "nullable": true
+              }
+             }
+            },
+            "captured_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "example": "John Doe"
+              },
+              "locale": {
+               "type": "string",
+               "example": "en-GB",
+               "nullable": true
+              },
+              "login": {
+               "type": "string",
+               "example": "test@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users unless granted a view witness statements granular permission.",
+      "description": "Users with a readonly role will now be restricted from accessing witness statements endpoints unless they have been granted a view witness statements granular permission.",
+      "endpoint": "GET /projects/{project_id}/incidents/witness_statements/{id}",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-12-21",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#show-witness-statement"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Witness Statement",
+    "description": "Updates the specified Witness Statement",
+    "tags": [
+     "Incidents"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "witness_statement"
+        ],
+        "properties": {
+         "witness_statement": {
+          "title": "IncidentWitnessStatementUpdateParameters",
+          "type": "object",
+          "properties": {
+           "statement": {
+            "type": "string",
+            "description": "The account of the event by the witness in rich text form.",
+            "example": "<p>I witnessed what happened.</p>"
+           },
+           "date_received": {
+            "type": "string",
+            "description": "Date that the Witness Statement was received. This assumes the dates provided are in the project timezone.",
+            "format": "date",
+            "example": "2016-10-25"
+           },
+           "witness_id": {
+            "type": "integer",
+            "description": "Witness ID",
+            "example": 1
+           },
+           "upload_uuids": {
+            "type": "array",
+            "description": "Array of uploaded file UUIDs.",
+            "items": {
+             "type": "string",
+             "description": "UUID of uploaded file",
+             "example": "1ZE258W9K804SAJJZX19JVAB3R"
+            }
+           },
+           "drawing_revision_ids": {
+            "type": "array",
+            "description": "Drawing Revisions to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             4,
+             5
+            ]
+           },
+           "file_version_ids": {
+            "type": "array",
+            "description": "File Versions to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             6,
+             7
+            ]
+           },
+           "form_ids": {
+            "type": "array",
+            "description": "Forms to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             7,
+             8
+            ]
+           },
+           "image_ids": {
+            "type": "array",
+            "description": "Images to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             9,
+             10
+            ]
+           },
+           "custom_field_%{custom_field_definition_id}": {
+            "description": "Value of the custom field. The data type of the value passed in corresponds with the data_type of the Custom Field Definition.\nFor a lov_entry data_type the value passed in should be the ID of one of the Custom Field Definition's LOV Entries. For a lov_entries data_type the value passed in should be an array of IDs of the Custom Field Definition's LOV Entries.",
+            "example": "custom field value",
+            "oneOf": [
+             {
+              "type": "string",
+              "title": "string"
+             },
+             {
+              "type": "number",
+              "title": "number"
+             },
+             {
+              "type": "boolean",
+              "title": "boolean"
+             },
+             {
+              "type": "array",
+              "title": "array",
+              "items": {
+               "type": "integer"
+              }
+             }
+            ]
+           },
+           "recording": {
+            "type": "object",
+            "properties": {
+             "upload_id": {
+              "type": "string",
+              "description": "Recording Upload ID",
+              "example": "01JBD3HF2SA3JZ5AR107GTWF4E"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Witness Statement ID",
+           "example": 99
+          },
+          "incident_id": {
+           "type": "integer",
+           "description": "Incident ID",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "title": "Incident Attachment",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "thumbnail_url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "name": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "example": "application/pdf"
+             },
+             "viewable": {
+              "type": "boolean",
+              "example": true
+             },
+             "can_be_viewed": {
+              "type": "boolean",
+              "example": true
+             }
+            }
+           }
+          },
+          "statement": {
+           "type": "string",
+           "description": "The account of the event by the witness in rich text form.",
+           "example": "<p>I witnessed what happened.</p>"
+          },
+          "statement_plain_text": {
+           "type": "string",
+           "description": "The account of the event by the witness in plain text form.",
+           "example": "I witnessed what happened."
+          },
+          "date_received": {
+           "type": "string",
+           "description": "Date that the Witness Statement was received.",
+           "format": "date",
+           "example": "2016-10-25"
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp of creation",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "deleted_at": {
+           "type": "string",
+           "description": "Timestamp of deletion",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z",
+           "nullable": true
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp of last update",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "witness": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "example": "John Doe"
+            }
+           }
+          },
+          "custom_fields": {
+           "type": "object",
+           "properties": {
+            "custom_field_%{custom_field_string_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "string"
+              },
+              "value": {
+               "type": "string",
+               "description": "The value of the custom field.",
+               "example": "custom field value"
+              }
+             }
+            },
+            "custom_field_%{custom_field_decimal_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "decimal"
+              },
+              "value": {
+               "type": "number",
+               "description": "The value of the custom field.",
+               "example": 2.2
+              }
+             }
+            },
+            "custom_field_%{custom_field_boolean_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "boolean"
+              },
+              "value": {
+               "type": "boolean",
+               "description": "The value of the custom field.",
+               "example": true
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entry_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entry"
+              },
+              "value": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "The unique identifier of the list of values (LOV) entry.",
+                 "example": 1
+                },
+                "label": {
+                 "type": "string",
+                 "description": "Label of the list of values (LOV) entry.",
+                 "example": "Open"
+                }
+               }
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entries_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entries"
+              },
+              "value": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 2
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "The label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "recording": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Recording ID",
+             "example": 1
+            },
+            "witness_statement_id": {
+             "type": "integer",
+             "description": "Witeness Statement ID",
+             "example": 8
+            },
+            "attachment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Attachment ID",
+               "example": 30
+              },
+              "content_type": {
+               "type": "string",
+               "description": "Attachment Content Type",
+               "example": "audio/mp4"
+              },
+              "name": {
+               "type": "string",
+               "description": "Attachment name",
+               "example": "attachment.mp4"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "Attachment thumbnail URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+               "nullable": true
+              },
+              "url": {
+               "type": "string",
+               "description": "Attachment URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+              },
+              "viewable_document_id": {
+               "type": "integer",
+               "description": "Attachment viewable document ID",
+               "example": 4,
+               "nullable": true
+              }
+             }
+            },
+            "captured_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "example": "John Doe"
+              },
+              "locale": {
+               "type": "string",
+               "example": "en-GB",
+               "nullable": true
+              },
+              "login": {
+               "type": "string",
+               "example": "test@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    witness_statement: {\n      statement: '<p>I witnessed what happened.</p>',\n      date_received: '2016-10-25',\n      witness_id: 1,\n      signature_attachment_id: 21,\n      signature_upload_id: '1ZE258W9K804SAJJZX19JVAB3R',\n      upload_uuids: ['1ZE258W9K804SAJJZX19JVAB3R'],\n      drawing_revision_ids: [4, 5],\n      file_version_ids: [6, 7],\n      form_ids: [7, 8],\n      image_ids: [9, 10],\n      'custom_field_%{custom_field_definition_id}': 'custom field value',\n      recording: {upload_id: '01JBD3HF2SA3JZ5AR107GTWF4E'}\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"witness_statement\\\":{\\\"statement\\\":\\\"<p>I witnessed what happened.</p>\\\",\\\"date_received\\\":\\\"2016-10-25\\\",\\\"witness_id\\\":1,\\\"signature_attachment_id\\\":21,\\\"signature_upload_id\\\":\\\"1ZE258W9K804SAJJZX19JVAB3R\\\",\\\"upload_uuids\\\":[\\\"1ZE258W9K804SAJJZX19JVAB3R\\\"],\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\",\\\"recording\\\":{\\\"upload_id\\\":\\\"01JBD3HF2SA3JZ5AR107GTWF4E\\\"}}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"witness_statement\":{\"statement\":\"<p>I witnessed what happened.</p>\",\"date_received\":\"2016-10-25\",\"witness_id\":1,\"signature_attachment_id\":21,\"signature_upload_id\":\"1ZE258W9K804SAJJZX19JVAB3R\",\"upload_uuids\":[\"1ZE258W9K804SAJJZX19JVAB3R\"],\"drawing_revision_ids\":[4,5],\"file_version_ids\":[6,7],\"form_ids\":[7,8],\"image_ids\":[9,10],\"custom_field_%{custom_field_definition_id}\":\"custom field value\",\"recording\":{\"upload_id\":\"01JBD3HF2SA3JZ5AR107GTWF4E\"}}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"witness_statement\\\":{\\\"statement\\\":\\\"<p>I witnessed what happened.</p>\\\",\\\"date_received\\\":\\\"2016-10-25\\\",\\\"witness_id\\\":1,\\\"signature_attachment_id\\\":21,\\\"signature_upload_id\\\":\\\"1ZE258W9K804SAJJZX19JVAB3R\\\",\\\"upload_uuids\\\":[\\\"1ZE258W9K804SAJJZX19JVAB3R\\\"],\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\",\\\"recording\\\":{\\\"upload_id\\\":\\\"01JBD3HF2SA3JZ5AR107GTWF4E\\\"}}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Update Attachments by Reference",
+      "description": "Updated the UPDATE request so attachments by image, drawing revision, file version, and form are additive.\n  - Will not replace existing attachments",
+      "endpoint": "PATCH /projects/{project_id}/incidents/witness_statements/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-10-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#update-witness-statement"
+     },
+     {
+      "summary": "Add upload_id as a new parameter for Witness Statements' Recording on update",
+      "description": "Add upload_id as a new parameter for Witness Statements' Recording on update",
+      "endpoint": "PATCH /projects/{project_id}/incidents/witness_statements/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-02-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#update-witness-statement"
+     },
+     {
+      "summary": "Add signature attachment support to Witness Statement updates",
+      "description": "Added support for adding, replacing, or clearing a signature attachment on witness statement updates via signature_attachment_id. Updating any other witness statement field without providing a new signature clears the existing signature.",
+      "endpoint": "PATCH /projects/{project_id}/incidents/witness_statements/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-16",
+      "versions": [
+       "1.0"
+      ],
+      "visibility": "private",
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "witness-statements?version=1.0#update-witness-statement"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Destroy Witness Statement",
+    "description": "Sends the specified Witness Statement to the Recycle Bin",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/witness_statements": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID. When provided, the list will be scoped to only the Recycled Witness Statements for a given Incident.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "filters[created_at]",
+     "in": "query",
+     "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+     "required": false,
+     "schema": {
+      "type": "string",
+      "format": "date"
+     }
+    },
+    {
+     "name": "filters[date_received]",
+     "in": "query",
+     "description": "Return item(s) within the specified date received date range. This assumes the dates provided are in the project time zone.",
+     "required": false,
+     "schema": {
+      "type": "string",
+      "format": "date"
+     }
+    },
+    {
+     "name": "filters[witness_id]",
+     "in": "query",
+     "description": "Return item(s) with the specified Witness (Party) ID.",
+     "required": false,
+     "style": "form",
+     "explode": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[query]",
+     "in": "query",
+     "description": "Return item(s) containing query",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "sort",
+     "in": "query",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "created_at",
+       "date_received",
+       "witness"
+      ]
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Recycled Witness Statements",
+    "description": "Returns a list of Recycled Witness Statements for a given project (or Incident, if incident_id is present).",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Witness Statement ID",
+            "example": 99
+           },
+           "incident_id": {
+            "type": "integer",
+            "description": "Incident ID",
+            "example": 42
+           },
+           "attachments": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "title": "Incident Attachment",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 5324
+              },
+              "url": {
+               "type": "string",
+               "description": "URL",
+               "example": "http://www.example.com/"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "URL",
+               "example": "http://www.example.com/"
+              },
+              "name": {
+               "type": "string",
+               "description": "Filename",
+               "example": "january_receipt_copy.jpg"
+              },
+              "content_type": {
+               "type": "string",
+               "example": "application/pdf"
+              },
+              "viewable": {
+               "type": "boolean",
+               "example": true
+              },
+              "can_be_viewed": {
+               "type": "boolean",
+               "example": true
+              }
+             }
+            }
+           },
+           "statement": {
+            "type": "string",
+            "description": "The account of the event by the witness in rich text form.",
+            "example": "<p>I witnessed what happened.</p>"
+           },
+           "statement_plain_text": {
+            "type": "string",
+            "description": "The account of the event by the witness in plain text form.",
+            "example": "I witnessed what happened."
+           },
+           "date_received": {
+            "type": "string",
+            "description": "Date that the Witness Statement was received.",
+            "format": "date",
+            "example": "2016-10-25"
+           },
+           "created_at": {
+            "type": "string",
+            "description": "Timestamp of creation",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "deleted_at": {
+            "type": "string",
+            "description": "Timestamp of deletion",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z",
+            "nullable": true
+           },
+           "updated_at": {
+            "type": "string",
+            "description": "Timestamp of last update",
+            "format": "date-time",
+            "example": "2016-10-25T17:53:35Z"
+           },
+           "witness": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "example": "John Doe"
+             }
+            }
+           },
+           "custom_fields": {
+            "type": "object",
+            "properties": {
+             "custom_field_%{custom_field_string_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "string"
+               },
+               "value": {
+                "type": "string",
+                "description": "The value of the custom field.",
+                "example": "custom field value"
+               }
+              }
+             },
+             "custom_field_%{custom_field_decimal_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "decimal"
+               },
+               "value": {
+                "type": "number",
+                "description": "The value of the custom field.",
+                "example": 2.2
+               }
+              }
+             },
+             "custom_field_%{custom_field_boolean_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "boolean"
+               },
+               "value": {
+                "type": "boolean",
+                "description": "The value of the custom field.",
+                "example": true
+               }
+              }
+             },
+             "custom_field_%{custom_field_lov_entry_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "lov_entry"
+               },
+               "value": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 1
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "Label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             },
+             "custom_field_%{custom_field_lov_entries_definition_id}": {
+              "type": "object",
+              "properties": {
+               "data_type": {
+                "type": "string",
+                "description": "The data type of the Custom Field Definition.",
+                "example": "lov_entries"
+               },
+               "value": {
+                "type": "array",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 2
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "The label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "recording": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Recording ID",
+              "example": 1
+             },
+             "witness_statement_id": {
+              "type": "integer",
+              "description": "Witeness Statement ID",
+              "example": 8
+             },
+             "attachment": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Attachment ID",
+                "example": 30
+               },
+               "content_type": {
+                "type": "string",
+                "description": "Attachment Content Type",
+                "example": "audio/mp4"
+               },
+               "name": {
+                "type": "string",
+                "description": "Attachment name",
+                "example": "attachment.mp4"
+               },
+               "thumbnail_url": {
+                "type": "string",
+                "description": "Attachment thumbnail URL",
+                "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+                "nullable": true
+               },
+               "url": {
+                "type": "string",
+                "description": "Attachment URL",
+                "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+               },
+               "viewable_document_id": {
+                "type": "integer",
+                "description": "Attachment viewable document ID",
+                "example": 4,
+                "nullable": true
+               }
+              }
+             },
+             "captured_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "example": "John Doe"
+               },
+               "locale": {
+                "type": "string",
+                "example": "en-GB",
+                "nullable": true
+               },
+               "login": {
+                "type": "string",
+                "example": "test@example.com"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp of creation",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[date_received]': 'SOME_STRING_VALUE',\n    'filters[witness_id]': 'SOME_ARRAY_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements?incident_id=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bdate_received%5D=SOME_STRING_VALUE&filters%5Bwitness_id%5D=SOME_ARRAY_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/witness_statements/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Witness Statement ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Recycled Witness Statement",
+    "description": "Returns a specific Recycled Witness Statement",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Witness Statement ID",
+           "example": 99
+          },
+          "incident_id": {
+           "type": "integer",
+           "description": "Incident ID",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "title": "Incident Attachment",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "thumbnail_url": {
+              "type": "string",
+              "description": "URL",
+              "example": "http://www.example.com/"
+             },
+             "name": {
+              "type": "string",
+              "description": "Filename",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "example": "application/pdf"
+             },
+             "viewable": {
+              "type": "boolean",
+              "example": true
+             },
+             "can_be_viewed": {
+              "type": "boolean",
+              "example": true
+             }
+            }
+           }
+          },
+          "statement": {
+           "type": "string",
+           "description": "The account of the event by the witness in rich text form.",
+           "example": "<p>I witnessed what happened.</p>"
+          },
+          "statement_plain_text": {
+           "type": "string",
+           "description": "The account of the event by the witness in plain text form.",
+           "example": "I witnessed what happened."
+          },
+          "date_received": {
+           "type": "string",
+           "description": "Date that the Witness Statement was received.",
+           "format": "date",
+           "example": "2016-10-25"
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp of creation",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "deleted_at": {
+           "type": "string",
+           "description": "Timestamp of deletion",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z",
+           "nullable": true
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp of last update",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "witness": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "example": "John Doe"
+            }
+           }
+          },
+          "custom_fields": {
+           "type": "object",
+           "properties": {
+            "custom_field_%{custom_field_string_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "string"
+              },
+              "value": {
+               "type": "string",
+               "description": "The value of the custom field.",
+               "example": "custom field value"
+              }
+             }
+            },
+            "custom_field_%{custom_field_decimal_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "decimal"
+              },
+              "value": {
+               "type": "number",
+               "description": "The value of the custom field.",
+               "example": 2.2
+              }
+             }
+            },
+            "custom_field_%{custom_field_boolean_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "boolean"
+              },
+              "value": {
+               "type": "boolean",
+               "description": "The value of the custom field.",
+               "example": true
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entry_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entry"
+              },
+              "value": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "The unique identifier of the list of values (LOV) entry.",
+                 "example": 1
+                },
+                "label": {
+                 "type": "string",
+                 "description": "Label of the list of values (LOV) entry.",
+                 "example": "Open"
+                }
+               }
+              }
+             }
+            },
+            "custom_field_%{custom_field_lov_entries_definition_id}": {
+             "type": "object",
+             "properties": {
+              "data_type": {
+               "type": "string",
+               "description": "The data type of the Custom Field Definition.",
+               "example": "lov_entries"
+              },
+              "value": {
+               "type": "array",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "The unique identifier of the list of values (LOV) entry.",
+                  "example": 2
+                 },
+                 "label": {
+                  "type": "string",
+                  "description": "The label of the list of values (LOV) entry.",
+                  "example": "Open"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "recording": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Recording ID",
+             "example": 1
+            },
+            "witness_statement_id": {
+             "type": "integer",
+             "description": "Witeness Statement ID",
+             "example": 8
+            },
+            "attachment": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Attachment ID",
+               "example": 30
+              },
+              "content_type": {
+               "type": "string",
+               "description": "Attachment Content Type",
+               "example": "audio/mp4"
+              },
+              "name": {
+               "type": "string",
+               "description": "Attachment name",
+               "example": "attachment.mp4"
+              },
+              "thumbnail_url": {
+               "type": "string",
+               "description": "Attachment thumbnail URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment-thumbnail.mp4",
+               "nullable": true
+              },
+              "url": {
+               "type": "string",
+               "description": "Attachment URL",
+               "example": "http://example.com/v4/d/us-east-1/attachment.mp4"
+              },
+              "viewable_document_id": {
+               "type": "integer",
+               "description": "Attachment viewable document ID",
+               "example": 4,
+               "nullable": true
+              }
+             }
+            },
+            "captured_by": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "example": "John Doe"
+              },
+              "locale": {
+               "type": "string",
+               "example": "en-GB",
+               "nullable": true
+              },
+              "login": {
+               "type": "string",
+               "example": "test@example.com"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/witness_statements/{id}/restore": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Witness Statement ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Retrieve Recycled Witness Statement",
+    "description": "Retrieves a specific Recycled Witness Statement from the recycle bin",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/witness_statements/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

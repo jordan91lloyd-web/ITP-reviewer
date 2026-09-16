@@ -1,0 +1,2685 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Checklist Schedules",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Inspections",
+  "x-resource-name": "Checklist Schedules",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/checklist/schedules": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Checklist (Inspection) Schedules",
+    "description": "Returns the Checklist Schedules from Checklists (Inspections) on the Project",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "parameters": [
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[inspection_type_id]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified Checklist Type IDs",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[frequency]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified Frequency Types",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "filters[location_id]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified Location IDs",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[list_template_id]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified Inspection Template IDs",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[assignee_id]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified Assignee IDs",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[first_inspection_due_at]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified First Inspection Due Date",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "format": "date"
+       }
+      }
+     },
+     {
+      "name": "filters[ends_at]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified Last Inspection Due Date.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "format": "date"
+       }
+      }
+     },
+     {
+      "name": "filters[ended]",
+      "in": "query",
+      "description": "Return schedule(s) that are finished when true, returns unfinished schedule(s) otherwise",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[equipment_id]",
+      "in": "query",
+      "description": "Return schedule(s) with the specified Equipment IDs",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort schedule(s) by the chosen param; check below for a list of options. The direction of sorting is ascending by default; for descending sort, insert the - symbol before the param.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "name",
+        "location_id",
+        "first_inspection_due_at",
+        "ends_at",
+        "frequency",
+        "inspections_created",
+        "inspection_template_name",
+        "inspection_type_name",
+        "location_name",
+        "inspection_type_then_name"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "title": "Checklist Schedule",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "ID",
+            "example": 21
+           },
+           "name": {
+            "type": "string",
+            "description": "Name",
+            "example": "Framing"
+           },
+           "first_inspection_due_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due at timestamp of first inspection"
+           },
+           "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due at timestamp of last inspection",
+            "example": "2012-10-23T21:39:40Z"
+           },
+           "next_due_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due at timestamp of next inspection to be created",
+            "example": "2012-10-23T21:39:40Z"
+           },
+           "frequency": {
+            "type": "string",
+            "description": "Name",
+            "example": "Weekly"
+           },
+           "inspections_created": {
+            "type": "integer",
+            "description": "Number of inspections created",
+            "example": 9
+           },
+           "total_inspections_scheduled": {
+            "type": "integer",
+            "description": "Total amount of inpections that will be created",
+            "example": 50
+           },
+           "inspection_template": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID"
+             },
+             "attachment_ids": {
+              "type": "array",
+              "items": {
+               "type": "integer",
+               "description": "Attachment IDs",
+               "example": 1
+              }
+             },
+             "description": {
+              "type": "string",
+              "description": "Description"
+             },
+             "inspection_type": {
+              "type": "object",
+              "description": "Inspection Type",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Quality"
+               }
+              }
+             },
+             "name": {
+              "type": "string",
+              "description": "Name"
+             },
+             "trade_id": {
+              "type": "integer",
+              "description": "Trade ID",
+              "example": 56
+             }
+            }
+           },
+           "location_id": {
+            "type": "integer",
+            "description": "Location ID",
+            "example": 3
+           },
+           "assignee_ids": {
+            "type": "array",
+            "items": {
+             "type": "integer",
+             "description": "User IDs assigned to the schedule",
+             "example": 1
+            }
+           },
+           "point_of_contact_id": {
+            "type": "integer",
+            "description": "Point of contact ID",
+            "example": 1
+           },
+           "responsible_contractor_id": {
+            "type": "integer",
+            "description": "ID of Vendor responsible for the work being inspected",
+            "example": 1
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of creation",
+            "example": "2012-10-23T21:39:40Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of update",
+            "example": "2012-10-23T21:39:40Z"
+           },
+           "equipment_id": {
+            "type": "string",
+            "description": "Equipment ID",
+            "example": "01J9BV3N9YQ34CDYA0G4J8R95R"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules',\n  qs: {\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[inspection_type_id]': 'SOME_ARRAY_VALUE',\n    'filters[frequency]': 'SOME_ARRAY_VALUE',\n    'filters[location_id]': 'SOME_ARRAY_VALUE',\n    'filters[list_template_id]': 'SOME_ARRAY_VALUE',\n    'filters[assignee_id]': 'SOME_ARRAY_VALUE',\n    'filters[first_inspection_due_at]': 'SOME_ARRAY_VALUE',\n    'filters[ends_at]': 'SOME_ARRAY_VALUE',\n    'filters[ended]': 'SOME_BOOLEAN_VALUE',\n    'filters[equipment_id]': 'SOME_ARRAY_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules?filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Binspection_type_id%5D=SOME_ARRAY_VALUE&filters%5Bfrequency%5D=SOME_ARRAY_VALUE&filters%5Blocation_id%5D=SOME_ARRAY_VALUE&filters%5Blist_template_id%5D=SOME_ARRAY_VALUE&filters%5Bassignee_id%5D=SOME_ARRAY_VALUE&filters%5Bfirst_inspection_due_at%5D=SOME_ARRAY_VALUE&filters%5Bends_at%5D=SOME_ARRAY_VALUE&filters%5Bended%5D=SOME_BOOLEAN_VALUE&filters%5Bequipment_id%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules?filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Binspection_type_id%5D=SOME_ARRAY_VALUE&filters%5Bfrequency%5D=SOME_ARRAY_VALUE&filters%5Blocation_id%5D=SOME_ARRAY_VALUE&filters%5Blist_template_id%5D=SOME_ARRAY_VALUE&filters%5Bassignee_id%5D=SOME_ARRAY_VALUE&filters%5Bfirst_inspection_due_at%5D=SOME_ARRAY_VALUE&filters%5Bends_at%5D=SOME_ARRAY_VALUE&filters%5Bended%5D=SOME_BOOLEAN_VALUE&filters%5Bequipment_id%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules?filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Binspection_type_id%5D=SOME_ARRAY_VALUE&filters%5Bfrequency%5D=SOME_ARRAY_VALUE&filters%5Blocation_id%5D=SOME_ARRAY_VALUE&filters%5Blist_template_id%5D=SOME_ARRAY_VALUE&filters%5Bassignee_id%5D=SOME_ARRAY_VALUE&filters%5Bfirst_inspection_due_at%5D=SOME_ARRAY_VALUE&filters%5Bends_at%5D=SOME_ARRAY_VALUE&filters%5Bended%5D=SOME_BOOLEAN_VALUE&filters%5Bequipment_id%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Checklist (Inspection) Schedules index endpoint",
+      "description": "List Project Checklist (Inspection) Schedules.",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-07-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#list-checklist-inspection-schedules"
+     },
+     {
+      "summary": "Added more sorting options to Project Checklist (Inspection) Schedules",
+      "description": "Added new options to sort  Project Checklist (Inspection) Schedules:\n  - frequency_type_id\n  - inspections_created\n  - inspection_template_name\n  - inspection_type_name\n  - location_name",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-09-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#list-checklist-inspection-schedules"
+     },
+     {
+      "summary": "Updated names and added more filter options to Project Checklist (Inspection) Schedules",
+      "description": "Added new options to filter Project Checklist (Inspection) Schedules:\n  - list_template_id\n  - assignee_id\n  - inspection_type_id\nRenamed options to filter Project Checklist (Inspection) Schedules:\n  - first_inspection_due_at (replacing first_due_date)\n  - last_inspection_due_at (replacing end_by_date)",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-09-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#list-checklist-inspection-schedules"
+     },
+     {
+      "summary": "Added new sort option to Project Checklist (Inspection) Schedules",
+      "description": "Added new option to sort Project Checklist (Inspection) Schedules:\n  - inspection_type_then_name (sorts by inspection type name and then by schedule name)",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-10-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#list-checklist-inspection-schedules"
+     },
+     {
+      "summary": "Updated last_inspection_due_at key to ends_at for Checklist (Inspection) Schedules index endpoint.",
+      "description": "Updated last_inspection_due_at key to ends_at for Checklist (Inspection) Schedules index endpoint",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-10-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#list-checklist-inspection-schedules"
+     },
+     {
+      "summary": "Added equipment_id filter option to Project Checklist (Inspection) Schedules",
+      "description": "Added equipment_id filter option to Project Checklist (Inspection) Schedules",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-10-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#list-checklist-inspection-schedules"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Checklist (Inspection) Schedule",
+    "description": "Creates a Checklist Schedule from a Checklist (Inspection) Template on the Project",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "ChecklistScheduleBody",
+        "type": "object",
+        "required": [
+         "schedule"
+        ],
+        "properties": {
+         "schedule": {
+          "title": "Checklist Schedule",
+          "type": "object",
+          "description": "Checklist Schedule object",
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "The name for the Checklist Schedule.",
+            "example": "New Checklist Schedule"
+           },
+           "days_created_before_due_date": {
+            "type": "integer",
+            "description": "The number of days an Inspection is to be created before the due date",
+            "example": 3
+           },
+           "inspection_template_id": {
+            "type": "integer",
+            "description": "The ID of the Inspection Template to create the Schedule from.",
+            "example": 23
+           },
+           "first_inspection_due_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp indicating when the first Inspection in the Schedule should be due. Cannot be in the past.",
+            "example": "2021-09-23T11:34:27Z"
+           },
+           "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp indicating when the last Inspection in the Schedule should be due. Not used when frequency is once.",
+            "example": "2023-10-23T11:34:27Z"
+           },
+           "frequency": {
+            "type": "string",
+            "description": "The frequency at which Inspections will be created by the Schedule.",
+            "example": "monthly",
+            "enum": [
+             "once",
+             "once_every_two_weeks",
+             "daily",
+             "weekly",
+             "monthly",
+             "quarterly",
+             "twice_yearly",
+             "yearly"
+            ]
+           },
+           "location_id": {
+            "type": "integer",
+            "description": "The ID of the Location to set on the Schedule.",
+            "example": 42
+           },
+           "point_of_contact_id": {
+            "type": "integer",
+            "description": "The ID of a User to be set as the of the point of contact on the Schedule",
+            "example": 42
+           },
+           "responsible_contractor_id": {
+            "type": "integer",
+            "description": "The ID of a vendor to set as the responsible contractor on the Schedule.",
+            "example": 76
+           },
+           "specification_section_id": {
+            "type": "integer",
+            "description": "The ID of the specification section to set on the Schedule.",
+            "example": 178
+           },
+           "assignee_ids": {
+            "type": "array",
+            "items": {
+             "type": "integer",
+             "description": "The ID of a user to set as an assignee on the Schedule.",
+             "example": 12
+            }
+           },
+           "distribution_member_ids": {
+            "type": "array",
+            "items": {
+             "type": "integer",
+             "description": "The ID of a user to set on the distribution list for the Schedule.",
+             "example": 93
+            }
+           },
+           "equipment_id": {
+            "type": "string",
+            "description": "The ID of the Equipment to set on the Schedule.",
+            "example": "01J9BV3N9YQ34CDYA0G4J8R95R"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Checklist Schedule",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 21
+          },
+          "name": {
+           "type": "string",
+           "description": "Name",
+           "example": "Framing"
+          },
+          "first_inspection_due_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of first inspection"
+          },
+          "ends_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of last inspection",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "next_due_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of next inspection to be created",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "frequency": {
+           "type": "string",
+           "description": "Name",
+           "example": "Weekly"
+          },
+          "inspections_created": {
+           "type": "integer",
+           "description": "Number of inspections created",
+           "example": 9
+          },
+          "total_inspections_scheduled": {
+           "type": "integer",
+           "description": "Total amount of inpections that will be created",
+           "example": 50
+          },
+          "inspection_template": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID"
+            },
+            "attachment_ids": {
+             "type": "array",
+             "items": {
+              "type": "integer",
+              "description": "Attachment IDs",
+              "example": 1
+             }
+            },
+            "description": {
+             "type": "string",
+             "description": "Description"
+            },
+            "inspection_type": {
+             "type": "object",
+             "description": "Inspection Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Name",
+               "example": "Quality"
+              }
+             }
+            },
+            "name": {
+             "type": "string",
+             "description": "Name"
+            },
+            "trade_id": {
+             "type": "integer",
+             "description": "Trade ID",
+             "example": 56
+            }
+           }
+          },
+          "location_id": {
+           "type": "integer",
+           "description": "Location ID",
+           "example": 3
+          },
+          "assignee_ids": {
+           "type": "array",
+           "items": {
+            "type": "integer",
+            "description": "User IDs assigned to the schedule",
+            "example": 1
+           }
+          },
+          "point_of_contact_id": {
+           "type": "integer",
+           "description": "Point of contact ID",
+           "example": 1
+          },
+          "responsible_contractor_id": {
+           "type": "integer",
+           "description": "ID of Vendor responsible for the work being inspected",
+           "example": 1
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of creation",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of update",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "equipment_id": {
+           "type": "string",
+           "description": "Equipment ID",
+           "example": "01J9BV3N9YQ34CDYA0G4J8R95R"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    schedule: {\n      name: 'New Checklist Schedule',\n      days_created_before_due_date: 3,\n      inspection_template_id: 23,\n      first_inspection_due_at: '2021-09-23T11:34:27Z',\n      ends_at: '2023-10-23T11:34:27Z',\n      frequency: 'monthly',\n      location_id: 42,\n      point_of_contact_id: 42,\n      responsible_contractor_id: 76,\n      specification_section_id: 178,\n      assignee_ids: [12],\n      distribution_member_ids: [93],\n      equipment_id: '01J9BV3N9YQ34CDYA0G4J8R95R'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"schedule\\\":{\\\"name\\\":\\\"New Checklist Schedule\\\",\\\"days_created_before_due_date\\\":3,\\\"inspection_template_id\\\":23,\\\"first_inspection_due_at\\\":\\\"2021-09-23T11:34:27Z\\\",\\\"ends_at\\\":\\\"2023-10-23T11:34:27Z\\\",\\\"frequency\\\":\\\"monthly\\\",\\\"location_id\\\":42,\\\"point_of_contact_id\\\":42,\\\"responsible_contractor_id\\\":76,\\\"specification_section_id\\\":178,\\\"assignee_ids\\\":[12],\\\"distribution_member_ids\\\":[93],\\\"equipment_id\\\":\\\"01J9BV3N9YQ34CDYA0G4J8R95R\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"schedule\":{\"name\":\"New Checklist Schedule\",\"days_created_before_due_date\":3,\"inspection_template_id\":23,\"first_inspection_due_at\":\"2021-09-23T11:34:27Z\",\"ends_at\":\"2023-10-23T11:34:27Z\",\"frequency\":\"monthly\",\"location_id\":42,\"point_of_contact_id\":42,\"responsible_contractor_id\":76,\"specification_section_id\":178,\"assignee_ids\":[12],\"distribution_member_ids\":[93],\"equipment_id\":\"01J9BV3N9YQ34CDYA0G4J8R95R\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"schedule\\\":{\\\"name\\\":\\\"New Checklist Schedule\\\",\\\"days_created_before_due_date\\\":3,\\\"inspection_template_id\\\":23,\\\"first_inspection_due_at\\\":\\\"2021-09-23T11:34:27Z\\\",\\\"ends_at\\\":\\\"2023-10-23T11:34:27Z\\\",\\\"frequency\\\":\\\"monthly\\\",\\\"location_id\\\":42,\\\"point_of_contact_id\\\":42,\\\"responsible_contractor_id\\\":76,\\\"specification_section_id\\\":178,\\\"assignee_ids\\\":[12],\\\"distribution_member_ids\\\":[93],\\\"equipment_id\\\":\\\"01J9BV3N9YQ34CDYA0G4J8R95R\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Checklist (Inspection) Schedules create endpoint",
+      "description": "Create a Project Checklist (Inspection) Schedule.",
+      "endpoint": "POST /projects/{project_id}/checklist/schedules",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-08-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#create-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Updated description of last_inspection_due_at on Checklist (Inspection) Schedules create endpoint",
+      "description": "Updated description of last_inspection_due_at on Checklist (Inspection) Schedules create endpoint.",
+      "endpoint": "POST /projects/{project_id}/checklist/schedules",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-09-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#create-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Updated description of first_inspection_due_at on Checklist (Inspection) Schedules create endpoint",
+      "description": "Updated description of first_inspection_due_at on Checklist (Inspection) Schedules create endpoint to include validation details.",
+      "endpoint": "POST /projects/{project_id}/checklist/schedules",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-10-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#create-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Updated last_inspection_due_at parameter to ends_at for Checklist (Inspection) Schedules create endpoint.",
+      "description": "Updated last_inspection_due_at parameter to ends_at for Checklist (Inspection) Schedules create endpoint",
+      "endpoint": "POST /projects/{project_id}/checklist/schedules",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-10-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#create-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Added equipment_id parameter to Checklist (Inspection) Schedules create endpoint.",
+      "description": "Added equipment_id parameter to Checklist (Inspection) Schedules create endpoint",
+      "endpoint": "POST /projects/{project_id}/checklist/schedules",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-10-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#create-a-checklist-inspection-schedule"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/checklist/schedules/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Checklist Schedule ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Checklist Schedule",
+    "description": "Retrieves Checklist Schedule in a specified Project.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Checklist Schedule",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 21
+          },
+          "name": {
+           "type": "string",
+           "description": "Name",
+           "example": "Framing"
+          },
+          "first_inspection_due_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of first inspection"
+          },
+          "ends_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of last inspection",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "next_due_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of next inspection to be created",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "frequency": {
+           "type": "string",
+           "description": "Name",
+           "example": "Weekly"
+          },
+          "inspections_created": {
+           "type": "integer",
+           "description": "Number of inspections created",
+           "example": 9
+          },
+          "total_inspections_scheduled": {
+           "type": "integer",
+           "description": "Total amount of inpections that will be created",
+           "example": 50
+          },
+          "inspection_template": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID"
+            },
+            "attachment_ids": {
+             "type": "array",
+             "items": {
+              "type": "integer",
+              "description": "Attachment IDs",
+              "example": 1
+             }
+            },
+            "description": {
+             "type": "string",
+             "description": "Description"
+            },
+            "inspection_type": {
+             "type": "object",
+             "description": "Inspection Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Name",
+               "example": "Quality"
+              }
+             }
+            },
+            "name": {
+             "type": "string",
+             "description": "Name"
+            },
+            "trade_id": {
+             "type": "integer",
+             "description": "Trade ID",
+             "example": 56
+            }
+           }
+          },
+          "location_id": {
+           "type": "integer",
+           "description": "Location ID",
+           "example": 3
+          },
+          "assignee_ids": {
+           "type": "array",
+           "items": {
+            "type": "integer",
+            "description": "User IDs assigned to the schedule",
+            "example": 1
+           }
+          },
+          "point_of_contact_id": {
+           "type": "integer",
+           "description": "Point of contact ID",
+           "example": 1
+          },
+          "responsible_contractor_id": {
+           "type": "integer",
+           "description": "ID of Vendor responsible for the work being inspected",
+           "example": 1
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of creation",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of update",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "equipment_id": {
+           "type": "string",
+           "description": "Equipment ID",
+           "example": "01J9BV3N9YQ34CDYA0G4J8R95R"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Checklist (Inspection) Schedule show endpoint",
+      "description": "Show the details of a single Project Checklist (Inspection) Schedule.",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-07-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#show-checklist-schedule"
+     },
+     {
+      "summary": "Updated last_inspection_due_at key to ends_at for Checklist (Inspection) Schedules show endpoint.",
+      "description": "Updated last_inspection_due_at key to ends_at for Checklist (Inspection) Schedules show endpoint",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-10-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#show-checklist-schedule"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a Checklist (Inspection) Schedule",
+    "description": "Updates a Checklist (Inspection) Schedule in a specified Project",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "ChecklistScheduleBody",
+        "type": "object",
+        "required": [
+         "schedule"
+        ],
+        "properties": {
+         "schedule": {
+          "title": "Checklist Schedule",
+          "type": "object",
+          "description": "Checklist Schedule object",
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "The name for the Checklist Schedule.",
+            "example": "New Checklist Schedule"
+           },
+           "first_inspection_due_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp indicating when the first Inspection in the Schedule should be due. Cannot be in the past.",
+            "example": "2021-09-23T11:34:27Z"
+           },
+           "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp indicating when the last Inspection in the Schedule should be due. Not used when frequency is once.",
+            "example": "2023-10-23T11:34:27Z"
+           },
+           "frequency": {
+            "type": "string",
+            "description": "The frequency at which Inspections will be created by the Schedule.",
+            "example": "monthly",
+            "enum": [
+             "once",
+             "daily",
+             "once_every_two_weeks",
+             "weekly",
+             "monthly",
+             "yearly"
+            ]
+           },
+           "location_id": {
+            "type": "integer",
+            "description": "The ID of the Location to set on the Schedule.",
+            "example": 42
+           },
+           "point_of_contact_id": {
+            "type": "integer",
+            "description": "The ID of a User to be set as the of the point of contact on the Schedule",
+            "example": 42
+           },
+           "responsible_contractor_id": {
+            "type": "integer",
+            "description": "The ID of a vendor to set as the responsible contractor on the Schedule.",
+            "example": 76
+           },
+           "specification_section_id": {
+            "type": "integer",
+            "description": "The ID of the specification section to set on the Schedule.",
+            "example": 178
+           },
+           "assignee_ids": {
+            "type": "array",
+            "items": {
+             "type": "integer",
+             "description": "The ID of a user to set as an assignee on the Schedule.",
+             "example": 12
+            }
+           },
+           "distribution_member_ids": {
+            "type": "array",
+            "items": {
+             "type": "integer",
+             "description": "The ID of a user to set on the distribution list for the Schedule.",
+             "example": 93
+            }
+           },
+           "equipment_id": {
+            "type": "string",
+            "description": "The ID of the Equipment to set on the Schedule.",
+            "example": "01J9BV3N9YQ34CDYA0G4J8R95R"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Checklist Schedule",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 21
+          },
+          "name": {
+           "type": "string",
+           "description": "Name",
+           "example": "Framing"
+          },
+          "first_inspection_due_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of first inspection"
+          },
+          "ends_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of last inspection",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "next_due_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Due at timestamp of next inspection to be created",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "frequency": {
+           "type": "string",
+           "description": "Name",
+           "example": "Weekly"
+          },
+          "inspections_created": {
+           "type": "integer",
+           "description": "Number of inspections created",
+           "example": 9
+          },
+          "total_inspections_scheduled": {
+           "type": "integer",
+           "description": "Total amount of inpections that will be created",
+           "example": 50
+          },
+          "inspection_template": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID"
+            },
+            "attachment_ids": {
+             "type": "array",
+             "items": {
+              "type": "integer",
+              "description": "Attachment IDs",
+              "example": 1
+             }
+            },
+            "description": {
+             "type": "string",
+             "description": "Description"
+            },
+            "inspection_type": {
+             "type": "object",
+             "description": "Inspection Type",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Name",
+               "example": "Quality"
+              }
+             }
+            },
+            "name": {
+             "type": "string",
+             "description": "Name"
+            },
+            "trade_id": {
+             "type": "integer",
+             "description": "Trade ID",
+             "example": 56
+            }
+           }
+          },
+          "location_id": {
+           "type": "integer",
+           "description": "Location ID",
+           "example": 3
+          },
+          "assignee_ids": {
+           "type": "array",
+           "items": {
+            "type": "integer",
+            "description": "User IDs assigned to the schedule",
+            "example": 1
+           }
+          },
+          "point_of_contact_id": {
+           "type": "integer",
+           "description": "Point of contact ID",
+           "example": 1
+          },
+          "responsible_contractor_id": {
+           "type": "integer",
+           "description": "ID of Vendor responsible for the work being inspected",
+           "example": 1
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of creation",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of update",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "equipment_id": {
+           "type": "string",
+           "description": "Equipment ID",
+           "example": "01J9BV3N9YQ34CDYA0G4J8R95R"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    schedule: {\n      name: 'New Checklist Schedule',\n      first_inspection_due_at: '2021-09-23T11:34:27Z',\n      ends_at: '2023-10-23T11:34:27Z',\n      frequency: 'monthly',\n      location_id: 42,\n      point_of_contact_id: 42,\n      responsible_contractor_id: 76,\n      specification_section_id: 178,\n      assignee_ids: [12],\n      distribution_member_ids: [93],\n      equipment_id: '01J9BV3N9YQ34CDYA0G4J8R95R'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"schedule\\\":{\\\"name\\\":\\\"New Checklist Schedule\\\",\\\"first_inspection_due_at\\\":\\\"2021-09-23T11:34:27Z\\\",\\\"ends_at\\\":\\\"2023-10-23T11:34:27Z\\\",\\\"frequency\\\":\\\"monthly\\\",\\\"location_id\\\":42,\\\"point_of_contact_id\\\":42,\\\"responsible_contractor_id\\\":76,\\\"specification_section_id\\\":178,\\\"assignee_ids\\\":[12],\\\"distribution_member_ids\\\":[93],\\\"equipment_id\\\":\\\"01J9BV3N9YQ34CDYA0G4J8R95R\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"schedule\":{\"name\":\"New Checklist Schedule\",\"first_inspection_due_at\":\"2021-09-23T11:34:27Z\",\"ends_at\":\"2023-10-23T11:34:27Z\",\"frequency\":\"monthly\",\"location_id\":42,\"point_of_contact_id\":42,\"responsible_contractor_id\":76,\"specification_section_id\":178,\"assignee_ids\":[12],\"distribution_member_ids\":[93],\"equipment_id\":\"01J9BV3N9YQ34CDYA0G4J8R95R\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"schedule\\\":{\\\"name\\\":\\\"New Checklist Schedule\\\",\\\"first_inspection_due_at\\\":\\\"2021-09-23T11:34:27Z\\\",\\\"ends_at\\\":\\\"2023-10-23T11:34:27Z\\\",\\\"frequency\\\":\\\"monthly\\\",\\\"location_id\\\":42,\\\"point_of_contact_id\\\":42,\\\"responsible_contractor_id\\\":76,\\\"specification_section_id\\\":178,\\\"assignee_ids\\\":[12],\\\"distribution_member_ids\\\":[93],\\\"equipment_id\\\":\\\"01J9BV3N9YQ34CDYA0G4J8R95R\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Checklist (Inspection) Schedules update endpoint",
+      "description": "Update a Project Checklist (Inspection) Schedule.",
+      "endpoint": "PATCH /projects/{project_id}/checklist/schedules/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-08-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#update-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Updated description of last_inspection_due_at on Checklist (Inspection) Schedules update endpoint",
+      "description": "Updated description of last_inspection_due_at body parameter on Checklist (Inspection) Schedules update endpoint.",
+      "endpoint": "PATCH /projects/{project_id}/checklist/schedules/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-09-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#update-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Updated description of first_inspection_due_at on Checklist (Inspection) Schedules update endpoint",
+      "description": "Updated description of first_inspection_due_at body parameter on Checklist (Inspection) Schedules update endpoint to include validation details.",
+      "endpoint": "PATCH /projects/{project_id}/checklist/schedules/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-10-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#update-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Updated last_inspection_due_at parameter to ends_at for Checklist (Inspection) Schedules update endpoint.",
+      "description": "Updated last_inspection_due_at parameter to ends_at for Checklist (Inspection) Schedules update endpoint",
+      "endpoint": "PATCH /projects/{project_id}/checklist/schedules/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-10-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#update-a-checklist-inspection-schedule"
+     },
+     {
+      "summary": "Added equipment_id parameter to Checklist (Inspection) Schedules update endpoint.",
+      "description": "Added equipment_id parameter to Checklist (Inspection) Schedules update endpoint",
+      "endpoint": "PATCH /projects/{project_id}/checklist/schedules/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-10-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#update-a-checklist-inspection-schedule"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Checklist Schedule",
+    "description": "Delete a Checklist Schedule in a specified Project.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Checklist (Inspection) Schedules delete endpoint",
+      "description": "Delete a Project Checklist (Inspection) Schedule.",
+      "endpoint": "DELETE /projects/{project_id}/checklist/schedules/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-08-25",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#delete-checklist-schedule"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/checklist/schedules/calculate_first_inspection_created_at": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Calculate when the first Inspection of an Inspection Schedule will be created",
+    "description": "Calculates the creation date for the first Inspection to be created based on an Inspection Schedule's temporal attributes.",
+    "tags": [
+     "Inspection Schedules"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "schedule"
+        ],
+        "properties": {
+         "schedule": {
+          "type": "object",
+          "required": [
+           "starts_at",
+           "ends_at",
+           "frequency",
+           "days_created_before_due_date"
+          ],
+          "properties": {
+           "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Schedule start date",
+            "example": "2019-10-27T07:40:12Z"
+           },
+           "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Schedule end date. When frequency is 'once' this should be the same value as starts_at.",
+            "example": "2019-10-27T07:40:12Z"
+           },
+           "frequency": {
+            "type": "string",
+            "description": "Schedule frequency type name",
+            "enum": [
+             "once",
+             "daily",
+             "weekly",
+             "once_every_two_weeks",
+             "monthly",
+             "yearly"
+            ],
+            "example": "once_every_two_weeks"
+           },
+           "days_created_before_due_date": {
+            "type": "integer",
+            "description": "Number of days before the inspection due date that the inspection should be created",
+            "example": 3
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "first_inspection_created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of when the first inspection will be created from the schedule.",
+           "example": "2019-10-27T07:40:12Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_first_inspection_created_at',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    schedule: {\n      starts_at: '2019-10-27T07:40:12Z',\n      ends_at: '2019-10-27T07:40:12Z',\n      frequency: 'once_every_two_weeks',\n      days_created_before_due_date: 3\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"schedule\\\":{\\\"starts_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"ends_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"frequency\\\":\\\"once_every_two_weeks\\\",\\\"days_created_before_due_date\\\":3}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_first_inspection_created_at\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_first_inspection_created_at \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"schedule\":{\"starts_at\":\"2019-10-27T07:40:12Z\",\"ends_at\":\"2019-10-27T07:40:12Z\",\"frequency\":\"once_every_two_weeks\",\"days_created_before_due_date\":3}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_first_inspection_created_at\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"schedule\\\":{\\\"starts_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"ends_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"frequency\\\":\\\"once_every_two_weeks\\\",\\\"days_created_before_due_date\\\":3}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Calculate the creation date for the first inspection to be created from a Checklist (Inspection) Schedule.",
+      "description": "Calculate when the first Inspection created from a Schedule is due based off of starts_at, ends_at, frequency, and days_created_before_due_date parameters.",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules/calculate_first_inspection_created_at",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-10-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#calculate-when-the-first-inspection-of-an-inspection-schedule-will-be-created"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/checklist/schedules/calculate_total_inspections_count": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Calculate number of Inspections to create based on Schedule",
+    "description": "Calculates the total number of Inspections to create based on Schedule parameters.",
+    "tags": [
+     "Inspection Schedules"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "schedule"
+        ],
+        "properties": {
+         "schedule": {
+          "type": "object",
+          "required": [
+           "starts_at",
+           "ends_at",
+           "frequency"
+          ],
+          "properties": {
+           "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Schedule start date",
+            "example": "2019-10-27T07:40:12Z"
+           },
+           "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Schedule end date",
+            "example": "2019-10-27T07:40:12Z"
+           },
+           "frequency": {
+            "type": "string",
+            "description": "Schedule frequency type name",
+            "enum": [
+             "once",
+             "daily",
+             "weekly",
+             "once_every_two_weeks",
+             "monthly",
+             "yearly"
+            ],
+            "example": "once_every_two_weeks"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Total Inspections",
+         "type": "object",
+         "properties": {
+          "total_in_schedule": {
+           "type": "integer",
+           "description": "Total inspections number calculated.",
+           "example": 2
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_total_inspections_count',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    schedule: {\n      starts_at: '2019-10-27T07:40:12Z',\n      ends_at: '2019-10-27T07:40:12Z',\n      frequency: 'once_every_two_weeks'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"schedule\\\":{\\\"starts_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"ends_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"frequency\\\":\\\"once_every_two_weeks\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_total_inspections_count\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_total_inspections_count \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"schedule\":{\"starts_at\":\"2019-10-27T07:40:12Z\",\"ends_at\":\"2019-10-27T07:40:12Z\",\"frequency\":\"once_every_two_weeks\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/schedules/calculate_total_inspections_count\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"schedule\\\":{\\\"starts_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"ends_at\\\":\\\"2019-10-27T07:40:12Z\\\",\\\"frequency\\\":\\\"once_every_two_weeks\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Calculate the total number of inspections to create.",
+      "description": "Calculate the total number of inspections to create based off of starts_at, ends_at, frequency parameters.",
+      "endpoint": "GET /projects/{project_id}/checklist/schedules/calculate_total_inspections_count",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-08-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-schedules?version=1.0#calculate-number-of-inspections-to-create-based-on-schedule"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

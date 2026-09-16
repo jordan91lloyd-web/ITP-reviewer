@@ -1,0 +1,3244 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Images",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Photos",
+  "x-resource-name": "Images",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/images": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List images",
+    "description": "Return a list of all Images from a Project's Photo Album (Image Category).\n\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "tags": [
+     "Images"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "image_category_id",
+      "in": "query",
+      "description": "Optional. ID of the image category to filter the images by.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "example": [
+       123456
+      ],
+      "name": "filters[daily_log_segment_id]",
+      "in": "query",
+      "description": "Daily Log Segment ID filter",
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[log_date]",
+      "in": "query",
+      "required": false,
+      "description": "Date of Photos added to the Daily Log in the format \"YYYY-MM-DD\", or a range of dates in the format \"YYYY-MM-DD...YYYY-MM-DD\".",
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[private]",
+      "in": "query",
+      "description": "If true, returns only item(s) with a `private` status.",
+      "schema": {
+       "type": "boolean",
+       "default": false
+      }
+     },
+     {
+      "name": "filters[starred]",
+      "in": "query",
+      "description": "If true, returns only item(s) with a `starred` status. This will be ignored for users without permission to star photos, returning the unfiltered list rather than an error.",
+      "schema": {
+       "type": "boolean",
+       "default": false
+      }
+     },
+     {
+      "name": "filters[location_id]",
+      "in": "query",
+      "description": "Location ID. Returns item(s) with the specified Location ID or a range of Location IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer",
+        "example": 45
+       }
+      }
+     },
+     {
+      "name": "filters[include_sublocations]",
+      "in": "query",
+      "description": "Use together with `filters[location_id]`\n",
+      "schema": {
+       "type": "boolean",
+       "default": false
+      }
+     },
+     {
+      "name": "filters[trade_ids]",
+      "in": "query",
+      "description": "Array of Trade IDs. Returns item(s) with the specified Trade IDs.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[projection]",
+      "in": "query",
+      "description": "Return items with the specified projection type.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "360",
+        "regular"
+       ]
+      }
+     },
+     {
+      "name": "filters[query]",
+      "in": "query",
+      "description": "Return item(s) containing search query",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[uploader_id]",
+      "in": "query",
+      "description": "Return item(s) uploaded by the specified User IDs",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Field to sort by. If the field is passed with a - (EX: -created_at) it is sorted in reverse order",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "deleted_at",
+        "created_at",
+        "exposure_date",
+        "taken_at",
+        "most_recent"
+       ]
+      }
+     },
+     {
+      "name": "serializer_view",
+      "in": "query",
+      "description": "The data set that should be returned from the serializer.\nThe normal view includes default fields, plus links, comments_count, trades.\nThe android view includes default fields, plus trades, comments.\nThe mobile view include default fields, plus log_date, trades, comments.\nThe mobile_feed view includes default fields, plus comments.\nThe prostore_file view includes default fields, plus images.\nThe ids_only view does not include default fields, response returns strictly an array of image ids.\nDefault view is normal.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "android",
+        "mobile",
+        "mobile_feed",
+        "prostore_file",
+        "ids_only"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of images",
+         "items": {
+          "title": "Image",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for the Image. Use as the {id} path segment in GET/PATCH/DELETE /rest/v1.0/images/{id}."
+           },
+           "url": {
+            "type": "string",
+            "description": "Time-limited URL to download the full-resolution image file. Null when the image has been permanently deleted.",
+            "nullable": true
+           },
+           "size": {
+            "type": "integer",
+            "description": "Image size",
+            "nullable": true
+           },
+           "filename": {
+            "type": "string",
+            "description": "Image file name",
+            "nullable": true
+           },
+           "description": {
+            "type": "string",
+            "description": "Image description"
+           },
+           "thumbnail_url": {
+            "type": "string",
+            "description": "Time-limited URL to the large thumbnail. Null when the image has been permanently deleted.",
+            "nullable": true
+           },
+           "taken_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp the photo was captured, from EXIF exposure metadata, in ISO 8601 format. Null when the source file has no capture date.",
+            "nullable": true
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Image created at"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Image updated at"
+           },
+           "location": {
+            "type": "object",
+            "title": "Location",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Location ID",
+              "example": 15504
+             },
+             "name": {
+              "type": "string",
+              "description": "Location name",
+              "example": "1space>1 space"
+             },
+             "node_name": {
+              "type": "string",
+              "description": "Location node name",
+              "example": "1 space"
+             },
+             "parent_id": {
+              "type": "integer",
+              "description": "Location parent id",
+              "example": 788866,
+              "nullable": true
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of Location creation",
+              "example": "2016-08-01T23:33:54Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of last update to Location",
+              "example": "2016-08-01T23:33:54Z"
+             }
+            }
+           },
+           "image_category_name": {
+            "type": "string",
+            "description": "Image Category Name"
+           },
+           "image_category_id": {
+            "type": "integer",
+            "description": "Image Category ID"
+           },
+           "permanently_deleted": {
+            "type": "boolean",
+            "description": "True when the image is marked as permanently deleted."
+           },
+           "private": {
+            "type": "boolean",
+            "description": "Image private status"
+           },
+           "projection": {
+            "type": "string",
+            "description": "Spatial projection of the image. '360' marks a panoramic photo, which clients render in a dedicated 360 viewer; such images are also eligible for tile generation, but only when the file is larger than MINIMUM_SIZE_FOR_TILE_GENERATION (5 MB). 'regular' is a standard flat photo, and 'unknown' means the projection has not been determined.",
+            "enum": [
+             "unknown",
+             "regular",
+             "360"
+            ],
+            "example": "regular"
+           },
+           "starred": {
+            "type": "boolean",
+            "description": "Image starred status"
+           },
+           "width": {
+            "type": "integer",
+            "description": "Image width",
+            "nullable": true
+           },
+           "height": {
+            "type": "integer",
+            "description": "Image height",
+            "nullable": true
+           },
+           "image_category_private": {
+            "type": "boolean",
+            "description": "Whether the Image's category is marked private. Mirrors the private flag of the Image's Image Category."
+           },
+           "origin_id": {
+            "type": "integer",
+            "description": "ID of the source record this Image originated from (for example, a Daily Log entry). Null when the Image was uploaded directly.",
+            "example": 45678,
+            "nullable": true
+           },
+           "daily_log_header_id": {
+            "type": "integer",
+            "description": "ID of the Daily Log day this Image is attached to. Null when the Image is not associated with a Daily Log.",
+            "example": 987,
+            "nullable": true
+           },
+           "daily_log_segment_id": {
+            "type": "integer",
+            "description": "Daily Log Segment ID",
+            "example": 123456,
+            "nullable": true
+           },
+           "daily_log_segment": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 123456
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the segment",
+              "example": "Morning Shift"
+             },
+             "description": {
+              "type": "string",
+              "nullable": true,
+              "description": "Description of the segment",
+              "example": "Work performed during the morning shift"
+             },
+             "deleted_at": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true,
+              "description": "Timestamp when the segment was soft deleted",
+              "example": "2025-01-15T10:30:00Z"
+             },
+             "deleted": {
+              "type": "boolean",
+              "description": "Indicates if the segment is deleted",
+              "example": false
+             }
+            }
+           },
+           "gps_lat": {
+            "type": "string",
+            "description": "GPS latitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+            "example": "34.0522",
+            "nullable": true
+           },
+           "gps_long": {
+            "type": "string",
+            "description": "GPS longitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+            "example": "-118.2437",
+            "nullable": true
+           },
+           "uploader": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Carl Contractor"
+             }
+            }
+           },
+           "links": {
+            "type": "object",
+            "title": "Links",
+            "properties": {
+             "self": {
+              "type": "string",
+              "description": "A link back to the current resource",
+              "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+             },
+             "update": {
+              "type": "string",
+              "description": "A link to the update endpoint for the resource",
+              "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+             },
+             "delete": {
+              "type": "string",
+              "description": "A link to the delete endpoint for the resource",
+              "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+             },
+             "permanentlyDelete": {
+              "type": "string",
+              "description": "A link to the permanent delete endpoint for the resource",
+              "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074&permanent=true"
+             },
+             "retrieve": {
+              "type": "string",
+              "description": "A link to the retrieve endpoint for the resource",
+              "example": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+             }
+            }
+           },
+           "trades": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "title": "Trade",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Trade ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Trade name",
+               "example": "09 - acoustical panels"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Trade availability",
+               "example": true
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp of last update to Trade",
+               "example": "2016-08-01T23:33:54Z"
+              }
+             }
+            }
+           },
+           "comments_count": {
+            "type": "integer",
+            "description": "the number of comments on this image"
+           }
+          },
+          "example": {
+           "id": 9122752,
+           "url": "https://s3.amazonaws.com/pro-core.com/prostore/20150730215438_production_83200871.JPG?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=hIkhmk3dWICVHm4b7e0ilpZ0CJc%3D",
+           "size": 3423146,
+           "filename": "2015-07-15_Photo 1042_bull nosed flashing to roof overhang on south elevation_time 16.21.JPG",
+           "description": "Image description",
+           "thumbnail_url": "https://prostore-thumbnail-bucket-production.s3.amazonaws.com/83200871_thumbnail_large.PNG?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=1753912481&Signature=X4b27yIyfP3sxXwQuYG3aOgFh%2BU%3D",
+           "taken_at": "2015-07-15T23:21:56Z",
+           "created_at": "2015-07-30T21:54:39Z",
+           "updated_at": "2015-08-01T09:44:29Z",
+           "image_category_id": 186339,
+           "image_category_name": "Unclassified",
+           "private": false,
+           "projection": "regular",
+           "starred": false,
+           "width": 400,
+           "height": 300,
+           "uploader": {
+            "id": 1,
+            "name": "Customer Support",
+            "login": "procore@example.com"
+           },
+           "location": {
+            "id": 2,
+            "name": "main building > kitchen",
+            "node_name": "kitchen",
+            "parent_id": 1
+           },
+           "trades": [
+            {
+             "id": 1,
+             "name": "Drywall"
+            },
+            {
+             "id": 2,
+             "name": "Electrical"
+            }
+           ],
+           "daily_log_header_id": 10,
+           "links": {
+            "self": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+            "update": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+            "delete": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+            "retrieve": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+           },
+           "comments_count": 6
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/images',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    image_category_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[daily_log_segment_id]': '123456',\n    'filters[log_date]': 'SOME_STRING_VALUE',\n    'filters[private]': 'SOME_BOOLEAN_VALUE',\n    'filters[starred]': 'SOME_BOOLEAN_VALUE',\n    'filters[location_id]': 'SOME_ARRAY_VALUE',\n    'filters[include_sublocations]': 'SOME_BOOLEAN_VALUE',\n    'filters[trade_ids]': 'SOME_ARRAY_VALUE',\n    'filters[projection]': 'SOME_STRING_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[uploader_id]': 'SOME_ARRAY_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    serializer_view: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/images?project_id=SOME_INTEGER_VALUE&image_category_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bdaily_log_segment_id%5D=123456&filters%5Blog_date%5D=SOME_STRING_VALUE&filters%5Bprivate%5D=SOME_BOOLEAN_VALUE&filters%5Bstarred%5D=SOME_BOOLEAN_VALUE&filters%5Blocation_id%5D=SOME_ARRAY_VALUE&filters%5Binclude_sublocations%5D=SOME_BOOLEAN_VALUE&filters%5Btrade_ids%5D=SOME_ARRAY_VALUE&filters%5Bprojection%5D=SOME_STRING_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Buploader_id%5D=SOME_ARRAY_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&serializer_view=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/images?project_id=SOME_INTEGER_VALUE&image_category_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bdaily_log_segment_id%5D=123456&filters%5Blog_date%5D=SOME_STRING_VALUE&filters%5Bprivate%5D=SOME_BOOLEAN_VALUE&filters%5Bstarred%5D=SOME_BOOLEAN_VALUE&filters%5Blocation_id%5D=SOME_ARRAY_VALUE&filters%5Binclude_sublocations%5D=SOME_BOOLEAN_VALUE&filters%5Btrade_ids%5D=SOME_ARRAY_VALUE&filters%5Bprojection%5D=SOME_STRING_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Buploader_id%5D=SOME_ARRAY_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&serializer_view=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/images?project_id=SOME_INTEGER_VALUE&image_category_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bdaily_log_segment_id%5D=123456&filters%5Blog_date%5D=SOME_STRING_VALUE&filters%5Bprivate%5D=SOME_BOOLEAN_VALUE&filters%5Bstarred%5D=SOME_BOOLEAN_VALUE&filters%5Blocation_id%5D=SOME_ARRAY_VALUE&filters%5Binclude_sublocations%5D=SOME_BOOLEAN_VALUE&filters%5Btrade_ids%5D=SOME_ARRAY_VALUE&filters%5Bprojection%5D=SOME_STRING_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Buploader_id%5D=SOME_ARRAY_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&sort=SOME_STRING_VALUE&serializer_view=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict the starred filter to users who can star photos",
+      "description": "The filters[starred] query parameter is now ignored for users without admin-level permission on the Photos tool.",
+      "endpoint": "GET /images",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#list-images"
+     },
+     {
+      "summary": "Add daily_log_segment to response body for Images index endpoint",
+      "description": "Add daily_log_segment to response body for Images index endpoint.",
+      "endpoint": "GET /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#list-images"
+     },
+     {
+      "summary": "Add `uploader_id` filter",
+      "description": "Allow clients to filter images by the user who uploaded them.",
+      "endpoint": "GET /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#list-images"
+     },
+     {
+      "summary": "Add `projection` filter",
+      "description": "Allow clients to filter images by projection type.",
+      "endpoint": "GET /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-10-01",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#list-images"
+     },
+     {
+      "summary": "Add a new `projection` field to the response",
+      "description": "Allow clients to determine if an image is 360 or not.",
+      "endpoint": "GET /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#list-images"
+     },
+     {
+      "summary": "Add daily_log_segment_id filter parameter and response body for Images index endpoint",
+      "description": "Add daily_log_segment_id filter parameter and response body for Images index endpoint.",
+      "endpoint": "GET /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-07",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#list-images"
+     },
+     {
+      "summary": "The `log_date` filter supports a date range",
+      "description": "The `log_date` filter supports a date range",
+      "endpoint": "GET /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-07-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#list-images"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create image",
+    "description": "Upload and add a new Image to a Project's Photo Album (Image Category).",
+    "tags": [
+     "Images"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "image"
+        ],
+        "properties": {
+         "upload_uuid": {
+          "type": "string",
+          "description": "UUID referencing a previously completed Upload. This is the recommended approach for image uploads. See Company Uploads or Project Uploads for instructions on how use uploads. You should not use both data and uuid fields in the same request. Mutually exclusive with source_image_id.",
+          "example": "1QJ83Q56CVQR4X3C0JG7YV86F8"
+         },
+         "source_image_id": {
+          "type": "integer",
+          "description": "ID of an existing Image in the same project to copy. Creates a new independent Image with its own file storage. Mutually exclusive with upload_uuid and data. When provided, image_name is not required. Takes precedence over upload_uuid and data if multiple are supplied.",
+          "example": 12345
+         },
+         "image_name": {
+          "type": "string",
+          "description": "The name of the image file to be uploaded. Required when using an upload_uuid to upload the image. Not required when using source_image_id.",
+          "example": "my_file.png"
+         },
+         "image": {
+          "title": "Image",
+          "type": "object",
+          "description": "At least one attribute is required even when an 'upload_uuid' or 'source_image_id' key is provided. If neither is provided, then the 'data' key must be provided",
+          "properties": {
+           "private": {
+            "type": "boolean",
+            "description": "The Private status of the Image. Defaults to a project configuration.",
+            "example": false
+           },
+           "provider_type": {
+            "type": "string",
+            "description": "Provider type. Currently supports only `MarkupLayer`, and should only be used when adding an Image to markup.",
+            "example": "MarkupLayer"
+           },
+           "provider_id": {
+            "type": "integer",
+            "description": "Provider ID. Currently supports only MarkupLayer IDs, and should only be used when adding an Image to markup.",
+            "example": 12
+           },
+           "starred": {
+            "type": "boolean",
+            "description": "The Starred status of the Image.",
+            "example": true
+           },
+           "source": {
+            "type": "string",
+            "description": "Image source",
+            "example": "Image from API"
+           },
+           "description": {
+            "type": "string",
+            "description": "Image description",
+            "example": "This is a cool image"
+           },
+           "image_category_id": {
+            "type": "integer",
+            "description": "Image Category ID",
+            "example": 2
+           },
+           "location_id": {
+            "type": "integer",
+            "description": "If you want to use an existing location and you have the ID of that existing location use this. `location_id` takes precedence over `mt_location`",
+            "example": 13
+           },
+           "daily_log_segment_id": {
+            "type": "integer",
+            "description": "Daily Log Segment ID",
+            "example": 123456,
+            "nullable": true
+           },
+           "mt_location": {
+            "type": "array",
+            "description": "Use this for creating a new multi-tier or single-tier Location. This will be ignored if `location_id` is provided.",
+            "items": {
+             "type": "string"
+            },
+            "example": [
+             "Location 1",
+             "Location 2"
+            ]
+           },
+           "trade_ids": {
+            "type": "array",
+            "description": "An array of IDs of the Trades of the Image",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             1,
+             2
+            ]
+           },
+           "log_date": {
+            "type": "string",
+            "example": "2018-01-01"
+           }
+          }
+         }
+        }
+       }
+      },
+      "multipart/form-data": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "image"
+        ],
+        "properties": {
+         "upload_uuid": {
+          "type": "string",
+          "description": "UUID referencing a previously completed Upload. This is the recommended approach for image uploads. See Company Uploads or Project Uploads for instructions on how use uploads. You should not use both data and uuid fields in the same request. Mutually exclusive with source_image_id.",
+          "example": "1QJ83Q56CVQR4X3C0JG7YV86F8"
+         },
+         "source_image_id": {
+          "type": "integer",
+          "description": "ID of an existing Image in the same project to copy. Creates a new independent Image with its own file storage. Mutually exclusive with upload_uuid and data. When provided, image_name is not required. Takes precedence over upload_uuid and data if multiple are supplied.",
+          "example": 12345
+         },
+         "image_name": {
+          "type": "string",
+          "description": "The name of the image file to be uploaded. Required when using an upload_uuid to upload the image. Not required when using source_image_id.",
+          "example": "my_file.png"
+         },
+         "image": {
+          "title": "Image",
+          "type": "object",
+          "description": "At least one attribute is required even when an 'upload_uuid' or 'source_image_id' key is provided. If neither is provided, then the 'data' key must be provided",
+          "properties": {
+           "private": {
+            "type": "boolean",
+            "description": "The Private status of the Image. Defaults to a project configuration.",
+            "example": false
+           },
+           "provider_type": {
+            "type": "string",
+            "description": "Provider type. Currently supports only `MarkupLayer`, and should only be used when adding an Image to markup.",
+            "example": "MarkupLayer"
+           },
+           "provider_id": {
+            "type": "integer",
+            "description": "Provider ID. Currently supports only MarkupLayer IDs, and should only be used when adding an Image to markup.",
+            "example": 12
+           },
+           "starred": {
+            "type": "boolean",
+            "description": "The Starred status of the Image.",
+            "example": true
+           },
+           "data": {
+            "type": "string",
+            "format": "binary",
+            "description": "[DEPRECATED] File to use as image data. Please use upload_uuid instead. Note that it's only possible to post a\nfile using a multipart/form-data body (see RFC 2388). Most HTTP\nlibraries will do the right thing when you pass in an open file or\nIO stream. Alternatively you can use an upload_uuid (see Company\nUploads or Project Uploads). You should not use both file and\nupload_uuid fields in the same request."
+           },
+           "source": {
+            "type": "string",
+            "description": "Image source",
+            "example": "Image from API"
+           },
+           "description": {
+            "type": "string",
+            "description": "Image description",
+            "example": "This is a cool image"
+           },
+           "image_category_id": {
+            "type": "integer",
+            "description": "Image Category ID",
+            "example": 2
+           },
+           "location_id": {
+            "type": "integer",
+            "description": "If you want to use an existing location and you have the ID of that existing location use this. `location_id` takes precedence over `mt_location`",
+            "example": 13
+           },
+           "daily_log_segment_id": {
+            "type": "integer",
+            "description": "Daily Log Segment ID",
+            "example": 123456,
+            "nullable": true
+           },
+           "mt_location": {
+            "type": "array",
+            "description": "Use this for creating a new multi-tier or single-tier Location. This will be ignored if `location_id` is provided.",
+            "items": {
+             "type": "string"
+            },
+            "example": [
+             "Location 1",
+             "Location 2"
+            ]
+           },
+           "trade_ids": {
+            "type": "array",
+            "description": "An array of IDs of the Trades of the Image",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             1,
+             2
+            ]
+           },
+           "log_date": {
+            "type": "string",
+            "example": "2018-01-01"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Image",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for the Image. Use as the {id} path segment in GET/PATCH/DELETE /rest/v1.0/images/{id}."
+          },
+          "url": {
+           "type": "string",
+           "description": "Time-limited URL to download the full-resolution image file. Null when the image has been permanently deleted.",
+           "nullable": true
+          },
+          "size": {
+           "type": "integer",
+           "description": "Image size",
+           "nullable": true
+          },
+          "filename": {
+           "type": "string",
+           "description": "Image file name",
+           "nullable": true
+          },
+          "description": {
+           "type": "string",
+           "description": "Image description"
+          },
+          "thumbnail_url": {
+           "type": "string",
+           "description": "Time-limited URL to the large thumbnail. Null when the image has been permanently deleted.",
+           "nullable": true
+          },
+          "taken_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp the photo was captured, from EXIF exposure metadata, in ISO 8601 format. Null when the source file has no capture date.",
+           "nullable": true
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Image created at"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Image updated at"
+          },
+          "location": {
+           "type": "object",
+           "title": "Location",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Location ID",
+             "example": 15504
+            },
+            "name": {
+             "type": "string",
+             "description": "Location name",
+             "example": "1space>1 space"
+            },
+            "node_name": {
+             "type": "string",
+             "description": "Location node name",
+             "example": "1 space"
+            },
+            "parent_id": {
+             "type": "integer",
+             "description": "Location parent id",
+             "example": 788866,
+             "nullable": true
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of Location creation",
+             "example": "2016-08-01T23:33:54Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of last update to Location",
+             "example": "2016-08-01T23:33:54Z"
+            }
+           }
+          },
+          "image_category_name": {
+           "type": "string",
+           "description": "Image Category Name"
+          },
+          "image_category_id": {
+           "type": "integer",
+           "description": "Image Category ID"
+          },
+          "permanently_deleted": {
+           "type": "boolean",
+           "description": "True when the image is marked as permanently deleted."
+          },
+          "private": {
+           "type": "boolean",
+           "description": "Image private status"
+          },
+          "projection": {
+           "type": "string",
+           "description": "Spatial projection of the image. '360' marks a panoramic photo, which clients render in a dedicated 360 viewer; such images are also eligible for tile generation, but only when the file is larger than MINIMUM_SIZE_FOR_TILE_GENERATION (5 MB). 'regular' is a standard flat photo, and 'unknown' means the projection has not been determined.",
+           "enum": [
+            "unknown",
+            "regular",
+            "360"
+           ],
+           "example": "regular"
+          },
+          "starred": {
+           "type": "boolean",
+           "description": "Image starred status"
+          },
+          "width": {
+           "type": "integer",
+           "description": "Image width",
+           "nullable": true
+          },
+          "height": {
+           "type": "integer",
+           "description": "Image height",
+           "nullable": true
+          },
+          "image_category_private": {
+           "type": "boolean",
+           "description": "Whether the Image's category is marked private. Mirrors the private flag of the Image's Image Category."
+          },
+          "origin_id": {
+           "type": "integer",
+           "description": "ID of the source record this Image originated from (for example, a Daily Log entry). Null when the Image was uploaded directly.",
+           "example": 45678,
+           "nullable": true
+          },
+          "daily_log_header_id": {
+           "type": "integer",
+           "description": "ID of the Daily Log day this Image is attached to. Null when the Image is not associated with a Daily Log.",
+           "example": 987,
+           "nullable": true
+          },
+          "daily_log_segment_id": {
+           "type": "integer",
+           "description": "Daily Log Segment ID",
+           "example": 123456,
+           "nullable": true
+          },
+          "daily_log_segment": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 123456
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the segment",
+             "example": "Morning Shift"
+            },
+            "description": {
+             "type": "string",
+             "nullable": true,
+             "description": "Description of the segment",
+             "example": "Work performed during the morning shift"
+            },
+            "deleted_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Timestamp when the segment was soft deleted",
+             "example": "2025-01-15T10:30:00Z"
+            },
+            "deleted": {
+             "type": "boolean",
+             "description": "Indicates if the segment is deleted",
+             "example": false
+            }
+           }
+          },
+          "gps_lat": {
+           "type": "string",
+           "description": "GPS latitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+           "example": "34.0522",
+           "nullable": true
+          },
+          "gps_long": {
+           "type": "string",
+           "description": "GPS longitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+           "example": "-118.2437",
+           "nullable": true
+          },
+          "uploader": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "links": {
+           "type": "object",
+           "title": "Links",
+           "properties": {
+            "self": {
+             "type": "string",
+             "description": "A link back to the current resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+            },
+            "update": {
+             "type": "string",
+             "description": "A link to the update endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+            },
+            "delete": {
+             "type": "string",
+             "description": "A link to the delete endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+            },
+            "permanentlyDelete": {
+             "type": "string",
+             "description": "A link to the permanent delete endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074&permanent=true"
+            },
+            "retrieve": {
+             "type": "string",
+             "description": "A link to the retrieve endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+            }
+           }
+          },
+          "trades": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "title": "Trade",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Trade ID",
+              "example": 999
+             },
+             "name": {
+              "type": "string",
+              "description": "Trade name",
+              "example": "09 - acoustical panels"
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Trade availability",
+              "example": true
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of last update to Trade",
+              "example": "2016-08-01T23:33:54Z"
+             }
+            }
+           }
+          },
+          "comments_count": {
+           "type": "integer",
+           "description": "the number of comments on this image"
+          }
+         },
+         "example": {
+          "id": 9122752,
+          "url": "https://s3.amazonaws.com/pro-core.com/prostore/20150730215438_production_83200871.JPG?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=hIkhmk3dWICVHm4b7e0ilpZ0CJc%3D",
+          "size": 3423146,
+          "filename": "2015-07-15_Photo 1042_bull nosed flashing to roof overhang on south elevation_time 16.21.JPG",
+          "description": "Image description",
+          "thumbnail_url": "https://prostore-thumbnail-bucket-production.s3.amazonaws.com/83200871_thumbnail_large.PNG?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=1753912481&Signature=X4b27yIyfP3sxXwQuYG3aOgFh%2BU%3D",
+          "taken_at": "2015-07-15T23:21:56Z",
+          "created_at": "2015-07-30T21:54:39Z",
+          "updated_at": "2015-08-01T09:44:29Z",
+          "image_category_id": 186339,
+          "image_category_name": "Unclassified",
+          "private": false,
+          "projection": "regular",
+          "starred": false,
+          "width": 400,
+          "height": 300,
+          "uploader": {
+           "id": 1,
+           "name": "Customer Support",
+           "login": "procore@example.com"
+          },
+          "location": {
+           "id": 2,
+           "name": "main building > kitchen",
+           "node_name": "kitchen",
+           "parent_id": 1
+          },
+          "trades": [
+           {
+            "id": 1,
+            "name": "Drywall"
+           },
+           {
+            "id": 2,
+            "name": "Electrical"
+           }
+          ],
+          "daily_log_header_id": 10,
+          "links": {
+           "self": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+           "update": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+           "delete": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+           "retrieve": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+          },
+          "comments_count": 6
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/images',\n  qs: {project_id: 'SOME_INTEGER_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    upload_uuid: '1QJ83Q56CVQR4X3C0JG7YV86F8',\n    source_image_id: 12345,\n    image_name: 'my_file.png',\n    image: {\n      private: false,\n      provider_type: 'MarkupLayer',\n      provider_id: 12,\n      starred: true,\n      source: 'Image from API',\n      description: 'This is a cool image',\n      image_category_id: 2,\n      location_id: 13,\n      daily_log_segment_id: 123456,\n      mt_location: ['Location 1', 'Location 2'],\n      trade_ids: [1, 2],\n      log_date: '2018-01-01'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"upload_uuid\\\":\\\"1QJ83Q56CVQR4X3C0JG7YV86F8\\\",\\\"source_image_id\\\":12345,\\\"image_name\\\":\\\"my_file.png\\\",\\\"image\\\":{\\\"private\\\":false,\\\"provider_type\\\":\\\"MarkupLayer\\\",\\\"provider_id\\\":12,\\\"starred\\\":true,\\\"source\\\":\\\"Image from API\\\",\\\"description\\\":\\\"This is a cool image\\\",\\\"image_category_id\\\":2,\\\"location_id\\\":13,\\\"daily_log_segment_id\\\":123456,\\\"mt_location\\\":[\\\"Location 1\\\",\\\"Location 2\\\"],\\\"trade_ids\\\":[1,2],\\\"log_date\\\":\\\"2018-01-01\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/images?project_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/images?project_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"upload_uuid\":\"1QJ83Q56CVQR4X3C0JG7YV86F8\",\"source_image_id\":12345,\"image_name\":\"my_file.png\",\"image\":{\"private\":false,\"provider_type\":\"MarkupLayer\",\"provider_id\":12,\"starred\":true,\"source\":\"Image from API\",\"description\":\"This is a cool image\",\"image_category_id\":2,\"location_id\":13,\"daily_log_segment_id\":123456,\"mt_location\":[\"Location 1\",\"Location 2\"],\"trade_ids\":[1,2],\"log_date\":\"2018-01-01\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/images?project_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"upload_uuid\\\":\\\"1QJ83Q56CVQR4X3C0JG7YV86F8\\\",\\\"source_image_id\\\":12345,\\\"image_name\\\":\\\"my_file.png\\\",\\\"image\\\":{\\\"private\\\":false,\\\"provider_type\\\":\\\"MarkupLayer\\\",\\\"provider_id\\\":12,\\\"starred\\\":true,\\\"source\\\":\\\"Image from API\\\",\\\"description\\\":\\\"This is a cool image\\\",\\\"image_category_id\\\":2,\\\"location_id\\\":13,\\\"daily_log_segment_id\\\":123456,\\\"mt_location\\\":[\\\"Location 1\\\",\\\"Location 2\\\"],\\\"trade_ids\\\":[1,2],\\\"log_date\\\":\\\"2018-01-01\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     },
+     {
+      "id": "node_request",
+      "mimeType": "multipart/form-data",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/images',\n  qs: {project_id: 'SOME_INTEGER_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'multipart/form-data; boundary=---011000010111000001101001'\n  },\n  formData: {\n    upload_uuid: '1QJ83Q56CVQR4X3C0JG7YV86F8',\n    source_image_id: '12345',\n    image_name: 'my_file.png',\n    image: '{\"private\":false,\"provider_type\":\"MarkupLayer\",\"provider_id\":12,\"starred\":true,\"data\":\"string\",\"source\":\"Image from API\",\"description\":\"This is a cool image\",\"image_category_id\":2,\"location_id\":13,\"daily_log_segment_id\":123456,\"mt_location\":[\"Location 1\",\"Location 2\"],\"trade_ids\":[1,2],\"log_date\":\"2018-01-01\"}'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "multipart/form-data",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"upload_uuid\\\"\\r\\n\\r\\n1QJ83Q56CVQR4X3C0JG7YV86F8\\r\\n-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"source_image_id\\\"\\r\\n\\r\\n12345\\r\\n-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"image_name\\\"\\r\\n\\r\\nmy_file.png\\r\\n-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"image\\\"\\r\\n\\r\\n{\\\"private\\\":false,\\\"provider_type\\\":\\\"MarkupLayer\\\",\\\"provider_id\\\":12,\\\"starred\\\":true,\\\"data\\\":\\\"string\\\",\\\"source\\\":\\\"Image from API\\\",\\\"description\\\":\\\"This is a cool image\\\",\\\"image_category_id\\\":2,\\\"location_id\\\":13,\\\"daily_log_segment_id\\\":123456,\\\"mt_location\\\":[\\\"Location 1\\\",\\\"Location 2\\\"],\\\"trade_ids\\\":[1,2],\\\"log_date\\\":\\\"2018-01-01\\\"}\\r\\n-----011000010111000001101001--\\r\\n\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"multipart/form-data; boundary=---011000010111000001101001\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/images?project_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "multipart/form-data",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/images?project_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: multipart/form-data' \\\n  --form upload_uuid=1QJ83Q56CVQR4X3C0JG7YV86F8 \\\n  --form source_image_id=12345 \\\n  --form image_name=my_file.png \\\n  --form 'image={\"private\":false,\"provider_type\":\"MarkupLayer\",\"provider_id\":12,\"starred\":true,\"data\":\"string\",\"source\":\"Image from API\",\"description\":\"This is a cool image\",\"image_category_id\":2,\"location_id\":13,\"daily_log_segment_id\":123456,\"mt_location\":[\"Location 1\",\"Location 2\"],\"trade_ids\":[1,2],\"log_date\":\"2018-01-01\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "multipart/form-data",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/images?project_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new MultipartFormDataContent\n    {\n        new StringContent(\"1QJ83Q56CVQR4X3C0JG7YV86F8\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"upload_uuid\",\n                }\n            }\n        },\n        new StringContent(\"12345\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"source_image_id\",\n                }\n            }\n        },\n        new StringContent(\"my_file.png\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"image_name\",\n                }\n            }\n        },\n        new StringContent(\"{\\\"private\\\":false,\\\"provider_type\\\":\\\"MarkupLayer\\\",\\\"provider_id\\\":12,\\\"starred\\\":true,\\\"data\\\":\\\"string\\\",\\\"source\\\":\\\"Image from API\\\",\\\"description\\\":\\\"This is a cool image\\\",\\\"image_category_id\\\":2,\\\"location_id\\\":13,\\\"daily_log_segment_id\\\":123456,\\\"mt_location\\\":[\\\"Location 1\\\",\\\"Location 2\\\"],\\\"trade_ids\\\":[1,2],\\\"log_date\\\":\\\"2018-01-01\\\"}\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"image\",\n                }\n            }\n        },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add source_image_id to request body for Images create endpoint",
+      "description": "Add an optional `source_image_id` to the request body. When provided, a new independent image is created by copying an existing, policy-visible image in the same project (with its own file storage), and `image_name` is not required. `source_image_id` is mutually exclusive with `upload_uuid` and `data`, and takes precedence when more than one is supplied. The `upload_uuid` and multipart `data` upload flows are unchanged.",
+      "endpoint": "POST /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#create-image"
+     },
+     {
+      "summary": "Add daily_log_segment to response body for Images create endpoint",
+      "description": "Add daily_log_segment to response body for Images create endpoint.",
+      "endpoint": "POST /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#create-image"
+     },
+     {
+      "summary": "Add a new `projection` field to the response",
+      "description": "Allow clients to determine if an image is 360 or not.",
+      "endpoint": "POST /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#create-image"
+     },
+     {
+      "summary": "Add daily_log_segment_id to request body and response body for Images create endpoint",
+      "description": "Add daily_log_segment_id to request body and response body for Images create endpoint.",
+      "endpoint": "POST /images",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-07",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#create-image"
+     },
+     {
+      "summary": "Updated permissions for image uploads",
+      "description": "Allow users to upload images if they have permission to update the project.",
+      "endpoint": "POST /images",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-06-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#create-image"
+     },
+     {
+      "summary": "Recommend upload_uuid field for image uploads",
+      "description": "The `upload_uuid` field (available in `application/json` requests) is the recommended approach for image uploads, providing higher performance and reliability. The `image.data` property (available in `multipart/form-data` requests) remains supported for backward compatibility but is not recommended for new implementations.",
+      "endpoint": "POST /images",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-06-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#create-image"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/images/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the image",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show image",
+    "description": "Show detailed information for a specified Image in a Project's Photo Album (Image Category).",
+    "tags": [
+     "Images"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "title": "Image",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier for the Image. Use as the {id} path segment in GET/PATCH/DELETE /rest/v1.0/images/{id}."
+            },
+            "url": {
+             "type": "string",
+             "description": "Time-limited URL to download the full-resolution image file. Null when the image has been permanently deleted.",
+             "nullable": true
+            },
+            "size": {
+             "type": "integer",
+             "description": "Image size",
+             "nullable": true
+            },
+            "filename": {
+             "type": "string",
+             "description": "Image file name",
+             "nullable": true
+            },
+            "description": {
+             "type": "string",
+             "description": "Image description"
+            },
+            "thumbnail_url": {
+             "type": "string",
+             "description": "Time-limited URL to the large thumbnail. Null when the image has been permanently deleted.",
+             "nullable": true
+            },
+            "taken_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp the photo was captured, from EXIF exposure metadata, in ISO 8601 format. Null when the source file has no capture date.",
+             "nullable": true
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Image created at"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Image updated at"
+            },
+            "location": {
+             "type": "object",
+             "title": "Location",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Location ID",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Location name",
+               "example": "1space>1 space"
+              },
+              "node_name": {
+               "type": "string",
+               "description": "Location node name",
+               "example": "1 space"
+              },
+              "parent_id": {
+               "type": "integer",
+               "description": "Location parent id",
+               "example": 788866,
+               "nullable": true
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp of Location creation",
+               "example": "2016-08-01T23:33:54Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Timestamp of last update to Location",
+               "example": "2016-08-01T23:33:54Z"
+              }
+             }
+            },
+            "image_category_name": {
+             "type": "string",
+             "description": "Image Category Name"
+            },
+            "image_category_id": {
+             "type": "integer",
+             "description": "Image Category ID"
+            },
+            "permanently_deleted": {
+             "type": "boolean",
+             "description": "True when the image is marked as permanently deleted."
+            },
+            "private": {
+             "type": "boolean",
+             "description": "Image private status"
+            },
+            "projection": {
+             "type": "string",
+             "description": "Spatial projection of the image. '360' marks a panoramic photo, which clients render in a dedicated 360 viewer; such images are also eligible for tile generation, but only when the file is larger than MINIMUM_SIZE_FOR_TILE_GENERATION (5 MB). 'regular' is a standard flat photo, and 'unknown' means the projection has not been determined.",
+             "enum": [
+              "unknown",
+              "regular",
+              "360"
+             ],
+             "example": "regular"
+            },
+            "starred": {
+             "type": "boolean",
+             "description": "Image starred status"
+            },
+            "width": {
+             "type": "integer",
+             "description": "Image width",
+             "nullable": true
+            },
+            "height": {
+             "type": "integer",
+             "description": "Image height",
+             "nullable": true
+            },
+            "image_category_private": {
+             "type": "boolean",
+             "description": "Whether the Image's category is marked private. Mirrors the private flag of the Image's Image Category."
+            },
+            "origin_id": {
+             "type": "integer",
+             "description": "ID of the source record this Image originated from (for example, a Daily Log entry). Null when the Image was uploaded directly.",
+             "example": 45678,
+             "nullable": true
+            },
+            "daily_log_header_id": {
+             "type": "integer",
+             "description": "ID of the Daily Log day this Image is attached to. Null when the Image is not associated with a Daily Log.",
+             "example": 987,
+             "nullable": true
+            },
+            "daily_log_segment_id": {
+             "type": "integer",
+             "description": "Daily Log Segment ID",
+             "example": 123456,
+             "nullable": true
+            },
+            "daily_log_segment": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 123456
+              },
+              "name": {
+               "type": "string",
+               "description": "Name of the segment",
+               "example": "Morning Shift"
+              },
+              "description": {
+               "type": "string",
+               "nullable": true,
+               "description": "Description of the segment",
+               "example": "Work performed during the morning shift"
+              },
+              "deleted_at": {
+               "type": "string",
+               "format": "date-time",
+               "nullable": true,
+               "description": "Timestamp when the segment was soft deleted",
+               "example": "2025-01-15T10:30:00Z"
+              },
+              "deleted": {
+               "type": "boolean",
+               "description": "Indicates if the segment is deleted",
+               "example": false
+              }
+             }
+            },
+            "gps_lat": {
+             "type": "string",
+             "description": "GPS latitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+             "example": "34.0522",
+             "nullable": true
+            },
+            "gps_long": {
+             "type": "string",
+             "description": "GPS longitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+             "example": "-118.2437",
+             "nullable": true
+            },
+            "uploader": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 160586
+              },
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name",
+               "example": "Carl Contractor"
+              }
+             }
+            },
+            "links": {
+             "type": "object",
+             "title": "Links",
+             "properties": {
+              "self": {
+               "type": "string",
+               "description": "A link back to the current resource",
+               "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+              },
+              "update": {
+               "type": "string",
+               "description": "A link to the update endpoint for the resource",
+               "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+              },
+              "delete": {
+               "type": "string",
+               "description": "A link to the delete endpoint for the resource",
+               "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+              },
+              "permanentlyDelete": {
+               "type": "string",
+               "description": "A link to the permanent delete endpoint for the resource",
+               "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074&permanent=true"
+              },
+              "retrieve": {
+               "type": "string",
+               "description": "A link to the retrieve endpoint for the resource",
+               "example": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+              }
+             }
+            },
+            "trades": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "title": "Trade",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Trade ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Trade name",
+                "example": "09 - acoustical panels"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Trade availability",
+                "example": true
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp of last update to Trade",
+                "example": "2016-08-01T23:33:54Z"
+               }
+              }
+             }
+            },
+            "comments_count": {
+             "type": "integer",
+             "description": "the number of comments on this image"
+            }
+           },
+           "example": {
+            "id": 9122752,
+            "url": "https://s3.amazonaws.com/pro-core.com/prostore/20150730215438_production_83200871.JPG?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=hIkhmk3dWICVHm4b7e0ilpZ0CJc%3D",
+            "size": 3423146,
+            "filename": "2015-07-15_Photo 1042_bull nosed flashing to roof overhang on south elevation_time 16.21.JPG",
+            "description": "Image description",
+            "thumbnail_url": "https://prostore-thumbnail-bucket-production.s3.amazonaws.com/83200871_thumbnail_large.PNG?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=1753912481&Signature=X4b27yIyfP3sxXwQuYG3aOgFh%2BU%3D",
+            "taken_at": "2015-07-15T23:21:56Z",
+            "created_at": "2015-07-30T21:54:39Z",
+            "updated_at": "2015-08-01T09:44:29Z",
+            "image_category_id": 186339,
+            "image_category_name": "Unclassified",
+            "private": false,
+            "projection": "regular",
+            "starred": false,
+            "width": 400,
+            "height": 300,
+            "uploader": {
+             "id": 1,
+             "name": "Customer Support",
+             "login": "procore@example.com"
+            },
+            "location": {
+             "id": 2,
+             "name": "main building > kitchen",
+             "node_name": "kitchen",
+             "parent_id": 1
+            },
+            "trades": [
+             {
+              "id": 1,
+              "name": "Drywall"
+             },
+             {
+              "id": 2,
+              "name": "Electrical"
+             }
+            ],
+            "daily_log_header_id": 10,
+            "links": {
+             "self": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+             "update": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+             "delete": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+             "retrieve": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+            },
+            "comments_count": 6
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "tiling_status": {
+             "type": "string",
+             "description": "Status of image tiling process",
+             "enum": [
+              "not_tiled",
+              "pending",
+              "processing",
+              "tiled",
+              "failed"
+             ],
+             "example": "not_tiled"
+            },
+            "tiles_config": {
+             "title": "Image Tiles Config",
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Image Tiles Config ID",
+               "example": 123
+              },
+              "tile_resolution": {
+               "type": "integer",
+               "description": "Resolution of individual tiles in pixels",
+               "example": 512
+              },
+              "cube_resolution": {
+               "type": "integer",
+               "description": "Resolution of the cube map in pixels",
+               "example": 4096
+              },
+              "max_zoom_level": {
+               "type": "integer",
+               "description": "Maximum zoom level for the tiled image",
+               "example": 3
+              },
+              "extension": {
+               "type": "string",
+               "description": "File extension for tile images",
+               "example": "jpg"
+              },
+              "path_pattern": {
+               "type": "string",
+               "description": "Path pattern for accessing tiles",
+               "example": "%l/%f%x_%y"
+              }
+             },
+             "example": {
+              "id": 123,
+              "tile_resolution": 512,
+              "cube_resolution": 4096,
+              "max_zoom_level": 3,
+              "extension": "jpg",
+              "path_pattern": "%l/%f%x_%y"
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/images/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add daily_log_segment to response body for Images show endpoint",
+      "description": "Add daily_log_segment to response body for Images show endpoint.",
+      "endpoint": "GET /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#show-image"
+     },
+     {
+      "summary": "Add `pending` status to `tiling_status` field",
+      "description": "Added a new `pending` status to the `tiling_status` field. This status indicates that a 360 image is pending tile generation.",
+      "endpoint": "GET /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-04",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#show-image"
+     },
+     {
+      "summary": "Add `tiles_config` and `tiling_status` fields to the response",
+      "description": "Added a new `tiles_config` object containing tiling configuration for 360 images, and a `tiling_status` field indicating the status of the tiling process (not_tiled, processing, tiled, failed).",
+      "endpoint": "GET /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#show-image"
+     },
+     {
+      "summary": "Add a new `projection` field to the response",
+      "description": "Allow clients to determine if an image is 360 or not.",
+      "endpoint": "GET /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#show-image"
+     },
+     {
+      "summary": "Add daily_log_segment_id to response body for Images show endpoint",
+      "description": "Add daily_log_segment_id to response body for Images show endpoint.",
+      "endpoint": "GET /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-07",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#show-image"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update image",
+    "description": "Update an existing Image in a Project.",
+    "tags": [
+     "Images"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "image"
+        ],
+        "properties": {
+         "image": {
+          "title": "Image",
+          "type": "object",
+          "properties": {
+           "private": {
+            "type": "boolean",
+            "description": "The Private status of the Image. Defaults to a project configuration.",
+            "example": false
+           },
+           "starred": {
+            "type": "boolean",
+            "description": "The Starred status of the Image.",
+            "example": true
+           },
+           "description": {
+            "type": "string",
+            "description": "Image description",
+            "example": "This is a cool image"
+           },
+           "image_category_id": {
+            "type": "integer",
+            "description": "Image Category ID to move the Image to",
+            "example": 2
+           },
+           "location_id": {
+            "type": "integer",
+            "description": "If you want to use an existing location and you have the ID of that existing location use this. `location_id` takes precedence over `mt_location`",
+            "example": 13
+           },
+           "daily_log_segment_id": {
+            "type": "integer",
+            "description": "Daily Log Segment ID",
+            "example": 123456,
+            "nullable": true
+           },
+           "mt_location": {
+            "type": "array",
+            "description": "Use this for creating a new multi-tier or single-tier Location. This will be ignored if `location_id` is provided.",
+            "items": {
+             "type": "string"
+            },
+            "example": [
+             "Location 1",
+             "Location 2"
+            ]
+           },
+           "trade_ids": {
+            "type": "array",
+            "description": "An array of IDs of the Trades of the Image",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             1,
+             2
+            ]
+           },
+           "log_date": {
+            "type": "string",
+            "example": "2018-01-01"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Image",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for the Image. Use as the {id} path segment in GET/PATCH/DELETE /rest/v1.0/images/{id}."
+          },
+          "url": {
+           "type": "string",
+           "description": "Time-limited URL to download the full-resolution image file. Null when the image has been permanently deleted.",
+           "nullable": true
+          },
+          "size": {
+           "type": "integer",
+           "description": "Image size",
+           "nullable": true
+          },
+          "filename": {
+           "type": "string",
+           "description": "Image file name",
+           "nullable": true
+          },
+          "description": {
+           "type": "string",
+           "description": "Image description"
+          },
+          "thumbnail_url": {
+           "type": "string",
+           "description": "Time-limited URL to the large thumbnail. Null when the image has been permanently deleted.",
+           "nullable": true
+          },
+          "taken_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp the photo was captured, from EXIF exposure metadata, in ISO 8601 format. Null when the source file has no capture date.",
+           "nullable": true
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Image created at"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Image updated at"
+          },
+          "location": {
+           "type": "object",
+           "title": "Location",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Location ID",
+             "example": 15504
+            },
+            "name": {
+             "type": "string",
+             "description": "Location name",
+             "example": "1space>1 space"
+            },
+            "node_name": {
+             "type": "string",
+             "description": "Location node name",
+             "example": "1 space"
+            },
+            "parent_id": {
+             "type": "integer",
+             "description": "Location parent id",
+             "example": 788866,
+             "nullable": true
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of Location creation",
+             "example": "2016-08-01T23:33:54Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of last update to Location",
+             "example": "2016-08-01T23:33:54Z"
+            }
+           }
+          },
+          "image_category_name": {
+           "type": "string",
+           "description": "Image Category Name"
+          },
+          "image_category_id": {
+           "type": "integer",
+           "description": "Image Category ID"
+          },
+          "permanently_deleted": {
+           "type": "boolean",
+           "description": "True when the image is marked as permanently deleted."
+          },
+          "private": {
+           "type": "boolean",
+           "description": "Image private status"
+          },
+          "projection": {
+           "type": "string",
+           "description": "Spatial projection of the image. '360' marks a panoramic photo, which clients render in a dedicated 360 viewer; such images are also eligible for tile generation, but only when the file is larger than MINIMUM_SIZE_FOR_TILE_GENERATION (5 MB). 'regular' is a standard flat photo, and 'unknown' means the projection has not been determined.",
+           "enum": [
+            "unknown",
+            "regular",
+            "360"
+           ],
+           "example": "regular"
+          },
+          "starred": {
+           "type": "boolean",
+           "description": "Image starred status"
+          },
+          "width": {
+           "type": "integer",
+           "description": "Image width",
+           "nullable": true
+          },
+          "height": {
+           "type": "integer",
+           "description": "Image height",
+           "nullable": true
+          },
+          "image_category_private": {
+           "type": "boolean",
+           "description": "Whether the Image's category is marked private. Mirrors the private flag of the Image's Image Category."
+          },
+          "origin_id": {
+           "type": "integer",
+           "description": "ID of the source record this Image originated from (for example, a Daily Log entry). Null when the Image was uploaded directly.",
+           "example": 45678,
+           "nullable": true
+          },
+          "daily_log_header_id": {
+           "type": "integer",
+           "description": "ID of the Daily Log day this Image is attached to. Null when the Image is not associated with a Daily Log.",
+           "example": 987,
+           "nullable": true
+          },
+          "daily_log_segment_id": {
+           "type": "integer",
+           "description": "Daily Log Segment ID",
+           "example": 123456,
+           "nullable": true
+          },
+          "daily_log_segment": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 123456
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the segment",
+             "example": "Morning Shift"
+            },
+            "description": {
+             "type": "string",
+             "nullable": true,
+             "description": "Description of the segment",
+             "example": "Work performed during the morning shift"
+            },
+            "deleted_at": {
+             "type": "string",
+             "format": "date-time",
+             "nullable": true,
+             "description": "Timestamp when the segment was soft deleted",
+             "example": "2025-01-15T10:30:00Z"
+            },
+            "deleted": {
+             "type": "boolean",
+             "description": "Indicates if the segment is deleted",
+             "example": false
+            }
+           }
+          },
+          "gps_lat": {
+           "type": "string",
+           "description": "GPS latitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+           "example": "34.0522",
+           "nullable": true
+          },
+          "gps_long": {
+           "type": "string",
+           "description": "GPS longitude extracted from the image EXIF metadata, as a decimal-degrees string. Null when the image has no embedded location data.",
+           "example": "-118.2437",
+           "nullable": true
+          },
+          "uploader": {
+           "type": "object",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "links": {
+           "type": "object",
+           "title": "Links",
+           "properties": {
+            "self": {
+             "type": "string",
+             "description": "A link back to the current resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+            },
+            "update": {
+             "type": "string",
+             "description": "A link to the update endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+            },
+            "delete": {
+             "type": "string",
+             "description": "A link to the delete endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074"
+            },
+            "permanentlyDelete": {
+             "type": "string",
+             "description": "A link to the permanent delete endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074&permanent=true"
+            },
+            "retrieve": {
+             "type": "string",
+             "description": "A link to the retrieve endpoint for the resource",
+             "example": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+            }
+           }
+          },
+          "trades": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "title": "Trade",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Trade ID",
+              "example": 999
+             },
+             "name": {
+              "type": "string",
+              "description": "Trade name",
+              "example": "09 - acoustical panels"
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Trade availability",
+              "example": true
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of last update to Trade",
+              "example": "2016-08-01T23:33:54Z"
+             }
+            }
+           }
+          },
+          "comments_count": {
+           "type": "integer",
+           "description": "the number of comments on this image"
+          }
+         },
+         "example": {
+          "id": 9122752,
+          "url": "https://s3.amazonaws.com/pro-core.com/prostore/20150730215438_production_83200871.JPG?AWSAccessKeyId=AKIAJ5EH2SRCJA6V2DKA&Expires=2099098110&Signature=hIkhmk3dWICVHm4b7e0ilpZ0CJc%3D",
+          "size": 3423146,
+          "filename": "2015-07-15_Photo 1042_bull nosed flashing to roof overhang on south elevation_time 16.21.JPG",
+          "description": "Image description",
+          "thumbnail_url": "https://prostore-thumbnail-bucket-production.s3.amazonaws.com/83200871_thumbnail_large.PNG?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=1753912481&Signature=X4b27yIyfP3sxXwQuYG3aOgFh%2BU%3D",
+          "taken_at": "2015-07-15T23:21:56Z",
+          "created_at": "2015-07-30T21:54:39Z",
+          "updated_at": "2015-08-01T09:44:29Z",
+          "image_category_id": 186339,
+          "image_category_name": "Unclassified",
+          "private": false,
+          "projection": "regular",
+          "starred": false,
+          "width": 400,
+          "height": 300,
+          "uploader": {
+           "id": 1,
+           "name": "Customer Support",
+           "login": "procore@example.com"
+          },
+          "location": {
+           "id": 2,
+           "name": "main building > kitchen",
+           "node_name": "kitchen",
+           "parent_id": 1
+          },
+          "trades": [
+           {
+            "id": 1,
+            "name": "Drywall"
+           },
+           {
+            "id": 2,
+            "name": "Electrical"
+           }
+          ],
+          "daily_log_header_id": 10,
+          "links": {
+           "self": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+           "update": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+           "delete": "/rest/v1.0/images/9122752?image_category_id=186339&project_id=173074",
+           "retrieve": "/rest/v1.0/images/9122752/retrieve?project_id=173074"
+          },
+          "comments_count": 6
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/images/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    image: {\n      private: false,\n      starred: true,\n      description: 'This is a cool image',\n      image_category_id: 2,\n      location_id: 13,\n      daily_log_segment_id: 123456,\n      mt_location: ['Location 1', 'Location 2'],\n      trade_ids: [1, 2],\n      log_date: '2018-01-01'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"image\\\":{\\\"private\\\":false,\\\"starred\\\":true,\\\"description\\\":\\\"This is a cool image\\\",\\\"image_category_id\\\":2,\\\"location_id\\\":13,\\\"daily_log_segment_id\\\":123456,\\\"mt_location\\\":[\\\"Location 1\\\",\\\"Location 2\\\"],\\\"trade_ids\\\":[1,2],\\\"log_date\\\":\\\"2018-01-01\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"image\":{\"private\":false,\"starred\":true,\"description\":\"This is a cool image\",\"image_category_id\":2,\"location_id\":13,\"daily_log_segment_id\":123456,\"mt_location\":[\"Location 1\",\"Location 2\"],\"trade_ids\":[1,2],\"log_date\":\"2018-01-01\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"image\\\":{\\\"private\\\":false,\\\"starred\\\":true,\\\"description\\\":\\\"This is a cool image\\\",\\\"image_category_id\\\":2,\\\"location_id\\\":13,\\\"daily_log_segment_id\\\":123456,\\\"mt_location\\\":[\\\"Location 1\\\",\\\"Location 2\\\"],\\\"trade_ids\\\":[1,2],\\\"log_date\\\":\\\"2018-01-01\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add daily_log_segment to response body for Images update endpoint",
+      "description": "Add daily_log_segment to response body for Images update endpoint.",
+      "endpoint": "PATCH /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-20",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#update-image"
+     },
+     {
+      "summary": "Add a new `projection` field to the response",
+      "description": "Allow clients to determine if an image is 360 or not.",
+      "endpoint": "PATCH /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#update-image"
+     },
+     {
+      "summary": "Add daily_log_segment_id to request body and response body for Images update endpoint",
+      "description": "Add daily_log_segment_id to request body and response body for Images update endpoint.",
+      "endpoint": "PATCH /images/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-07",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "images?version=1.0#update-image"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete image",
+    "description": "Remove an Image from a Project.",
+    "tags": [
+     "Images"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "permanent",
+      "in": "query",
+      "description": "If true, permanently deletes the image.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/images/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE', permanent: 'SOME_BOOLEAN_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE&permanent=SOME_BOOLEAN_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url 'https://api.procore.com/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE&permanent=SOME_BOOLEAN_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/images/%7Bid%7D?project_id=SOME_INTEGER_VALUE&permanent=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

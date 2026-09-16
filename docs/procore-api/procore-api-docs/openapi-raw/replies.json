@@ -1,0 +1,1155 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Replies",
+  "x-product-category": "Project Management",
+  "x-tool-category": "RFI",
+  "x-resource-name": "Replies",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/rfis/{rfi_id}/replies": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "rfi_id",
+     "in": "path",
+     "description": "RFI ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List RFI Replies",
+    "description": "Returns a list of replies for a specified RFI",
+    "tags": [
+     "RFIs"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique integer identifier for this RFI reply. Use as the `{id}` path parameter to retrieve, update, or delete via the replies endpoints.",
+            "example": 999
+           },
+           "official": {
+            "type": "boolean",
+            "description": "Whether this reply is an official RFI response. Official replies represent the authoritative answer to the RFI question.",
+            "example": true
+           },
+           "answer_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when this reply was created, in ISO 8601 format.",
+            "example": "2016-08-29T14:37:22Z"
+           },
+           "plain_text_body": {
+            "type": "string",
+            "description": "Plain text content of the reply, with HTML tags stripped.",
+            "example": "No, they need to follow the guidelines on Schedule D"
+           },
+           "rich_text_body": {
+            "type": "string",
+            "description": "HTML-formatted content of the reply.",
+            "example": "<p>No, they need to follow the guidelines on Schedule D</p>"
+           },
+           "created_by": {
+            "type": "string",
+            "description": "Display name of the user who created this reply, formatted as first name, last name, and company.",
+            "example": "Jane Doe"
+           },
+           "created_by_id": {
+            "type": "integer",
+            "description": "Login information ID of the user who created this reply.",
+            "example": 42
+           },
+           "attachments": {
+            "type": "array",
+            "description": "List of files attached to this reply.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique integer identifier for this attachment."
+              },
+              "name": {
+               "type": "string",
+               "description": "Display name of the attached file."
+              },
+              "url": {
+               "type": "string",
+               "description": "URL to download the attached file."
+              },
+              "filename": {
+               "type": "string",
+               "deprecated": true,
+               "description": "Duplicate of `name`. Deprecated \u2014 use `name` instead. Both fields carry the same value.",
+               "example": "january_receipt_copy.jpg"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create RFI Reply",
+    "description": "Creates a reply for a specified RFI",
+    "tags": [
+     "RFIs"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "reply"
+        ],
+        "properties": {
+         "reply": {
+          "type": "object",
+          "properties": {
+           "body": {
+            "type": "string",
+            "description": "HTML content of the reply. Rendered as rich text in the RFI interface."
+           },
+           "official": {
+            "type": "boolean",
+            "description": "Whether this reply is an official response. Set to `true` to mark the reply as the official answer to the RFI question."
+           },
+           "drawing_revision_ids": {
+            "type": "array",
+            "description": "Drawing Revisions to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             4,
+             5
+            ]
+           },
+           "file_version_ids": {
+            "type": "array",
+            "description": "File Versions to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             6,
+             7
+            ]
+           },
+           "form_ids": {
+            "type": "array",
+            "description": "Forms to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             7,
+             8
+            ]
+           },
+           "image_ids": {
+            "type": "array",
+            "description": "Images to attach to the response",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             9,
+             10
+            ]
+           },
+           "upload_ids": {
+            "type": "array",
+            "description": "Uploads to attach to the response",
+            "items": {
+             "type": "string"
+            },
+            "example": [
+             "4120226e-36a8-416f-970e-880bae78164f",
+             "de07e35a-4860-4f96-acd8-8360833dc495"
+            ]
+           },
+           "document_management_document_revision_ids": {
+            "type": "array",
+            "description": "PDM document to attach to the response",
+            "items": {
+             "type": "string"
+            },
+            "example": [
+             "01JC3TZNKJK6121Z1A2V7G574Q",
+             "01JC3TZPXCJMC6P88CHHD6PTZ9"
+            ]
+           }
+          }
+         },
+         "attachments": {
+          "type": "array",
+          "description": "RFI Response Attachments.\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique integer identifier for this RFI reply. Use as the `{id}` path parameter to retrieve, update, or delete via the replies endpoints.",
+           "example": 999
+          },
+          "official": {
+           "type": "boolean",
+           "description": "Whether this reply is an official RFI response. Official replies represent the authoritative answer to the RFI question.",
+           "example": true
+          },
+          "answer_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when this reply was created, in ISO 8601 format.",
+           "example": "2016-08-29T14:37:22Z"
+          },
+          "plain_text_body": {
+           "type": "string",
+           "description": "Plain text content of the reply, with HTML tags stripped.",
+           "example": "No, they need to follow the guidelines on Schedule D"
+          },
+          "rich_text_body": {
+           "type": "string",
+           "description": "HTML-formatted content of the reply.",
+           "example": "<p>No, they need to follow the guidelines on Schedule D</p>"
+          },
+          "created_by": {
+           "type": "string",
+           "description": "Display name of the user who created this reply, formatted as first name, last name, and company.",
+           "example": "Jane Doe"
+          },
+          "created_by_id": {
+           "type": "integer",
+           "description": "Login information ID of the user who created this reply.",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "description": "List of files attached to this reply.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique integer identifier for this attachment."
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attached file."
+             },
+             "url": {
+              "type": "string",
+              "description": "URL to download the attached file."
+             },
+             "filename": {
+              "type": "string",
+              "deprecated": true,
+              "description": "Duplicate of `name`. Deprecated \u2014 use `name` instead. Both fields carry the same value.",
+              "example": "january_receipt_copy.jpg"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies',\n  headers: {'content-type': 'application/json'},\n  body: {\n    reply: {\n      body: 'string',\n      official: true,\n      drawing_revision_ids: [4, 5],\n      file_version_ids: [6, 7],\n      form_ids: [7, 8],\n      image_ids: [9, 10],\n      upload_ids: ['4120226e-36a8-416f-970e-880bae78164f', 'de07e35a-4860-4f96-acd8-8360833dc495'],\n      document_management_document_revision_ids: ['01JC3TZNKJK6121Z1A2V7G574Q', '01JC3TZPXCJMC6P88CHHD6PTZ9']\n    },\n    attachments: ['string']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"reply\\\":{\\\"body\\\":\\\"string\\\",\\\"official\\\":true,\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"upload_ids\\\":[\\\"4120226e-36a8-416f-970e-880bae78164f\\\",\\\"de07e35a-4860-4f96-acd8-8360833dc495\\\"],\\\"document_management_document_revision_ids\\\":[\\\"01JC3TZNKJK6121Z1A2V7G574Q\\\",\\\"01JC3TZPXCJMC6P88CHHD6PTZ9\\\"]},\\\"attachments\\\":[\\\"string\\\"]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies \\\n  --header 'content-type: application/json' \\\n  --data '{\"reply\":{\"body\":\"string\",\"official\":true,\"drawing_revision_ids\":[4,5],\"file_version_ids\":[6,7],\"form_ids\":[7,8],\"image_ids\":[9,10],\"upload_ids\":[\"4120226e-36a8-416f-970e-880bae78164f\",\"de07e35a-4860-4f96-acd8-8360833dc495\"],\"document_management_document_revision_ids\":[\"01JC3TZNKJK6121Z1A2V7G574Q\",\"01JC3TZPXCJMC6P88CHHD6PTZ9\"]},\"attachments\":[\"string\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies\"),\n    Content = new StringContent(\"{\\\"reply\\\":{\\\"body\\\":\\\"string\\\",\\\"official\\\":true,\\\"drawing_revision_ids\\\":[4,5],\\\"file_version_ids\\\":[6,7],\\\"form_ids\\\":[7,8],\\\"image_ids\\\":[9,10],\\\"upload_ids\\\":[\\\"4120226e-36a8-416f-970e-880bae78164f\\\",\\\"de07e35a-4860-4f96-acd8-8360833dc495\\\"],\\\"document_management_document_revision_ids\\\":[\\\"01JC3TZNKJK6121Z1A2V7G574Q\\\",\\\"01JC3TZPXCJMC6P88CHHD6PTZ9\\\"]},\\\"attachments\\\":[\\\"string\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/rfis/{rfi_id}/replies/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "rfi_id",
+     "in": "path",
+     "description": "RFI ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Reply ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show RFI Reply",
+    "description": "Returns detailed information on a specified RFI reply",
+    "tags": [
+     "RFIs"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique integer identifier for this RFI reply. Use as the `{id}` path parameter to retrieve, update, or delete via the replies endpoints.",
+           "example": 999
+          },
+          "official": {
+           "type": "boolean",
+           "description": "Whether this reply is an official RFI response. Official replies represent the authoritative answer to the RFI question.",
+           "example": true
+          },
+          "answer_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when this reply was created, in ISO 8601 format.",
+           "example": "2016-08-29T14:37:22Z"
+          },
+          "plain_text_body": {
+           "type": "string",
+           "description": "Plain text content of the reply, with HTML tags stripped.",
+           "example": "No, they need to follow the guidelines on Schedule D"
+          },
+          "rich_text_body": {
+           "type": "string",
+           "description": "HTML-formatted content of the reply.",
+           "example": "<p>No, they need to follow the guidelines on Schedule D</p>"
+          },
+          "created_by": {
+           "type": "string",
+           "description": "Display name of the user who created this reply, formatted as first name, last name, and company.",
+           "example": "Jane Doe"
+          },
+          "created_by_id": {
+           "type": "integer",
+           "description": "Login information ID of the user who created this reply.",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "description": "List of files attached to this reply.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique integer identifier for this attachment."
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attached file."
+             },
+             "url": {
+              "type": "string",
+              "description": "URL to download the attached file."
+             },
+             "filename": {
+              "type": "string",
+              "deprecated": true,
+              "description": "Duplicate of `name`. Deprecated \u2014 use `name` instead. Both fields carry the same value.",
+              "example": "january_receipt_copy.jpg"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update RFI Reply",
+    "description": "Updates a specified RFI reply",
+    "tags": [
+     "RFIs"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "reply"
+        ],
+        "properties": {
+         "reply": {
+          "type": "object",
+          "properties": {
+           "official": {
+            "type": "boolean",
+            "description": "Whether this reply is an official response. Set to `true` to mark the reply as the official answer to the RFI question."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "RFI Reply",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique integer identifier for this RFI reply. Use as the `{id}` path parameter to retrieve, update, or delete via the replies endpoints.",
+           "example": 999
+          },
+          "official": {
+           "type": "boolean",
+           "description": "Whether this reply is an official RFI response. Official replies represent the authoritative answer to the RFI question.",
+           "example": true
+          },
+          "answer_date": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when this reply was created, in ISO 8601 format.",
+           "example": "2016-08-29T14:37:22Z"
+          },
+          "plain_text_body": {
+           "type": "string",
+           "description": "Plain text content of the reply, with HTML tags stripped.",
+           "example": "No, they need to follow the guidelines on Schedule D"
+          },
+          "rich_text_body": {
+           "type": "string",
+           "description": "HTML-formatted content of the reply.",
+           "example": "<p>No, they need to follow the guidelines on Schedule D</p>"
+          },
+          "created_by": {
+           "type": "string",
+           "description": "Display name of the user who created this reply, formatted as first name, last name, and company.",
+           "example": "Jane Doe"
+          },
+          "created_by_id": {
+           "type": "integer",
+           "description": "Login information ID of the user who created this reply.",
+           "example": 42
+          },
+          "attachments": {
+           "type": "array",
+           "description": "List of files attached to this reply.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique integer identifier for this attachment."
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attached file."
+             },
+             "url": {
+              "type": "string",
+              "description": "URL to download the attached file."
+             },
+             "filename": {
+              "type": "string",
+              "deprecated": true,
+              "description": "Duplicate of `name`. Deprecated \u2014 use `name` instead. Both fields carry the same value.",
+              "example": "january_receipt_copy.jpg"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {reply: {official: true}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"reply\\\":{\\\"official\\\":true}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"reply\":{\"official\":true}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"reply\\\":{\\\"official\\\":true}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete an RFI Response",
+    "description": "Deletes a specified response associated with a specified RFI and specified Project",
+    "tags": [
+     "RFIs"
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully deleted responses"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Brfi_id%7D/replies/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

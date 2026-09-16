@@ -1,0 +1,313 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Invoicing Async Jobs",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Invoices",
+  "x-resource-name": "Invoicing Async Jobs",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/invoices/async_jobs/{uuid}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "uuid",
+     "in": "path",
+     "description": "UUID of the Async Job",
+     "example": "329e09cc-315b-42c8-9ffe-4a328017f747",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Show an Async Job for a Company",
+    "tags": [
+     "Invoicing",
+     "Async Job"
+    ],
+    "description": "Return detailed information about a specified Async Job.",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "An Invoicing Async Job",
+         "properties": {
+          "uuid": {
+           "type": "string",
+           "description": "Unique identifier for the async job. Use as the {uuid} path parameter to poll this endpoint for the job's current status and result.",
+           "example": "329e09cc-315b-42c8-9ffe-4a328017f747"
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "ID of the company that owns this async job.",
+           "example": 2
+          },
+          "created_by_id": {
+           "type": "integer",
+           "description": "ID of the user who initiated the async job.",
+           "example": 3
+          },
+          "status": {
+           "type": "string",
+           "description": "Current lifecycle state of the async job. Poll this endpoint until the status is `completed` or `failed`; `result` is populated once the job succeeds.",
+           "enum": [
+            "pending",
+            "in_progress",
+            "completed",
+            "failed"
+           ],
+           "example": "completed"
+          },
+          "result": {
+           "type": "object",
+           "description": "Payload produced by the async job. Populated only after the job reaches `completed`; null while the job is pending, in progress, or failed. Shape depends on the job type.",
+           "nullable": true,
+           "oneOf": [
+            {
+             "type": "object",
+             "description": "An Invoicing Async Job Result",
+             "properties": {
+              "url": {
+               "type": "string",
+               "description": "URL of the result of the Async Job",
+               "example": "https://example.com/payment_application_1.pdf",
+               "nullable": true
+              }
+             }
+            }
+           ]
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp when the async job was created, in ISO 8601 format.",
+           "format": "date-time",
+           "example": "2016-10-25T17:53:35Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of the most recent update to the async job, in ISO 8601 format. Advances as the job transitions between statuses.",
+           "example": "2015-11-12T21:26:28Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/invoices/async_jobs/329e09cc-315b-42c8-9ffe-4a328017f747'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/invoices/async_jobs/329e09cc-315b-42c8-9ffe-4a328017f747\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/invoices/async_jobs/329e09cc-315b-42c8-9ffe-4a328017f747"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/invoices/async_jobs/329e09cc-315b-42c8-9ffe-4a328017f747\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Async Job show endpoint",
+      "description": "Show an Async Job",
+      "endpoint": "GET /companies/{company_id}/invoices/async_jobs/{uuid}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-02-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "invoicing-async-jobs?version=1.0#show-an-async-job-for-a-company"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

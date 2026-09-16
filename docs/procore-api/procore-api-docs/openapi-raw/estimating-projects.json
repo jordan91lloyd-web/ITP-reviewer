@@ -1,0 +1,635 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Estimating Projects",
+  "version": "2.0",
+  "x-product-category": "Preconstruction",
+  "x-tool-category": "Estimating",
+  "x-resource-name": "Estimating Projects",
+  "x-product-lines": [
+   "Preconstruction"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/estimating/estimating_projects": {
+   "get": {
+    "tags": [
+     "CompanyProjects"
+    ],
+    "summary": "Get all estimating projects",
+    "operationId": "CompanyProjects_GetProjects",
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page number",
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      },
+      "x-position": 1,
+      "required": false
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Items per page",
+      "schema": {
+       "type": "integer",
+       "format": "int32",
+       "default": 10,
+       "maximum": 100
+      },
+      "x-position": 2,
+      "required": false
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "headers": {
+       "Total": {
+        "description": "Total number of items",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Per-Page": {
+        "description": "Number of items per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Links to other pages",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "array",
+           "nullable": true,
+           "items": {
+            "type": "object",
+            "description": "Represents a project as returned in portfolio (company-wide) listings.",
+            "additionalProperties": false,
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The unique identifier of the Bid Board project.",
+              "nullable": true
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Bid Board project.",
+              "nullable": true
+             },
+             "description": {
+              "type": "string",
+              "description": "The description of the Bid Board project.",
+              "nullable": true
+             },
+             "created_on": {
+              "type": "string",
+              "description": "The creation date of the Bid Board project.",
+              "format": "date-time",
+              "nullable": true
+             },
+             "due_date": {
+              "type": "string",
+              "description": "The due date of the Bid Board project.",
+              "format": "date-time",
+              "nullable": true,
+              "example": "2025-01-22T16:40:00Z"
+             },
+             "last_status_change": {
+              "type": "string",
+              "description": "The date when the Bid Board project's status was last changed.",
+              "format": "date-time",
+              "nullable": true
+             },
+             "status": {
+              "type": "string",
+              "description": "The current status of the project.",
+              "x-enumNames": [
+               "Estimating",
+               "BidSubmitted",
+               "Accepted",
+               "Delayed",
+               "Lost",
+               "InProgress",
+               "Complete",
+               "Invitation",
+               "ToDo"
+              ],
+              "enum": [
+               "ESTIMATING",
+               "BID_SUBMITTED",
+               "ACCEPTED",
+               "DELAYED",
+               "LOST",
+               "IN_PROGRESS",
+               "COMPLETE",
+               "INVITATION",
+               "TO_DO"
+              ]
+             },
+             "archived": {
+              "type": "boolean",
+              "description": "Indicates whether the Bid Board project is archived.",
+              "example": false
+             },
+             "use_metric_units": {
+              "type": "boolean",
+              "description": "Indicates whether the Bid Board project uses metric units."
+             },
+             "use_tax_from_cost": {
+              "type": "boolean",
+              "description": "Indicates whether the Bid Board project uses tax calculations based on cost."
+             },
+             "individual_labor_rates": {
+              "type": "boolean",
+              "description": "Indicates whether the Bid Board project uses individual labor rates."
+             },
+             "stats": {
+              "nullable": true,
+              "type": "object",
+              "description": "The Bid Board project statistics.",
+              "additionalProperties": false,
+              "properties": {
+               "total": {
+                "type": "number",
+                "description": "The total cost or value associated with the Bid Board project.",
+                "format": "decimal"
+               },
+               "completed_tasks": {
+                "type": "integer",
+                "description": "The number of completed tasks in the Bid Board project.",
+                "format": "int32"
+               },
+               "total_tasks": {
+                "type": "integer",
+                "description": "The total number of tasks in the Bid Board project.",
+                "format": "int32"
+               },
+               "total_notes": {
+                "type": "integer",
+                "description": "The total number of notes associated with the Bid Board project.",
+                "format": "int32"
+               }
+              }
+             },
+             "project_number": {
+              "type": "string",
+              "description": "The Bid Board project number.",
+              "nullable": true
+             },
+             "square_footage": {
+              "type": "number",
+              "description": "The square footage of the Bid Board project.",
+              "format": "decimal",
+              "nullable": true,
+              "example": 0
+             },
+             "pricing_locked": {
+              "type": "boolean",
+              "description": "Indicates whether the Bid Board project pricing is locked.",
+              "example": false
+             },
+             "address": {
+              "nullable": true,
+              "type": "object",
+              "description": "The address associated with the Bid Board project.",
+              "additionalProperties": false,
+              "properties": {
+               "street": {
+                "type": "string",
+                "description": "The street address.",
+                "nullable": true
+               },
+               "city": {
+                "type": "string",
+                "description": "The city of the address.",
+                "nullable": true
+               },
+               "state": {
+                "type": "string",
+                "description": "The state of the address.",
+                "nullable": true
+               },
+               "zip": {
+                "type": "string",
+                "description": "The zip code of the address.",
+                "nullable": true
+               },
+               "country": {
+                "type": "string",
+                "description": "The country of the address.",
+                "nullable": true
+               }
+              }
+             },
+             "is_template": {
+              "type": "boolean",
+              "description": "Indicates whether the Bid Board project is a template.",
+              "example": false
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "The date and time when the Bid Board project was last updated.",
+              "format": "date-time",
+              "nullable": true,
+              "example": "2026-03-25T13:25:00Z"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "The Procore Portfolio project identifier linked to this Bid Board project. Null if the Bid Board project is not added to Portfolio.\nUse this to join Bid Board Project data with the Procore Portfolio Project API data.",
+              "nullable": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to get all estimating projects",
+      "description": "This endpoint allows retrieving all Bid Board and estimating projects for a company.",
+      "endpoint": "GET /companies/{company_id}/estimating/estimating_projects",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-05-19",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/estimating/estimating_projects',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/estimating/estimating_projects?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/estimating/estimating_projects?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/estimating/estimating_projects?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/estimating/estimating_project": {
+   "get": {
+    "tags": [
+     "EstimatingProject"
+    ],
+    "summary": "Get estimating project data by Procore project id",
+    "operationId": "EstimatingProject_GetProject",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 1
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Represents a project as returned in portfolio (company-wide) listings.",
+           "additionalProperties": false,
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The unique identifier of the Bid Board project.",
+             "nullable": true
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the Bid Board project.",
+             "nullable": true
+            },
+            "description": {
+             "type": "string",
+             "description": "The description of the Bid Board project.",
+             "nullable": true
+            },
+            "created_on": {
+             "type": "string",
+             "description": "The creation date of the Bid Board project.",
+             "format": "date-time",
+             "nullable": true
+            },
+            "due_date": {
+             "type": "string",
+             "description": "The due date of the Bid Board project.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2025-01-22T16:40:00Z"
+            },
+            "last_status_change": {
+             "type": "string",
+             "description": "The date when the Bid Board project's status was last changed.",
+             "format": "date-time",
+             "nullable": true
+            },
+            "status": {
+             "type": "string",
+             "description": "The current status of the project.",
+             "x-enumNames": [
+              "Estimating",
+              "BidSubmitted",
+              "Accepted",
+              "Delayed",
+              "Lost",
+              "InProgress",
+              "Complete",
+              "Invitation",
+              "ToDo"
+             ],
+             "enum": [
+              "ESTIMATING",
+              "BID_SUBMITTED",
+              "ACCEPTED",
+              "DELAYED",
+              "LOST",
+              "IN_PROGRESS",
+              "COMPLETE",
+              "INVITATION",
+              "TO_DO"
+             ]
+            },
+            "archived": {
+             "type": "boolean",
+             "description": "Indicates whether the Bid Board project is archived.",
+             "example": false
+            },
+            "use_metric_units": {
+             "type": "boolean",
+             "description": "Indicates whether the Bid Board project uses metric units."
+            },
+            "use_tax_from_cost": {
+             "type": "boolean",
+             "description": "Indicates whether the Bid Board project uses tax calculations based on cost."
+            },
+            "individual_labor_rates": {
+             "type": "boolean",
+             "description": "Indicates whether the Bid Board project uses individual labor rates."
+            },
+            "stats": {
+             "nullable": true,
+             "type": "object",
+             "description": "The Bid Board project statistics.",
+             "additionalProperties": false,
+             "properties": {
+              "total": {
+               "type": "number",
+               "description": "The total cost or value associated with the Bid Board project.",
+               "format": "decimal"
+              },
+              "completed_tasks": {
+               "type": "integer",
+               "description": "The number of completed tasks in the Bid Board project.",
+               "format": "int32"
+              },
+              "total_tasks": {
+               "type": "integer",
+               "description": "The total number of tasks in the Bid Board project.",
+               "format": "int32"
+              },
+              "total_notes": {
+               "type": "integer",
+               "description": "The total number of notes associated with the Bid Board project.",
+               "format": "int32"
+              }
+             }
+            },
+            "project_number": {
+             "type": "string",
+             "description": "The Bid Board project number.",
+             "nullable": true
+            },
+            "square_footage": {
+             "type": "number",
+             "description": "The square footage of the Bid Board project.",
+             "format": "decimal",
+             "nullable": true,
+             "example": 0
+            },
+            "pricing_locked": {
+             "type": "boolean",
+             "description": "Indicates whether the Bid Board project pricing is locked.",
+             "example": false
+            },
+            "address": {
+             "nullable": true,
+             "type": "object",
+             "description": "The address associated with the Bid Board project.",
+             "additionalProperties": false,
+             "properties": {
+              "street": {
+               "type": "string",
+               "description": "The street address.",
+               "nullable": true
+              },
+              "city": {
+               "type": "string",
+               "description": "The city of the address.",
+               "nullable": true
+              },
+              "state": {
+               "type": "string",
+               "description": "The state of the address.",
+               "nullable": true
+              },
+              "zip": {
+               "type": "string",
+               "description": "The zip code of the address.",
+               "nullable": true
+              },
+              "country": {
+               "type": "string",
+               "description": "The country of the address.",
+               "nullable": true
+              }
+             }
+            },
+            "is_template": {
+             "type": "boolean",
+             "description": "Indicates whether the Bid Board project is a template.",
+             "example": false
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time when the Bid Board project was last updated.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2026-03-25T13:25:00Z"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "The Procore Portfolio project identifier linked to this Bid Board project. Null if the Bid Board project is not added to Portfolio.\nUse this to join Bid Board Project data with the Procore Portfolio Project API data.",
+             "nullable": true
+            }
+           },
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to get Procore project estimating information",
+      "description": "This endpoint allows retrieving estimating information for a Procore project.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/estimating_project",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-03-30",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: project_id",
+      "description": "The response of Bid Board project endpoints now includes project_id: the Procore Portfolio project identifier linked to this Bid Board project.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/estimating_project",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-05-18",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/estimating_project'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/estimating_project\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/estimating_project"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/estimating_project\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

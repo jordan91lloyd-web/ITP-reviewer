@@ -1,0 +1,668 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Project Association",
+  "version": "2.0",
+  "x-product-category": "Resource Management",
+  "x-resource-name": "Project Association",
+  "x-tool-category": "Equipment",
+  "x-product-lines": [
+   "equipment-register"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/equipment_register/associate": {
+   "post": {
+    "tags": [
+     "Project Association"
+    ],
+    "summary": "Associate equipment with project (Project)",
+    "operationId": "associateEquipmentWithProject",
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "The Id of the project",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "exclusiveMinimum": 0
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment project dissociation request",
+        "properties": {
+         "ids": {
+          "type": "array",
+          "description": "A list of unique identifiers for the equipment to be associated/dissociated with the project.",
+          "items": {
+           "type": "string",
+           "description": "A unique identifier  for equipment.",
+           "example": "01J3F5HDS3A3KE980C4H7HW3KQ"
+          }
+         }
+        },
+        "required": [
+         "ids"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "equipment_id": {
+              "type": "string",
+              "example": "A1d2D3432"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "The project id to associate the equipment with",
+              "example": "1234"
+             }
+            },
+            "required": [
+             "equipment_id",
+             "project_id"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {ids: ['01J3F5HDS3A3KE980C4H7HW3KQ']},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"ids\\\":[\\\"01J3F5HDS3A3KE980C4H7HW3KQ\\\"]}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"ids\":[\"01J3F5HDS3A3KE980C4H7HW3KQ\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"ids\\\":[\\\"01J3F5HDS3A3KE980C4H7HW3KQ\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Associate Equipment With Project Endpoint At Project Level",
+      "description": "Associate equipment with project (Project)",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/equipment_register/associate",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "project-association?version=2.0#associate-equipment-with-project-project"
+     }
+    ]
+   },
+   "delete": {
+    "tags": [
+     "Project Association"
+    ],
+    "summary": "Disassociate equipment with project (Project)",
+    "operationId": "disassociateEquipmentWithProject",
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "The Id of the project",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "exclusiveMinimum": 0
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment project dissociation request",
+        "properties": {
+         "ids": {
+          "type": "array",
+          "description": "A list of unique identifiers for the equipment to be associated/dissociated with the project.",
+          "items": {
+           "type": "string",
+           "description": "A unique identifier  for equipment.",
+           "example": "01J3F5HDS3A3KE980C4H7HW3KQ"
+          }
+         }
+        },
+        "required": [
+         "ids"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "equipment_id": {
+              "type": "string",
+              "example": "A1d2D3432"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "The project id to associate the equipment with",
+              "example": "1234"
+             }
+            },
+            "required": [
+             "equipment_id",
+             "project_id"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {ids: ['01J3F5HDS3A3KE980C4H7HW3KQ']},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"ids\\\":[\\\"01J3F5HDS3A3KE980C4H7HW3KQ\\\"]}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"ids\":[\"01J3F5HDS3A3KE980C4H7HW3KQ\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/%7Bproject_id%7D/equipment_register/associate\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"ids\\\":[\\\"01J3F5HDS3A3KE980C4H7HW3KQ\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Dissociate Equipment From Project Endpoint At Project Level",
+      "description": "Disassociate equipment with project (Project)",
+      "endpoint": "DELETE /companies/{company_id}/projects/{project_id}/equipment_register/associate",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "project-association?version=2.0#disassociate-equipment-with-project-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/equipment_register/associate": {
+   "post": {
+    "tags": [
+     "Project Association"
+    ],
+    "summary": "Associate equipment with project (Company)",
+    "operationId": "associateEquipmentWithProject_1",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "description": "Equipment project association request",
+        "items": {
+         "type": "object",
+         "properties": {
+          "equipment_id": {
+           "type": "string",
+           "example": "A1d2D3432"
+          },
+          "project_id": {
+           "type": "string",
+           "description": "The project id to associate the equipment with",
+           "example": "1234"
+          }
+         },
+         "required": [
+          "equipment_id",
+          "project_id"
+         ]
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "equipment_id": {
+              "type": "string",
+              "example": "A1d2D3432"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "The project id to associate the equipment with",
+              "example": "1234"
+             }
+            },
+            "required": [
+             "equipment_id",
+             "project_id"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/associate',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: [{equipment_id: 'A1d2D3432', project_id: '1234'}],\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"[{\\\"equipment_id\\\":\\\"A1d2D3432\\\",\\\"project_id\\\":\\\"1234\\\"}]\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/equipment_register/associate\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/associate \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '[{\"equipment_id\":\"A1d2D3432\",\"project_id\":\"1234\"}]'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/associate\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"[{\\\"equipment_id\\\":\\\"A1d2D3432\\\",\\\"project_id\\\":\\\"1234\\\"}]\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Associate Equipment With Project Endpoint At Company Level",
+      "description": "Associate equipment with project (Company)",
+      "endpoint": "POST /companies/{company_id}/equipment_register/associate",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "project-association?version=2.0#associate-equipment-with-project-company"
+     }
+    ]
+   },
+   "delete": {
+    "tags": [
+     "Project Association"
+    ],
+    "summary": "Disassociate equipment with project (Company)",
+    "operationId": "disassociateEquipmentWithProject_1",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "equipment_id": {
+           "type": "string",
+           "example": "A1d2D3432"
+          },
+          "project_id": {
+           "type": "string",
+           "description": "The project id to associate the equipment with",
+           "example": "1234"
+          }
+         },
+         "required": [
+          "equipment_id",
+          "project_id"
+         ]
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "equipment_id": {
+              "type": "string",
+              "example": "A1d2D3432"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "The project id to associate the equipment with",
+              "example": "1234"
+             }
+            },
+            "required": [
+             "equipment_id",
+             "project_id"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/associate',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: [{equipment_id: 'A1d2D3432', project_id: '1234'}],\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"[{\\\"equipment_id\\\":\\\"A1d2D3432\\\",\\\"project_id\\\":\\\"1234\\\"}]\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/equipment_register/associate\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/associate \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '[{\"equipment_id\":\"A1d2D3432\",\"project_id\":\"1234\"}]'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/associate\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"[{\\\"equipment_id\\\":\\\"A1d2D3432\\\",\\\"project_id\\\":\\\"1234\\\"}]\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Dissociate Equipment From Project Endpoint At Company Level",
+      "description": "Disassociate equipment with project (Company)",
+      "endpoint": "DELETE /companies/{company_id}/equipment_register/associate",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "project-association?version=2.0#disassociate-equipment-with-project-company"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

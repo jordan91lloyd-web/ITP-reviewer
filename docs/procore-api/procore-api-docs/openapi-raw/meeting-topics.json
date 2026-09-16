@@ -1,0 +1,2382 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Meeting Topics",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Meetings",
+  "x-resource-name": "Meeting Topics",
+  "version": "1.1",
+  "x-product-lines": [
+   "PM Essentials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.1/projects/{project_id}/meeting_topics/{meeting_topic_id}/parent_minutes": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get the minutes and date created for all parent topics",
+    "description": "Returns an array of objects of minutes and created_on values for all parent meeting topics",
+    "tags": [
+     "Meetings",
+     "Meeting Topics",
+     "Minutes"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "meeting_id",
+      "in": "query",
+      "description": "ID of the meeting",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "meeting_topic_id",
+      "in": "path",
+      "description": "ID of the meeting topic",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Minutes recorded on each ancestor (parent) of the requested topic, ordered from nearest parent outward.",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Identifier of the ancestor meeting topic these minutes belong to.",
+            "example": 965039
+           },
+           "meeting_id": {
+            "type": "integer",
+            "description": "Identifier of the Meeting the ancestor topic belongs to.",
+            "example": 82593
+           },
+           "created_on": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the ancestor topic's minutes were recorded.",
+            "example": "2014-04-25"
+           },
+           "minutes": {
+            "type": "string",
+            "description": "Rich-text (HTML) minutes recorded on the ancestor topic, or a placeholder message when none exist.",
+            "example": "<p>Reviewed the previous action items.</p>"
+           },
+           "no_minutes": {
+            "type": "boolean",
+            "description": "True when the ancestor topic has no recorded minutes.",
+            "example": false
+           },
+           "marked": {
+            "type": "boolean",
+            "description": "Whether the ancestor topic's minutes are starred (flagged for emphasis on the PDF).",
+            "example": false
+           },
+           "meeting_position": {
+            "type": "integer",
+            "description": "Position of the ancestor topic's Meeting within its series.",
+            "example": 1
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have the right permissions to view the meeting",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bmeeting_topic_id%7D/parent_minutes',\n  qs: {meeting_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bmeeting_topic_id%7D/parent_minutes?meeting_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bmeeting_topic_id%7D/parent_minutes?meeting_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bmeeting_topic_id%7D/parent_minutes?meeting_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Rest v1.1 endpoint",
+      "description": "Added Rest v1.1 endpoint",
+      "endpoint": "GET /projects/{project_id}/meeting_topics/{meeting_topic_id}/parent_minutes",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-09-08",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "meeting-topics?version=1.1#get-the-minutes-and-date-created-for-all-parent-topics"
+     },
+     {
+      "summary": "Add meeting_position property to parent minutes endpoint",
+      "description": "Add meeting_position property to parent minutes endpoint",
+      "endpoint": "GET /projects/{project_id}/meeting_topics/{meeting_topic_id}/parent_minutes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-11-05",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "meeting-topics?version=1.1#get-the-minutes-and-date-created-for-all-parent-topics"
+     },
+     {
+      "summary": "Enable fetching parent minutes for a deleted meeting topic.",
+      "description": "Enable fetching parent minutes for a deleted meeting topic.",
+      "endpoint": "GET /projects/{project_id}/meeting_topics/{meeting_topic_id}/parent_minutes",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-12-19",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "meeting-topics?version=1.1#get-the-minutes-and-date-created-for-all-parent-topics"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.1/projects/{project_id}/meeting_topics": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create meeting topic",
+    "description": "Creates Meeting Topic.\n\n#### Uploading attachments\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+    "tags": [
+     "Meetings"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "meeting_id",
+         "meeting_topic"
+        ],
+        "properties": {
+         "meeting_id": {
+          "type": "integer",
+          "description": "Identifier of the Meeting this topic will be created under or updated within."
+         },
+         "meeting_topic": {
+          "title": "Meeting Topic",
+          "type": "object",
+          "description": "Attributes for the meeting topic to create or update.",
+          "properties": {
+           "title": {
+            "type": "string",
+            "description": "Short title summarizing the topic."
+           },
+           "description": {
+            "type": "string",
+            "description": "Rich-text (HTML) description of the topic. Markup is sanitized before it is stored.",
+            "example": "Need pricing from vendor for 34' level"
+           },
+           "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date by which the topic should be resolved.",
+            "example": "2014-05-20"
+           },
+           "status": {
+            "type": "string",
+            "description": "Workflow state to set on the topic. Constrained to the values in the enum.",
+            "enum": [
+             "Open",
+             "On Hold",
+             "Closed"
+            ],
+            "example": "On Hold"
+           },
+           "minutes": {
+            "type": "string",
+            "description": "Rich-text (HTML) meeting minutes for the topic. Markup is sanitized before it is stored.",
+            "example": "<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+           },
+           "is_private": {
+            "type": "boolean",
+            "description": "When true, restricts the topic to assignees and users with Admin access to the Meetings tool."
+           },
+           "closed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the topic was closed. Managed automatically when status becomes `Closed`.",
+            "example": "2021-05-20T12:00:00Z"
+           },
+           "priority": {
+            "type": "string",
+            "description": "Priority to assign to the topic. Constrained to the values in the enum; an empty string clears the priority.",
+            "enum": [
+             "",
+             "High",
+             "Medium",
+             "Low"
+            ],
+            "example": "Low"
+           },
+           "added_under_agenda": {
+            "type": "boolean",
+            "description": "Whether the topic was added while the Meeting was in agenda mode. Defaults to true.",
+            "default": true
+           },
+           "meeting_wide_number": {
+            "type": "integer",
+            "description": "Sequential number of the topic across the whole Meeting, used to build the topic's outline number.",
+            "example": 1
+           },
+           "meeting_category_id": {
+            "type": "integer",
+            "description": "Identifier of the meeting category to place this topic under.",
+            "example": 192424
+           },
+           "assignment_ids": {
+            "type": "array",
+            "description": "Login Information (user) IDs of the Project users to assign to this topic.\n\nSetting `meeting_topic[assignment_ids]` to \"none\" erases assignments.",
+            "items": {
+             "example": 160586,
+             "oneOf": [
+              {
+               "type": "integer"
+              },
+              {
+               "type": "string"
+              }
+             ]
+            }
+           },
+           "upload_ids": {
+            "type": "array",
+            "description": "Upload IDs of previously uploaded files to attach to the topic.",
+            "items": {
+             "type": "string",
+             "example": "01JN0N5BJMM1F3M68HJ3G0PK46"
+            }
+           }
+          }
+         },
+         "attachments": {
+          "type": "array",
+          "description": "Files to attach to the topic.\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single agenda or minutes item within a Meeting, organized under a meeting category.",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this meeting topic. Use as the `{id}` path parameter to update the topic via `/rest/v1.1/projects/{project_id}/meeting_topics/{id}`.",
+           "example": 965039
+          },
+          "number": {
+           "type": "string",
+           "description": "Human-readable outline number for the topic, combining its category and position (for example `1.1`).",
+           "example": "1.1"
+          },
+          "created_on": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the topic was created, in the project's time zone.",
+           "example": "2014-04-25"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Zero-based ordering of this topic within its meeting category; lower values sort first.",
+           "example": 0
+          },
+          "due_date": {
+           "type": "string",
+           "nullable": true,
+           "format": "date",
+           "description": "Date by which the topic is expected to be resolved. Null when no due date is set.",
+           "example": "2014-05-20"
+          },
+          "priority": {
+           "type": "string",
+           "nullable": true,
+           "description": "Priority assigned to the topic. Constrained to the values in the enum; null or an empty string means no priority.",
+           "example": "Low",
+           "enum": [
+            "",
+            "High",
+            "Medium",
+            "Low",
+            null
+           ]
+          },
+          "status": {
+           "type": "string",
+           "description": "Workflow state of the topic. Constrained to the values in the enum.",
+           "example": "On Hold",
+           "enum": [
+            "Open",
+            "On Hold",
+            "Closed"
+           ]
+          },
+          "title": {
+           "type": "string",
+           "description": "Short title summarizing the topic.",
+           "example": "34' Level"
+          },
+          "minutes": {
+           "type": "string",
+           "nullable": true,
+           "description": "Rich-text (HTML) meeting minutes recorded for this topic. Null when no minutes have been entered.",
+           "example": "<p><span style=\\\"font-size: large;\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+          },
+          "description": {
+           "type": "string",
+           "description": "Plain-text description of the topic, with any rich-text markup stripped.",
+           "example": "Need pricing from vendor for 34' level"
+          },
+          "meeting_category": {
+           "type": "object",
+           "description": "The category this topic is grouped under within the Meeting.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Identifier of the meeting category.",
+             "example": 192424
+            },
+            "title": {
+             "type": "string",
+             "description": "Display name of the meeting category.",
+             "example": "Uncategorized Items"
+            }
+           }
+          },
+          "assignments": {
+           "type": "array",
+           "description": "Project users assigned responsibility for this topic. Each entry carries the assignee's id, login, and name.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Carl Contractor"
+             }
+            }
+           }
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Files attached to this topic.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Identifier of the attached file.",
+              "example": 5324
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attached file.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Original file name of the attachment. Present on create and update responses.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "url": {
+              "type": "string",
+              "description": "Download URL for the attached file.",
+              "example": "http://www.example.com/"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics',\n  headers: {'content-type': 'application/json'},\n  body: {\n    meeting_id: 0,\n    meeting_topic: {\n      title: 'string',\n      description: 'Need pricing from vendor for 34\\' level',\n      due_date: '2014-05-20',\n      status: 'On Hold',\n      minutes: '<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>',\n      is_private: true,\n      closed_at: '2021-05-20T12:00:00Z',\n      priority: 'Low',\n      added_under_agenda: true,\n      meeting_wide_number: 1,\n      meeting_category_id: 192424,\n      assignment_ids: [160586],\n      upload_ids: ['01JN0N5BJMM1F3M68HJ3G0PK46']\n    },\n    attachments: ['string']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586],\\\"upload_ids\\\":[\\\"01JN0N5BJMM1F3M68HJ3G0PK46\\\"]},\\\"attachments\\\":[\\\"string\\\"]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics \\\n  --header 'content-type: application/json' \\\n  --data '{\"meeting_id\":0,\"meeting_topic\":{\"title\":\"string\",\"description\":\"Need pricing from vendor for 34'\\'' level\",\"due_date\":\"2014-05-20\",\"status\":\"On Hold\",\"minutes\":\"<p><span style=\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\",\"is_private\":true,\"closed_at\":\"2021-05-20T12:00:00Z\",\"priority\":\"Low\",\"added_under_agenda\":true,\"meeting_wide_number\":1,\"meeting_category_id\":192424,\"assignment_ids\":[160586],\"upload_ids\":[\"01JN0N5BJMM1F3M68HJ3G0PK46\"]},\"attachments\":[\"string\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics\"),\n    Content = new StringContent(\"{\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586],\\\"upload_ids\\\":[\\\"01JN0N5BJMM1F3M68HJ3G0PK46\\\"]},\\\"attachments\\\":[\\\"string\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Rest v1.1 endpoint",
+      "description": "Added Rest v1.1 endpoint",
+      "endpoint": "POST /projects/{project_id}/meeting_topics",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-09-08",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "meeting-topics?version=1.1#create-meeting-topic"
+     },
+     {
+      "summary": "Added upload_ids as a new parameter while CREATING a new Meeeting Topic",
+      "description": "upload_ids of directly uploaded files can be passed in array format while creating a new meeting topic (POST endpoint)",
+      "endpoint": "POST /projects/{project_id}/meeting_topics",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-04-15",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "meeting-topics?version=1.1#create-meeting-topic"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/projects/{project_id}/meeting_topics/{id}": {
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update meeting topic",
+    "description": "Update an existing Meeting Topic.\n\n#### Uploading attachments\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+    "tags": [
+     "Meetings"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "id",
+      "in": "path",
+      "description": "ID of the Meeting Topic",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "meeting_id",
+         "meeting_topic"
+        ],
+        "properties": {
+         "meeting_id": {
+          "type": "integer",
+          "description": "Identifier of the Meeting this topic will be created under or updated within."
+         },
+         "meeting_topic": {
+          "title": "Meeting Topic",
+          "type": "object",
+          "description": "Attributes for the meeting topic to create or update.",
+          "properties": {
+           "title": {
+            "type": "string",
+            "description": "Short title summarizing the topic."
+           },
+           "description": {
+            "type": "string",
+            "description": "Rich-text (HTML) description of the topic. Markup is sanitized before it is stored.",
+            "example": "Need pricing from vendor for 34' level"
+           },
+           "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date by which the topic should be resolved.",
+            "example": "2014-05-20"
+           },
+           "status": {
+            "type": "string",
+            "description": "Workflow state to set on the topic. Constrained to the values in the enum.",
+            "enum": [
+             "Open",
+             "On Hold",
+             "Closed"
+            ],
+            "example": "On Hold"
+           },
+           "minutes": {
+            "type": "string",
+            "description": "Rich-text (HTML) meeting minutes for the topic. Markup is sanitized before it is stored.",
+            "example": "<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+           },
+           "is_private": {
+            "type": "boolean",
+            "description": "When true, restricts the topic to assignees and users with Admin access to the Meetings tool."
+           },
+           "closed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the topic was closed. Managed automatically when status becomes `Closed`.",
+            "example": "2021-05-20T12:00:00Z"
+           },
+           "priority": {
+            "type": "string",
+            "description": "Priority to assign to the topic. Constrained to the values in the enum; an empty string clears the priority.",
+            "enum": [
+             "",
+             "High",
+             "Medium",
+             "Low"
+            ],
+            "example": "Low"
+           },
+           "added_under_agenda": {
+            "type": "boolean",
+            "description": "Whether the topic was added while the Meeting was in agenda mode. Defaults to true.",
+            "default": true
+           },
+           "meeting_wide_number": {
+            "type": "integer",
+            "description": "Sequential number of the topic across the whole Meeting, used to build the topic's outline number.",
+            "example": 1
+           },
+           "meeting_category_id": {
+            "type": "integer",
+            "description": "Identifier of the meeting category to place this topic under.",
+            "example": 192424
+           },
+           "assignment_ids": {
+            "type": "array",
+            "description": "Login Information (user) IDs of the Project users to assign to this topic.\n\nSetting `meeting_topic[assignment_ids]` to \"none\" erases assignments.",
+            "items": {
+             "example": 160586,
+             "oneOf": [
+              {
+               "type": "integer"
+              },
+              {
+               "type": "string"
+              }
+             ]
+            }
+           },
+           "upload_ids": {
+            "type": "array",
+            "description": "Upload IDs of previously uploaded files to attach to the topic.",
+            "items": {
+             "type": "string",
+             "example": "01JN0N5BJMM1F3M68HJ3G0PK46"
+            }
+           }
+          }
+         },
+         "attachments": {
+          "type": "array",
+          "description": "Files to attach to the topic.\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single agenda or minutes item within a Meeting, organized under a meeting category.",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this meeting topic. Use as the `{id}` path parameter to update the topic via `/rest/v1.1/projects/{project_id}/meeting_topics/{id}`.",
+           "example": 965039
+          },
+          "number": {
+           "type": "string",
+           "description": "Human-readable outline number for the topic, combining its category and position (for example `1.1`).",
+           "example": "1.1"
+          },
+          "created_on": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the topic was created, in the project's time zone.",
+           "example": "2014-04-25"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Zero-based ordering of this topic within its meeting category; lower values sort first.",
+           "example": 0
+          },
+          "due_date": {
+           "type": "string",
+           "nullable": true,
+           "format": "date",
+           "description": "Date by which the topic is expected to be resolved. Null when no due date is set.",
+           "example": "2014-05-20"
+          },
+          "priority": {
+           "type": "string",
+           "nullable": true,
+           "description": "Priority assigned to the topic. Constrained to the values in the enum; null or an empty string means no priority.",
+           "example": "Low",
+           "enum": [
+            "",
+            "High",
+            "Medium",
+            "Low",
+            null
+           ]
+          },
+          "status": {
+           "type": "string",
+           "description": "Workflow state of the topic. Constrained to the values in the enum.",
+           "example": "On Hold",
+           "enum": [
+            "Open",
+            "On Hold",
+            "Closed"
+           ]
+          },
+          "title": {
+           "type": "string",
+           "description": "Short title summarizing the topic.",
+           "example": "34' Level"
+          },
+          "minutes": {
+           "type": "string",
+           "nullable": true,
+           "description": "Rich-text (HTML) meeting minutes recorded for this topic. Null when no minutes have been entered.",
+           "example": "<p><span style=\\\"font-size: large;\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+          },
+          "description": {
+           "type": "string",
+           "description": "Plain-text description of the topic, with any rich-text markup stripped.",
+           "example": "Need pricing from vendor for 34' level"
+          },
+          "meeting_category": {
+           "type": "object",
+           "description": "The category this topic is grouped under within the Meeting.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Identifier of the meeting category.",
+             "example": 192424
+            },
+            "title": {
+             "type": "string",
+             "description": "Display name of the meeting category.",
+             "example": "Uncategorized Items"
+            }
+           }
+          },
+          "assignments": {
+           "type": "array",
+           "description": "Project users assigned responsibility for this topic. Each entry carries the assignee's id, login, and name.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Carl Contractor"
+             }
+            }
+           }
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Files attached to this topic.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Identifier of the attached file.",
+              "example": 5324
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attached file.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Original file name of the attachment. Present on create and update responses.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "url": {
+              "type": "string",
+              "description": "Download URL for the attached file.",
+              "example": "http://www.example.com/"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    meeting_id: 0,\n    meeting_topic: {\n      title: 'string',\n      description: 'Need pricing from vendor for 34\\' level',\n      due_date: '2014-05-20',\n      status: 'On Hold',\n      minutes: '<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>',\n      is_private: true,\n      closed_at: '2021-05-20T12:00:00Z',\n      priority: 'Low',\n      added_under_agenda: true,\n      meeting_wide_number: 1,\n      meeting_category_id: 192424,\n      assignment_ids: [160586],\n      upload_ids: ['01JN0N5BJMM1F3M68HJ3G0PK46']\n    },\n    attachments: ['string']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586],\\\"upload_ids\\\":[\\\"01JN0N5BJMM1F3M68HJ3G0PK46\\\"]},\\\"attachments\\\":[\\\"string\\\"]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"meeting_id\":0,\"meeting_topic\":{\"title\":\"string\",\"description\":\"Need pricing from vendor for 34'\\'' level\",\"due_date\":\"2014-05-20\",\"status\":\"On Hold\",\"minutes\":\"<p><span style=\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\",\"is_private\":true,\"closed_at\":\"2021-05-20T12:00:00Z\",\"priority\":\"Low\",\"added_under_agenda\":true,\"meeting_wide_number\":1,\"meeting_category_id\":192424,\"assignment_ids\":[160586],\"upload_ids\":[\"01JN0N5BJMM1F3M68HJ3G0PK46\"]},\"attachments\":[\"string\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/meeting_topics/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586],\\\"upload_ids\\\":[\\\"01JN0N5BJMM1F3M68HJ3G0PK46\\\"]},\\\"attachments\\\":[\\\"string\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Rest v1.1 endpoint",
+      "description": "Added Rest v1.1 endpoint",
+      "endpoint": "PATCH /projects/{project_id}/meeting_topics/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-09-08",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "meeting-topics?version=1.1#update-meeting-topic"
+     },
+     {
+      "summary": "Added upload_ids as a new parameter while UPDATING a Meeeting Topic",
+      "description": "upload_ids of directly uploaded files can be passed in array format while UPDATING a new meeting topic (PATCH Endpoint)",
+      "endpoint": "PATCH /projects/{project_id}/meeting_topics/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-04-15",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "meeting-topics?version=1.1#update-meeting-topic"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/meeting_topics/parent_minutes": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-deprecated-at": "2021-09-08",
+    "deprecated": true,
+    "summary": "Get the minutes and date created for all parent topics",
+    "description": "Returns an array of objects of minutes and created_on values for all parent meeting topics",
+    "tags": [
+     "Meetings",
+     "Meeting Topics",
+     "Minutes"
+    ],
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "query",
+      "description": "ID of the meeting",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "meeting_topic_id",
+      "in": "query",
+      "description": "ID of the meeting topic",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "created_on": {
+            "type": "string",
+            "format": "date"
+           },
+           "minutes": {
+            "type": "string"
+           },
+           "no_minutes": {
+            "type": "boolean"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have the right permissions to view the meeting",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/meeting_topics/parent_minutes',\n  qs: {meeting_id: 'SOME_INTEGER_VALUE', meeting_topic_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/meeting_topics/parent_minutes?meeting_id=SOME_INTEGER_VALUE&meeting_topic_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/meeting_topics/parent_minutes?meeting_id=SOME_INTEGER_VALUE&meeting_topic_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/meeting_topics/parent_minutes?meeting_id=SOME_INTEGER_VALUE&meeting_topic_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/meeting_topics": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-deprecated-at": "2021-09-08",
+    "deprecated": true,
+    "summary": "Create meeting topic",
+    "description": "Creates Meeting Topic.\n\n#### Uploading attachments\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+    "tags": [
+     "Meetings"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "meeting_id",
+         "meeting_topic"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Identifier of the Project the Meeting belongs to. Must reference a Project the caller can access."
+         },
+         "meeting_id": {
+          "type": "integer",
+          "description": "Identifier of the Meeting this topic will be created under or updated within."
+         },
+         "meeting_topic": {
+          "title": "Meeting Topic",
+          "type": "object",
+          "description": "Attributes for the meeting topic to create or update.",
+          "properties": {
+           "title": {
+            "type": "string",
+            "description": "Short title summarizing the topic."
+           },
+           "description": {
+            "type": "string",
+            "description": "Rich-text (HTML) description of the topic. Markup is sanitized before it is stored.",
+            "example": "Need pricing from vendor for 34' level"
+           },
+           "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date by which the topic should be resolved.",
+            "example": "2014-05-20"
+           },
+           "status": {
+            "type": "string",
+            "description": "Workflow state to set on the topic. Constrained to the values in the enum.",
+            "enum": [
+             "Open",
+             "On Hold",
+             "Closed"
+            ],
+            "example": "On Hold"
+           },
+           "minutes": {
+            "type": "string",
+            "description": "Rich-text (HTML) meeting minutes for the topic. Markup is sanitized before it is stored.",
+            "example": "<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+           },
+           "is_private": {
+            "type": "boolean",
+            "description": "When true, restricts the topic to assignees and users with Admin access to the Meetings tool."
+           },
+           "closed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the topic was closed. Managed automatically when status becomes `Closed`.",
+            "example": "2021-05-20T12:00:00Z"
+           },
+           "priority": {
+            "type": "string",
+            "description": "Priority to assign to the topic. Constrained to the values in the enum; an empty string clears the priority.",
+            "enum": [
+             "",
+             "High",
+             "Medium",
+             "Low"
+            ],
+            "example": "Low"
+           },
+           "added_under_agenda": {
+            "type": "boolean",
+            "description": "Whether the topic was added while the Meeting was in agenda mode. Defaults to true.",
+            "default": true
+           },
+           "meeting_wide_number": {
+            "type": "integer",
+            "description": "Sequential number of the topic across the whole Meeting, used to build the topic's outline number.",
+            "example": 1
+           },
+           "meeting_category_id": {
+            "type": "integer",
+            "description": "Identifier of the meeting category to place this topic under.",
+            "example": 192424
+           },
+           "assignment_ids": {
+            "type": "array",
+            "description": "Login Information (user) IDs of the Project users to assign to this topic.\n\nSetting `meeting_topic[assignment_ids]` to \"none\" erases assignments.",
+            "items": {
+             "example": 160586,
+             "oneOf": [
+              {
+               "type": "integer"
+              },
+              {
+               "type": "string"
+              }
+             ]
+            }
+           }
+          }
+         },
+         "attachments": {
+          "type": "array",
+          "description": "Files to attach to the topic.\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single agenda or minutes item within a Meeting, organized under a meeting category.",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this meeting topic. Use as the `{id}` path parameter to update the topic via `/rest/v1.0/meeting_topics/{id}`.",
+           "example": 965039
+          },
+          "number": {
+           "type": "string",
+           "description": "Human-readable outline number for the topic, combining its category and position (for example `1.1`).",
+           "example": "1.1"
+          },
+          "created_on": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the topic was created, in the project's time zone.",
+           "example": "2014-04-25"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Zero-based ordering of this topic within its meeting category; lower values sort first.",
+           "example": 0
+          },
+          "due_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date by which the topic is expected to be resolved. Null when no due date is set.",
+           "example": "2014-05-20"
+          },
+          "priority": {
+           "type": "string",
+           "description": "Priority assigned to the topic. Constrained to the values in the enum; an empty string means no priority.",
+           "example": "Low",
+           "enum": [
+            "",
+            "High",
+            "Medium",
+            "Low"
+           ]
+          },
+          "status": {
+           "type": "string",
+           "description": "Workflow state of the topic. Constrained to the values in the enum.",
+           "example": "On Hold",
+           "enum": [
+            "Open",
+            "On Hold",
+            "Closed"
+           ]
+          },
+          "title": {
+           "type": "string",
+           "description": "Short title summarizing the topic.",
+           "example": "34' Level"
+          },
+          "minutes": {
+           "type": "string",
+           "description": "Rich-text (HTML) meeting minutes recorded for this topic.",
+           "example": "<p><span style=\\\"font-size: large;\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+          },
+          "description": {
+           "type": "string",
+           "description": "Plain-text description of the topic, with any rich-text markup stripped.",
+           "example": "Need pricing from vendor for 34' level"
+          },
+          "meeting_category": {
+           "type": "object",
+           "description": "The category this topic is grouped under within the Meeting.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Identifier of the meeting category.",
+             "example": 192424
+            },
+            "title": {
+             "type": "string",
+             "description": "Display name of the meeting category.",
+             "example": "Uncategorized Items"
+            }
+           }
+          },
+          "assignments": {
+           "type": "array",
+           "description": "Project users assigned responsibility for this topic.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Login Information (user) identifier of the assignee.",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email address the assignee signs in with.",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Full display name of the assignee.",
+              "example": "Carl Contractor"
+             }
+            }
+           }
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Files attached to this topic.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Identifier of the attached file.",
+              "example": 5324
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attached file.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Original file name of the attachment (same value as `name`).",
+              "example": "january_receipt_copy.jpg"
+             },
+             "url": {
+              "type": "string",
+              "description": "Download URL for the attached file.",
+              "example": "http://www.example.com/"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/meeting_topics',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 0,\n    meeting_id: 0,\n    meeting_topic: {\n      title: 'string',\n      description: 'Need pricing from vendor for 34\\' level',\n      due_date: '2014-05-20',\n      status: 'On Hold',\n      minutes: '<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>',\n      is_private: true,\n      closed_at: '2021-05-20T12:00:00Z',\n      priority: 'Low',\n      added_under_agenda: true,\n      meeting_wide_number: 1,\n      meeting_category_id: 192424,\n      assignment_ids: [160586]\n    },\n    attachments: ['string']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":0,\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586]},\\\"attachments\\\":[\\\"string\\\"]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/meeting_topics\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/meeting_topics \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":0,\"meeting_id\":0,\"meeting_topic\":{\"title\":\"string\",\"description\":\"Need pricing from vendor for 34'\\'' level\",\"due_date\":\"2014-05-20\",\"status\":\"On Hold\",\"minutes\":\"<p><span style=\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\",\"is_private\":true,\"closed_at\":\"2021-05-20T12:00:00Z\",\"priority\":\"Low\",\"added_under_agenda\":true,\"meeting_wide_number\":1,\"meeting_category_id\":192424,\"assignment_ids\":[160586]},\"attachments\":[\"string\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/meeting_topics\"),\n    Content = new StringContent(\"{\\\"project_id\\\":0,\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586]},\\\"attachments\\\":[\\\"string\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/meeting_topics/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the meeting topic",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-deprecated-at": "2021-09-08",
+    "deprecated": true,
+    "summary": "Update meeting topic",
+    "description": "Update an existing Meeting Topic.\n\n#### Uploading attachments\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+    "tags": [
+     "Meetings"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "meeting_id",
+         "meeting_topic"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Identifier of the Project the Meeting belongs to. Must reference a Project the caller can access."
+         },
+         "meeting_id": {
+          "type": "integer",
+          "description": "Identifier of the Meeting this topic will be created under or updated within."
+         },
+         "meeting_topic": {
+          "title": "Meeting Topic",
+          "type": "object",
+          "description": "Attributes for the meeting topic to create or update.",
+          "properties": {
+           "title": {
+            "type": "string",
+            "description": "Short title summarizing the topic."
+           },
+           "description": {
+            "type": "string",
+            "description": "Rich-text (HTML) description of the topic. Markup is sanitized before it is stored.",
+            "example": "Need pricing from vendor for 34' level"
+           },
+           "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date by which the topic should be resolved.",
+            "example": "2014-05-20"
+           },
+           "status": {
+            "type": "string",
+            "description": "Workflow state to set on the topic. Constrained to the values in the enum.",
+            "enum": [
+             "Open",
+             "On Hold",
+             "Closed"
+            ],
+            "example": "On Hold"
+           },
+           "minutes": {
+            "type": "string",
+            "description": "Rich-text (HTML) meeting minutes for the topic. Markup is sanitized before it is stored.",
+            "example": "<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+           },
+           "is_private": {
+            "type": "boolean",
+            "description": "When true, restricts the topic to assignees and users with Admin access to the Meetings tool."
+           },
+           "closed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the topic was closed. Managed automatically when status becomes `Closed`.",
+            "example": "2021-05-20T12:00:00Z"
+           },
+           "priority": {
+            "type": "string",
+            "description": "Priority to assign to the topic. Constrained to the values in the enum; an empty string clears the priority.",
+            "enum": [
+             "",
+             "High",
+             "Medium",
+             "Low"
+            ],
+            "example": "Low"
+           },
+           "added_under_agenda": {
+            "type": "boolean",
+            "description": "Whether the topic was added while the Meeting was in agenda mode. Defaults to true.",
+            "default": true
+           },
+           "meeting_wide_number": {
+            "type": "integer",
+            "description": "Sequential number of the topic across the whole Meeting, used to build the topic's outline number.",
+            "example": 1
+           },
+           "meeting_category_id": {
+            "type": "integer",
+            "description": "Identifier of the meeting category to place this topic under.",
+            "example": 192424
+           },
+           "assignment_ids": {
+            "type": "array",
+            "description": "Login Information (user) IDs of the Project users to assign to this topic.\n\nSetting `meeting_topic[assignment_ids]` to \"none\" erases assignments.",
+            "items": {
+             "example": 160586,
+             "oneOf": [
+              {
+               "type": "integer"
+              },
+              {
+               "type": "string"
+              }
+             ]
+            }
+           }
+          }
+         },
+         "attachments": {
+          "type": "array",
+          "description": "Files to attach to the topic.\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A single agenda or minutes item within a Meeting, organized under a meeting category.",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this meeting topic. Use as the `{id}` path parameter to update the topic via `/rest/v1.0/meeting_topics/{id}`.",
+           "example": 965039
+          },
+          "number": {
+           "type": "string",
+           "description": "Human-readable outline number for the topic, combining its category and position (for example `1.1`).",
+           "example": "1.1"
+          },
+          "created_on": {
+           "type": "string",
+           "format": "date",
+           "description": "Date the topic was created, in the project's time zone.",
+           "example": "2014-04-25"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Zero-based ordering of this topic within its meeting category; lower values sort first.",
+           "example": 0
+          },
+          "due_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date by which the topic is expected to be resolved. Null when no due date is set.",
+           "example": "2014-05-20"
+          },
+          "priority": {
+           "type": "string",
+           "description": "Priority assigned to the topic. Constrained to the values in the enum; an empty string means no priority.",
+           "example": "Low",
+           "enum": [
+            "",
+            "High",
+            "Medium",
+            "Low"
+           ]
+          },
+          "status": {
+           "type": "string",
+           "description": "Workflow state of the topic. Constrained to the values in the enum.",
+           "example": "On Hold",
+           "enum": [
+            "Open",
+            "On Hold",
+            "Closed"
+           ]
+          },
+          "title": {
+           "type": "string",
+           "description": "Short title summarizing the topic.",
+           "example": "34' Level"
+          },
+          "minutes": {
+           "type": "string",
+           "description": "Rich-text (HTML) meeting minutes recorded for this topic.",
+           "example": "<p><span style=\\\"font-size: large;\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>"
+          },
+          "description": {
+           "type": "string",
+           "description": "Plain-text description of the topic, with any rich-text markup stripped.",
+           "example": "Need pricing from vendor for 34' level"
+          },
+          "meeting_category": {
+           "type": "object",
+           "description": "The category this topic is grouped under within the Meeting.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Identifier of the meeting category.",
+             "example": 192424
+            },
+            "title": {
+             "type": "string",
+             "description": "Display name of the meeting category.",
+             "example": "Uncategorized Items"
+            }
+           }
+          },
+          "assignments": {
+           "type": "array",
+           "description": "Project users assigned responsibility for this topic.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Login Information (user) identifier of the assignee.",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email address the assignee signs in with.",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Full display name of the assignee.",
+              "example": "Carl Contractor"
+             }
+            }
+           }
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Files attached to this topic.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Identifier of the attached file.",
+              "example": 5324
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the attached file.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Original file name of the attachment (same value as `name`).",
+              "example": "january_receipt_copy.jpg"
+             },
+             "url": {
+              "type": "string",
+              "description": "Download URL for the attached file.",
+              "example": "http://www.example.com/"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/meeting_topics/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 0,\n    meeting_id: 0,\n    meeting_topic: {\n      title: 'string',\n      description: 'Need pricing from vendor for 34\\' level',\n      due_date: '2014-05-20',\n      status: 'On Hold',\n      minutes: '<p><span style=\\\\\\\"font-size: large;\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>',\n      is_private: true,\n      closed_at: '2021-05-20T12:00:00Z',\n      priority: 'Low',\n      added_under_agenda: true,\n      meeting_wide_number: 1,\n      meeting_category_id: 192424,\n      assignment_ids: [160586]\n    },\n    attachments: ['string']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":0,\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586]},\\\"attachments\\\":[\\\"string\\\"]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/meeting_topics/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/meeting_topics/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":0,\"meeting_id\":0,\"meeting_topic\":{\"title\":\"string\",\"description\":\"Need pricing from vendor for 34'\\'' level\",\"due_date\":\"2014-05-20\",\"status\":\"On Hold\",\"minutes\":\"<p><span style=\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\",\"is_private\":true,\"closed_at\":\"2021-05-20T12:00:00Z\",\"priority\":\"Low\",\"added_under_agenda\":true,\"meeting_wide_number\":1,\"meeting_category_id\":192424,\"assignment_ids\":[160586]},\"attachments\":[\"string\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/meeting_topics/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"project_id\\\":0,\\\"meeting_id\\\":0,\\\"meeting_topic\\\":{\\\"title\\\":\\\"string\\\",\\\"description\\\":\\\"Need pricing from vendor for 34' level\\\",\\\"due_date\\\":\\\"2014-05-20\\\",\\\"status\\\":\\\"On Hold\\\",\\\"minutes\\\":\\\"<p><span style=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"font-size: large;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">Please look at Item 1 and have those pieces completed <strong>before</strong></span></p>\\\",\\\"is_private\\\":true,\\\"closed_at\\\":\\\"2021-05-20T12:00:00Z\\\",\\\"priority\\\":\\\"Low\\\",\\\"added_under_agenda\\\":true,\\\"meeting_wide_number\\\":1,\\\"meeting_category_id\\\":192424,\\\"assignment_ids\\\":[160586]},\\\"attachments\\\":[\\\"string\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

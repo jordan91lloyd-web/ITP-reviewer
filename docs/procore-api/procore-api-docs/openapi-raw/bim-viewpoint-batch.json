@@ -1,0 +1,641 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "BIM Viewpoint Batch",
+  "x-product-category": "Preconstruction",
+  "x-tool-category": "BIM",
+  "x-resource-name": "BIM Viewpoint Batch",
+  "version": "1.0",
+  "x-product-lines": [
+   "Design Coordination"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/bim_viewpoints/batch": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a batch of BIM Viewpoints",
+    "description": "Create a batch of BIM Viewpoints",
+    "tags": [
+     "BIM Viewpoints"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "bim_viewpoints"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 126
+         },
+         "bim_viewpoints": {
+          "type": "array",
+          "description": "An array of BIM Viewpoint payloads. Limited to 100 items per request",
+          "items": {
+           "type": "object",
+           "required": [
+            "bim_file_id",
+            "camera_data",
+            "upload_uuid"
+           ],
+           "properties": {
+            "bim_file_id": {
+             "type": "integer",
+             "description": "ID of a BIM File to be associated to the viewpoint"
+            },
+            "name": {
+             "type": "string",
+             "description": "Viewpoint name",
+             "example": "Ceiling view"
+            },
+            "view_folder_id": {
+             "type": "integer",
+             "description": "ID of the BIM View Folder the viewpoint belongs to"
+            },
+            "upload_uuid": {
+             "type": "string",
+             "description": "UUID of uploaded snapshot",
+             "example": "1ZE146W9K804SAJJZX19JVAD0R"
+            },
+            "uuid": {
+             "type": "string",
+             "nullable": true,
+             "description": "Unique identifier for the Extraction viewpoint",
+             "example": "123e4567-e89b-12d3-a456-426614174000"
+            },
+            "camera_data": {
+             "type": "string",
+             "description": "JSON string representation of camera position",
+             "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+            },
+            "redlines_data": {
+             "type": "string",
+             "description": "JSON string representation of markup",
+             "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+            },
+            "sections_data": {
+             "type": "string",
+             "description": "JSON string representation of sections applied to a 3d model as a set of clipping planes",
+             "example": "[{\"location\":{\"x\":0.0,\"y\":0.0,\"z\":28.82},\"direction\":{\"x\":0,\"y\":0,\"z\":-1},\"unit\":\"ft\"},{\"location\":{\"x\":10.0,\"y\":50.0,\"z\":68.82},\"direction\":{\"x\":2,\"y\":4,\"z\":-6}}]"
+            },
+            "render_mode": {
+             "type": "string",
+             "description": "Viewer render mode when viewpoint is applied",
+             "enum": [
+              "shaded",
+              "xray"
+             ]
+            },
+            "visibility": {
+             "type": "object",
+             "description": "Object visibility settings",
+             "properties": {
+              "default_visibility": {
+               "type": "boolean"
+              },
+              "exceptions": {
+               "type": "object",
+               "description": "Group of model objects represented as an array of object ids, or object ranges",
+               "properties": {
+                "object_ids": {
+                 "type": "array",
+                 "description": "Array of object ids",
+                 "example": [
+                  24861,
+                  46732
+                 ],
+                 "items": {
+                  "type": "integer"
+                 }
+                },
+                "object_ranges": {
+                 "type": "array",
+                 "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                 "example": [
+                  [
+                   24862,
+                   24
+                  ]
+                 ],
+                 "items": {
+                  "type": "array",
+                  "items": {
+                   "type": "integer"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "BIM Viewpoint Batch create response",
+         "type": "object",
+         "properties": {
+          "bim_viewpoints": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "allOf": [
+             {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 206
+               },
+               "bim_file_id": {
+                "type": "integer",
+                "description": "ID of associated BIM File",
+                "example": 809
+               },
+               "view_folder_id": {
+                "type": "integer",
+                "nullable": true,
+                "description": "ID of associated BIM View Folder",
+                "example": 316
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Created date",
+                "example": "2018-04-19T09:36:42Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Updated date",
+                "example": "2018-04-20T09:36:42Z"
+               },
+               "snapshot": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Base name of the file without its path",
+                  "example": "filename.ext"
+                 },
+                 "content_type": {
+                  "type": "string",
+                  "description": "A mime type or a file extension",
+                  "example": "image/png"
+                 },
+                 "url": {
+                  "type": "string",
+                  "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                  "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                 }
+                }
+               },
+               "name": {
+                "type": "string",
+                "description": "Viewpoint name",
+                "example": "Mechanical Conflict View"
+               },
+               "render_mode": {
+                "type": "string",
+                "description": "Viewer render mode when viewpoint is applied",
+                "enum": [
+                 "shaded",
+                 "xray"
+                ]
+               },
+               "uuid": {
+                "type": "string",
+                "nullable": true,
+                "description": "Unique identifier for the Extraction viewpoint",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+               },
+               "visibility": {
+                "type": "object",
+                "nullable": true,
+                "description": "Object Visibility settings",
+                "properties": {
+                 "default_visibility": {
+                  "type": "boolean"
+                 },
+                 "exceptions": {
+                  "type": "object",
+                  "description": "Group of model objects represented as an array of object ids, or object ranges",
+                  "properties": {
+                   "object_ids": {
+                    "type": "array",
+                    "description": "Array of object ids",
+                    "example": [
+                     24861,
+                     46732
+                    ],
+                    "items": {
+                     "type": "integer"
+                    }
+                   },
+                   "object_ranges": {
+                    "type": "array",
+                    "description": "Array of object ranges. A range is an array containing two numbers, the first represents object id, the second represents the number of objects in the range.",
+                    "example": [
+                     [
+                      24862,
+                      24
+                     ]
+                    ],
+                    "items": {
+                     "type": "array",
+                     "items": {
+                      "type": "integer"
+                     },
+                     "minItems": 2,
+                     "maxItems": 2
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "camera_data": {
+                "type": "string",
+                "description": "JSON string representation of camera position",
+                "example": "{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "redlines_data": {
+                "type": "string",
+                "description": "JSON string representation of markup",
+                "example": "{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "sections_data": {
+                "type": "string",
+                "description": "JSON string representation of sections applied to a 3d model as a set of clipping planes",
+                "example": "[{\"location\":{\"x\":0.0,\"y\":0.0,\"z\":28.82},\"direction\":{\"x\":0,\"y\":0,\"z\":-1},\"unit\":\"ft\"},{\"location\":{\"x\":10.0,\"y\":50.0,\"z\":68.82},\"direction\":{\"x\":2,\"y\":4,\"z\":-6}}]"
+               }
+              }
+             }
+            ]
+           }
+          },
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "allOf": [
+             {
+              "type": "object",
+              "required": [
+               "bim_file_id",
+               "upload_uuid",
+               "camera_data"
+              ],
+              "properties": {
+               "bim_file_id": {
+                "type": "integer",
+                "description": "ID of a BIM File to be associated to the viewpoint"
+               },
+               "name": {
+                "type": "string",
+                "description": "Viewpoint name",
+                "example": "Ceiling view"
+               },
+               "view_folder_id": {
+                "type": "integer",
+                "description": "ID of the BIM View Folder the viewpoint belongs to"
+               },
+               "upload_uuid": {
+                "type": "string",
+                "description": "UUID of uploaded snapshot",
+                "example": "1ZE146W9K804SAJJZX19JVAD0R"
+               },
+               "camera_data": {
+                "type": "string",
+                "description": "Camera data for the building model associated with the issue",
+                "example": "{\"Type\":\"Camera\",\"Scale\":1,\"Up\":[0,0,1],\"Front\":[0,1,2.22],\"Right\":[1,0,0],\"Position\":[36.48,22.38,68.27],\"View\":[-0.11,-0.14,-0.98]}"
+               },
+               "redlines_data": {
+                "type": "string",
+                "description": "Lines data for the building model associated with the issue",
+                "example": "{\"Type\":\"RedlineCollection\",\"Values\":[{\"Type\":\"RedlineEllipse\",\"Thickness\":3,\"Color\":[1,0,0],\"MinPoint\":[-0.131,0.202],\"MaxPoint\":[0.144,0.024]}]}"
+               },
+               "sections_data": {
+                "type": "string",
+                "description": "Clipping plane data for the building model associated with the issue",
+                "example": "{\"Type\":\"ClipPlaneSet\",\"Version\":1\"}"
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "errors": {
+                "type": "object",
+                "properties": {
+                 "field_name": {
+                  "type": "array",
+                  "items": {
+                   "type": "string"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/bim_viewpoints/batch',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 126,\n    bim_viewpoints: [\n      {\n        bim_file_id: 0,\n        name: 'Ceiling view',\n        view_folder_id: 0,\n        upload_uuid: '1ZE146W9K804SAJJZX19JVAD0R',\n        uuid: '123e4567-e89b-12d3-a456-426614174000',\n        camera_data: '{\"perspective_camera\":{\"camera_direction\":{\"x\":-0.24,\"y\":-0.14,\"z\":-0.99},\"camera_up_vector\":{\"x\":-0.17,\"y\":-0.74,\"z\":0.14},\"camera_view_point\":{\"x\":-13.86,\"y\":64.83,\"z\":31.9},\"field_of_view\":0.78,\"target_distance\":9.18,\"unit\":\"ft\"}}',\n        redlines_data: '{\"lines\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":-0.29,\"y\":-0.53,\"z\":0.0}}],\"texts\":[{\"origin\":{\"x\":-0.29,\"y\":-0.15,\"z\":0.0},\"text\":\"Issue\",\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1}}],\"arrows\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"end_point\":{\"x\":-0.16,\"y\":0.33,\"z\":0.0},\"thickness\":3,\"start_point\":{\"x\":0.58,\"y\":0.25,\"z\":0.0}}],\"ellipses\":[{\"color\":{\"a\":1.0,\"b\":0,\"g\":0,\"r\":1},\"max_point\":{\"x\":0.11,\"y\":-0.25,\"z\":0.0},\"min_point\":{\"x\":0.31,\"y\":0.68,\"z\":0.0},\"thickness\":3}]}',\n        sections_data: '[{\"location\":{\"x\":0.0,\"y\":0.0,\"z\":28.82},\"direction\":{\"x\":0,\"y\":0,\"z\":-1},\"unit\":\"ft\"},{\"location\":{\"x\":10.0,\"y\":50.0,\"z\":68.82},\"direction\":{\"x\":2,\"y\":4,\"z\":-6}}]',\n        render_mode: 'shaded',\n        visibility: {\n          default_visibility: true,\n          exceptions: {object_ids: [24861, 46732], object_ranges: [[24862, 24]]}\n        }\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":126,\\\"bim_viewpoints\\\":[{\\\"bim_file_id\\\":0,\\\"name\\\":\\\"Ceiling view\\\",\\\"view_folder_id\\\":0,\\\"upload_uuid\\\":\\\"1ZE146W9K804SAJJZX19JVAD0R\\\",\\\"uuid\\\":\\\"123e4567-e89b-12d3-a456-426614174000\\\",\\\"camera_data\\\":\\\"{\\\\\\\"perspective_camera\\\\\\\":{\\\\\\\"camera_direction\\\\\\\":{\\\\\\\"x\\\\\\\":-0.24,\\\\\\\"y\\\\\\\":-0.14,\\\\\\\"z\\\\\\\":-0.99},\\\\\\\"camera_up_vector\\\\\\\":{\\\\\\\"x\\\\\\\":-0.17,\\\\\\\"y\\\\\\\":-0.74,\\\\\\\"z\\\\\\\":0.14},\\\\\\\"camera_view_point\\\\\\\":{\\\\\\\"x\\\\\\\":-13.86,\\\\\\\"y\\\\\\\":64.83,\\\\\\\"z\\\\\\\":31.9},\\\\\\\"field_of_view\\\\\\\":0.78,\\\\\\\"target_distance\\\\\\\":9.18,\\\\\\\"unit\\\\\\\":\\\\\\\"ft\\\\\\\"}}\\\",\\\"redlines_data\\\":\\\"{\\\\\\\"lines\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.53,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"texts\\\\\\\":[{\\\\\\\"origin\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"text\\\\\\\":\\\\\\\"Issue\\\\\\\",\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1}}],\\\\\\\"arrows\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.16,\\\\\\\"y\\\\\\\":0.33,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.58,\\\\\\\"y\\\\\\\":0.25,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"ellipses\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"max_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.11,\\\\\\\"y\\\\\\\":-0.25,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"min_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.31,\\\\\\\"y\\\\\\\":0.68,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3}]}\\\",\\\"sections_data\\\":\\\"[{\\\\\\\"location\\\\\\\":{\\\\\\\"x\\\\\\\":0.0,\\\\\\\"y\\\\\\\":0.0,\\\\\\\"z\\\\\\\":28.82},\\\\\\\"direction\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":-1},\\\\\\\"unit\\\\\\\":\\\\\\\"ft\\\\\\\"},{\\\\\\\"location\\\\\\\":{\\\\\\\"x\\\\\\\":10.0,\\\\\\\"y\\\\\\\":50.0,\\\\\\\"z\\\\\\\":68.82},\\\\\\\"direction\\\\\\\":{\\\\\\\"x\\\\\\\":2,\\\\\\\"y\\\\\\\":4,\\\\\\\"z\\\\\\\":-6}}]\\\",\\\"render_mode\\\":\\\"shaded\\\",\\\"visibility\\\":{\\\"default_visibility\\\":true,\\\"exceptions\\\":{\\\"object_ids\\\":[24861,46732],\\\"object_ranges\\\":[[24862,24]]}}}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/bim_viewpoints/batch\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/bim_viewpoints/batch \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":126,\"bim_viewpoints\":[{\"bim_file_id\":0,\"name\":\"Ceiling view\",\"view_folder_id\":0,\"upload_uuid\":\"1ZE146W9K804SAJJZX19JVAD0R\",\"uuid\":\"123e4567-e89b-12d3-a456-426614174000\",\"camera_data\":\"{\\\"perspective_camera\\\":{\\\"camera_direction\\\":{\\\"x\\\":-0.24,\\\"y\\\":-0.14,\\\"z\\\":-0.99},\\\"camera_up_vector\\\":{\\\"x\\\":-0.17,\\\"y\\\":-0.74,\\\"z\\\":0.14},\\\"camera_view_point\\\":{\\\"x\\\":-13.86,\\\"y\\\":64.83,\\\"z\\\":31.9},\\\"field_of_view\\\":0.78,\\\"target_distance\\\":9.18,\\\"unit\\\":\\\"ft\\\"}}\",\"redlines_data\":\"{\\\"lines\\\":[{\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1},\\\"end_point\\\":{\\\"x\\\":-0.29,\\\"y\\\":-0.15,\\\"z\\\":0.0},\\\"thickness\\\":3,\\\"start_point\\\":{\\\"x\\\":-0.29,\\\"y\\\":-0.53,\\\"z\\\":0.0}}],\\\"texts\\\":[{\\\"origin\\\":{\\\"x\\\":-0.29,\\\"y\\\":-0.15,\\\"z\\\":0.0},\\\"text\\\":\\\"Issue\\\",\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1}}],\\\"arrows\\\":[{\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1},\\\"end_point\\\":{\\\"x\\\":-0.16,\\\"y\\\":0.33,\\\"z\\\":0.0},\\\"thickness\\\":3,\\\"start_point\\\":{\\\"x\\\":0.58,\\\"y\\\":0.25,\\\"z\\\":0.0}}],\\\"ellipses\\\":[{\\\"color\\\":{\\\"a\\\":1.0,\\\"b\\\":0,\\\"g\\\":0,\\\"r\\\":1},\\\"max_point\\\":{\\\"x\\\":0.11,\\\"y\\\":-0.25,\\\"z\\\":0.0},\\\"min_point\\\":{\\\"x\\\":0.31,\\\"y\\\":0.68,\\\"z\\\":0.0},\\\"thickness\\\":3}]}\",\"sections_data\":\"[{\\\"location\\\":{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":28.82},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-1},\\\"unit\\\":\\\"ft\\\"},{\\\"location\\\":{\\\"x\\\":10.0,\\\"y\\\":50.0,\\\"z\\\":68.82},\\\"direction\\\":{\\\"x\\\":2,\\\"y\\\":4,\\\"z\\\":-6}}]\",\"render_mode\":\"shaded\",\"visibility\":{\"default_visibility\":true,\"exceptions\":{\"object_ids\":[24861,46732],\"object_ranges\":[[24862,24]]}}}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/bim_viewpoints/batch\"),\n    Content = new StringContent(\"{\\\"project_id\\\":126,\\\"bim_viewpoints\\\":[{\\\"bim_file_id\\\":0,\\\"name\\\":\\\"Ceiling view\\\",\\\"view_folder_id\\\":0,\\\"upload_uuid\\\":\\\"1ZE146W9K804SAJJZX19JVAD0R\\\",\\\"uuid\\\":\\\"123e4567-e89b-12d3-a456-426614174000\\\",\\\"camera_data\\\":\\\"{\\\\\\\"perspective_camera\\\\\\\":{\\\\\\\"camera_direction\\\\\\\":{\\\\\\\"x\\\\\\\":-0.24,\\\\\\\"y\\\\\\\":-0.14,\\\\\\\"z\\\\\\\":-0.99},\\\\\\\"camera_up_vector\\\\\\\":{\\\\\\\"x\\\\\\\":-0.17,\\\\\\\"y\\\\\\\":-0.74,\\\\\\\"z\\\\\\\":0.14},\\\\\\\"camera_view_point\\\\\\\":{\\\\\\\"x\\\\\\\":-13.86,\\\\\\\"y\\\\\\\":64.83,\\\\\\\"z\\\\\\\":31.9},\\\\\\\"field_of_view\\\\\\\":0.78,\\\\\\\"target_distance\\\\\\\":9.18,\\\\\\\"unit\\\\\\\":\\\\\\\"ft\\\\\\\"}}\\\",\\\"redlines_data\\\":\\\"{\\\\\\\"lines\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.53,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"texts\\\\\\\":[{\\\\\\\"origin\\\\\\\":{\\\\\\\"x\\\\\\\":-0.29,\\\\\\\"y\\\\\\\":-0.15,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"text\\\\\\\":\\\\\\\"Issue\\\\\\\",\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1}}],\\\\\\\"arrows\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"end_point\\\\\\\":{\\\\\\\"x\\\\\\\":-0.16,\\\\\\\"y\\\\\\\":0.33,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3,\\\\\\\"start_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.58,\\\\\\\"y\\\\\\\":0.25,\\\\\\\"z\\\\\\\":0.0}}],\\\\\\\"ellipses\\\\\\\":[{\\\\\\\"color\\\\\\\":{\\\\\\\"a\\\\\\\":1.0,\\\\\\\"b\\\\\\\":0,\\\\\\\"g\\\\\\\":0,\\\\\\\"r\\\\\\\":1},\\\\\\\"max_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.11,\\\\\\\"y\\\\\\\":-0.25,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"min_point\\\\\\\":{\\\\\\\"x\\\\\\\":0.31,\\\\\\\"y\\\\\\\":0.68,\\\\\\\"z\\\\\\\":0.0},\\\\\\\"thickness\\\\\\\":3}]}\\\",\\\"sections_data\\\":\\\"[{\\\\\\\"location\\\\\\\":{\\\\\\\"x\\\\\\\":0.0,\\\\\\\"y\\\\\\\":0.0,\\\\\\\"z\\\\\\\":28.82},\\\\\\\"direction\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":-1},\\\\\\\"unit\\\\\\\":\\\\\\\"ft\\\\\\\"},{\\\\\\\"location\\\\\\\":{\\\\\\\"x\\\\\\\":10.0,\\\\\\\"y\\\\\\\":50.0,\\\\\\\"z\\\\\\\":68.82},\\\\\\\"direction\\\\\\\":{\\\\\\\"x\\\\\\\":2,\\\\\\\"y\\\\\\\":4,\\\\\\\"z\\\\\\\":-6}}]\\\",\\\"render_mode\\\":\\\"shaded\\\",\\\"visibility\\\":{\\\"default_visibility\\\":true,\\\"exceptions\\\":{\\\"object_ids\\\":[24861,46732],\\\"object_ranges\\\":[[24862,24]]}}}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new payload parameters",
+      "description": "Added new payload parameters render_mode and components.",
+      "endpoint": "POST /bim_viewpoints/batch",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-12-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoint-batch?version=1.0#create-a-batch-of-bim-viewpoints"
+     },
+     {
+      "summary": "Added new payload parameter visibility",
+      "description": "Added new payload parameter visibility",
+      "endpoint": "POST /bim_viewpoints/batch",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-04-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoint-batch?version=1.0#create-a-batch-of-bim-viewpoints"
+     },
+     {
+      "summary": "Modified the viewpoints create API to make upload_uuid an optional parameter",
+      "description": "Modified the viewpoints create API to make upload_uuid optional. Viewpoints created without\na snapshot upload will contain a blank snapshot object",
+      "endpoint": "POST /bim_viewpoints/batch",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-10-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoint-batch?version=1.0#create-a-batch-of-bim-viewpoints"
+     },
+     {
+      "summary": "Added new payload parameter uuid",
+      "description": "Added new payload parameter uuid",
+      "endpoint": "POST /bim_viewpoints/batch",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-13",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bim-viewpoint-batch?version=1.0#create-a-batch-of-bim-viewpoints"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

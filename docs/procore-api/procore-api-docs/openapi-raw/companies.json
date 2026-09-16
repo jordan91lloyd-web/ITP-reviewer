@@ -1,0 +1,312 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Companies",
+  "x-product-category": "Company Admin",
+  "x-tool-category": "Company Settings",
+  "x-resource-name": "Companies",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Companies",
+    "description": "Return a list of Companies visible to the User.\n\nNOTE: This endpoint does not require the ['Procore-Company-Id' header]\n(https://developers.procore.com/documentation/tutorial-mpz)\nto be included on a request.",
+    "tags": [
+     "Companies"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "include_free_companies",
+      "in": "query",
+      "description": "By default the endpoint excludes free companies. Provide include_free_companies=true to include them",
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "arrayOfCompanies",
+         "type": "array",
+         "items": {
+          "type": "object",
+          "title": "Company",
+          "description": "Company",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Company id",
+            "example": 1
+           },
+           "name": {
+            "type": "string",
+            "description": "Company name",
+            "example": "ABC Drywall"
+           },
+           "is_active": {
+            "type": "boolean",
+            "description": "Company is active status",
+            "example": true
+           },
+           "logo_url": {
+            "type": "string",
+            "description": "Company Logo URL",
+            "example": "https://pro-core.com/prostore/logo.gif"
+           },
+           "pcn_business_experience": {
+            "type": "boolean",
+            "description": "Company has business experience enabled",
+            "example": true,
+            "nullable": true
+           },
+           "my_company": {
+            "type": "boolean",
+            "description": "The current user is an active employee of this company. This will only return as true for a single company in the response.",
+            "example": true,
+            "nullable": true
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    include_free_companies: 'SOME_BOOLEAN_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/companies?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&include_free_companies=SOME_BOOLEAN_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&include_free_companies=SOME_BOOLEAN_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&include_free_companies=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Company Logo to index endpoint",
+      "description": "Companies index now includes Logo URLs",
+      "endpoint": "GET /companies",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-02-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "companies?version=1.0#list-companies"
+     },
+     {
+      "summary": "Added \"My Company\"",
+      "description": "Companies index now includes \"My Company\" field to identify the users primary company",
+      "endpoint": "GET /companies",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-05-09",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "companies?version=1.0#list-companies"
+     },
+     {
+      "summary": "Using WEB_ROOT for internal hosts",
+      "description": "If view is :with_root and host is '.internal' then WEB_ROOT is used instead of root_url",
+      "endpoint": "GET /companies",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-12-03",
+      "versions": [
+       "1.0",
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "companies?version=1.0#list-companies"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

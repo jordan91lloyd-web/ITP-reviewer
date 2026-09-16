@@ -1,0 +1,230 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Import Logs",
+  "version": "2.0",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Import Logs",
+  "x-tool-category": "Scheduling",
+  "x-product-lines": [
+   "schedule-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/imports/{job_id}/logs": {
+   "get": {
+    "tags": [
+     "schedule-import-controller"
+    ],
+    "summary": "Get import logs",
+    "description": "Get structured validation/import logs for the latest completed or failed import.",
+    "operationId": "getImportLogs",
+    "parameters": [
+     {
+      "name": "locale",
+      "in": "header",
+      "description": "Optional. Locale for parsing the import report (e.g. en, fr-FR, ja-JP). Must match the locale used when the import was initiated. A mismatch will result in a parsing error.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "en"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "job_id",
+      "in": "path",
+      "description": "Import job id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Import logs (summary + items)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "description": "Summary counts",
+             "type": "object",
+             "properties": {
+              "error_count": {
+               "type": "integer",
+               "format": "int32",
+               "description": "Number of error entries",
+               "example": 5
+              },
+              "warning_count": {
+               "type": "integer",
+               "format": "int32",
+               "description": "Number of warning entries",
+               "example": 3
+              }
+             }
+            },
+            "items": {
+             "type": "array",
+             "description": "Log entries",
+             "items": {
+              "type": "object",
+              "properties": {
+               "level": {
+                "type": "string",
+                "description": "Log level (localized, e.g. ERROR, ERREUR, FEHLER)",
+                "example": "ERROR"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human-readable message",
+                "example": "Non-nullable field 'task_name' is null"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "Import job or schedule not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string"
+               },
+               "message": {
+                "type": "string"
+               },
+               "source": {
+                "type": "string"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D/logs',\n  headers: {locale: 'en'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'locale': \"en\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D/logs\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D/logs \\\n  --header 'locale: en'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/imports/%7Bjob_id%7D/logs\"),\n    Headers =\n    {\n        { \"locale\", \"en\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

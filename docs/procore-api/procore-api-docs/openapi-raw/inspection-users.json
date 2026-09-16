@@ -1,0 +1,404 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Inspection Users",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Inspections",
+  "x-resource-name": "Inspection Users",
+  "version": "1.1",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.1/projects/{project_id}/checklist/users": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Inspection Users",
+    "description": "Returns a list of Inspection Users for a given project",
+    "tags": [
+     "Inspections"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[vendor_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Vendor ID.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[potential_assignee]",
+      "in": "query",
+      "required": false,
+      "description": "Returns item(s) with the that can be potential inspection assignees.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[potential_distribution_member]",
+      "in": "query",
+      "required": false,
+      "description": "Returns item(s) that can be potential distribution members.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[potential_point_of_contact]",
+      "in": "query",
+      "required": false,
+      "description": "Returns item(s) with the that can be potential inspection points of contact.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[potential_signatory]",
+      "in": "query",
+      "required": false,
+      "description": "When true, returns only users eligible to sign an inspection.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[inspection_id]",
+      "in": "query",
+      "required": false,
+      "description": "Scopes signatory evaluation to a specific inspection. Closed inspections return no signatories. When the ID is unknown, falls back to project-wide evaluation.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort the collection by full name. Ascending by default; prefix the value with a hyphen (`-name`) to sort descending.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "name"
+       ]
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "Specifies which view of the resource to return (which attributes should be present in the response). The default view is normal.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "compact",
+        "normal"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "title": "Inspection User",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "User ID",
+            "example": 21
+           },
+           "login": {
+            "type": "string",
+            "description": "Email",
+            "example": "carl.contractor@example.com"
+           },
+           "name": {
+            "type": "string",
+            "description": "User's Name",
+            "example": "Carl Contractor"
+           },
+           "vendor": {
+            "type": "object",
+            "title": "Compact",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique integer identifier for this vendor/company.",
+              "example": 161072
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the vendor or contractor company.",
+              "example": "SID Architecture"
+             }
+            }
+           },
+           "potential_assignee": {
+            "type": "boolean",
+            "description": "Represents whether or not a user can be an Assignee for an Inspection.",
+            "example": true
+           },
+           "potential_point_of_contact": {
+            "type": "boolean",
+            "description": "Represents whether or not a user can be a Point of Contact for an Inspection.",
+            "example": true
+           },
+           "potential_distribution_member": {
+            "type": "boolean",
+            "description": "Represents whether or not a user can be a Distribution Member for an Inspection."
+           },
+           "potential_signatory": {
+            "type": "boolean",
+            "description": "Indicates whether the user is eligible to sign an inspection. When filters[inspection_id] is provided, evaluated in that inspection's scope (closed inspections yield false for all users). When omitted, reflects project-wide signatory eligibility.",
+            "example": true
+           },
+           "potential_signatory_as_creator": {
+            "type": "boolean",
+            "description": "Indicates whether the user may sign as the inspection creator. Only present when no filters[inspection_id] is provided; clients should apply the creator check themselves. Always true when potential_signatory is true.",
+            "example": true
+           },
+           "potential_signatory_as_assignee": {
+            "type": "boolean",
+            "description": "Indicates whether the user may sign as an inspection assignee. Only present when no filters[inspection_id] is provided; clients should apply the assignee check themselves. Always true when potential_signatory is true.",
+            "example": true
+           },
+           "default_distribution_member": {
+            "type": "boolean",
+            "description": "Represents whether or not a user is a Default Distribution Member for Inspections."
+           },
+           "custom_fields": {
+            "type": "object",
+            "properties": {
+             "custom_field_%{custom_field_decimal_definition_id}": {
+              "type": "boolean",
+              "description": "Represents whether or not the user has read access to the Custom Field",
+              "example": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/checklist/users',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[vendor_id]': 'SOME_INTEGER_VALUE',\n    'filters[potential_assignee]': 'SOME_BOOLEAN_VALUE',\n    'filters[potential_distribution_member]': 'SOME_BOOLEAN_VALUE',\n    'filters[potential_point_of_contact]': 'SOME_BOOLEAN_VALUE',\n    'filters[potential_signatory]': 'SOME_BOOLEAN_VALUE',\n    'filters[inspection_id]': 'SOME_INTEGER_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    view: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/checklist/users?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_INTEGER_VALUE&filters%5Bpotential_assignee%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_distribution_member%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_point_of_contact%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_signatory%5D=SOME_BOOLEAN_VALUE&filters%5Binspection_id%5D=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE&view=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/checklist/users?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_INTEGER_VALUE&filters%5Bpotential_assignee%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_distribution_member%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_point_of_contact%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_signatory%5D=SOME_BOOLEAN_VALUE&filters%5Binspection_id%5D=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE&view=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/checklist/users?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_INTEGER_VALUE&filters%5Bpotential_assignee%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_distribution_member%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_point_of_contact%5D=SOME_BOOLEAN_VALUE&filters%5Bpotential_signatory%5D=SOME_BOOLEAN_VALUE&filters%5Binspection_id%5D=SOME_INTEGER_VALUE&sort=SOME_STRING_VALUE&view=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Updated checklist users endpoint with signatory filters and inspection scoping",
+      "description": "Added `filters[potential_signatory]` and optional `filters[inspection_id]`\nto the checklist users endpoint.\n\nNew response fields:\n- `potential_signatory`: always returned; true when the user is eligible to sign.\n- `potential_signatory_as_creator`: only returned when `filters[inspection_id]` is\n  omitted, for client-side creator scoping.\n- `potential_signatory_as_assignee`: only returned when `filters[inspection_id]` is\n  omitted, for client-side assignee scoping.\n\nBehavior notes:\n- When `filters[inspection_id]` is provided, signatory eligibility is evaluated\n  in that inspection's scope. Closed inspections return no eligible signatories.\n- An unknown `filters[inspection_id]` falls back to project-wide evaluation.\n- Existing behavior is preserved when neither filter is provided.",
+      "endpoint": "GET /projects/{project_id}/checklist/users",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-02",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "inspection-users?version=1.1#list-inspection-users"
+     },
+     {
+      "summary": "Added List Checklist Users",
+      "description": "Get a list of Checklist Users for a given project.",
+      "endpoint": "GET /projects/{project_id}/checklist/users",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-02-04",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "inspection-users?version=1.1#list-inspection-users"
+     },
+     {
+      "summary": "Update checklist users endpoint to support compact view",
+      "description": "Updated the checklist users endpoint to support a compact view that only returns the users id, name, login, and vendor",
+      "endpoint": "GET /projects/{project_id}/checklist/users",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-12-12",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "inspection-users?version=1.1#list-inspection-users"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

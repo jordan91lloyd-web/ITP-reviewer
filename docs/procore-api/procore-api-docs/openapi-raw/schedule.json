@@ -1,0 +1,977 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Schedule",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Schedule (Legacy)",
+  "x-resource-name": "Schedule",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/schedule": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Schedule Metadata",
+    "description": "Returns metadata about this Project's Schedule, including information about the Schedule integration configuration for the current project.\n\n#### Schedule Types\n\n| Type                                                 | Key                           |\n|------------------------------------------------------|-------------------------------|\n| File-based schedule integration via web browser      | \"Microsoft Project\"           |\n| File-based schedule integration via Procore Drive    | \"Microsoft Project 2010\"      |\n| File-based schedule integration via Procore Documents| \"Microsoft Project Documents\" |\n| Primavera P6 database integration via Procore Drive  | \"Primavera P6\"                |\n\nNote that the schedule types listed as \"Microsoft Project\", \"Microsoft Project 2010\", and \"Microsoft Project Documents\" are functionally identical.\nIn all cases Procore can consume any supported schedule file type and extract data from it, not just Microsoft Project.\nSchedule files can be uploaded either via Procore Drive, via the Procore Documents tool, or via the Procore Schedule tool,\nregardless of which of these three types is selected. Where Primavera P6 database integration via Procore Drive is in use, the `p6_id`\nattribute returned by this API indicates which P6 project Procore Drive is extracting data from.\n",
+    "tags": [
+     "Schedule"
+    ],
+    "responses": {
+     "200": {
+      "description": "Schedule metadata",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "active_features": {
+           "type": "object",
+           "properties": {
+            "schedule_activity_feed": {
+             "type": "boolean"
+            },
+            "schedule_gantt_crud": {
+             "type": "boolean"
+            },
+            "schedule_task_comments": {
+             "type": "boolean"
+            },
+            "schedule_task_details": {
+             "type": "boolean"
+            },
+            "schedule_linked_items": {
+             "type": "boolean"
+            }
+           }
+          },
+          "last_calendar_view": {
+           "type": "string",
+           "example": "month"
+          },
+          "schedule_present": {
+           "type": "boolean"
+          },
+          "schedule_processing": {
+           "type": "boolean"
+          },
+          "schedule_crud_beta_agreement": {
+           "type": "object",
+           "properties": {
+            "signed": {
+             "type": "boolean"
+            },
+            "version": {
+             "type": "string",
+             "example": "onetrust_beta_user/schedule_crud"
+            }
+           }
+          },
+          "schedule_tasks_last_updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "nullable": true,
+           "description": "Timestamp of the most recent change to any task in the Schedule.",
+           "example": "2020-06-04T20:30:00Z"
+          },
+          "schedule_tasks_edited_manually": {
+           "type": "boolean"
+          },
+          "type": {
+           "type": "object",
+           "properties": {
+            "key": {
+             "type": "string",
+             "nullable": true,
+             "enum": [
+              "Microsoft Project",
+              "Microsoft Project 2010",
+              "Microsoft Project Documents",
+              "Primavera P6",
+              null
+             ],
+             "description": "Schedule type key",
+             "example": "Microsoft Project"
+            },
+            "p6_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "Schedule type Primavera P6 Identifier",
+             "example": "NRG00940"
+            }
+           }
+          },
+          "data_date": {
+           "type": "string",
+           "nullable": true,
+           "format": "date-time",
+           "description": "The data datetime of the last imported schedule.",
+           "example": "2019-01-06T11:26:00Z"
+          },
+          "lookahead_data_date": {
+           "type": "string",
+           "nullable": true,
+           "format": "date-time",
+           "description": "The Lookahead's data datetime.",
+           "example": "2019-01-06T11:26:00Z"
+          },
+          "number_of_pending_requested_changes": {
+           "type": "number",
+           "description": "The number of pending Requested Changes for the given user.",
+           "example": 2
+          },
+          "uploaded_at": {
+           "type": "string",
+           "nullable": true,
+           "format": "date-time",
+           "description": "The upload datetime of the last imported schedule.",
+           "example": "2019-01-06T11:26:00Z"
+          },
+          "office": {
+           "type": "object",
+           "title": "Office",
+           "description": "Office",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Office id",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "description": "Office name",
+             "example": "Main Office"
+            },
+            "address": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office address",
+             "example": "100 Construction Lane"
+            },
+            "city": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office city",
+             "example": "Santa Barbara"
+            },
+            "state_code": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office state code (ISO-3166 Alpha-2 format)",
+             "example": "CA"
+            },
+            "country_code": {
+             "type": "string",
+             "description": "Office country code (ISO-3166 Alpha-2 format)",
+             "example": "US"
+            },
+            "zip": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office zip",
+             "example": "93101"
+            },
+            "phone": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office phone",
+             "example": "8059831234"
+            },
+            "fax": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office fax",
+             "example": "8059834321"
+            },
+            "division": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office division",
+             "example": "First"
+            },
+            "logo": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer"
+              },
+              "name": {
+               "type": "string",
+               "description": "Use :name, :filename to be deprecated"
+              },
+              "url": {
+               "type": "string"
+              },
+              "filename": {
+               "type": "string",
+               "description": ":filename to be deprecated, use :name"
+              }
+             }
+            }
+           }
+          },
+          "project": {
+           "type": "object",
+           "title": "Project",
+           "description": "Project",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Project Id",
+             "example": 1
+            },
+            "country_code": {
+             "type": "string",
+             "description": "Country Code",
+             "example": "US"
+            },
+            "country_name": {
+             "type": "string",
+             "description": "Country Name",
+             "example": "United States"
+            },
+            "state_code": {
+             "type": "string",
+             "nullable": true,
+             "description": "State Code",
+             "example": "AL"
+            },
+            "state_name": {
+             "type": "string",
+             "nullable": true,
+             "description": "State Name",
+             "example": "Alabama"
+            },
+            "county": {
+             "type": "string",
+             "nullable": true,
+             "description": "County",
+             "example": "Washington County"
+            },
+            "city": {
+             "type": "string",
+             "nullable": true,
+             "description": "City",
+             "example": "New York"
+            },
+            "address": {
+             "type": "string",
+             "nullable": true,
+             "description": "Address",
+             "example": "First street 111"
+            },
+            "zip": {
+             "type": "string",
+             "nullable": true,
+             "description": "ZIP",
+             "example": 12345
+            },
+            "phone": {
+             "type": "string",
+             "nullable": true,
+             "description": "Phone",
+             "example": 123456789
+            },
+            "fax": {
+             "type": "string",
+             "nullable": true,
+             "description": "Fax",
+             "example": 123456789
+            },
+            "time_zone": {
+             "type": "string",
+             "description": "Time Zone",
+             "example": "Eastern Time (US & Canada)"
+            },
+            "time_zone_name": {
+             "type": "string",
+             "description": "Time Zone Name",
+             "example": "(GMT-05:00) Eastern Time (US & Canada)"
+            },
+            "logo_url": {
+             "type": "string",
+             "description": "Logo URL",
+             "example": "https://some_url_to_logo.png"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/schedule\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added additional metadata to response",
+      "description": "Added additional metadata to response.",
+      "endpoint": "GET /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-10-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#get-schedule-metadata"
+     },
+     {
+      "summary": "Added Schedule Type metadata to response",
+      "description": "Added Schedule Type information to the response.",
+      "endpoint": "GET /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-03-31",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#get-schedule-metadata"
+     },
+     {
+      "summary": "Added new attributes to response",
+      "description": "Added new data_date and uploaded_at attributes to response",
+      "endpoint": "GET /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-01-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#get-schedule-metadata"
+     },
+     {
+      "summary": "Added `number_of_pending_requested_changes` to response",
+      "description": "Added `number_of_pending_requested_changes` to response.",
+      "endpoint": "GET /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-02-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#get-schedule-metadata"
+     },
+     {
+      "summary": "Added `office` to response",
+      "description": "Added `office` to response.",
+      "endpoint": "GET /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-03-08",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#get-schedule-metadata"
+     },
+     {
+      "summary": "Added `schedule_tasks_edited_manually` to response",
+      "description": "Added `schedule_tasks_edited_manually` to response.",
+      "endpoint": "GET /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-05-02",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#get-schedule-metadata"
+     },
+     {
+      "summary": "Added `project` to response",
+      "description": "Added `project` data to response.",
+      "endpoint": "GET /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-05-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#get-schedule-metadata"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Schedule Metadata",
+    "description": "Updates the Schedule integration type for a project.\n\n#### Schedule Types\n\n| Type                                                 | Key                           |\n|------------------------------------------------------|-------------------------------|\n| File-based schedule integration via web browser      | \"Microsoft Project\"           |\n| File-based schedule integration via Procore Drive    | \"Microsoft Project 2010\"      |\n| File-based schedule integration via Procore Documents| \"Microsoft Project Documents\" |\n| Primavera P6 database integration via Procore Drive  | \"Primavera P6\"                |\n\nNote that the schedule types listed as \"Microsoft Project\", \"Microsoft Project 2010\", and \"Microsoft Project Documents\" are functionally identical.\nIn all cases Procore can consume any supported schedule file type and extract data from it, not just Microsoft Project.\nSchedule files can be uploaded either via Procore Drive, via the Procore Documents tool, or via the Procore Schedule tool,\nregardless of which of these three types is selected. Where Primavera P6 database integration via Procore Drive is in use, the `p6_id`\nattribute returned by this API indicates which P6 project Procore Drive is extracting data from.\n",
+    "tags": [
+     "Schedule"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "type"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "The ID of the Project the Schedule Type belongs to",
+          "example": 513526
+         },
+         "type": {
+          "title": "Schedule Type",
+          "type": "object",
+          "description": "Schedule Type object",
+          "properties": {
+           "key": {
+            "type": "string",
+            "enum": [
+             "Microsoft Project",
+             "Microsoft Project 2010",
+             "Microsoft Project Documents",
+             "Primavera P6"
+            ],
+            "description": "The Key of the Schedule Type",
+            "example": "Primavera P6"
+           },
+           "p6_id": {
+            "type": "string",
+            "description": "The Primavera P6 Identifier of the Schedule Type",
+            "example": "123456abc"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Schedule metadata",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "active_features": {
+           "type": "object",
+           "properties": {
+            "schedule_activity_feed": {
+             "type": "boolean"
+            },
+            "schedule_gantt_crud": {
+             "type": "boolean"
+            },
+            "schedule_task_comments": {
+             "type": "boolean"
+            },
+            "schedule_task_details": {
+             "type": "boolean"
+            },
+            "schedule_linked_items": {
+             "type": "boolean"
+            }
+           }
+          },
+          "last_calendar_view": {
+           "type": "string",
+           "example": "month"
+          },
+          "schedule_present": {
+           "type": "boolean"
+          },
+          "schedule_processing": {
+           "type": "boolean"
+          },
+          "schedule_crud_beta_agreement": {
+           "type": "object",
+           "properties": {
+            "signed": {
+             "type": "boolean"
+            },
+            "version": {
+             "type": "string",
+             "example": "onetrust_beta_user/schedule_crud"
+            }
+           }
+          },
+          "schedule_tasks_last_updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "nullable": true,
+           "description": "Timestamp of the most recent change to any task in the Schedule.",
+           "example": "2020-06-04T20:30:00Z"
+          },
+          "schedule_tasks_edited_manually": {
+           "type": "boolean"
+          },
+          "type": {
+           "type": "object",
+           "properties": {
+            "key": {
+             "type": "string",
+             "nullable": true,
+             "enum": [
+              "Microsoft Project",
+              "Microsoft Project 2010",
+              "Microsoft Project Documents",
+              "Primavera P6",
+              null
+             ],
+             "description": "Schedule type key",
+             "example": "Microsoft Project"
+            },
+            "p6_id": {
+             "type": "string",
+             "nullable": true,
+             "description": "Schedule type Primavera P6 Identifier",
+             "example": "NRG00940"
+            }
+           }
+          },
+          "data_date": {
+           "type": "string",
+           "nullable": true,
+           "format": "date-time",
+           "description": "The data datetime of the last imported schedule.",
+           "example": "2019-01-06T11:26:00Z"
+          },
+          "lookahead_data_date": {
+           "type": "string",
+           "nullable": true,
+           "format": "date-time",
+           "description": "The Lookahead's data datetime.",
+           "example": "2019-01-06T11:26:00Z"
+          },
+          "number_of_pending_requested_changes": {
+           "type": "number",
+           "description": "The number of pending Requested Changes for the given user.",
+           "example": 2
+          },
+          "uploaded_at": {
+           "type": "string",
+           "nullable": true,
+           "format": "date-time",
+           "description": "The upload datetime of the last imported schedule.",
+           "example": "2019-01-06T11:26:00Z"
+          },
+          "office": {
+           "type": "object",
+           "title": "Office",
+           "description": "Office",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Office id",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "description": "Office name",
+             "example": "Main Office"
+            },
+            "address": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office address",
+             "example": "100 Construction Lane"
+            },
+            "city": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office city",
+             "example": "Santa Barbara"
+            },
+            "state_code": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office state code (ISO-3166 Alpha-2 format)",
+             "example": "CA"
+            },
+            "country_code": {
+             "type": "string",
+             "description": "Office country code (ISO-3166 Alpha-2 format)",
+             "example": "US"
+            },
+            "zip": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office zip",
+             "example": "93101"
+            },
+            "phone": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office phone",
+             "example": "8059831234"
+            },
+            "fax": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office fax",
+             "example": "8059834321"
+            },
+            "division": {
+             "type": "string",
+             "nullable": true,
+             "description": "Office division",
+             "example": "First"
+            },
+            "logo": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer"
+              },
+              "name": {
+               "type": "string",
+               "description": "Use :name, :filename to be deprecated"
+              },
+              "url": {
+               "type": "string"
+              },
+              "filename": {
+               "type": "string",
+               "description": ":filename to be deprecated, use :name"
+              }
+             }
+            }
+           }
+          },
+          "project": {
+           "type": "object",
+           "title": "Project",
+           "description": "Project",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Project Id",
+             "example": 1
+            },
+            "country_code": {
+             "type": "string",
+             "description": "Country Code",
+             "example": "US"
+            },
+            "country_name": {
+             "type": "string",
+             "description": "Country Name",
+             "example": "United States"
+            },
+            "state_code": {
+             "type": "string",
+             "nullable": true,
+             "description": "State Code",
+             "example": "AL"
+            },
+            "state_name": {
+             "type": "string",
+             "nullable": true,
+             "description": "State Name",
+             "example": "Alabama"
+            },
+            "county": {
+             "type": "string",
+             "nullable": true,
+             "description": "County",
+             "example": "Washington County"
+            },
+            "city": {
+             "type": "string",
+             "nullable": true,
+             "description": "City",
+             "example": "New York"
+            },
+            "address": {
+             "type": "string",
+             "nullable": true,
+             "description": "Address",
+             "example": "First street 111"
+            },
+            "zip": {
+             "type": "string",
+             "nullable": true,
+             "description": "ZIP",
+             "example": 12345
+            },
+            "phone": {
+             "type": "string",
+             "nullable": true,
+             "description": "Phone",
+             "example": 123456789
+            },
+            "fax": {
+             "type": "string",
+             "nullable": true,
+             "description": "Fax",
+             "example": 123456789
+            },
+            "time_zone": {
+             "type": "string",
+             "description": "Time Zone",
+             "example": "Eastern Time (US & Canada)"
+            },
+            "time_zone_name": {
+             "type": "string",
+             "description": "Time Zone Name",
+             "example": "(GMT-05:00) Eastern Time (US & Canada)"
+            },
+            "logo_url": {
+             "type": "string",
+             "description": "Logo URL",
+             "example": "https://some_url_to_logo.png"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule',\n  headers: {'content-type': 'application/json'},\n  body: {project_id: 513526, type: {key: 'Primavera P6', p6_id: '123456abc'}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":513526,\\\"type\\\":{\\\"key\\\":\\\"Primavera P6\\\",\\\"p6_id\\\":\\\"123456abc\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/schedule\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":513526,\"type\":{\"key\":\"Primavera P6\",\"p6_id\":\"123456abc\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/schedule\"),\n    Content = new StringContent(\"{\\\"project_id\\\":513526,\\\"type\\\":{\\\"key\\\":\\\"Primavera P6\\\",\\\"p6_id\\\":\\\"123456abc\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added PATCH method to update Schedule Type metadata",
+      "description": "Added a PATCH method to update the Schedule Type metadata.",
+      "endpoint": "PATCH /projects/{project_id}/schedule",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-03-31",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#update-schedule-metadata"
+     },
+     {
+      "summary": "Added additional metadata to response",
+      "description": "Added additional metadata to response.",
+      "endpoint": "PATCH /projects/{project_id}/schedule",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2021-10-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#update-schedule-metadata"
+     },
+     {
+      "summary": "Added `project` to response",
+      "description": "dded `project` data to response.",
+      "endpoint": "PATCH /projects/{project_id}/schedule",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2021-05-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "schedule?version=1.0#update-schedule-metadata"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,524 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Project Observation Templates",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Observations",
+  "x-resource-name": "Project Observation Templates",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/observation_templates/bulk_update": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk Update Project Observation Templates",
+    "description": "Applies the same attribute changes to several Project Observation Templates in one request. The templates are validated first \u2014 if any fails, nothing is written and the response is a `422` listing the offending template IDs and their errors.",
+    "tags": [
+     "Project Observation Templates"
+    ],
+    "parameters": [
+     {
+      "name": "observation_template_ids",
+      "in": "query",
+      "description": "IDs of all Project Observation Templates specified for bulk update",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "observation_template"
+        ],
+        "properties": {
+         "observation_template": {
+          "type": "object",
+          "title": "Project Observation Template",
+          "properties": {
+           "active": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the templates can be selected when creating a new Observation. Applied to every template in `observation_template_ids`."
+           },
+           "assignee_id": {
+            "type": "integer",
+            "example": 54,
+            "description": "User ID of a single default assignee to set on every template in `observation_template_ids`. Mutually exclusive with `assignee_ids`."
+           },
+           "assignee_ids": {
+            "type": "array",
+            "description": "User IDs of the default assignees to set on every template in `observation_template_ids`, replacing their existing assignee lists. Mutually exclusive with `assignee_id`.",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             123,
+             456
+            ]
+           },
+           "trade_id": {
+            "type": "integer",
+            "example": 54,
+            "description": "ID of the Trade to set on every template in `observation_template_ids`."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "title": "Project Observation Template",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this Project Observation Template. Pass as the `{id}` path parameter to `GET /rest/v1.0/projects/{project_id}/observation_templates/{id}`.",
+            "example": 1738
+           },
+           "active": {
+            "type": "boolean",
+            "description": "Whether the template can be selected when creating a new Observation. Inactive templates are retained but hidden from the picker.",
+            "example": true
+           },
+           "assignee": {
+            "description": "Most recently added default assignee applied to Observations created from this template. Null when the template has no assignees. Read the full list from `assignees`.",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Carl Contractor"
+             }
+            }
+           },
+           "assignees": {
+            "type": "array",
+            "description": "Every default assignee applied to Observations created from this template, most recently added first. Empty when the template has no assignees. Set with `observation_template[assignee_ids]`.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "User ID of the default assignee.",
+               "example": 160586
+              },
+              "login": {
+               "type": "string",
+               "description": "Email address the assignee signs in with.",
+               "example": "carl.contractor@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Assignee's name, formatted first-name-first.",
+               "example": "Carl Contractor"
+              }
+             }
+            }
+           },
+           "updated_at": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of the last change to the template. Bulk updates stamp this even when no attribute value actually changed.",
+            "format": "date-time",
+            "example": "2016-08-23T15:23:57Z"
+           },
+           "company_observation_template_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "ID of the Company Observation Template this template was cloned from. Null for templates created directly on the Project. When set, `observation_title`, `observation_type_id`, and `trade_id` are inherited from the company template and cannot be changed here.",
+            "example": 1337
+           },
+           "observation_title": {
+            "type": "string",
+            "description": "Title pre-filled on Observations created from this template. Inherited from the company template when `company_observation_template_id` is set.",
+            "example": "Worker seen not wearing PPE"
+           },
+           "observation_type": {
+            "description": "Observation Type applied to Observations created from this template. Inherited from the company template when `company_observation_template_id` is set.",
+            "type": "object",
+            "title": "Project Observation Type",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier for this Project Observation Type. Pass as the `{id}` path parameter to `PATCH /rest/v1.0/projects/{project_id}/observation_types/{id}`, as `observation[type_id]` when creating an Observation Item, or as `filters[type_id]` when listing Observation Items.",
+              "example": 2020
+             },
+             "name": {
+              "type": "string",
+              "description": "Display name of the Observation Type, localized to the requesting user's locale when a translation exists.",
+              "example": "No Type"
+             },
+             "localized_name": {
+              "type": "string",
+              "description": "Type name resolved for the locale of the request, falling back to the Company default and then the stored name. Display this to end users rather than reimplementing the fallback chain.",
+              "example": "No Type"
+             },
+             "category": {
+              "type": "string",
+              "description": "Localized display name of the type's Observations Category. Procore ships six built-in categories (Quality, Safety, Commissioning, Warranty, Work to Complete, Environmental), but companies can define additional categories, so treat this as free-form text. Use `category_key` for programmatic comparisons.",
+              "example": "Quality"
+             },
+             "category_key": {
+              "type": "string",
+              "description": "Stable, unlocalized key of the type's Observations Category. Prefer this over `category` when branching on category in code.",
+              "example": "quality"
+             },
+             "category_id": {
+              "type": "integer",
+              "description": "ID of the Observations Category this type belongs to. Corresponds to the `id` returned by `GET /rest/v2.0/companies/{company_id}/observations/categories`, and to the `observations_category_id` accepted on create.",
+              "example": 13
+             },
+             "name_translations": {
+              "type": "object",
+              "nullable": true,
+              "additionalProperties": {
+               "type": "string"
+              },
+              "description": "Company-authored translations of the type name, keyed by locale code (for example `en`, `es`, `fr-CA`). Null when the Company has not configured custom translations for this type.",
+              "example": {
+               "en": "No Type",
+               "es": "Sin tipo"
+              }
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Whether the type can be selected on new Observations in this Project. For a company-level type this reflects the project-level activation. Filter the collection with `filters[active]`.",
+              "example": true
+             },
+             "company_active": {
+              "type": "boolean",
+              "description": "Whether the type is active at the Company level, ignoring any project-level override. Compare with `active` to detect a type enabled company-wide but switched off for this Project.",
+              "example": true
+             },
+             "parent_inactive": {
+              "type": "boolean",
+              "description": "True when this project-level type's parent company-level type has been deactivated. Such a type cannot be used on new Observations even if `active` is true.",
+              "example": false
+             },
+             "in_use": {
+              "type": "boolean",
+              "description": "Whether at least one Observation Item currently references this type. Use to warn before deactivating or deleting a type.",
+              "example": false
+             },
+             "kind": {
+              "type": "string",
+              "description": "Whether the type is owned by the Company or defined on this Project only. Project-level types are selectable only within their own Project.",
+              "enum": [
+               "company",
+               "project"
+              ],
+              "example": "project"
+             }
+            }
+           },
+           "trade": {
+            "description": "Trade applied to Observations created from this template. Null when the template does not set a Trade.",
+            "type": "object",
+            "title": "Trade",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Trade ID",
+              "example": 999
+             },
+             "name": {
+              "type": "string",
+              "description": "Trade name",
+              "example": "09 - acoustical panels"
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Trade availability",
+              "example": true
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of last update to Trade",
+              "example": "2016-08-01T23:33:54Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_templates/bulk_update',\n  qs: {observation_template_ids: 'SOME_ARRAY_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    observation_template: {active: true, assignee_id: 54, assignee_ids: [123, 456], trade_id: 54}\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"observation_template\\\":{\\\"active\\\":true,\\\"assignee_id\\\":54,\\\"assignee_ids\\\":[123,456],\\\"trade_id\\\":54}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/observation_templates/bulk_update?observation_template_ids=SOME_ARRAY_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_templates/bulk_update?observation_template_ids=SOME_ARRAY_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"observation_template\":{\"active\":true,\"assignee_id\":54,\"assignee_ids\":[123,456],\"trade_id\":54}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/observation_templates/bulk_update?observation_template_ids=SOME_ARRAY_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"observation_template\\\":{\\\"active\\\":true,\\\"assignee_id\\\":54,\\\"assignee_ids\\\":[123,456],\\\"trade_id\\\":54}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Project Observation Templates bulk update endpoint",
+      "description": "Bulk Update a Project Observation Template for a given project id.",
+      "endpoint": "PATCH /projects/{project_id}/observation_templates/bulk_update",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2020-07-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-observation-templates?version=1.0#bulk-update-project-observation-templates"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

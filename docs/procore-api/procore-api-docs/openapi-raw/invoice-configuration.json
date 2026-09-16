@@ -1,0 +1,930 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "version": "1.0",
+  "title": "Invoice Configuration",
+  "x-resource-name": "Invoice Configuration",
+  "x-tool-category": "Contracts",
+  "x-product-category": "Construction Financials",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/contracts/{contract_id}/invoice_configuration": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "contract_id",
+     "in": "path",
+     "description": "ID of the Contract",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Contract's Invoice Configuration",
+    "description": "Get the details of a specific Contract's Invoice Configuration",
+    "tags": [
+     "Invoice Configuration"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID of the Invoice Configuration",
+           "example": 12
+          },
+          "separate_billing_for_stored_materials": {
+           "type": "boolean",
+           "description": "Whether billing for materials separately from the work complete is allowed",
+           "example": true
+          },
+          "stored_materials_billing_method": {
+           "type": "string",
+           "description": "Billing method for stored materials",
+           "example": "move_new_materials"
+          },
+          "contract_invoicing_method": {
+           "type": "string",
+           "description": "The invoicing method for the contract, either progressive or simplified",
+           "example": "progressive",
+           "enum": [
+            "progressive",
+            "simplified"
+           ],
+           "nullable": false
+          },
+          "contract_id": {
+           "type": "integer",
+           "description": "Contract ID",
+           "example": 1366
+          },
+          "project_id": {
+           "type": "integer",
+           "description": "Project ID",
+           "example": 180
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "Company ID",
+           "example": 90
+          },
+          "ssr_enabled": {
+           "type": "boolean",
+           "description": "Sliding Scale Retainage Enabled",
+           "example": true
+          },
+          "move_materials_to_previous_work_completed": {
+           "type": "boolean",
+           "description": "True if the Project Invoice Configuration is set to move materials to previous work completed",
+           "example": true
+          },
+          "commitment_has_invoices": {
+           "type": "boolean",
+           "description": "True if there are any invoices associated with this commitment",
+           "example": true
+          },
+          "retainage_rule_set": {
+           "type": "object",
+           "description": "A set of rules to control how retainage is applied to invoices of a contract",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "format": "int64",
+             "description": "Unique integer ID",
+             "example": 12345
+            },
+            "contract_id": {
+             "type": "integer",
+             "format": "int64",
+             "description": "Integer ID for the associated Contract",
+             "example": 22222
+            },
+            "name": {
+             "type": "string",
+             "description": "The Name of the Retainage Rule Set",
+             "example": "Rule Set 1"
+            },
+            "retainage_rules": {
+             "type": "array",
+             "items": {
+              "allOf": [
+               {
+                "type": "object",
+                "description": "A set of rules to control how retainage is applied to invoices of a contract",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "Unique integer ID",
+                  "example": 12345
+                 },
+                 "max_retainage": {
+                  "type": "string",
+                  "description": "The maximum amount of retainage held before this rule no longer applies",
+                  "example": "1000.0"
+                 },
+                 "position": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "The ordinal of this Rule within the containing Rule Set",
+                  "example": 1
+                 },
+                 "retainage_percentage": {
+                  "type": "string",
+                  "description": "The percentage of retaiange to withold on work completed while this Rule is active",
+                  "example": "10.0"
+                 },
+                 "rule_type": {
+                  "type": "string",
+                  "description": "The property type used to calculate the max retainage for this Rule",
+                  "example": "%_original_contract_value",
+                  "enum": [
+                   "%_original_contract_value",
+                   "%_revised_contract_value",
+                   "amount"
+                  ]
+                 },
+                 "rule_type_upper_limit": {
+                  "type": "string",
+                  "description": "The amount used in conjunction with the Rule Type to detertmine the max retainage for this Rule",
+                  "example": "5.0"
+                 }
+                }
+               },
+               {
+                "type": "object"
+               }
+              ]
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string"
+          },
+          "exception": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Get Contract's Invoice Configuration now returns retainage_rule_set and ssr_enabled",
+      "description": "This endpoint now returns the Retainage Rule Set if there is one associated with the contract and if Sliding Scale Retainage is enabled for the Contract then ssr_enabled will be true",
+      "endpoint": "GET /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-09-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#get-contracts-invoice-configuration"
+     },
+     {
+      "summary": "Added move_materials_to_previous_work_completed to Invoice Configuration response",
+      "description": "move_materials_to_previous_work_completed is True if the Project Invoice Configuration is set to move materials to previous work completed",
+      "endpoint": "GET /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-02-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#get-contracts-invoice-configuration"
+     },
+     {
+      "summary": "Added commitment_has_invoices to Invoice Configuration response",
+      "description": "commitment_has_invoices is True if there are any invoices associated with this commitment",
+      "endpoint": "GET /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-03-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#get-contracts-invoice-configuration"
+     },
+     {
+      "summary": "Added contract_invoicing_method to Invoice Configuration response",
+      "description": "contract_invoicing_method indicates the invoicing method for the contract, either progressive or simplified",
+      "endpoint": "GET /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#get-contracts-invoice-configuration"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Contract's Invoice Configuration",
+    "description": "Update a specific Contract's Invoice Configuration",
+    "tags": [
+     "Invoice Configuration"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "invoice_configuration"
+        ],
+        "properties": {
+         "invoice_configuration": {
+          "type": "object",
+          "description": "Invoice Configuration for the Contract",
+          "properties": {
+           "separate_billing_for_stored_materials": {
+            "type": "boolean",
+            "description": "Whether billing for materials separately from the work complete is allowed. Cannot be enabled when contract_invoicing_method is simplified; attempting to set it to true in that case returns a 422 error.",
+            "example": true
+           },
+           "stored_materials_billing_method": {
+            "type": "string",
+            "enum": [
+             "move_new_materials"
+            ],
+            "description": "Billing method for stored materials",
+            "example": "move_new_materials"
+           },
+           "contract_invoicing_method": {
+            "type": "string",
+            "enum": [
+             "progressive",
+             "simplified"
+            ],
+            "description": "The invoicing method for the contract. Only accepted for commitments when simplified invoicing is enabled for the project or company; otherwise the value is ignored. Locked once any invoice exists on the commitment; attempting to change it after invoices exist returns a 422 error. Changing to simplified disables incompatible settings (separate_billing_for_stored_materials is set to false).",
+            "example": "progressive",
+            "nullable": false
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID of the Invoice Configuration",
+           "example": 12
+          },
+          "separate_billing_for_stored_materials": {
+           "type": "boolean",
+           "description": "Whether billing for materials separately from the work complete is allowed",
+           "example": true
+          },
+          "stored_materials_billing_method": {
+           "type": "string",
+           "description": "Billing method for stored materials",
+           "example": "move_new_materials"
+          },
+          "contract_invoicing_method": {
+           "type": "string",
+           "description": "The invoicing method for the contract, either progressive or simplified",
+           "example": "progressive",
+           "enum": [
+            "progressive",
+            "simplified"
+           ],
+           "nullable": false
+          },
+          "contract_id": {
+           "type": "integer",
+           "description": "Contract ID",
+           "example": 1366
+          },
+          "project_id": {
+           "type": "integer",
+           "description": "Project ID",
+           "example": 180
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "Company ID",
+           "example": 90
+          },
+          "ssr_enabled": {
+           "type": "boolean",
+           "description": "Sliding Scale Retainage Enabled",
+           "example": true
+          },
+          "move_materials_to_previous_work_completed": {
+           "type": "boolean",
+           "description": "True if the Project Invoice Configuration is set to move materials to previous work completed",
+           "example": true
+          },
+          "commitment_has_invoices": {
+           "type": "boolean",
+           "description": "True if there are any invoices associated with this commitment",
+           "example": true
+          },
+          "retainage_rule_set": {
+           "type": "object",
+           "description": "A set of rules to control how retainage is applied to invoices of a contract",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "format": "int64",
+             "description": "Unique integer ID",
+             "example": 12345
+            },
+            "contract_id": {
+             "type": "integer",
+             "format": "int64",
+             "description": "Integer ID for the associated Contract",
+             "example": 22222
+            },
+            "name": {
+             "type": "string",
+             "description": "The Name of the Retainage Rule Set",
+             "example": "Rule Set 1"
+            },
+            "retainage_rules": {
+             "type": "array",
+             "items": {
+              "allOf": [
+               {
+                "type": "object",
+                "description": "A set of rules to control how retainage is applied to invoices of a contract",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "Unique integer ID",
+                  "example": 12345
+                 },
+                 "max_retainage": {
+                  "type": "string",
+                  "description": "The maximum amount of retainage held before this rule no longer applies",
+                  "example": "1000.0"
+                 },
+                 "position": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "The ordinal of this Rule within the containing Rule Set",
+                  "example": 1
+                 },
+                 "retainage_percentage": {
+                  "type": "string",
+                  "description": "The percentage of retaiange to withold on work completed while this Rule is active",
+                  "example": "10.0"
+                 },
+                 "rule_type": {
+                  "type": "string",
+                  "description": "The property type used to calculate the max retainage for this Rule",
+                  "example": "%_original_contract_value",
+                  "enum": [
+                   "%_original_contract_value",
+                   "%_revised_contract_value",
+                   "amount"
+                  ]
+                 },
+                 "rule_type_upper_limit": {
+                  "type": "string",
+                  "description": "The amount used in conjunction with the Rule Type to detertmine the max retainage for this Rule",
+                  "example": "5.0"
+                 }
+                }
+               },
+               {
+                "type": "object"
+               }
+              ]
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string"
+          },
+          "exception": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity. Returned when the requested change is invalid, for example when attempting to change contract_invoicing_method after invoices already exist on the commitment, or when enabling separate_billing_for_stored_materials while contract_invoicing_method is simplified.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration',\n  headers: {'content-type': 'application/json'},\n  body: {\n    invoice_configuration: {\n      separate_billing_for_stored_materials: true,\n      stored_materials_billing_method: 'move_new_materials',\n      contract_invoicing_method: 'progressive'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"invoice_configuration\\\":{\\\"separate_billing_for_stored_materials\\\":true,\\\"stored_materials_billing_method\\\":\\\"move_new_materials\\\",\\\"contract_invoicing_method\\\":\\\"progressive\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration \\\n  --header 'content-type: application/json' \\\n  --data '{\"invoice_configuration\":{\"separate_billing_for_stored_materials\":true,\"stored_materials_billing_method\":\"move_new_materials\",\"contract_invoicing_method\":\"progressive\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/contracts/%7Bcontract_id%7D/invoice_configuration\"),\n    Content = new StringContent(\"{\\\"invoice_configuration\\\":{\\\"separate_billing_for_stored_materials\\\":true,\\\"stored_materials_billing_method\\\":\\\"move_new_materials\\\",\\\"contract_invoicing_method\\\":\\\"progressive\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Update Contract's Invoice Configuration now returns retainage_rule_set and ssr_enabled",
+      "description": "This endpoint now returns the Retainage Rule Set if there is one associated with the contract and if Sliding Scale Retainage is enabled for the Contract then ssr_enabled will be true",
+      "endpoint": "PATCH /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-09-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#update-contracts-invoice-configuration"
+     },
+     {
+      "summary": "Added move_materials_to_previous_work_completed to Invoice Configuration response",
+      "description": "move_materials_to_previous_work_completed is True if the Project Invoice Configuration is set to move materials to previous work completed",
+      "endpoint": "PATCH /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-02-23",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#update-contracts-invoice-configuration"
+     },
+     {
+      "summary": "Added commitment_has_invoices to Invoice Configuration response",
+      "description": "commitment_has_invoices is True if there are any invoices associated with this commitment",
+      "endpoint": "PATCH /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-03-11",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#update-contracts-invoice-configuration"
+     },
+     {
+      "summary": "Added contract_invoicing_method to Invoice Configuration request and response",
+      "description": "contract_invoicing_method indicates the invoicing method for the contract, either progressive or simplified. It can be updated only for commitments when simplified invoicing is enabled for the project or company.",
+      "endpoint": "PATCH /projects/{project_id}/contracts/{contract_id}/invoice_configuration",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "invoice-configuration?version=1.0#update-contracts-invoice-configuration"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

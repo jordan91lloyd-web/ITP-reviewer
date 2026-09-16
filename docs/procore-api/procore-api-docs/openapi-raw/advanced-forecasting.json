@@ -1,0 +1,969 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Advanced Forecasting",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Advanced Forecasting",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/advanced_forecastings/rows": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Advanced Forecasting Rows of a Project",
+    "description": "Get Advanced forecasting rows. Each page will have a maximum of 100 items.",
+    "tags": [
+     "Advanced forecasting",
+     "Budget",
+     "Forecasting"
+    ],
+    "parameters": [
+     {
+      "name": "budget_view_id",
+      "in": "query",
+      "description": "Unique identifier for the Budget View (also known as Budget Template). Required to return spread amount for other curves besides manual. Also required when column-based forecasting is enabled.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "filters",
+      "in": "query",
+      "description": "Array structure to filter the result of the advanced forecasting endpoint\nSupported filter objects (with and without budget_view_id):\n  - WBS segment item filter\n    Structure:\n      - id: <segment_id>\n      - tier: <segment_tier>\n      - type: 'segment'\n      - values: <array of segment item ids>\n  \n    Example:\n    `{\"id\": \"23\", tier: <segment_tier>, \"type\": \"segment\", \"values\": [2]}`\n\n    URL example:\n    https://app.procore.com/rest/v2.0/companies/<company_id>/projects/<project_id>/advanced_forecastings/rows?filters[][id]=23&filters[][tier]=1&filters[][type]=segment&filters[][values][]=2&page=1&per_page=100&budget_view_id=2\n\nSupported filters only if budget_view_id is provided:\n  - Actuals by date\n    Structure:\n      - id: 'date_range_for_actuals'\n      - code: 'date_range_for_actuals'\n      - type: 'date_range_for_actuals'\n      - values: [`<start_date>(YYYY-MM-DD)`, `<end_date>(YYYY-MM-DD)`, `<include_actuals_without_dates (boolean)>`].\n    \n    Example:\n    `{\"id\": \"date_range_for_actuals\", \"code\": \"date_range_for_actuals\", \"type\": \"date_range_for_actuals\", \"values\": [\"2021-01-01\", \"2021-01-31\", false]}`\n\n    URL Example:\n    https://app.procore.com/rest/v2.0/companies/<company_id>/projects/<project_id>/advanced_forecastings/rows?filters[][code]=date_range_for_actuals&filters[][id]=date_range_for_actuals&filters[][type]=date_range_for_actuals&filters[][values][]=2021-01-01&filters[][values][]=2021-01-31&filters[][values][]=false&page=1&per_page=100&budget_view_id=2",
+      "example": [
+       {
+        "\\\"id\\\"": "\\\"23\\\"",
+        "\\\"tier\\\"": 1,
+        "\\\"type\\\"": "\\\"segment\\\"",
+        "\\\"values\\\"": [
+         2,
+         3
+        ]
+       }
+      ],
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string",
+          "description": "Identifier of the thing being filtered on. For a segment filter this is the WBS segment id; for a date-range-for-actuals filter it is the literal 'date_range_for_actuals'.",
+          "example": "68"
+         },
+         "code": {
+          "type": "string",
+          "description": "Filter code. Required for the date-range-for-actuals filter (set to 'date_range_for_actuals'); omit for segment filters.",
+          "example": "date_range_for_actuals"
+         },
+         "tier": {
+          "type": "integer",
+          "description": "Tier of the Segment if applicable",
+          "example": 1
+         },
+         "type": {
+          "type": "string",
+          "description": "Type of the filter",
+          "example": "segment",
+          "enum": [
+           "segment",
+           "forecast_start_date",
+           "date_range_for_actuals",
+           "budget_row_type"
+          ]
+         },
+         "values": {
+          "type": "array",
+          "description": "Values of the filter",
+          "items": {
+           "type": "string",
+           "example": "1"
+          }
+         }
+        }
+       }
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Array of Advanced forecasting summarized rows",
+           "items": {
+            "type": "object",
+            "description": "Advanced forecasting Row Summarized",
+            "properties": {
+             "budget_line_item_id": {
+              "type": "string",
+              "description": "Identifier of the budget line item this forecasting row belongs to. Null for rows that do not yet have a persisted budget line item.",
+              "example": "56"
+             },
+             "wbs_code_id": {
+              "type": "string",
+              "description": "Identifier of the WBS (Work Breakdown Structure) code that scopes this forecasting row. Uniquely identifies the budget cost code combination being forecast.",
+              "example": "76"
+             },
+             "start_date": {
+              "type": "string",
+              "description": "First day the forecast applies to, in 'YYYY-MM-DD' format. Together with end_date it defines the span over which periods are distributed.",
+              "example": "2024-06-24"
+             },
+             "end_date": {
+              "type": "string",
+              "description": "Last day the forecast applies to, in 'YYYY-MM-DD' format. Together with start_date it defines the span over which periods are distributed.",
+              "example": "2024-07-24"
+             },
+             "curve": {
+              "type": "string",
+              "description": "The curve of the line item. For more information about the curve distribution visit https://support.procore.com/faq/how-do-procores-advanced-forecasting-curves-distribute-projected-cost-to-complete-amounts",
+              "example": "manual",
+              "enum": [
+               "bell",
+               "back_loaded",
+               "front_loaded",
+               "linear",
+               "manual"
+              ]
+             },
+             "forecast_to_complete": {
+              "type": "number",
+              "description": "Total projected cost remaining (forecast to complete) for this line item, as a currency amount. This total is distributed across periods according to the curve.",
+              "example": 100
+             },
+             "periods": {
+              "type": "array",
+              "description": "Per-period breakdown of the forecast-to-complete amount across the line item's date span.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "period_date": {
+                 "type": "string",
+                 "description": "Month this period applies to, in 'YYYY-MM' format.",
+                 "example": "2024-06"
+                },
+                "amount": {
+                 "type": "number",
+                 "description": "Currency amount of the forecast allocated to this period.",
+                 "example": 100
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows',\n  qs: {\n    budget_view_id: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    filters: '[object Object]'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows?budget_view_id=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters=%5Bobject%20Object%5D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows?budget_view_id=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters=%5Bobject%20Object%5D'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows?budget_view_id=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters=%5Bobject%20Object%5D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v2.0 Get Advanced Forecasting Summarized Rows",
+      "description": "Introduction of API endpoint for Advanced Forecasting Summarized Rows",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/advanced_forecastings/rows",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-07-18",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "advanced-forecasting?version=2.0#get-advanced-forecasting-rows-of-a-project"
+     },
+     {
+      "summary": "Allow budget_view_id to enable support for all curves and the \"Actuals by Date\" filter in the GET Advanced Forecasting endpoint.",
+      "description": "Add support for all curves and the \"Actuals by Date\" filter in the GET Advanced Forecasting endpoint by allowing budget_view_id to be passed as a query parameter.\nWhen budget_view_id is provided, the endpoint will:\n1. Return spread amounts for all curves (including those beyond manual curves).\n2. Apply the \"Actuals by Date\" filter if passed.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/advanced_forecastings/rows",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-12-02",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "advanced-forecasting?version=2.0#get-advanced-forecasting-rows-of-a-project"
+     },
+     {
+      "summary": "budget_view_id may be required on GET Advanced Forecasting Rows.",
+      "description": "When column-based forecasting is enabled, GET Advanced Forecasting Rows now returns `422 Unprocessable Entity`\nif `budget_view_id` is omitted. This parameter remains optional when column-based forecasting is disabled.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/advanced_forecastings/rows",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-08-04",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "advanced-forecasting?version=2.0#get-advanced-forecasting-rows-of-a-project"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Advanced Forecasting Rows",
+    "description": "Update Advanced Forecasting Rows.\n\nWhen `async: true` and Budget Columns 2.0 is enabled, the response is `202 Accepted` with a single `receipt_id` that the client should use to poll `Check confirm budget version` API before re-fetching budget data. When `async: false` (default) or Budget Columns 2.0\nis disabled, the response is `200 OK` with the updated rows.",
+    "tags": [
+     "Advanced forecasting",
+     "Budget",
+     "Forecasting"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "async": {
+          "type": "boolean",
+          "description": "Request asynchronous processing. When `true`, Budget Columns 2.0 must be enabled or the request will return `422`. On success returns `202 Accepted` with a single `receipt_id` that the client should use to poll `Check confirm budget version` API before re-fetching budget data.",
+          "default": false
+         },
+         "budget_view_id": {
+          "type": "string",
+          "description": "Unique identifier for the Budget View (also known as Budget Template). Required when column-based forecasting is enabled and the update changes forecasting data (period amounts/percentages, the curve, or the start/end dates that reshape periods); used to scope the update to the correct spreadable column. Not required otherwise.",
+          "example": "42"
+         },
+         "forecasting_rows": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "required": [
+            "wbs_code_id"
+           ],
+           "properties": {
+            "budget_line_item_id": {
+             "type": "string",
+             "description": "ID of the line item.",
+             "example": "56"
+            },
+            "wbs_code_id": {
+             "type": "string",
+             "description": "ID of the WBS code",
+             "example": "76"
+            },
+            "start_date": {
+             "type": "string",
+             "description": "The start date of the line item",
+             "example": "2024-06-24"
+            },
+            "end_date": {
+             "type": "string",
+             "description": "The end date of the line item",
+             "example": "2024-07-24"
+            },
+            "curve": {
+             "type": "string",
+             "description": "The curve of the line item. For more information about the curve distribution visit https://support.procore.com/faq/how-do-procores-advanced-forecasting-curves-distribute-projected-cost-to-complete-amounts",
+             "example": "manual",
+             "enum": [
+              "bell",
+              "back_loaded",
+              "front_loaded",
+              "linear",
+              "manual"
+             ]
+            },
+            "forecast_to_complete": {
+             "type": "number",
+             "description": "The forecast to complete of the line item",
+             "example": 100
+            },
+            "periods": {
+             "type": "array",
+             "description": "The periods of the line item",
+             "items": {
+              "type": "object",
+              "required": [
+               "period_date",
+               "amount"
+              ],
+              "properties": {
+               "period_date": {
+                "type": "string",
+                "description": "Month this period applies to, in 'YYYY-MM' format. Identifies which forecast period the amount/percentage belongs to.",
+                "example": "2024-06"
+               },
+               "amount": {
+                "type": "number",
+                "description": "Currency amount allocated to this period. Provide either amount or percentage to distribute the forecast across periods; use amount for explicit per-period values.",
+                "example": 100
+               },
+               "percentage": {
+                "type": "number",
+                "description": "Percentage of the line item's forecast-to-complete allocated to this period. Alternative to amount for distributing the forecast; expressed as a percentage value (e.g. 25.0 for 25%).",
+                "example": 25
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Array of Advanced forecasting summarized rows",
+           "items": {
+            "type": "object",
+            "description": "Advanced forecasting Row Summarized",
+            "properties": {
+             "budget_line_item_id": {
+              "type": "string",
+              "description": "Identifier of the budget line item this forecasting row belongs to. Null for rows that do not yet have a persisted budget line item.",
+              "example": "56"
+             },
+             "wbs_code_id": {
+              "type": "string",
+              "description": "Identifier of the WBS (Work Breakdown Structure) code that scopes this forecasting row. Uniquely identifies the budget cost code combination being forecast.",
+              "example": "76"
+             },
+             "start_date": {
+              "type": "string",
+              "description": "First day the forecast applies to, in 'YYYY-MM-DD' format. Together with end_date it defines the span over which periods are distributed.",
+              "example": "2024-06-24"
+             },
+             "end_date": {
+              "type": "string",
+              "description": "Last day the forecast applies to, in 'YYYY-MM-DD' format. Together with start_date it defines the span over which periods are distributed.",
+              "example": "2024-07-24"
+             },
+             "curve": {
+              "type": "string",
+              "description": "The curve of the line item. For more information about the curve distribution visit https://support.procore.com/faq/how-do-procores-advanced-forecasting-curves-distribute-projected-cost-to-complete-amounts",
+              "example": "manual",
+              "enum": [
+               "bell",
+               "back_loaded",
+               "front_loaded",
+               "linear",
+               "manual"
+              ]
+             },
+             "forecast_to_complete": {
+              "type": "number",
+              "description": "Total projected cost remaining (forecast to complete) for this line item, as a currency amount. This total is distributed across periods according to the curve.",
+              "example": 100
+             },
+             "periods": {
+              "type": "array",
+              "description": "Per-period breakdown of the forecast-to-complete amount across the line item's date span.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "period_date": {
+                 "type": "string",
+                 "description": "Month this period applies to, in 'YYYY-MM' format.",
+                 "example": "2024-06"
+                },
+                "amount": {
+                 "type": "number",
+                 "description": "Currency amount of the forecast allocated to this period.",
+                 "example": 100
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "202": {
+      "description": "Accepted (async)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Receipt for an asynchronous update",
+           "properties": {
+            "receipt_id": {
+             "type": "string",
+             "description": "ID used to poll `Check confirm budget version` API before re-fetching budget data",
+             "example": "12345"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows',\n  headers: {'content-type': 'application/json'},\n  body: {\n    async: false,\n    budget_view_id: '42',\n    forecasting_rows: [\n      {\n        budget_line_item_id: '56',\n        wbs_code_id: '76',\n        start_date: '2024-06-24',\n        end_date: '2024-07-24',\n        curve: 'manual',\n        forecast_to_complete: 100,\n        periods: [{period_date: '2024-06', amount: 100, percentage: 25}]\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"async\\\":false,\\\"budget_view_id\\\":\\\"42\\\",\\\"forecasting_rows\\\":[{\\\"budget_line_item_id\\\":\\\"56\\\",\\\"wbs_code_id\\\":\\\"76\\\",\\\"start_date\\\":\\\"2024-06-24\\\",\\\"end_date\\\":\\\"2024-07-24\\\",\\\"curve\\\":\\\"manual\\\",\\\"forecast_to_complete\\\":100,\\\"periods\\\":[{\\\"period_date\\\":\\\"2024-06\\\",\\\"amount\\\":100,\\\"percentage\\\":25}]}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows \\\n  --header 'content-type: application/json' \\\n  --data '{\"async\":false,\"budget_view_id\":\"42\",\"forecasting_rows\":[{\"budget_line_item_id\":\"56\",\"wbs_code_id\":\"76\",\"start_date\":\"2024-06-24\",\"end_date\":\"2024-07-24\",\"curve\":\"manual\",\"forecast_to_complete\":100,\"periods\":[{\"period_date\":\"2024-06\",\"amount\":100,\"percentage\":25}]}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/advanced_forecastings/rows\"),\n    Content = new StringContent(\"{\\\"async\\\":false,\\\"budget_view_id\\\":\\\"42\\\",\\\"forecasting_rows\\\":[{\\\"budget_line_item_id\\\":\\\"56\\\",\\\"wbs_code_id\\\":\\\"76\\\",\\\"start_date\\\":\\\"2024-06-24\\\",\\\"end_date\\\":\\\"2024-07-24\\\",\\\"curve\\\":\\\"manual\\\",\\\"forecast_to_complete\\\":100,\\\"periods\\\":[{\\\"period_date\\\":\\\"2024-06\\\",\\\"amount\\\":100,\\\"percentage\\\":25}]}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v2.0 PUT Bulk Update Advanced Forecasting Rows",
+      "description": "Introduction of API endpoint for bulk update Advanced Forecasting Rows",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/advanced_forecastings/rows",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-08-01",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "advanced-forecasting?version=2.0#update-advanced-forecasting-rows"
+     },
+     {
+      "summary": "budget_view_id may be required on POST Bulk Update Advanced Forecasting Rows.",
+      "description": "budget_view_id may be required if budgeting periods should be scoped to a spreadable column.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/advanced_forecastings/rows",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-04",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "advanced-forecasting?version=2.0#update-advanced-forecasting-rows"
+     },
+     {
+      "summary": "Added async support to Advanced Forecasting Bulk Update endpoint",
+      "description": "The POST Advanced Forecasting rows endpoint now accepts an optional `async` boolean parameter.\nWhen `async: true` and Budget Columns 2.0 is enabled, the response is `202 Accepted` with a single `receipt_id`\nrepresenting the last processed event. When `async: false` (default) or Budget Columns 2.0 is\ndisabled, the standard synchronous response is returned.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/advanced_forecastings/rows",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-10",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "advanced-forecasting?version=2.0#update-advanced-forecasting-rows"
+     },
+     {
+      "summary": "budget_view_id is required on POST Bulk Update Advanced Forecasting Rows when column-based forecasting is enabled.",
+      "description": "When column-based forecasting is enabled, POST Advanced Forecasting Rows now returns `422 Unprocessable Entity`\nif `budget_view_id` is omitted. The parameter remains optional when column-based forecasting is disabled.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/advanced_forecastings/rows",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-08-12",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "advanced-forecasting?version=2.0#update-advanced-forecasting-rows"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,1080 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Payment Readiness Manual Holds",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Invoices",
+  "x-resource-name": "Payment Readiness Manual Holds",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/payment_readiness/manual_holds": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List manual holds for a given invoice",
+    "description": "Return a list of all manual holds for a given invoice",
+    "tags": [
+     "Invoice Management",
+     "Payment Readiness"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "invoice_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier of the invoice to retrieve manual holds",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Manual Holds",
+         "items": {
+          "type": "object",
+          "title": "ManualHold",
+          "description": "Manual hold for an invoice",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier of the manual hold. Use as the {id} path parameter to update it via PATCH /rest/v1.0/projects/{project_id}/payment_readiness/manual_holds/{id}.",
+            "example": 1
+           },
+           "status": {
+            "type": "string",
+            "description": "Whether the manual hold is currently applied to (blocking payment on) or released from the invoice or vendor. Either 'applied' or 'released'.",
+            "example": "applied"
+           },
+           "description": {
+            "type": "string",
+            "description": "Free-text explanation of why the manual hold was placed.",
+            "example": "description"
+           },
+           "created_by": {
+            "type": "string",
+            "description": "Full name of the user who created the manual hold.",
+            "example": "John Doe"
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the manual hold was created, in ISO 8601 format.",
+            "example": "2012-10-23T21:39:40Z"
+           },
+           "updated_by": {
+            "type": "string",
+            "description": "Full name of the user who last updated the manual hold.",
+            "example": "Jane Doe"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the manual hold was last updated, in ISO 8601 format.",
+            "example": "2013-10-23T21:49:40Z"
+           },
+           "company_id": {
+            "type": "integer",
+            "description": "ID of the company that owns this manual hold.",
+            "example": 123
+           },
+           "project_id": {
+            "type": "integer",
+            "description": "ID of the project this manual hold belongs to. Matches the {project_id} path parameter.",
+            "example": 234
+           },
+           "invoice_id": {
+            "type": "integer",
+            "description": "ID of the invoice the hold is placed on. Required when hold_type is `invoice`.",
+            "example": 345
+           },
+           "hold_type": {
+            "type": "string",
+            "description": "Scope of the hold. 'invoice' applies it to a single invoice; 'vendor' applies it to the vendor across invoices.",
+            "example": "invoice"
+           },
+           "vendor_id": {
+            "type": "integer",
+            "description": "ID of the vendor the hold is placed on. Required when hold_type is `vendor`.",
+            "example": 456
+           },
+           "visible_to_vendor": {
+            "type": "boolean",
+            "description": "Whether the hold is visible to the vendor. When true, the vendor can see this hold.",
+            "example": true
+           },
+           "attachments": {
+            "type": "array",
+            "description": "Files attached to the manual hold, such as supporting documentation.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Unique identifier of the attachment.",
+               "example": 5324
+              },
+              "url": {
+               "type": "string",
+               "description": "URL to download the attached file.",
+               "example": "http://www.example.com/"
+              },
+              "filename": {
+               "type": "string",
+               "description": "Original name of the attached file.",
+               "example": "january_receipt_copy.jpg"
+              },
+              "content_type": {
+               "type": "string",
+               "description": "MIME type of the attached file.",
+               "example": "image/jpeg"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds',\n  qs: {invoice_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds?invoice_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds?invoice_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds?invoice_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a manual hold for a given invoice",
+    "description": "Create a manual hold for an invoice or vendor.",
+    "tags": [
+     "Invoice Management",
+     "Payment Readiness"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "invoice_id",
+      "in": "query",
+      "required": false,
+      "description": "Unique identifier of the invoice. This is required if the hold_type is invoice",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "manual_hold"
+        ],
+        "properties": {
+         "manual_hold": {
+          "type": "object",
+          "properties": {
+           "status": {
+            "type": "string",
+            "description": "State of the hold. Either 'applied' or 'released'.",
+            "example": "applied"
+           },
+           "description": {
+            "type": "string",
+            "description": "Free-text explanation of why the hold is being placed.",
+            "example": "Awaiting insurance documentation"
+           },
+           "hold_type": {
+            "type": "string",
+            "description": "Scope of the hold. 'invoice' applies it to a single invoice; 'vendor' applies it to the vendor across invoices.",
+            "example": "invoice"
+           },
+           "vendor_id": {
+            "type": "integer",
+            "description": "ID of the vendor the hold applies to. Required when hold_type is 'vendor'.",
+            "example": 456
+           },
+           "visible_to_vendor": {
+            "type": "boolean",
+            "description": "When true, the hold is visible to the vendor.",
+            "example": true
+           },
+           "prostore_file_ids": {
+            "type": "array",
+            "description": "IDs of uploaded files to attach to the manual hold as supporting documentation.",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             5324,
+             5325
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "ManualHold",
+         "description": "Manual hold for an invoice",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier of the manual hold. Use as the {id} path parameter to update it via PATCH /rest/v1.0/projects/{project_id}/payment_readiness/manual_holds/{id}.",
+           "example": 1
+          },
+          "status": {
+           "type": "string",
+           "description": "Whether the manual hold is currently applied to (blocking payment on) or released from the invoice or vendor. Either 'applied' or 'released'.",
+           "example": "applied"
+          },
+          "description": {
+           "type": "string",
+           "description": "Free-text explanation of why the manual hold was placed.",
+           "example": "description"
+          },
+          "created_by": {
+           "type": "string",
+           "description": "Full name of the user who created the manual hold.",
+           "example": "John Doe"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the manual hold was created, in ISO 8601 format.",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "updated_by": {
+           "type": "string",
+           "description": "Full name of the user who last updated the manual hold.",
+           "example": "Jane Doe"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the manual hold was last updated, in ISO 8601 format.",
+           "example": "2013-10-23T21:49:40Z"
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "ID of the company that owns this manual hold.",
+           "example": 123
+          },
+          "project_id": {
+           "type": "integer",
+           "description": "ID of the project this manual hold belongs to. Matches the {project_id} path parameter.",
+           "example": 234
+          },
+          "invoice_id": {
+           "type": "integer",
+           "description": "ID of the invoice the hold is placed on. Required when hold_type is `invoice`.",
+           "example": 345
+          },
+          "hold_type": {
+           "type": "string",
+           "description": "Scope of the hold. 'invoice' applies it to a single invoice; 'vendor' applies it to the vendor across invoices.",
+           "example": "invoice"
+          },
+          "vendor_id": {
+           "type": "integer",
+           "description": "ID of the vendor the hold is placed on. Required when hold_type is `vendor`.",
+           "example": 456
+          },
+          "visible_to_vendor": {
+           "type": "boolean",
+           "description": "Whether the hold is visible to the vendor. When true, the vendor can see this hold.",
+           "example": true
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Files attached to the manual hold, such as supporting documentation.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the attachment.",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL to download the attached file.",
+              "example": "http://www.example.com/"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Original name of the attached file.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "description": "MIME type of the attached file.",
+              "example": "image/jpeg"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds',\n  qs: {invoice_id: 'SOME_INTEGER_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {\n    manual_hold: {\n      status: 'applied',\n      description: 'Awaiting insurance documentation',\n      hold_type: 'invoice',\n      vendor_id: 456,\n      visible_to_vendor: true,\n      prostore_file_ids: [5324, 5325]\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"manual_hold\\\":{\\\"status\\\":\\\"applied\\\",\\\"description\\\":\\\"Awaiting insurance documentation\\\",\\\"hold_type\\\":\\\"invoice\\\",\\\"vendor_id\\\":456,\\\"visible_to_vendor\\\":true,\\\"prostore_file_ids\\\":[5324,5325]}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds?invoice_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds?invoice_id=SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"manual_hold\":{\"status\":\"applied\",\"description\":\"Awaiting insurance documentation\",\"hold_type\":\"invoice\",\"vendor_id\":456,\"visible_to_vendor\":true,\"prostore_file_ids\":[5324,5325]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds?invoice_id=SOME_INTEGER_VALUE\"),\n    Content = new StringContent(\"{\\\"manual_hold\\\":{\\\"status\\\":\\\"applied\\\",\\\"description\\\":\\\"Awaiting insurance documentation\\\",\\\"hold_type\\\":\\\"invoice\\\",\\\"vendor_id\\\":456,\\\"visible_to_vendor\\\":true,\\\"prostore_file_ids\\\":[5324,5325]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/projects/{project_id}/payment_readiness/manual_holds/{id}": {
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a manual hold",
+    "description": "Update a manual hold with the ID specified in the URL",
+    "tags": [
+     "Invoice Management",
+     "Payment Readiness"
+    ],
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "description": "Manual Hold ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "invoice_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier of the invoice",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "manual_hold"
+        ],
+        "properties": {
+         "manual_hold": {
+          "type": "object",
+          "properties": {
+           "status": {
+            "type": "string",
+            "description": "State of the hold. Either 'applied' or 'released'.",
+            "example": "released"
+           },
+           "description": {
+            "type": "string",
+            "description": "Free-text explanation of why the hold is being placed or updated.",
+            "example": "Awaiting insurance documentation"
+           },
+           "hold_type": {
+            "type": "string",
+            "description": "Scope of the hold. 'invoice' applies it to a single invoice; 'vendor' applies it to the vendor across invoices.",
+            "example": "invoice"
+           },
+           "vendor_id": {
+            "type": "integer",
+            "description": "ID of the vendor the hold applies to. Required when hold_type is 'vendor'.",
+            "example": 456
+           },
+           "visible_to_vendor": {
+            "type": "boolean",
+            "description": "When true, the hold is visible to the vendor.",
+            "example": true
+           },
+           "prostore_file_ids": {
+            "type": "array",
+            "description": "IDs of uploaded files to attach to the manual hold as supporting documentation.",
+            "items": {
+             "type": "integer"
+            },
+            "example": [
+             5324,
+             5325
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "ManualHold",
+         "description": "Manual hold for an invoice",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier of the manual hold. Use as the {id} path parameter to update it via PATCH /rest/v1.0/projects/{project_id}/payment_readiness/manual_holds/{id}.",
+           "example": 1
+          },
+          "status": {
+           "type": "string",
+           "description": "Whether the manual hold is currently applied to (blocking payment on) or released from the invoice or vendor. Either 'applied' or 'released'.",
+           "example": "applied"
+          },
+          "description": {
+           "type": "string",
+           "description": "Free-text explanation of why the manual hold was placed.",
+           "example": "description"
+          },
+          "created_by": {
+           "type": "string",
+           "description": "Full name of the user who created the manual hold.",
+           "example": "John Doe"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the manual hold was created, in ISO 8601 format.",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "updated_by": {
+           "type": "string",
+           "description": "Full name of the user who last updated the manual hold.",
+           "example": "Jane Doe"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp when the manual hold was last updated, in ISO 8601 format.",
+           "example": "2013-10-23T21:49:40Z"
+          },
+          "company_id": {
+           "type": "integer",
+           "description": "ID of the company that owns this manual hold.",
+           "example": 123
+          },
+          "project_id": {
+           "type": "integer",
+           "description": "ID of the project this manual hold belongs to. Matches the {project_id} path parameter.",
+           "example": 234
+          },
+          "invoice_id": {
+           "type": "integer",
+           "description": "ID of the invoice the hold is placed on. Required when hold_type is `invoice`.",
+           "example": 345
+          },
+          "hold_type": {
+           "type": "string",
+           "description": "Scope of the hold. 'invoice' applies it to a single invoice; 'vendor' applies it to the vendor across invoices.",
+           "example": "invoice"
+          },
+          "vendor_id": {
+           "type": "integer",
+           "description": "ID of the vendor the hold is placed on. Required when hold_type is `vendor`.",
+           "example": 456
+          },
+          "visible_to_vendor": {
+           "type": "boolean",
+           "description": "Whether the hold is visible to the vendor. When true, the vendor can see this hold.",
+           "example": true
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Files attached to the manual hold, such as supporting documentation.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the attachment.",
+              "example": 5324
+             },
+             "url": {
+              "type": "string",
+              "description": "URL to download the attached file.",
+              "example": "http://www.example.com/"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Original name of the attached file.",
+              "example": "january_receipt_copy.jpg"
+             },
+             "content_type": {
+              "type": "string",
+              "description": "MIME type of the attached file.",
+              "example": "image/jpeg"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds/%7Bid%7D',\n  qs: {invoice_id: 'SOME_INTEGER_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {\n    manual_hold: {\n      status: 'released',\n      description: 'Awaiting insurance documentation',\n      hold_type: 'invoice',\n      vendor_id: 456,\n      visible_to_vendor: true,\n      prostore_file_ids: [5324, 5325]\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"manual_hold\\\":{\\\"status\\\":\\\"released\\\",\\\"description\\\":\\\"Awaiting insurance documentation\\\",\\\"hold_type\\\":\\\"invoice\\\",\\\"vendor_id\\\":456,\\\"visible_to_vendor\\\":true,\\\"prostore_file_ids\\\":[5324,5325]}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds/%7Bid%7D?invoice_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds/%7Bid%7D?invoice_id=SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"manual_hold\":{\"status\":\"released\",\"description\":\"Awaiting insurance documentation\",\"hold_type\":\"invoice\",\"vendor_id\":456,\"visible_to_vendor\":true,\"prostore_file_ids\":[5324,5325]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/payment_readiness/manual_holds/%7Bid%7D?invoice_id=SOME_INTEGER_VALUE\"),\n    Content = new StringContent(\"{\\\"manual_hold\\\":{\\\"status\\\":\\\"released\\\",\\\"description\\\":\\\"Awaiting insurance documentation\\\",\\\"hold_type\\\":\\\"invoice\\\",\\\"vendor_id\\\":456,\\\"visible_to_vendor\\\":true,\\\"prostore_file_ids\\\":[5324,5325]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

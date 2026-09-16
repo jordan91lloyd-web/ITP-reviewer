@@ -1,0 +1,643 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Bid Package Documents",
+  "x-product-category": "Preconstruction",
+  "x-tool-category": "Bid Management",
+  "x-resource-name": "Bid Package Documents",
+  "version": "1.0"
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/planroom/bid_packages/{bid_package_id}/documents": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "bid_package_id",
+     "in": "path",
+     "description": "Bid Package ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Gets documents attached to Bid Package",
+    "description": "Returns list of all documents attached to Bid Package, with meta information about all drawings and PDM (Project Document Management) attachments. Supports optional pagination and sorting for PDM attachments via query parameters.",
+    "tags": [
+     "Bids"
+    ],
+    "parameters": [
+     {
+      "name": "pdm_page",
+      "in": "query",
+      "required": false,
+      "description": "Page number for paginating PDM attachments",
+      "schema": {
+       "type": "integer",
+       "minimum": 1,
+       "example": 1
+      }
+     },
+     {
+      "name": "pdm_per_page",
+      "in": "query",
+      "required": false,
+      "description": "Number of PDM attachments per page",
+      "schema": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 100,
+       "example": 10
+      }
+     },
+     {
+      "name": "pdm_sort_by",
+      "in": "query",
+      "required": false,
+      "description": "Field to sort PDM attachments by",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "document_revision_id",
+        "document_container_id",
+        "document_collection_id",
+        "created_at",
+        "updated_at"
+       ],
+       "default": "document_revision_id",
+       "example": "created_at"
+      }
+     },
+     {
+      "name": "pdm_sort_order",
+      "in": "query",
+      "required": false,
+      "description": "Sort order for PDM attachments",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "asc",
+        "desc"
+       ],
+       "default": "asc",
+       "example": "desc"
+      }
+     },
+     {
+      "name": "pdm_search",
+      "in": "query",
+      "required": false,
+      "description": "Search term to filter PDM attachments by document_revision_id",
+      "schema": {
+       "type": "string",
+       "example": "01HZ8K9M2N3P4Q5R6S7T8U9V0W"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Bid Package Documents",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 101
+          },
+          "title": {
+           "type": "string",
+           "description": "Bid package title",
+           "example": "Floor Bid Package"
+          },
+          "files": {
+           "type": "array",
+           "description": "List of files, attached to the bid package",
+           "items": {
+            "type": "object",
+            "properties": {
+             "size": {
+              "type": "integer",
+              "description": "Size of the file in bytes",
+              "example": 17656
+             },
+             "file_path": {
+              "type": "string",
+              "description": "Name of the file (as would be presented in bid package zip)",
+              "example": "Bid_Drawings/Current/123-Sample-Plans.pdf"
+             },
+             "s3_source": {
+              "type": "string",
+              "description": "URI, where the file is accessible at. Could have limited lifetime",
+              "example": "https://storage.procore.com/us-east-1/pro-core.com/prostore/file.pdf?sig=deadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeaf"
+             },
+             "type": {
+              "type": "string",
+              "description": "type of the file",
+              "example": "ZipManifests::BidDocsManifest::DrawingRevisionRow"
+             },
+             "drawing": {
+              "type": "object",
+              "description": "Metadata about drawing (if file is drawing)",
+              "properties": {
+               "dpi": {
+                "type": "number",
+                "description": "DPI of the drawing",
+                "example": 72
+               },
+               "revision": {
+                "type": "string",
+                "description": "Revision property of the drawing",
+                "example": "0"
+               },
+               "drawing_set_id": {
+                "type": "number",
+                "description": "ID of the drawing set",
+                "example": 9
+               },
+               "drawing_id": {
+                "type": "number",
+                "description": "ID of the drawing",
+                "example": 309
+               },
+               "width": {
+                "type": "number",
+                "description": "Width of the drawing, in pixels",
+                "example": 4000
+               },
+               "height": {
+                "type": "number",
+                "description": "Height of the drawing, in pixels",
+                "example": 3000
+               },
+               "png_s3_source": {
+                "type": "string",
+                "description": "URI, where the drawing, converted to PNG, is accessible at. Could have limited lifetime",
+                "example": "https://storage.procore.com/us-east-1/pro-core.com/prostore/file.png?sig=deadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeaf"
+               },
+               "thumbnail_url": {
+                "type": "string",
+                "description": "URI, where the drawing's thumbnail is accessible at. Could have limited lifetime",
+                "example": "https://storage.procore.com/us-east-1/pro-core.com/prostore/thumbnail.png?sig=deadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeafdeadbeaf"
+               }
+              }
+             },
+             "pdm": {
+              "type": "object",
+              "description": "Metadata about PDM (Project Document Management) attachment (if file is a PDM document)",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID of the PDM reference",
+                "example": 1
+               },
+               "document_revision_id": {
+                "type": "string",
+                "description": "Document revision ID (ULID)",
+                "example": "01HZ8K9M2N3P4Q5R6S7T8U9V0W"
+               },
+               "document_container_id": {
+                "type": "string",
+                "description": "Document container ID (ULID)",
+                "example": "01HZ8K9M2N3P4Q5R6S7T8U9V0Y"
+               },
+               "document_collection_id": {
+                "type": "string",
+                "description": "Document collection ID (ULID)",
+                "example": "01HZ8K9M2N3P4Q5R6S7T8U9V0Z"
+               },
+               "document_revision": {
+                "type": "object",
+                "description": "Document revision data returned from Documents service",
+                "properties": {
+                 "name": {
+                  "type": "string",
+                  "description": "Name of the document revision",
+                  "example": "Sample Document.pdf"
+                 },
+                 "download_url": {
+                  "type": "string",
+                  "description": "URL to download the document revision",
+                  "example": "https://document-service.example/rest/v1.0/companies/42/projects/42/document_revisions/01HZ8K9M2N3P4Q5R6S7T8U9V0W/download"
+                 },
+                 "file_locked": {
+                  "type": "boolean",
+                  "description": "Whether the document revision file is locked",
+                  "example": false
+                 },
+                 "status": {
+                  "type": "string",
+                  "description": "Status of the document",
+                  "example": "active"
+                 },
+                 "description": {
+                  "type": "string",
+                  "description": "Description of the document",
+                  "example": "Sample document description"
+                 },
+                 "type": {
+                  "type": "string",
+                  "description": "Type of the document",
+                  "example": "drawing"
+                 },
+                 "revision": {
+                  "type": "string",
+                  "description": "Revision number",
+                  "example": "1.0"
+                 },
+                 "format": {
+                  "type": "string",
+                  "description": "File format",
+                  "example": "pdf"
+                 },
+                 "original_filename": {
+                  "type": "string",
+                  "description": "Original filename",
+                  "example": "Sample Document.pdf"
+                 },
+                 "file_size": {
+                  "type": "string",
+                  "description": "File size in bytes",
+                  "example": "1024"
+                 },
+                 "originator": {
+                  "type": "string",
+                  "description": "Originator of the document",
+                  "example": "John Doe"
+                 },
+                 "number": {
+                  "type": "string",
+                  "description": "Document number",
+                  "example": "DOC-001"
+                 },
+                 "location": {
+                  "type": "string",
+                  "description": "Location of the document",
+                  "example": "Site A"
+                 },
+                 "discipline": {
+                  "type": "string",
+                  "description": "Discipline of the document",
+                  "example": "Architecture"
+                 },
+                 "date_authored": {
+                  "type": "string",
+                  "description": "Date the document was authored",
+                  "example": "2024-01-15"
+                 },
+                 "version": {
+                  "type": "string",
+                  "description": "Version of the document revision",
+                  "example": "1.0"
+                 },
+                 "uploaded_at": {
+                  "type": "string",
+                  "description": "Date the document was uploaded",
+                  "example": "2024-01-15"
+                 },
+                 "permissions": {
+                  "type": "object",
+                  "description": "Permissions for the document revision",
+                  "properties": {
+                   "allowed_actions": {
+                    "type": "array",
+                    "description": "Allowed actions for the document revision",
+                    "items": {
+                     "type": "string"
+                    },
+                    "example": [
+                     "view",
+                     "download"
+                    ]
+                   }
+                  }
+                 }
+                }
+               },
+               "attachment": {
+                "type": "object",
+                "nullable": true,
+                "description": "Attachment information for viewing the document",
+                "properties": {
+                 "attached_to_item_id": {
+                  "type": "string",
+                  "description": "Document revision ID (ULID) - the document this attachment references",
+                  "example": "01K3VCBXQKG183X0SAASRVEZXF"
+                 },
+                 "attached_to_item_type": {
+                  "type": "string",
+                  "description": "Type of the item - always \"document_management_document_revision\" for PDM attachments",
+                  "example": "document_management_document_revision"
+                 },
+                 "viewer_url": {
+                  "type": "string",
+                  "description": "URL to view the document in the document viewer",
+                  "example": "/webclients/host/companies/8/projects/113050/tools/document-viewer/document_revision/01K3VCBXQKG183X0SAASRVEZXF?item_type=BidPackagePdmReference&item_id=5"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "pdm_pagination": {
+           "type": "object",
+           "description": "Pagination metadata for PDM attachments (only included when pagination parameters are provided)",
+           "properties": {
+            "current_page": {
+             "type": "integer",
+             "description": "Current page number",
+             "example": 1
+            },
+            "per_page": {
+             "type": "integer",
+             "description": "Number of items per page",
+             "example": 10
+            },
+            "total_count": {
+             "type": "integer",
+             "description": "Total number of PDM attachments",
+             "example": 25
+            },
+            "total_pages": {
+             "type": "integer",
+             "description": "Total number of pages",
+             "example": 3
+            },
+            "has_next_page": {
+             "type": "boolean",
+             "description": "Whether there is a next page",
+             "example": true
+            },
+            "has_previous_page": {
+             "type": "boolean",
+             "description": "Whether there is a previous page",
+             "example": false
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/planroom/bid_packages/%7Bbid_package_id%7D/documents',\n  qs: {\n    pdm_page: '1',\n    pdm_per_page: '10',\n    pdm_sort_by: 'created_at',\n    pdm_sort_order: 'desc',\n    pdm_search: '01HZ8K9M2N3P4Q5R6S7T8U9V0W'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/planroom/bid_packages/%7Bbid_package_id%7D/documents?pdm_page=1&pdm_per_page=10&pdm_sort_by=created_at&pdm_sort_order=desc&pdm_search=01HZ8K9M2N3P4Q5R6S7T8U9V0W\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/planroom/bid_packages/%7Bbid_package_id%7D/documents?pdm_page=1&pdm_per_page=10&pdm_sort_by=created_at&pdm_sort_order=desc&pdm_search=01HZ8K9M2N3P4Q5R6S7T8U9V0W'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/planroom/bid_packages/%7Bbid_package_id%7D/documents?pdm_page=1&pdm_per_page=10&pdm_sort_by=created_at&pdm_sort_order=desc&pdm_search=01HZ8K9M2N3P4Q5R6S7T8U9V0W\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Bid Package Documents endpoint",
+      "description": "Get a list of documents, attached to a given bid package",
+      "endpoint": "GET /companies/{company_id}/planroom/bid_packages/{bid_package_id}/documents",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-06-21",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bid-package-documents?version=1.0#gets-documents-attached-to-bid-package"
+     },
+     {
+      "summary": "Added PDM attachments support with pagination and sorting",
+      "description": "Added support for PDM (Project Document Management) attachments metadata in the response. Files with type \"ZipManifests::DocumentManagement::DocumentRevisionRow\" now include PDM metadata with document information, download URLs, and attachment details. Added optional query parameters for pagination and sorting of PDM attachments (pdm_page, pdm_per_page, pdm_sort_by, pdm_sort_order, pdm_search). When pagination parameters are provided, the response includes pdm_pagination metadata.",
+      "endpoint": "GET /companies/{company_id}/planroom/bid_packages/{bid_package_id}/documents",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-12-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "bid-package-documents?version=1.0#gets-documents-attached-to-bid-package"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

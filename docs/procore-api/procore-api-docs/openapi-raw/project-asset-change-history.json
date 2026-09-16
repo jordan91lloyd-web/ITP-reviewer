@@ -1,0 +1,650 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Project Asset Change History",
+  "version": "2.0",
+  "x-product-category": "Core",
+  "x-resource-name": "Project Asset Change History",
+  "x-tool-category": "Assets",
+  "x-product-lines": [
+   "asset-register"
+  ]
+ },
+ "servers": [
+  {
+   "url": "http://localhost:8080",
+   "description": "Generated server url"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/assets/{entity_type}/{entity_id}/history": {
+   "get": {
+    "tags": [
+     "change-history-controller"
+    ],
+    "summary": "List Change History",
+    "description": "Returns change history for a specific entity",
+    "operationId": "getChangeHistoryByProject",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "entity_type",
+      "in": "path",
+      "description": "The type of entity to retrieve change history for",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "asset"
+       ]
+      }
+     },
+     {
+      "name": "entity_id",
+      "in": "path",
+      "description": "The unique identifier of the entity to retrieve change history for",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[change_type]",
+      "in": "query",
+      "description": "Filter by change type (e.g., asset_updated_asset_name). Supports multiple values.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "filters[changed_by]",
+      "in": "query",
+      "description": "Filter by user who made the change. Supports multiple values.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "filters[changed_at]",
+      "in": "query",
+      "description": "Changed at filter (date range format: YYYY-MM-DD...YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ...YYYY-MM-DDTHH:MM:SSZ)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sorting criteria in minus-based order format. Default sort order is ascending. Prefix with minus (-) for descending order. Default sort is by changed_at in descending order. Supports both snake_case and camelCase. Valid field: changed_at (or changedAt).",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "changed_at"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Zero-based page index (0..N)",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32",
+       "default": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "The number of items per page to be returned",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32",
+       "default": 10,
+       "maximum": 100,
+       "minimum": 1
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Change history records retrieved successfully. Response varies based on entity_type.",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items per page",
+        "schema": {
+         "type": "integer",
+         "format": "int32"
+        }
+       },
+       "Link": {
+        "description": "Links to related pages (first, prev, next, last)",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "total": {
+        "description": "Total number of items available",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "string",
+         "description": "Response varies based on 'entity_type' parameter",
+         "oneOf": [
+          {
+           "type": "object",
+           "description": "Response for entity_type=asset - returns asset change history records",
+           "properties": {
+            "data": {
+             "type": "array",
+             "description": "Array of asset change history records",
+             "items": {
+              "type": "object",
+              "description": "Asset change history record",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "Unique identifier for the change history record",
+                "example": "01JEGHIST123456ABCDEFG"
+               },
+               "event_id": {
+                "type": "string",
+                "description": "Unique identifier for the change event (groups related changes)",
+                "example": "01JEGEVENT123456ABCDEFG"
+               },
+               "entity_id": {
+                "type": "string",
+                "description": "The ID of the entity (asset) that was changed",
+                "example": "01JEGASSET123456ABCDEFG"
+               },
+               "operation": {
+                "type": "string",
+                "description": "The type of operation performed: c (create), u (update), d (delete)",
+                "enum": [
+                 "c",
+                 "u",
+                 "d"
+                ],
+                "example": "u"
+               },
+               "change_type": {
+                "type": "string",
+                "description": "Specific type of change that occurred (e.g., asset_updated_asset_name, asset_created, asset_deleted)",
+                "example": "asset_updated_asset_name"
+               },
+               "before": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "object",
+                 "description": "The state of the changed field(s) before the modification. Null for create operations.",
+                 "example": {
+                  "asset_name": "Old Name"
+                 }
+                },
+                "description": "The state of the changed field(s) before the modification. Null for create operations.",
+                "example": {
+                 "asset_name": "Old Name"
+                }
+               },
+               "after": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "object",
+                 "description": "The state of the changed field(s) after the modification. Null for delete operations.",
+                 "example": {
+                  "asset_name": "New Name"
+                 }
+                },
+                "description": "The state of the changed field(s) after the modification. Null for delete operations.",
+                "example": {
+                 "asset_name": "New Name"
+                }
+               },
+               "company_id": {
+                "type": "string",
+                "description": "The company ID the entity belongs to",
+                "example": "8"
+               },
+               "project_id": {
+                "type": "string",
+                "description": "The project ID the entity belongs to (null for company-level entities)",
+                "example": "8"
+               },
+               "changed_by": {
+                "description": "Contact Information",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "User ID",
+                  "example": "12345"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "User's full name",
+                  "example": "John Doe"
+                 },
+                 "email": {
+                  "type": "string",
+                  "description": "User's email address",
+                  "example": "user@example.com"
+                 }
+                }
+               },
+               "changed_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the change occurred",
+                "example": "2024-10-28T14:30:00Z"
+               }
+              }
+             }
+            }
+           },
+           "title": "asset"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history',\n  qs: {\n    'filters[change_type]': 'SOME_ARRAY_VALUE',\n    'filters[changed_by]': 'SOME_ARRAY_VALUE',\n    'filters[changed_at]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  },\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\"\n    }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history?filters%5Bchange_type%5D=SOME_ARRAY_VALUE&filters%5Bchanged_by%5D=SOME_ARRAY_VALUE&filters%5Bchanged_at%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history?filters%5Bchange_type%5D=SOME_ARRAY_VALUE&filters%5Bchanged_by%5D=SOME_ARRAY_VALUE&filters%5Bchanged_at%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE' \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history?filters%5Bchange_type%5D=SOME_ARRAY_VALUE&filters%5Bchanged_by%5D=SOME_ARRAY_VALUE&filters%5Bchanged_at%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/assets/{entity_type}/{entity_id}/history/filters/user": {
+   "get": {
+    "tags": [
+     "change-history-controller"
+    ],
+    "summary": "List User Filter Options",
+    "description": "Returns all users who made changes to a specific entity at project level for filtering change history",
+    "operationId": "getUserFilterOptionsByProject",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "entity_type",
+      "in": "path",
+      "description": "The type of entity to retrieve filter options for",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "asset"
+       ]
+      }
+     },
+     {
+      "name": "entity_id",
+      "in": "path",
+      "description": "The unique identifier of the entity to retrieve filter options for",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "User filter option for change history",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "User ID",
+              "example": "12345"
+             },
+             "name": {
+              "type": "string",
+              "description": "User's full name",
+              "example": "John Doe"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/user',\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\"\n    }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/user\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/user \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/user\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/assets/{entity_type}/{entity_id}/history/filters/change_type": {
+   "get": {
+    "tags": [
+     "change-history-controller"
+    ],
+    "summary": "List Change Type Filter Options",
+    "description": "Returns all available Change Type values of a specific entity at project level for filtering change history",
+    "operationId": "getChangeTypeFilterOptionsByProject",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "entity_type",
+      "in": "path",
+      "description": "The type of entity to retrieve filter options for",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "asset"
+       ]
+      }
+     },
+     {
+      "name": "entity_id",
+      "in": "path",
+      "description": "The unique identifier of the entity to retrieve filter options for",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Accept-Language",
+      "in": "header",
+      "description": "Locale for localized response messages (for example: en, fr-FR, pseudo)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "The Change Type Values",
+            "properties": {
+             "key": {
+              "type": "string",
+              "description": "The Change Type value",
+              "example": "asset_updated_asset_name"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/change_type',\n  headers: {\n    'Procore-Company-Id': 'SOME_INTEGER_VALUE',\n    'Accept-Language': 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPConnection(\"localhost:8080\")\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'Accept-Language': \"SOME_STRING_VALUE\"\n    }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/change_type\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/change_type \\\n  --header 'Accept-Language: SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"http://localhost:8080/rest/v2.0/companies/1234/projects/1234/assets/%7Bentity_type%7D/%7Bentity_id%7D/history/filters/change_type\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n        { \"Accept-Language\", \"SOME_STRING_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

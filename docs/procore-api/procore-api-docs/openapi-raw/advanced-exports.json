@@ -1,0 +1,393 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Advanced Exports",
+  "x-product-category": "Project Management",
+  "x-tool-category": "RFI",
+  "x-resource-name": "Advanced Exports",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/rfis/{id}/advanced_exports": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "RFI ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Export Options for Existing RFI",
+    "description": "Get the available export options for an existing RFI.",
+    "tags": [
+     "RFIs"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "slug": {
+            "type": "string",
+            "description": "Machine-readable key identifying the export option group, e.g. `cover_sheet` or `files`. Pass sub-options from this group in the `options` request body when creating an export.",
+            "example": "cover_sheet"
+           },
+           "name": {
+            "type": "string",
+            "description": "Human-readable label for the export option group, suitable for display in an export UI.",
+            "example": "Responses"
+           },
+           "type": {
+            "type": "string",
+            "description": "Selection mode for this option group. `single_select` allows exactly one option to be chosen; `multi_select` allows multiple.",
+            "enum": [
+             "single_select",
+             "multi_select"
+            ]
+           },
+           "options": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "description": "The value to pass in the request body for this option. For the `cover_sheet` group, pass this as `options.cover_sheet`; for the `files` group, pass this integer ID in the `options.files` array.",
+               "example": "official_responses_only",
+               "oneOf": [
+                {
+                 "type": "string"
+                },
+                {
+                 "type": "integer"
+                }
+               ]
+              },
+              "name": {
+               "type": "string",
+               "description": "Human-readable display label for this export option.",
+               "example": "Official Responses Only"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Advanced Export for Existing RFI",
+    "description": "Request an advanced export for an existing RFI. Specify which kind of cover sheet you'd like, if one at all, and which associated attachments with the RFI you'd like included in the export. Specify whether you'd like the export to be in PDF or ZIP format at the tail end of the URL request.",
+    "parameters": [
+     {
+      "name": "format",
+      "in": "query",
+      "description": "Output format for the generated export. Pass as a query string parameter when posting to this endpoint.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "pdf",
+        "zip"
+       ]
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "options"
+        ],
+        "properties": {
+         "options": {
+          "type": "object",
+          "properties": {
+           "cover_sheet": {
+            "type": "string",
+            "description": "Which version of the response cover sheet to include in the export. Omit to include no cover sheet.",
+            "enum": [
+             "all_responses",
+             "official_responses_only"
+            ],
+            "example": "all_responses"
+           },
+           "files": {
+            "type": "array",
+            "description": "Array of attachment IDs to include in the export. IDs correspond to the `id` values in the GET response's `options` array for prostore file option sets. Pass an empty array to include no attachments.",
+            "example": [
+             3453247,
+             6543893,
+             3476145
+            ],
+            "items": {
+             "type": "integer"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string",
+           "description": "Confirmation message. The export is processed asynchronously; the compiled file is delivered by email when ready.",
+           "example": "Success! You'll receive an email with the file when we're done."
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports',\n  qs: {format: 'SOME_STRING_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {options: {cover_sheet: 'all_responses', files: [3453247, 6543893, 3476145]}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"options\\\":{\\\"cover_sheet\\\":\\\"all_responses\\\",\\\"files\\\":[3453247,6543893,3476145]}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports?format=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports?format=SOME_STRING_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"options\":{\"cover_sheet\":\"all_responses\",\"files\":[3453247,6543893,3476145]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/%7Bid%7D/advanced_exports?format=SOME_STRING_VALUE\"),\n    Content = new StringContent(\"{\\\"options\\\":{\\\"cover_sheet\\\":\\\"all_responses\\\",\\\"files\\\":[3453247,6543893,3476145]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "partial"
+  }
+ }
+}

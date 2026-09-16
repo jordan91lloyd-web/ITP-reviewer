@@ -1,0 +1,46 @@
+# API Lifecycle
+
+_Understand the stages of Active, Deprecated, and Sunset for Procore APIs._
+
+Source: https://developers.procore.com/documentation/rest-api-lifecycle
+
+---
+
+## Overview
+
+Every Procore REST API resource moves through a defined lifecycle, from active support to eventual sunset.
+This page explains the three lifecycle phases, how Procore manages a resource through them, and what each phase means for an integration you have already built.
+
+## Lifecycle Phases
+
+The API lifecycle comprises three distinct phases.
+
+- **Active**: Current version of the API and is fully supported. Ongoing feature releases, bug fixes, and refinements to functionality may occur in this phase.
+- **Deprecated**: Has been superseded by a newer API version. A deprecated API version will be supported for a period of one (1) year following the date of deprecation. However, no new development occurs during this phase. New applications are denied access to deprecated APIs.
+- **Sunset**: API resources are no longer available on production. This occurs at the conclusion of the ‘Deprecated’ phase.
+
+## Lifecycle Management
+
+This table provides additional information on how the Rest API product is managed through the lifecycle.
+
+| Phase      | API Resources                             | Support                                                                                                                                                | Documentation                                                            | Change Notification                                                                                                                         |
+| ---------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Active     | API is live in Production                 | - New resource versions released periodically with new features, refinements, fixes, etc.
+- Technical support available at <apisupport@procore.com> | - Released with new API versions
+- Reference documentation maintained | - Changelog entries published for updates to resource endpoints
+ - Developer Portal notifications covering new resource version releases |
+| Deprecated | API is live in Production                 | - Fixes deployed as needed
+- No new development
+- Technical support available at <apisupport@procore.com>                                        | - Endpoint reference pages marked as 'Deprecated'                        | - Developer Portal notification and announcement prior to deprecation
+ - Changelog entries published only for fixes and related changes  |
+| Sunset     | API is no longer accessible in Production | - Support no longer provided                                                                                                                           | - Reference pages no longer accessible in Production                     | - Developer Portal notification and announcement prior to sunset
+ - Final sunset announcement                                            |
+
+## Need Help?
+Please reach out to <apisupport@procore.com> if you have any questions regarding the API lifecycle.
+
+## See Also
+
+- [REST API Overview](065-rest-api-overview.md)
+- [API Request and Response Format](066-restful-api-concepts.md)
+- [API Usage Guidelines](011-api-usage-guidelines.md)

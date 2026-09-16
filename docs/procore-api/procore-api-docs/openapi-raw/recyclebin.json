@@ -1,0 +1,601 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "RecycleBin",
+  "version": "2.0",
+  "x-resource-name": "RecycleBin",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Materials Management",
+  "x-product-lines": [
+   "material-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/materials_mgmt/recycle_bin": {
+   "get": {
+    "tags": [
+     "RecycleBin"
+    ],
+    "summary": "Retrieves recycled resources matching the specified filter criteria.",
+    "description": "The returned collection is streamed asynchronously, which allows efficient handling of large\r\n            result sets. The response will have a status code of 200 (OK) if successful, or 406 (Not Acceptable) if the\r\n            request parameters are invalid.",
+    "operationId": "RecycleBin_GetRecycledItems",
+    "parameters": [
+     {
+      "name": "filters[resource_type]",
+      "in": "query",
+      "description": "Comma-separated list of resource types to filter the results by.",
+      "schema": {
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "name": "filters[recycled_at]",
+      "in": "query",
+      "description": "Date and time when the item was recycled. Formatted as YYYY-MM-DDThh:mm:ssZ...YYYY-MM-DDThh:mm:ssZ.",
+      "schema": {
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "name": "filters[recycled_by_user]",
+      "in": "query",
+      "description": "Comma-separated list of user IDs used to filter items recycled by specific users.",
+      "schema": {
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "The sort string",
+      "schema": {
+       "type": "string",
+       "description": "The sort string"
+      },
+      "required": false
+     },
+     {
+      "name": "filters[search]",
+      "in": "query",
+      "description": "The search term",
+      "schema": {
+       "type": "string",
+       "description": "The search term"
+      },
+      "required": false
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number",
+      "schema": {
+       "type": "integer",
+       "description": "The page number",
+       "format": "int32"
+      },
+      "required": false
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "The page size between 1 and 100.",
+      "schema": {
+       "maximum": 100,
+       "minimum": 1,
+       "type": "integer",
+       "description": "The page size",
+       "format": "int32",
+       "default": 10
+      },
+      "required": false
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "The company identifier",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "The project identifier",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "The number of items per page",
+        "schema": {
+         "type": "integer",
+         "description": "The number of items per page",
+         "format": ""
+        }
+       },
+       "Link": {
+        "description": "Pagination links",
+        "schema": {
+         "type": "string",
+         "description": "Pagination links",
+         "format": ""
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "totalCount": {
+             "type": "integer",
+             "format": "int32"
+            },
+            "result": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "format": "uuid"
+               },
+               "name": {
+                "type": "string",
+                "nullable": true
+               },
+               "description": {
+                "type": "string",
+                "nullable": true
+               },
+               "uom": {
+                "type": "string",
+                "nullable": true
+               },
+               "resource_type": {
+                "type": "string",
+                "nullable": true
+               },
+               "subtype": {
+                "type": "string",
+                "nullable": true
+               },
+               "recycled_at": {
+                "type": "string",
+                "format": "date-time"
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time"
+               },
+               "recycled_by": {
+                "type": "integer",
+                "format": "int64"
+               }
+              },
+              "additionalProperties": false
+             },
+             "nullable": true
+            }
+           },
+           "additionalProperties": false
+          }
+         },
+         "additionalProperties": false,
+         "description": "Class representing a procore response with data."
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "The code",
+             "nullable": true,
+             "readOnly": true
+            },
+            "message": {
+             "type": "string",
+             "description": "The message",
+             "nullable": true,
+             "readOnly": true
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "The reason code",
+                "nullable": true,
+                "readOnly": true
+               },
+               "message": {
+                "type": "string",
+                "description": "The message",
+                "nullable": true
+               },
+               "source": {
+                "type": "string",
+                "description": "The source",
+                "nullable": true
+               },
+               "data": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "string"
+                },
+                "description": "The data",
+                "nullable": true
+               }
+              },
+              "additionalProperties": false,
+              "description": "Class representing an error detail, including the reason code, message, and source."
+             },
+             "description": "The details",
+             "nullable": true
+            }
+           },
+           "additionalProperties": false,
+           "description": "Class representing an error response, including the error."
+          }
+         },
+         "additionalProperties": false,
+         "description": "Class representing an error response, including the error."
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "The code",
+             "nullable": true,
+             "readOnly": true
+            },
+            "message": {
+             "type": "string",
+             "description": "The message",
+             "nullable": true,
+             "readOnly": true
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "The reason code",
+                "nullable": true,
+                "readOnly": true
+               },
+               "message": {
+                "type": "string",
+                "description": "The message",
+                "nullable": true
+               },
+               "source": {
+                "type": "string",
+                "description": "The source",
+                "nullable": true
+               },
+               "data": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "string"
+                },
+                "description": "The data",
+                "nullable": true
+               }
+              },
+              "additionalProperties": false,
+              "description": "Class representing an error detail, including the reason code, message, and source."
+             },
+             "description": "The details",
+             "nullable": true
+            }
+           },
+           "additionalProperties": false,
+           "description": "Class representing an error response, including the error."
+          }
+         },
+         "additionalProperties": false,
+         "description": "Class representing an error response, including the error."
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "The code",
+             "nullable": true,
+             "readOnly": true
+            },
+            "message": {
+             "type": "string",
+             "description": "The message",
+             "nullable": true,
+             "readOnly": true
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "The reason code",
+                "nullable": true,
+                "readOnly": true
+               },
+               "message": {
+                "type": "string",
+                "description": "The message",
+                "nullable": true
+               },
+               "source": {
+                "type": "string",
+                "description": "The source",
+                "nullable": true
+               },
+               "data": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "string"
+                },
+                "description": "The data",
+                "nullable": true
+               }
+              },
+              "additionalProperties": false,
+              "description": "Class representing an error detail, including the reason code, message, and source."
+             },
+             "description": "The details",
+             "nullable": true
+            }
+           },
+           "additionalProperties": false,
+           "description": "Class representing an error response, including the error."
+          }
+         },
+         "additionalProperties": false,
+         "description": "Class representing an error response, including the error."
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "The code",
+             "nullable": true,
+             "readOnly": true
+            },
+            "message": {
+             "type": "string",
+             "description": "The message",
+             "nullable": true,
+             "readOnly": true
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "The reason code",
+                "nullable": true,
+                "readOnly": true
+               },
+               "message": {
+                "type": "string",
+                "description": "The message",
+                "nullable": true
+               },
+               "source": {
+                "type": "string",
+                "description": "The source",
+                "nullable": true
+               },
+               "data": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "string"
+                },
+                "description": "The data",
+                "nullable": true
+               }
+              },
+              "additionalProperties": false,
+              "description": "Class representing an error detail, including the reason code, message, and source."
+             },
+             "description": "The details",
+             "nullable": true
+            }
+           },
+           "additionalProperties": false,
+           "description": "Class representing an error response, including the error."
+          }
+         },
+         "additionalProperties": false,
+         "description": "Class representing an error response, including the error."
+        }
+       }
+      }
+     },
+     "406": {
+      "description": "Not Acceptable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "The code",
+             "nullable": true,
+             "readOnly": true
+            },
+            "message": {
+             "type": "string",
+             "description": "The message",
+             "nullable": true,
+             "readOnly": true
+            },
+            "details": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "The reason code",
+                "nullable": true,
+                "readOnly": true
+               },
+               "message": {
+                "type": "string",
+                "description": "The message",
+                "nullable": true
+               },
+               "source": {
+                "type": "string",
+                "description": "The source",
+                "nullable": true
+               },
+               "data": {
+                "type": "object",
+                "additionalProperties": {
+                 "type": "string"
+                },
+                "description": "The data",
+                "nullable": true
+               }
+              },
+              "additionalProperties": false,
+              "description": "Class representing an error detail, including the reason code, message, and source."
+             },
+             "description": "The details",
+             "nullable": true
+            }
+           },
+           "additionalProperties": false,
+           "description": "Class representing an error response, including the error."
+          }
+         },
+         "additionalProperties": false,
+         "description": "Class representing an error response, including the error."
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/materials_mgmt/recycle_bin',\n  qs: {\n    'filters[resource_type]': 'SOME_STRING_VALUE',\n    'filters[recycled_at]': 'SOME_STRING_VALUE',\n    'filters[recycled_by_user]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    'filters[search]': 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/materials_mgmt/recycle_bin?filters%5Bresource_type%5D=SOME_STRING_VALUE&filters%5Brecycled_at%5D=SOME_STRING_VALUE&filters%5Brecycled_by_user%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/materials_mgmt/recycle_bin?filters%5Bresource_type%5D=SOME_STRING_VALUE&filters%5Brecycled_at%5D=SOME_STRING_VALUE&filters%5Brecycled_by_user%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/materials_mgmt/recycle_bin?filters%5Bresource_type%5D=SOME_STRING_VALUE&filters%5Brecycled_at%5D=SOME_STRING_VALUE&filters%5Brecycled_by_user%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

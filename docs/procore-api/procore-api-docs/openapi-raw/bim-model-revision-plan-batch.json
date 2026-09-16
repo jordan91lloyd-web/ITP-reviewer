@@ -1,0 +1,639 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "BIM Model Revision Plan Batch",
+  "x-product-category": "Preconstruction",
+  "x-tool-category": "BIM",
+  "x-resource-name": "BIM Model Revision Plan Batch",
+  "version": "1.0",
+  "x-product-lines": [
+   "Design Coordination"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/bim_model_revision_plans/batch": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a batch of BIM Model Revision Plans",
+    "description": "Create relationships between several BIM Model Revisions and BIM Plans.",
+    "tags": [
+     "BIM Models"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "bim_model_revision_plans"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 126
+         },
+         "bim_model_revision_plans": {
+          "type": "array",
+          "description": "An array of BIM Model Revision Plan payloads",
+          "items": {
+           "type": "object",
+           "description": "BIM Model Revision Plan",
+           "required": [
+            "bim_model_revision_id",
+            "bim_plan_id"
+           ],
+           "properties": {
+            "bim_model_revision_id": {
+             "type": "integer",
+             "description": "ID of BIM Model Revision",
+             "example": 16
+            },
+            "bim_plan_id": {
+             "type": "integer",
+             "description": "ID of BIM Plan. The BIM Plan should be associated to the same BIM File as the BIM Model Revision",
+             "example": 96
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "BIM Model Revision Plan Batch create response",
+         "type": "object",
+         "properties": {
+          "bim_model_revision_plans": {
+           "type": "array",
+           "items": {
+            "oneOf": [
+             {
+              "allOf": [
+               {
+                "type": "object",
+                "description": "BIM Model Revision Plan associates BIM Plans to published BIM Model Revisions",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "ID",
+                  "example": 144
+                 },
+                 "bim_model_revision_id": {
+                  "type": "integer",
+                  "description": "ID of associated published BIM Model Revision",
+                  "example": 16
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Created date",
+                  "example": "2019-01-04T06:13:10Z"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Updated date",
+                  "example": "2019-01-06T11:26:08Z"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "bim_plan_id": {
+                  "type": "integer",
+                  "description": "ID of the BIM Plan",
+                  "example": 16
+                 },
+                 "bim_level_id": {
+                  "type": "integer",
+                  "description": "ID of the Bim Level linked to the plan",
+                  "example": 18
+                 }
+                }
+               }
+              ]
+             },
+             {
+              "type": "object",
+              "description": "BIM Model Revision Plan associates BIM Plans to published BIM Model Revisions",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 144
+               },
+               "bim_model_revision_id": {
+                "type": "integer",
+                "description": "ID of associated published BIM Model Revision",
+                "example": 16
+               },
+               "bim_plan": {
+                "allOf": [
+                 {
+                  "type": "object",
+                  "description": "BIM Plan captures the plan view of a level and contains the plan as a drawing or an attached 2D sheet",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "ID",
+                    "example": 144
+                   },
+                   "bim_level_id": {
+                    "type": "integer",
+                    "description": "ID of the BIM Level that the plan is associated to",
+                    "example": 16
+                   },
+                   "drawing_id": {
+                    "type": "integer",
+                    "description": "ID of the Drawing that the plan is associated to",
+                    "example": 16
+                   },
+                   "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Created date",
+                    "example": "2019-01-04T06:13:10Z"
+                   },
+                   "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Updated date",
+                    "example": "2019-01-06T11:26:08Z"
+                   }
+                  }
+                 },
+                 {
+                  "type": "object",
+                  "properties": {
+                   "title": {
+                    "type": "string",
+                    "description": "Title of the plan. This reflects the title of the drawing associated to the plan. If plan is not associated to a drawing, the title will contain the associated location name",
+                    "example": "A201: Floor II Plan"
+                   },
+                   "image": {
+                    "type": "object",
+                    "properties": {
+                     "id": {
+                      "type": "integer"
+                     },
+                     "name": {
+                      "type": "string",
+                      "description": "Base name of the file without its path",
+                      "example": "drawing.png"
+                     },
+                     "content_type": {
+                      "type": "string",
+                      "description": "A mime type or a file extension",
+                      "example": "image/png"
+                     },
+                     "url": {
+                      "type": "string",
+                      "description": "URL to download the attached file. HTTP client should be prepared to follow redirects to successfully download the file.",
+                      "example": "https://storage.procore.com/v3/d/default/procore-files/1ZE258W9K804SAJJZX19JVAB3R?sig=e7a476ec0a46154d05e0d4a554fb2ea0904cb6604670f9247c54d7c56a84d0b6"
+                     },
+                     "height": {
+                      "type": "integer",
+                      "description": "Image height",
+                      "example": 1200
+                     },
+                     "width": {
+                      "type": "integer",
+                      "description": "Image width",
+                      "example": 1600
+                     }
+                    }
+                   },
+                   "thumbnail": {
+                    "type": "object",
+                    "properties": {
+                     "id": {
+                      "type": "integer",
+                      "description": "ID",
+                      "example": 149
+                     },
+                     "size": {
+                      "type": "string",
+                      "description": "Thumbnail size",
+                      "example": "small",
+                      "enum": [
+                       "small",
+                       "medium",
+                       "large"
+                      ]
+                     },
+                     "url": {
+                      "type": "string",
+                      "description": "Thumbnail url",
+                      "example": "https://storage.procore.com/thumbnail-bucket/46971c37f_thumbnail_large.png?sig=e7a476ec0a46154d05e0d"
+                     }
+                    }
+                   },
+                   "sheet_map_start": {
+                    "type": "object",
+                    "description": "2D Coordinate Point",
+                    "properties": {
+                     "x": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "x-axis coordinate",
+                      "example": "6.24"
+                     },
+                     "y": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "y-axis coordinate",
+                      "example": "12.48"
+                     }
+                    }
+                   },
+                   "sheet_map_end": {
+                    "type": "object",
+                    "description": "2D Coordinate Point",
+                    "properties": {
+                     "x": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "x-axis coordinate",
+                      "example": "6.24"
+                     },
+                     "y": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "y-axis coordinate",
+                      "example": "12.48"
+                     }
+                    }
+                   },
+                   "model_map_start": {
+                    "type": "object",
+                    "description": "3D Coordinate Point",
+                    "properties": {
+                     "x": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "x-axis coordinate",
+                      "example": "6.24"
+                     },
+                     "y": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "y-axis coordinate",
+                      "example": "12.48"
+                     },
+                     "z": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "z-axis coordinate",
+                      "example": "24.96"
+                     }
+                    }
+                   },
+                   "model_map_end": {
+                    "type": "object",
+                    "description": "3D Coordinate Point",
+                    "properties": {
+                     "x": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "x-axis coordinate",
+                      "example": "6.24"
+                     },
+                     "y": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "y-axis coordinate",
+                      "example": "12.48"
+                     },
+                     "z": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "z-axis coordinate",
+                      "example": "24.96"
+                     }
+                    }
+                   }
+                  }
+                 }
+                ]
+               },
+               "bim_level": {
+                "allOf": [
+                 {
+                  "type": "object",
+                  "description": "BIM Model Level",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "ID",
+                    "example": 144
+                   },
+                   "elevation": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Level elevation",
+                    "example": 10.25
+                   },
+                   "name": {
+                    "type": "string",
+                    "description": "Level name",
+                    "example": "1space>1 space"
+                   },
+                   "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Created date",
+                    "example": "2019-01-04T06:13:10Z"
+                   },
+                   "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Updated date",
+                    "example": "2019-01-06T11:26:08Z"
+                   }
+                  }
+                 },
+                 {
+                  "type": "object",
+                  "properties": {
+                   "bim_file_id": {
+                    "type": "integer",
+                    "description": "ID of the BIM Model revision linked to the Level",
+                    "example": 16
+                   },
+                   "location_id": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "ID of location linked to the Level",
+                    "example": 16
+                   },
+                   "created_by_id": {
+                    "type": "integer",
+                    "description": "ID of user that created the level",
+                    "example": 16
+                   }
+                  }
+                 }
+                ]
+               },
+               "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Created date",
+                "example": "2019-01-04T06:13:10Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Updated date",
+                "example": "2019-01-06T11:26:08Z"
+               }
+              }
+             }
+            ]
+           }
+          },
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "allOf": [
+             {
+              "type": "object",
+              "description": "BIM Model Revision Plan",
+              "required": [
+               "bim_model_revision_id",
+               "bim_plan_id"
+              ],
+              "properties": {
+               "bim_model_revision_id": {
+                "type": "integer",
+                "description": "ID of BIM Model Revision",
+                "example": 16
+               },
+               "bim_plan_id": {
+                "type": "integer",
+                "description": "ID of BIM Plan. The BIM Plan should be associated to the same BIM File as the BIM Model Revision",
+                "example": 96
+               }
+              }
+             },
+             {
+              "type": "object",
+              "properties": {
+               "errors": {
+                "type": "object",
+                "properties": {
+                 "field_name": {
+                  "type": "array",
+                  "items": {
+                   "type": "string"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/bim_model_revision_plans/batch',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 126,\n    bim_model_revision_plans: [{bim_model_revision_id: 16, bim_plan_id: 96}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":126,\\\"bim_model_revision_plans\\\":[{\\\"bim_model_revision_id\\\":16,\\\"bim_plan_id\\\":96}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/bim_model_revision_plans/batch\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/bim_model_revision_plans/batch \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":126,\"bim_model_revision_plans\":[{\"bim_model_revision_id\":16,\"bim_plan_id\":96}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/bim_model_revision_plans/batch\"),\n    Content = new StringContent(\"{\\\"project_id\\\":126,\\\"bim_model_revision_plans\\\":[{\\\"bim_model_revision_id\\\":16,\\\"bim_plan_id\\\":96}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

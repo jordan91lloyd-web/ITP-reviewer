@@ -1,0 +1,854 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Daily Log Headers",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Daily Log",
+  "x-resource-name": "Daily Log Headers",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/daily_log_headers": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "query",
+     "required": false,
+     "description": "The id of the requested Daily Log Header",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "log_date",
+     "in": "query",
+     "required": false,
+     "description": "The log date for the requested Daily Log Header",
+     "schema": {
+      "type": "string",
+      "format": "date"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get the Daily Log Header via date or id",
+    "description": "Returns the Daily Log Header for a given date or id",
+    "tags": [
+     "Daily Log Header"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A daily log header",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "The id of the daily log header",
+           "example": 12345
+          },
+          "log_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date that this daily log header represents Format: YYYY-MM-DD Example: 2016-05-19",
+           "example": "2016-05-19"
+          },
+          "log_datetime": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Estimated UTC datetime that this daily log header represents",
+           "example": "2016-05-19T12:00:00Z"
+          },
+          "completed": {
+           "type": "boolean",
+           "description": "Is this log date marked as complete?",
+           "example": true
+          },
+          "completed_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "completed_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Daily log header marked complete at",
+           "example": "2017-09-19T20:02:27Z"
+          },
+          "completable": {
+           "type": "boolean",
+           "description": "Is this log date able to be completed?",
+           "example": true
+          },
+          "distributed": {
+           "type": "boolean",
+           "description": "Is this log date marked as distributed?",
+           "example": true
+          },
+          "distributed_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "distributed_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Daily log header marked distributed at",
+           "example": "2017-09-19T20:02:27Z"
+          },
+          "distributable": {
+           "type": "boolean",
+           "description": "Is this log date able to be distributed?",
+           "example": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have permissions to view the requested Daily Log Header",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers',\n  qs: {id: 'SOME_INTEGER_VALUE', log_date: 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers?id=SOME_INTEGER_VALUE&log_date=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers?id=SOME_INTEGER_VALUE&log_date=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers?id=SOME_INTEGER_VALUE&log_date=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update the state of a Daily Log Header",
+    "description": "Sets the completed boolean value and/or distributes the Daily Log to its distribution list",
+    "tags": [
+     "Daily Log Header"
+    ],
+    "parameters": [
+     {
+      "name": "app_name",
+      "in": "query",
+      "required": false,
+      "description": "The name of app which issues this request. If app name is 'web' and request completes day then web filters of user which completes day are applied to pdf which is sent to distribution users.",
+      "schema": {
+       "type": "string",
+       "example": "web"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "daily_log_header"
+        ],
+        "properties": {
+         "daily_log_header": {
+          "type": "object",
+          "required": [
+           "completed",
+           "distributed"
+          ],
+          "properties": {
+           "completed": {
+            "type": "boolean",
+            "description": "Set the completion status for the day",
+            "example": true
+           },
+           "distributed": {
+            "type": "boolean",
+            "description": "Distribute the Daily Log for the day",
+            "example": true
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Daily Log Header updated",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A daily log header",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "The id of the daily log header",
+           "example": 12345
+          },
+          "log_date": {
+           "type": "string",
+           "format": "date",
+           "description": "Date that this daily log header represents Format: YYYY-MM-DD Example: 2016-05-19",
+           "example": "2016-05-19"
+          },
+          "log_datetime": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Estimated UTC datetime that this daily log header represents",
+           "example": "2016-05-19T12:00:00Z"
+          },
+          "completed": {
+           "type": "boolean",
+           "description": "Is this log date marked as complete?",
+           "example": true
+          },
+          "completed_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "completed_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Daily log header marked complete at",
+           "example": "2017-09-19T20:02:27Z"
+          },
+          "completable": {
+           "type": "boolean",
+           "description": "Is this log date able to be completed?",
+           "example": true
+          },
+          "distributed": {
+           "type": "boolean",
+           "description": "Is this log date marked as distributed?",
+           "example": true
+          },
+          "distributed_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "distributed_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Daily log header marked distributed at",
+           "example": "2017-09-19T20:02:27Z"
+          },
+          "distributable": {
+           "type": "boolean",
+           "description": "Is this log date able to be distributed?",
+           "example": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Daily Log Header parameter was missing or invalid",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have permission to update Daily Log Headers",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers',\n  qs: {id: 'SOME_INTEGER_VALUE', log_date: 'SOME_STRING_VALUE', app_name: 'web'},\n  headers: {'content-type': 'application/json'},\n  body: {daily_log_header: {completed: true, distributed: true}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"daily_log_header\\\":{\\\"completed\\\":true,\\\"distributed\\\":true}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers?id=SOME_INTEGER_VALUE&log_date=SOME_STRING_VALUE&app_name=web\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers?id=SOME_INTEGER_VALUE&log_date=SOME_STRING_VALUE&app_name=web' \\\n  --header 'content-type: application/json' \\\n  --data '{\"daily_log_header\":{\"completed\":true,\"distributed\":true}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers?id=SOME_INTEGER_VALUE&log_date=SOME_STRING_VALUE&app_name=web\"),\n    Content = new StringContent(\"{\\\"daily_log_header\\\":{\\\"completed\\\":true,\\\"distributed\\\":true}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added app_name query param",
+      "description": "If app name is 'web' and request completes day then web filters of user which completes day are applied to pdf which is sent to distribution users.",
+      "endpoint": "PATCH /projects/{project_id}/daily_log_headers",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2021-03-29",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "daily-log-headers?version=1.0#update-the-state-of-a-daily-log-header"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/daily_log_headers/index": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Daily Log Headers for the Project",
+    "description": "Returns Daily Log Headers for the Project. When no date range is supplied, results default to the project's creation date through today. Daily Log Headers dated before the project's creation date are returned only when an explicit `start_date` earlier than that date is supplied.",
+    "tags": [
+     "Daily Log Header"
+    ],
+    "parameters": [
+     {
+      "name": "start_date",
+      "in": "query",
+      "required": false,
+      "description": "The left (earliest) boundary of the requested date range, inclusive, matched against each header's `log_date`. Defaults to the project's creation date when omitted. Supply a `start_date` earlier than the project's creation date to retrieve headers dated before the project was created.",
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "end_date",
+      "in": "query",
+      "required": false,
+      "description": "The right (latest) boundary of the requested date range, inclusive, matched against each header's `log_date`. Defaults to today when omitted and is always capped at today, so a future `end_date` returns results only through the current date.",
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Daily Log Headers",
+         "items": {
+          "type": "object",
+          "description": "A daily log header",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "The id of the daily log header",
+            "example": 12345
+           },
+           "log_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date that this daily log header represents Format: YYYY-MM-DD Example: 2016-05-19",
+            "example": "2016-05-19"
+           },
+           "log_datetime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Estimated UTC datetime that this daily log header represents",
+            "example": "2016-05-19T12:00:00Z"
+           },
+           "completed": {
+            "type": "boolean",
+            "description": "Is this log date marked as complete?",
+            "example": true
+           },
+           "completed_by": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Carl Contractor"
+             }
+            }
+           },
+           "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Daily log header marked complete at",
+            "example": "2017-09-19T20:02:27Z"
+           },
+           "completable": {
+            "type": "boolean",
+            "description": "Is this log date able to be completed?",
+            "example": true
+           },
+           "distributed": {
+            "type": "boolean",
+            "description": "Is this log date marked as distributed?",
+            "example": true
+           },
+           "distributed_by": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Carl Contractor"
+             }
+            }
+           },
+           "distributed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Daily log header marked distributed at",
+            "example": "2017-09-19T20:02:27Z"
+           },
+           "distributable": {
+            "type": "boolean",
+            "description": "Is this log date able to be distributed?",
+            "example": true
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have permissions to view the requested Daily Log Header",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers/index',\n  qs: {\n    start_date: 'SOME_STRING_VALUE',\n    end_date: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers/index?start_date=SOME_STRING_VALUE&end_date=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers/index?start_date=SOME_STRING_VALUE&end_date=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/daily_log_headers/index?start_date=SOME_STRING_VALUE&end_date=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Return headers dated before the project's creation date",
+      "description": "Fixed the date-range query so that Daily Log Headers dated before the project's creation date are returned when the requested start_date/end_date range covers them. Previously these headers were omitted from the response.",
+      "endpoint": "GET /projects/{project_id}/daily_log_headers/index",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-06-22",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "daily-log-headers?version=1.0#get-daily-log-headers-for-the-project"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

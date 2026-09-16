@@ -1,0 +1,452 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Invoice Payment Terms",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Payments",
+  "x-resource-name": "Invoice Payment Terms",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/requisitions/{id}/invoice_payment_terms": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier for the Requisition (Subcontractor Invoice)",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Show the Invoice Payment Term for a Requisition (Subcontractor Invoice)",
+    "description": "Returns the Invoice Payment Term snapshot for a Requisition (Subcontractor Invoice).",
+    "tags": [
+     "Invoice Payment Terms"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Per-invoice snapshot of the payment term assigned to the commitment at invoice submission. The snapshotted term values are fixed at submission, so later changes to the company payment term do not affect existing invoices. payment_term_status is the exception and changes over the invoice lifecycle, for example when the term is waived.",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for the invoice payment term",
+             "example": "123456"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Company ID that owns this invoice payment term",
+             "example": "789"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Project ID that owns this invoice payment term",
+             "example": "456"
+            },
+            "requisition_id": {
+             "type": "string",
+             "description": "ID of the requisition (subcontractor invoice) this payment term applies to",
+             "example": "321"
+            },
+            "payment_term_id": {
+             "type": "string",
+             "description": "Identifier of the company-level payment term this snapshot was copied from",
+             "example": "5f9b2c1e-2a44-4d0b-9d2e-4c1a1c9c0f11"
+            },
+            "payment_term_type": {
+             "type": "string",
+             "description": "Type of payment term captured in the snapshot",
+             "enum": [
+              "NET_DAYS_AFTER_SUBMISSION",
+              "DISCOUNT_TERMS",
+              "OWNER_FUNDING_RECEIVED"
+             ],
+             "example": "NET_DAYS_AFTER_SUBMISSION"
+            },
+            "payment_term_status": {
+             "type": "string",
+             "description": "Current status of the invoice payment term. WAIVED, PAID, DISABLED_MANUAL_PAID, and DISABLED_PARTIALLY_PAID are terminal.",
+             "enum": [
+              "ACTIVE",
+              "WAIVED",
+              "EXPIRED",
+              "DISABLED_MANUAL_PAID",
+              "DISABLED_PARTIALLY_PAID",
+              "PAID"
+             ],
+             "example": "ACTIVE"
+            },
+            "net_days": {
+             "type": "integer",
+             "description": "Number of days after the qualifying event that payment is due",
+             "example": 30,
+             "nullable": true
+            },
+            "discount_rate": {
+             "type": "integer",
+             "description": "Discount rate in basis points",
+             "example": 200,
+             "nullable": true
+            },
+            "discount_valid_days": {
+             "type": "integer",
+             "description": "Number of days the discount remains valid after invoice submission",
+             "example": 10,
+             "nullable": true
+            },
+            "discount_day_of_month": {
+             "type": "integer",
+             "description": "Day of the month the discount expires, for DISCOUNT_TERMS payment terms",
+             "example": 10,
+             "nullable": true
+            },
+            "auto_expire_discount": {
+             "type": "boolean",
+             "description": "Whether the discount automatically expires once the due date passes",
+             "example": true
+            },
+            "discount_amount": {
+             "type": "string",
+             "description": "Calculated discount amount for this invoice",
+             "example": "200.0",
+             "nullable": true
+            },
+            "due_date": {
+             "type": "string",
+             "format": "date",
+             "description": "Date the invoice payment is due under this payment term",
+             "example": "2025-06-30",
+             "nullable": true
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the invoice payment term was created",
+             "example": "2025-05-31T13:21:20Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp when the invoice payment term was last updated",
+             "example": "2025-06-01T13:21:20Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/requisitions/%7Bid%7D/invoice_payment_terms'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/requisitions/%7Bid%7D/invoice_payment_terms\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/requisitions/%7Bid%7D/invoice_payment_terms"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/requisitions/%7Bid%7D/invoice_payment_terms\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introduce GET Invoice Payment Term Endpoint",
+      "description": "Fetch the invoice payment term snapshot for a requisition (subcontractor invoice).",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/requisitions/{id}/invoice_payment_terms",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-02",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "invoice-payment-terms?version=2.0#show-the-invoice-payment-term-for-a-requisition-subcontractor-invoice"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

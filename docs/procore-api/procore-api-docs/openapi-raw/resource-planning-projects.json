@@ -1,0 +1,4228 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Projects",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Resource Planning Projects",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Company Projects",
+    "description": "Get a list of all projects for a given company ID",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     },
+     {
+      "name": "name",
+      "in": "query",
+      "description": "Filters items by their exact name. The query performs an exact match. Example usage: `/v2/companies/{company_id}/...?name=Bridge+Restoration`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "Bridge Restoration"
+     },
+     {
+      "name": "project_number",
+      "in": "query",
+      "description": "Filters items by their exact project number. The query performs an exact match. Example usage: `/v2/companies/{company_id}/...?project_number=BR-2024`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "BR-2024"
+     },
+     {
+      "name": "custom_fields_integration_name",
+      "in": "query",
+      "description": "Filter results by a **Custom Field's** `integration_name`. This allows searching based on custom-defined attributes in the system. Example usage: `/v2/companies/{company_id}/...?my_custom_field=northwest`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "northwest"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns array of Project objects.",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a single Project.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Project.",
+            "example": "a3d9f4e2-8f9b-4c8a-ae89-12d7a68e95b3"
+           },
+           "name": {
+            "type": "string",
+            "description": "The name of the Project.",
+            "example": "Airport Concourse"
+           },
+           "project_number": {
+            "type": "string",
+            "description": "Unique identifier for the Project used internally.",
+            "example": "1zx212ms"
+           },
+           "status": {
+            "type": "string",
+            "enum": [
+             "active",
+             "pending",
+             "inactive"
+            ],
+            "description": "The status of the Project, controlling visibility and filtering.",
+            "example": "active"
+           },
+           "start_date": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Project's start date in Epoch time.",
+            "example": 1509771600000
+           },
+           "est_end_date": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Estimated end date for the Project in Epoch time.",
+            "example": null
+           },
+           "closed_date": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "If the Project is closed, this is the closed date in Epoch time.",
+            "example": null
+           },
+           "timezone": {
+            "type": "string",
+            "description": "Timezone used for scheduling outbound messages.",
+            "example": "America/Los_Angeles"
+           },
+           "color": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6})$",
+            "description": "Hexadecimal color code for categorization.",
+            "example": "#53A9FF"
+           },
+           "daily_start_time": {
+            "type": "string",
+            "description": "Default start time for the Project's workday.",
+            "example": "7:30 am"
+           },
+           "daily_end_time": {
+            "type": "string",
+            "description": "Default end time for the Project's workday.",
+            "example": "3:30 pm"
+           },
+           "bid_rate": {
+            "type": "number",
+            "description": "Project bid rate.",
+            "example": 20
+           },
+           "percent_complete": {
+            "type": "number",
+            "description": "Percentage of the Project completed.",
+            "example": 30
+           },
+           "customer_name": {
+            "type": "string",
+            "description": "The name of the customer for the Project.",
+            "example": "City of Los Angeles"
+           },
+           "project_type": {
+            "type": "string",
+            "description": "Internal categorical classification for the Project.",
+            "example": "Airport"
+           },
+           "address_1": {
+            "type": "string",
+            "description": "The first part of the Project's address.",
+            "example": "1111 S Figueroa St"
+           },
+           "address_2": {
+            "type": "string",
+            "nullable": true,
+            "description": "The second part of the Project's address.",
+            "example": "Building 17"
+           },
+           "city_town": {
+            "type": "string",
+            "description": "The city or town where the Project is located.",
+            "example": "Los Angeles"
+           },
+           "state_province": {
+            "type": "string",
+            "description": "The state or province where the Project is located.",
+            "example": "KS"
+           },
+           "zipcode": {
+            "type": "string",
+            "description": "The postal/zip code of the Project.",
+            "example": "66085"
+           },
+           "country": {
+            "type": "string",
+            "description": "The country where the Project is located.",
+            "example": "United States"
+           },
+           "stage": {
+            "type": "string",
+            "description": "The stage of the Project .",
+            "example": "Course of Construction"
+           },
+           "stage_id": {
+            "type": "integer",
+            "description": "The ID of the project stage.",
+            "example": 12345
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "List of UUIDs representing the Groups associated with the Project.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+             "2ec02e52-8a14-4689-adec-bbd6161e37a4"
+            ]
+           },
+           "roles": {
+            "type": "array",
+            "description": "List of people assigned to roles in the Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "person_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID of the Person assigned to the role.",
+               "example": "572a480a-637e-4d0e-a02e-246b0181562c"
+              },
+              "job_title_id": {
+               "type": "string",
+               "format": "uuid",
+               "nullable": true,
+               "description": "UUID of the Job Title associated with the role. If omitted, the Person's default Job Title is used.",
+               "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+              }
+             }
+            }
+           },
+           "categories": {
+            "type": "array",
+            "description": "List of Categories and their Subcategories within the Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "name": {
+               "type": "string",
+               "description": "The name of the Category.",
+               "example": "Phase 1"
+              },
+              "subcategories": {
+               "type": "array",
+               "description": "Subcategories within the Category.",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "name": {
+                  "type": "string",
+                  "description": "Name of the Subcategory.",
+                  "example": "North Lot"
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "tag_instances": {
+            "type": "array",
+            "description": "List of Tags associated with the Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "tag_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID of the applied Tag.",
+               "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+              }
+             }
+            }
+           },
+           "wage_overrides": {
+            "type": "array",
+            "description": "List of Wage Overrides set for specific Job Titles on this Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "job_title_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID of the Job Title.",
+               "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+              },
+              "rate": {
+               "type": "number",
+               "description": "Hourly wage override for the Job Title.",
+               "example": 35
+              }
+             }
+            }
+           },
+           "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp when the Project was created.",
+            "example": 1508251600000
+           },
+           "updated_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp when the Project was last updated.",
+            "example": 1509251600000
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Project",
+    "description": "Create a Project for a given company ID. When a Project is successfully created, you will be returned the new Project UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for creating a new Project.",
+        "required": [
+         "name",
+         "status",
+         "group_ids"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the Project.",
+          "example": "Airport Concourse"
+         },
+         "status": {
+          "type": "string",
+          "enum": [
+           "active",
+           "pending",
+           "inactive"
+          ],
+          "description": "Controls Project visibility and filtering. `active` - Project is currently in progress. `pending` - Project is planned but not started. `inactive` - Project is no longer active.\n",
+          "example": "active"
+         },
+         "group_ids": {
+          "type": "array",
+          "description": "UUID references to the Groups this Project should be available to.",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "example": [
+           "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+           "2ec02e52-8a14-4689-adec-bbd6161e37a4"
+          ]
+         },
+         "start_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Project's start date. Required if `status` is `active`.",
+          "example": "2024-06-01T00:00:00Z"
+         },
+         "timezone": {
+          "type": "string",
+          "description": "The timezone to use for scheduling outbound messages for the Project. If not provided, the Group timezone will be used.\n",
+          "example": "America/Chicago"
+         },
+         "color": {
+          "type": "string",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "description": "Hexadecimal color code for the Project. Helps with categorization and visual distinction.\n",
+          "example": "#53A9FF"
+         },
+         "daily_start_time": {
+          "type": "string",
+          "description": "Default time the Project's workday begins. Must follow `HH:MM am/pm` format. Allowed increments: 15 minutes.\n",
+          "example": "7:30 am"
+         },
+         "daily_end_time": {
+          "type": "string",
+          "description": "Default time the Project's workday ends. Must follow `HH:MM am/pm` format. Allowed increments: 15 minutes.\n",
+          "example": "3:30 pm"
+         },
+         "project_number": {
+          "type": "string",
+          "description": "A unique identifier for the Project.",
+          "example": "1zx212ms"
+         },
+         "est_end_date": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "Estimated end date for the Project.",
+          "example": "2024-12-31T00:00:00Z"
+         },
+         "closed_date": {
+          "type": "string",
+          "format": "date-time",
+          "nullable": true,
+          "description": "If loading already closed jobs for historical tracking, this field can be populated.",
+          "example": "2025-01-01T00:00:00Z"
+         },
+         "address_1": {
+          "type": "string",
+          "description": "First part of the Project's address.",
+          "example": "1111 S Figueroa St"
+         },
+         "address_2": {
+          "type": "string",
+          "nullable": true,
+          "description": "Second part of the Project's address (e.g., Apartment, Suite, Unit).",
+          "example": "Building 17"
+         },
+         "city_town": {
+          "type": "string",
+          "description": "The City/Town for the Project.",
+          "example": "Los Angeles"
+         },
+         "state_province": {
+          "type": "string",
+          "description": "The State/Province for the Project.",
+          "example": "CA"
+         },
+         "zipcode": {
+          "type": "string",
+          "description": "The Zip/Postal Code for the Project.",
+          "example": "90015"
+         },
+         "country": {
+          "type": "string",
+          "description": "The Country for the Project.",
+          "example": "United States"
+         },
+         "bid_rate": {
+          "type": "number",
+          "description": "The bid rate for the Project.",
+          "example": 20
+         },
+         "percent_complete": {
+          "type": "number",
+          "description": "The percentage of the Project that is complete.",
+          "example": 30
+         },
+         "customer_name": {
+          "type": "string",
+          "description": "Name of the customer associated with the Project.",
+          "example": "City of Los Angeles"
+         },
+         "project_type": {
+          "type": "string",
+          "description": "Any categorical classifier you use internally to label your Projects.\n",
+          "example": "Airport"
+         },
+         "tag_instances": {
+          "type": "array",
+          "description": "Tags can be used as categorical labels or to define requirements for people assigned to the Project.\n",
+          "items": {
+           "type": "object",
+           "properties": {
+            "tag_id": {
+             "type": "string",
+             "format": "uuid",
+             "description": "UUID reference for the Tag.",
+             "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+            }
+           }
+          }
+         },
+         "categories": {
+          "type": "array",
+          "description": "Categories define buckets for resource assignments. Each Category can have nested Subcategories.\n",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "The name of the Category.",
+             "example": "Phase 1"
+            },
+            "subcategories": {
+             "type": "array",
+             "description": "A nested layer of classification inside the Category.",
+             "items": {
+              "type": "object",
+              "properties": {
+               "name": {
+                "type": "string",
+                "description": "Name of the Subcategory.",
+                "example": "North Lot"
+               }
+              }
+             }
+            }
+           }
+          }
+         },
+         "wage_overrides": {
+          "type": "array",
+          "description": "Sets an hourly wage rate for specific Job Titles on this Project.\n",
+          "items": {
+           "type": "object",
+           "properties": {
+            "job_title_id": {
+             "type": "string",
+             "format": "uuid",
+             "description": "UUID of the Job Title.",
+             "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+            },
+            "rate": {
+             "type": "number",
+             "description": "Hourly wage rate for the Job Title.",
+             "example": 45
+            }
+           }
+          }
+         },
+         "roles": {
+          "type": "array",
+          "description": "Assigns specific People to Roles on the Project. Useful for defining responsibilities and for notifications.\n",
+          "items": {
+           "type": "object",
+           "properties": {
+            "person_id": {
+             "type": "string",
+             "format": "uuid",
+             "description": "UUID of the Person assigned to the Role.",
+             "example": "572a480a-637e-4d0e-a02e-246b0181562c"
+            },
+            "job_title_id": {
+             "type": "string",
+             "format": "uuid",
+             "nullable": true,
+             "description": "UUID of the Job Title for the Role. If omitted, the Person's default Job Title is used.\n",
+             "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "When a Project is successfully created, you will be returned the new Project UUID.",
+         "items": {
+          "type": "object",
+          "description": "Response schema containing a unique identifier.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier.",
+            "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a Single Project",
+    "description": "Get a single project given a company ID and project ID",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Project.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Project.",
+           "example": "a3d9f4e2-8f9b-4c8a-ae89-12d7a68e95b3"
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Project.",
+           "example": "Airport Concourse"
+          },
+          "project_number": {
+           "type": "string",
+           "description": "Unique identifier for the Project used internally.",
+           "example": "1zx212ms"
+          },
+          "status": {
+           "type": "string",
+           "enum": [
+            "active",
+            "pending",
+            "inactive"
+           ],
+           "description": "The status of the Project, controlling visibility and filtering.",
+           "example": "active"
+          },
+          "start_date": {
+           "type": "integer",
+           "format": "int64",
+           "description": "Project's start date in Epoch time.",
+           "example": 1509771600000
+          },
+          "est_end_date": {
+           "type": "integer",
+           "format": "int64",
+           "nullable": true,
+           "description": "Estimated end date for the Project in Epoch time.",
+           "example": null
+          },
+          "closed_date": {
+           "type": "integer",
+           "format": "int64",
+           "nullable": true,
+           "description": "If the Project is closed, this is the closed date in Epoch time.",
+           "example": null
+          },
+          "timezone": {
+           "type": "string",
+           "description": "Timezone used for scheduling outbound messages.",
+           "example": "America/Los_Angeles"
+          },
+          "color": {
+           "type": "string",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "description": "Hexadecimal color code for categorization.",
+           "example": "#53A9FF"
+          },
+          "daily_start_time": {
+           "type": "string",
+           "description": "Default start time for the Project's workday.",
+           "example": "7:30 am"
+          },
+          "daily_end_time": {
+           "type": "string",
+           "description": "Default end time for the Project's workday.",
+           "example": "3:30 pm"
+          },
+          "bid_rate": {
+           "type": "number",
+           "description": "Project bid rate.",
+           "example": 20
+          },
+          "percent_complete": {
+           "type": "number",
+           "description": "Percentage of the Project completed.",
+           "example": 30
+          },
+          "customer_name": {
+           "type": "string",
+           "description": "The name of the customer for the Project.",
+           "example": "City of Los Angeles"
+          },
+          "project_type": {
+           "type": "string",
+           "description": "Internal categorical classification for the Project.",
+           "example": "Airport"
+          },
+          "address_1": {
+           "type": "string",
+           "description": "The first part of the Project's address.",
+           "example": "1111 S Figueroa St"
+          },
+          "address_2": {
+           "type": "string",
+           "nullable": true,
+           "description": "The second part of the Project's address.",
+           "example": "Building 17"
+          },
+          "city_town": {
+           "type": "string",
+           "description": "The city or town where the Project is located.",
+           "example": "Los Angeles"
+          },
+          "state_province": {
+           "type": "string",
+           "description": "The state or province where the Project is located.",
+           "example": "KS"
+          },
+          "zipcode": {
+           "type": "string",
+           "description": "The postal/zip code of the Project.",
+           "example": "66085"
+          },
+          "country": {
+           "type": "string",
+           "description": "The country where the Project is located.",
+           "example": "United States"
+          },
+          "stage": {
+           "type": "string",
+           "description": "The stage of the Project .",
+           "example": "Course of Construction"
+          },
+          "stage_id": {
+           "type": "integer",
+           "description": "The ID of the project stage.",
+           "example": 12345
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "List of UUIDs representing the Groups associated with the Project.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+            "2ec02e52-8a14-4689-adec-bbd6161e37a4"
+           ]
+          },
+          "roles": {
+           "type": "array",
+           "description": "List of people assigned to roles in the Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "person_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the Person assigned to the role.",
+              "example": "572a480a-637e-4d0e-a02e-246b0181562c"
+             },
+             "job_title_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "UUID of the Job Title associated with the role. If omitted, the Person's default Job Title is used.",
+              "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+             }
+            }
+           }
+          },
+          "categories": {
+           "type": "array",
+           "description": "List of Categories and their Subcategories within the Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "name": {
+              "type": "string",
+              "description": "The name of the Category.",
+              "example": "Phase 1"
+             },
+             "subcategories": {
+              "type": "array",
+              "description": "Subcategories within the Category.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "Name of the Subcategory.",
+                 "example": "North Lot"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "tag_instances": {
+           "type": "array",
+           "description": "List of Tags associated with the Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "tag_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the applied Tag.",
+              "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+             }
+            }
+           }
+          },
+          "wage_overrides": {
+           "type": "array",
+           "description": "List of Wage Overrides set for specific Job Titles on this Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "job_title_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the Job Title.",
+              "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+             },
+             "rate": {
+              "type": "number",
+              "description": "Hourly wage override for the Job Title.",
+              "example": 35
+             }
+            }
+           }
+          },
+          "created_at": {
+           "type": "integer",
+           "format": "int64",
+           "description": "Timestamp when the Project was created.",
+           "example": 1508251600000
+          },
+          "updated_at": {
+           "type": "integer",
+           "format": "int64",
+           "description": "Timestamp when the Project was last updated.",
+           "example": 1509251600000
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Single Project",
+    "description": "Delete a single project given a company ID and project ID. When a Project has been successfully deleted, you will receive the Project's ID back as confirmation.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a Single Project",
+    "description": "Updats a single project given a company ID and project ID and body params",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for creating a new Project.",
+        "required": [
+         "name",
+         "status",
+         "group_ids"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the Project.",
+          "example": "Airport Concourse"
+         },
+         "status": {
+          "type": "string",
+          "enum": [
+           "active",
+           "pending",
+           "inactive"
+          ],
+          "description": "Controls Project visibility and filtering. `active` - Project is currently in progress. `pending` - Project is planned but not started. `inactive` - Project is no longer active.\n",
+          "example": "active"
+         },
+         "start_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Project's start date. Required if `status` is `active`.",
+          "example": "2024-06-01T00:00:00Z"
+         },
+         "timezone": {
+          "type": "string",
+          "description": "The timezone to use for scheduling outbound messages for the Project. If not provided, the Group timezone will be used.\n",
+          "example": "America/Chicago"
+         },
+         "color": {
+          "type": "string",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "description": "Hexadecimal color code for the Project. Helps with categorization and visual distinction.\n",
+          "example": "#53A9FF"
+         },
+         "daily_start_time": {
+          "type": "string",
+          "description": "Default time the Project's workday begins. Must follow `HH:MM am/pm` format. Allowed increments: 15 minutes.\n",
+          "example": "7:30 am"
+         },
+         "daily_end_time": {
+          "type": "string",
+          "description": "Default time the Project's workday ends. Must follow `HH:MM am/pm` format. Allowed increments: 15 minutes.\n",
+          "example": "3:30 pm"
+         },
+         "job_title_id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true,
+          "description": "UUID of the Job Title for the Role. If omitted, the Person's default Job Title is used.\n",
+          "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Project.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Project.",
+           "example": "a3d9f4e2-8f9b-4c8a-ae89-12d7a68e95b3"
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Project.",
+           "example": "Airport Concourse"
+          },
+          "project_number": {
+           "type": "string",
+           "description": "Unique identifier for the Project used internally.",
+           "example": "1zx212ms"
+          },
+          "status": {
+           "type": "string",
+           "enum": [
+            "active",
+            "pending",
+            "inactive"
+           ],
+           "description": "The status of the Project, controlling visibility and filtering.",
+           "example": "active"
+          },
+          "start_date": {
+           "type": "integer",
+           "format": "int64",
+           "description": "Project's start date in Epoch time.",
+           "example": 1509771600000
+          },
+          "est_end_date": {
+           "type": "integer",
+           "format": "int64",
+           "nullable": true,
+           "description": "Estimated end date for the Project in Epoch time.",
+           "example": null
+          },
+          "closed_date": {
+           "type": "integer",
+           "format": "int64",
+           "nullable": true,
+           "description": "If the Project is closed, this is the closed date in Epoch time.",
+           "example": null
+          },
+          "timezone": {
+           "type": "string",
+           "description": "Timezone used for scheduling outbound messages.",
+           "example": "America/Los_Angeles"
+          },
+          "color": {
+           "type": "string",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "description": "Hexadecimal color code for categorization.",
+           "example": "#53A9FF"
+          },
+          "daily_start_time": {
+           "type": "string",
+           "description": "Default start time for the Project's workday.",
+           "example": "7:30 am"
+          },
+          "daily_end_time": {
+           "type": "string",
+           "description": "Default end time for the Project's workday.",
+           "example": "3:30 pm"
+          },
+          "bid_rate": {
+           "type": "number",
+           "description": "Project bid rate.",
+           "example": 20
+          },
+          "percent_complete": {
+           "type": "number",
+           "description": "Percentage of the Project completed.",
+           "example": 30
+          },
+          "customer_name": {
+           "type": "string",
+           "description": "The name of the customer for the Project.",
+           "example": "City of Los Angeles"
+          },
+          "project_type": {
+           "type": "string",
+           "description": "Internal categorical classification for the Project.",
+           "example": "Airport"
+          },
+          "address_1": {
+           "type": "string",
+           "description": "The first part of the Project's address.",
+           "example": "1111 S Figueroa St"
+          },
+          "address_2": {
+           "type": "string",
+           "nullable": true,
+           "description": "The second part of the Project's address.",
+           "example": "Building 17"
+          },
+          "city_town": {
+           "type": "string",
+           "description": "The city or town where the Project is located.",
+           "example": "Los Angeles"
+          },
+          "state_province": {
+           "type": "string",
+           "description": "The state or province where the Project is located.",
+           "example": "KS"
+          },
+          "zipcode": {
+           "type": "string",
+           "description": "The postal/zip code of the Project.",
+           "example": "66085"
+          },
+          "country": {
+           "type": "string",
+           "description": "The country where the Project is located.",
+           "example": "United States"
+          },
+          "stage": {
+           "type": "string",
+           "description": "The stage of the Project .",
+           "example": "Course of Construction"
+          },
+          "stage_id": {
+           "type": "integer",
+           "description": "The ID of the project stage.",
+           "example": 12345
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "List of UUIDs representing the Groups associated with the Project.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+            "2ec02e52-8a14-4689-adec-bbd6161e37a4"
+           ]
+          },
+          "roles": {
+           "type": "array",
+           "description": "List of people assigned to roles in the Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "person_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the Person assigned to the role.",
+              "example": "572a480a-637e-4d0e-a02e-246b0181562c"
+             },
+             "job_title_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "UUID of the Job Title associated with the role. If omitted, the Person's default Job Title is used.",
+              "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+             }
+            }
+           }
+          },
+          "categories": {
+           "type": "array",
+           "description": "List of Categories and their Subcategories within the Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "name": {
+              "type": "string",
+              "description": "The name of the Category.",
+              "example": "Phase 1"
+             },
+             "subcategories": {
+              "type": "array",
+              "description": "Subcategories within the Category.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "Name of the Subcategory.",
+                 "example": "North Lot"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "tag_instances": {
+           "type": "array",
+           "description": "List of Tags associated with the Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "tag_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the applied Tag.",
+              "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+             }
+            }
+           }
+          },
+          "wage_overrides": {
+           "type": "array",
+           "description": "List of Wage Overrides set for specific Job Titles on this Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "job_title_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the Job Title.",
+              "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+             },
+             "rate": {
+              "type": "number",
+              "description": "Hourly wage override for the Job Title.",
+              "example": 35
+             }
+            }
+           }
+          },
+          "created_at": {
+           "type": "integer",
+           "format": "int64",
+           "description": "Timestamp when the Project was created.",
+           "example": 1508251600000
+          },
+          "updated_at": {
+           "type": "integer",
+           "format": "int64",
+           "description": "Timestamp when the Project was last updated.",
+           "example": 1509251600000
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/projects": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a Groups Projects",
+    "description": "Get the projects for a given company ID and group ID",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     },
+     {
+      "name": "name",
+      "in": "query",
+      "description": "Filters items by their exact name. The query performs an exact match. Example usage: `/v2/companies/{company_id}/...?name=Bridge+Restoration`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "Bridge Restoration"
+     },
+     {
+      "name": "project_number",
+      "in": "query",
+      "description": "Filters items by their exact project number. The query performs an exact match. Example usage: `/v2/companies/{company_id}/...?project_number=BR-2024`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "BR-2024"
+     },
+     {
+      "name": "custom_fields_integration_name",
+      "in": "query",
+      "description": "Filter results by a **Custom Field's** `integration_name`. This allows searching based on custom-defined attributes in the system. Example usage: `/v2/companies/{company_id}/...?my_custom_field=northwest`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "northwest"
+     },
+     {
+      "name": "created_at",
+      "in": "query",
+      "description": "Filters items based on their creation timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_before",
+      "in": "query",
+      "description": "Filters items created on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_after",
+      "in": "query",
+      "description": "Filters items created on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_at",
+      "in": "query",
+      "description": "Filters items based on their last updated timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_before",
+      "in": "query",
+      "description": "Filters items updated on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_after",
+      "in": "query",
+      "description": "Filters items updated on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns array of Project objects.",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a single Project.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Project.",
+            "example": "a3d9f4e2-8f9b-4c8a-ae89-12d7a68e95b3"
+           },
+           "name": {
+            "type": "string",
+            "description": "The name of the Project.",
+            "example": "Airport Concourse"
+           },
+           "project_number": {
+            "type": "string",
+            "description": "Unique identifier for the Project used internally.",
+            "example": "1zx212ms"
+           },
+           "status": {
+            "type": "string",
+            "enum": [
+             "active",
+             "pending",
+             "inactive"
+            ],
+            "description": "The status of the Project, controlling visibility and filtering.",
+            "example": "active"
+           },
+           "start_date": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Project's start date in Epoch time.",
+            "example": 1509771600000
+           },
+           "est_end_date": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Estimated end date for the Project in Epoch time.",
+            "example": null
+           },
+           "closed_date": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "If the Project is closed, this is the closed date in Epoch time.",
+            "example": null
+           },
+           "timezone": {
+            "type": "string",
+            "description": "Timezone used for scheduling outbound messages.",
+            "example": "America/Los_Angeles"
+           },
+           "color": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6})$",
+            "description": "Hexadecimal color code for categorization.",
+            "example": "#53A9FF"
+           },
+           "daily_start_time": {
+            "type": "string",
+            "description": "Default start time for the Project's workday.",
+            "example": "7:30 am"
+           },
+           "daily_end_time": {
+            "type": "string",
+            "description": "Default end time for the Project's workday.",
+            "example": "3:30 pm"
+           },
+           "bid_rate": {
+            "type": "number",
+            "description": "Project bid rate.",
+            "example": 20
+           },
+           "percent_complete": {
+            "type": "number",
+            "description": "Percentage of the Project completed.",
+            "example": 30
+           },
+           "customer_name": {
+            "type": "string",
+            "description": "The name of the customer for the Project.",
+            "example": "City of Los Angeles"
+           },
+           "project_type": {
+            "type": "string",
+            "description": "Internal categorical classification for the Project.",
+            "example": "Airport"
+           },
+           "address_1": {
+            "type": "string",
+            "description": "The first part of the Project's address.",
+            "example": "1111 S Figueroa St"
+           },
+           "address_2": {
+            "type": "string",
+            "nullable": true,
+            "description": "The second part of the Project's address.",
+            "example": "Building 17"
+           },
+           "city_town": {
+            "type": "string",
+            "description": "The city or town where the Project is located.",
+            "example": "Los Angeles"
+           },
+           "state_province": {
+            "type": "string",
+            "description": "The state or province where the Project is located.",
+            "example": "KS"
+           },
+           "zipcode": {
+            "type": "string",
+            "description": "The postal/zip code of the Project.",
+            "example": "66085"
+           },
+           "country": {
+            "type": "string",
+            "description": "The country where the Project is located.",
+            "example": "United States"
+           },
+           "stage": {
+            "type": "string",
+            "description": "The stage of the Project .",
+            "example": "Course of Construction"
+           },
+           "stage_id": {
+            "type": "integer",
+            "description": "The ID of the project stage.",
+            "example": 12345
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "List of UUIDs representing the Groups associated with the Project.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+             "2ec02e52-8a14-4689-adec-bbd6161e37a4"
+            ]
+           },
+           "roles": {
+            "type": "array",
+            "description": "List of people assigned to roles in the Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "person_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID of the Person assigned to the role.",
+               "example": "572a480a-637e-4d0e-a02e-246b0181562c"
+              },
+              "job_title_id": {
+               "type": "string",
+               "format": "uuid",
+               "nullable": true,
+               "description": "UUID of the Job Title associated with the role. If omitted, the Person's default Job Title is used.",
+               "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+              }
+             }
+            }
+           },
+           "categories": {
+            "type": "array",
+            "description": "List of Categories and their Subcategories within the Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "name": {
+               "type": "string",
+               "description": "The name of the Category.",
+               "example": "Phase 1"
+              },
+              "subcategories": {
+               "type": "array",
+               "description": "Subcategories within the Category.",
+               "items": {
+                "type": "object",
+                "properties": {
+                 "name": {
+                  "type": "string",
+                  "description": "Name of the Subcategory.",
+                  "example": "North Lot"
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "tag_instances": {
+            "type": "array",
+            "description": "List of Tags associated with the Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "tag_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID of the applied Tag.",
+               "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+              }
+             }
+            }
+           },
+           "wage_overrides": {
+            "type": "array",
+            "description": "List of Wage Overrides set for specific Job Titles on this Project.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "job_title_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID of the Job Title.",
+               "example": "38f2a244-365f-409e-8e94-60bbae1097a6"
+              },
+              "rate": {
+               "type": "number",
+               "description": "Hourly wage override for the Job Title.",
+               "example": 35
+              }
+             }
+            }
+           },
+           "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp when the Project was created.",
+            "example": 1508251600000
+           },
+           "updated_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp when the Project was last updated.",
+            "example": 1509251600000
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Group Projects endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/projects",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#get-a-groups-projects"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/tags": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Tag Instance to Project",
+    "description": "To make a Tag available to a Project, send a `tag_id` in the POST body. A successful response will return the newly created Tag Instance UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for adding a Tag to a Project.",
+        "required": [
+         "tag_id"
+        ],
+        "properties": {
+         "tag_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID reference of the Tag to be applied to the Project.",
+          "example": "94186279-fa66-42c6-a2ca-f44dde84f584"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Tag Instance ID.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "UUID representing the applied Tag Instance.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Project Tag endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/projects/{project_id}/tags",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#add-tag-instance-to-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/tags/{tag_instance_id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove Tag Instance from Project",
+    "description": "Remove a Tag from a Project by specifying its `tag_instance_id`. A successful response returns the removed Tag Instance UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "tag_instance_id",
+      "in": "path",
+      "description": "Unique identifier for the tag instance",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Tag Instance ID.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "UUID representing the applied Tag Instance.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Project Tag endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/projects/{project_id}/tags/{tag_instance_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#remove-tag-instance-from-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Category to Project",
+    "description": "Add a new Category to a Project. Subcategories can also be provided. A successful response returns the new Category UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for adding a Category to a Project.",
+        "required": [
+         "name"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the Category.",
+          "example": "Phase 1"
+         },
+         "subcategories": {
+          "type": "array",
+          "description": "List of Subcategories under this Category. If no Subcategories are needed, this can be an empty array.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "The name of the Subcategory.",
+             "example": "Night Shift"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a Category ID.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "The unique identifier of the Category.",
+           "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Project Category endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#add-category-to-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories/{category_id}": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Category Name",
+    "description": "Update a Category\u2019s name within a Project. A successful response returns all Categories for the Project.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "category_id",
+      "in": "path",
+      "description": "Unique identifier for the Category.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for updating a Category within a Project.",
+        "required": [
+         "name"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The updated name of the Category.",
+          "example": "Phase 1a"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Represents the categories within a Project.",
+         "properties": {
+          "categories": {
+           "type": "array",
+           "description": "List of categories associated with the Project.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the Category.",
+              "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the Category.",
+              "example": "Phase 1"
+             },
+             "subcategories": {
+              "type": "array",
+              "description": "List of subcategories within the Category.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "format": "uuid",
+                 "description": "Unique identifier for the Subcategory.",
+                 "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Name of the Subcategory.",
+                 "example": "North Lot"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Project Category endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories/{category_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#update-category-name"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Category",
+    "description": "Delete a Category from a Project. Assignments will be moved to the default \"None\" category. A successful response returns the deleted Category ID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "category_id",
+      "in": "path",
+      "description": "Unique identifier for the Category.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a Category ID.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "The unique identifier of the Category.",
+           "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Project Category endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories/{category_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#delete-category"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories/{category_id}/subcategories": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Subcategory to Category",
+    "description": "Add a Subcategory to a Category in a Project. A successful response returns the new Subcategory UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "category_id",
+      "in": "path",
+      "description": "Unique identifier for the Category.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for adding a Subcategory to a Category within a Project.",
+        "required": [
+         "name"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Name of the Subcategory to be added.",
+          "example": "Temp Workers"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema for a Subcategory ID response.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Subcategory.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Project Category Subcategory endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories/{category_id}/subcategories",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#add-subcategory-to-category"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories/{category_id}/subcategories/{subcategory_id}": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Subcategory Name",
+    "description": "Update a Subcategory\u2019s name within a Category. A successful response returns the updated Subcategory UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "category_id",
+      "in": "path",
+      "description": "Unique identifier for the Category.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+     },
+     {
+      "name": "subcategory_id",
+      "in": "path",
+      "description": "Unique identifier for the Subcategory.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for updating a Subcategory in a Project.",
+        "required": [
+         "name"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The new name for the Subcategory.",
+          "example": "Updated Subcategory Name"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema for a Subcategory ID response.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Subcategory.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Subcategory",
+    "description": "Delete a Subcategory from a Project. Assignments will lose their subcategory. A successful response returns the deleted Subcategory UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "category_id",
+      "in": "path",
+      "description": "Unique identifier for the Category.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+     },
+     {
+      "name": "subcategory_id",
+      "in": "path",
+      "description": "Unique identifier for the Subcategory.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema for a Subcategory ID response.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Subcategory.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Project Category Subcategory endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/projects/{project_id}/categories/{category_id}/subcategories/{subcategory_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#delete-subcategory"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/wage-overrides": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Wage Override",
+    "description": "Add a Wage Override for a specific Job Title in a Project. A successful response returns the new Wage Override UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for adding a Wage Override to a Project.",
+        "required": [
+         "job_title_id",
+         "rate"
+        ],
+        "properties": {
+         "job_title_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Job Title for which the Wage Override applies.",
+          "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+         },
+         "rate": {
+          "type": "number",
+          "description": "Hourly wage rate override for the specified Job Title.",
+          "example": 35
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema representing the ID of a Wage Override.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Wage Override.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Project Wage Override endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/projects/{project_id}/wage-overrides",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#add-wage-override"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/wage-overrides/{wage_override_id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Wage Override",
+    "description": "Delete a Wage Override from a Project. A successful response returns the removed Wage Override UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "wage_override_id",
+      "in": "path",
+      "description": "Unique identifier for the Wage Override.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema representing the ID of a Wage Override.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Wage Override.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Project Wage Override endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/projects/{project_id}/wage-overrides/{wage_override_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#delete-wage-override"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/roles": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Role to Project",
+    "description": "Assign a Person to a Role in a Project. A successful response returns the new Role UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for adding a Role to a Project.",
+        "required": [
+         "person_id"
+        ],
+        "properties": {
+         "person_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Person being assigned the Role.",
+          "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+         },
+         "job_title_id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true,
+          "description": "UUID of the Job Title for the Role. If omitted, the Person's default Job Title is used.",
+          "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema representing the ID of a Role assigned to a Project.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Role assigned to a Project.",
+           "example": "d7852dc1-f466-467b-8e64-4fa74ac16e4a"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Project Role endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/projects/{project_id}/roles",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#add-role-to-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/roles/{role_id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove Role from Project",
+    "description": "Remove a Person from a Role in a Project. A successful response returns the removed Role UUID.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "role_id",
+      "in": "path",
+      "description": "Unique identifier for the Role in the Project.",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "example": "d7852dc1-f466-467b-8e64-4fa74ac16e4a"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Schema representing the ID of a Role assigned to a Project.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Role assigned to a Project.",
+           "example": "d7852dc1-f466-467b-8e64-4fa74ac16e4a"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Project Role endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/projects/{project_id}/roles/{role_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "resource-planning-projects?version=1.0#remove-role-from-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/groups": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Project to Group",
+    "description": "Add a Project to a Group. A successful response returns the full list of Group IDs for the Project.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for specifying a Group ID.",
+        "required": [
+         "group_id"
+        ],
+        "properties": {
+         "group_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Group.",
+          "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a list of Group IDs.",
+         "properties": {
+          "group_ids": {
+           "type": "array",
+           "description": "Array of unique identifiers for Groups.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+            "2d2ad78e-c6de-467e-8413-c616b55294a5",
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/projects/{project_id}/groups/{group_id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove Project from Group",
+    "description": "Remove a Project from a Group. A successful response returns the updated list of Group IDs for the Project.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a list of Group IDs.",
+         "properties": {
+          "group_ids": {
+           "type": "array",
+           "description": "Array of unique identifiers for Groups.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+            "2d2ad78e-c6de-467e-8413-c616b55294a5",
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

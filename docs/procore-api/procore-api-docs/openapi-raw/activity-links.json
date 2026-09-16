@@ -1,0 +1,550 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Activity Links",
+  "version": "2.0",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Activity Links",
+  "x-tool-category": "Scheduling",
+  "x-product-lines": [
+   "schedule-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/activity_links": {
+   "get": {
+    "tags": [
+     "activity-links-controller"
+    ],
+    "summary": "List Activity Links",
+    "description": "List all activity links in a schedule",
+    "operationId": "listActivityLinks",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Filter activity links by ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[from_activity]",
+      "in": "query",
+      "description": "Filter activity links by predecessor activity IDs (bracket list syntax like [1,2])",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[to_activity]",
+      "in": "query",
+      "description": "Filter activity links by successor activity IDs (bracket list syntax like [1,2])",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[updated_at][gt]",
+      "in": "query",
+      "description": "Filter for activity links updated after this timestamp (ISO 8601)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort by supported fields. Accepts comma separated values to sort by multiple fields. Order is ascending by default, prefix field with '-' for descending",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "id",
+        "from_activity",
+        "to_activity",
+        "updated_at"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved activity links",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int32"
+        }
+       },
+       "Total": {
+        "description": "Total number of records available",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int64"
+        }
+       },
+       "Link": {
+        "description": "Link header for the first, prev, next, and the last page links",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The unique identifier for the activity link",
+              "example": "98765",
+              "pattern": "^\\d+$"
+             },
+             "from_activity": {
+              "type": "string",
+              "description": "The ID of the predecessor activity",
+              "example": "418600"
+             },
+             "to_activity": {
+              "type": "string",
+              "description": "The ID of the successor activity",
+              "example": "418700"
+             },
+             "relationship_type": {
+              "type": "string",
+              "description": "The type of dependency relationship (SS, SF, FS, FF)",
+              "example": "FS"
+             },
+             "lag": {
+              "type": "number",
+              "format": "float",
+              "description": "The time delay between the activities",
+              "example": 2.5
+             },
+             "lag_unit": {
+              "type": "string",
+              "description": "The unit of time for the lag",
+              "example": "hour"
+             },
+             "lag_display_unit": {
+              "type": "string",
+              "description": "The unit in which lag is displayed in the UI",
+              "example": "hours"
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Indicates whether the dependency is active",
+              "example": true
+             },
+             "schedule_id": {
+              "type": "string",
+              "description": "The ID of the schedule",
+              "example": "15",
+              "pattern": "^\\d+$"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "Procore Project ID",
+              "example": "12345",
+              "pattern": "^\\d+$"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Procore Company ID",
+              "example": "67890",
+              "pattern": "^\\d+$"
+             },
+             "created_at": {
+              "type": "string",
+              "description": "The date and time the link was created (ISO 8601 format)",
+              "example": "2024-05-14T13:30:00Z"
+             },
+             "created_by": {
+              "type": "string",
+              "description": "The ID of the user who created the link",
+              "example": "1001",
+              "pattern": "^\\d+$"
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "The date and time the link was updated (ISO 8601 format)",
+              "example": "2024-05-15T10:30:00Z"
+             },
+             "updated_by": {
+              "type": "string",
+              "description": "The ID of the user who updated the link",
+              "example": "1002",
+              "pattern": "^\\d+$"
+             }
+            },
+            "required": [
+             "company_id",
+             "created_at",
+             "created_by",
+             "from_activity",
+             "id",
+             "project_id",
+             "relationship_type",
+             "schedule_id",
+             "to_activity"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links',\n  qs: {\n    'filters[id]': 'SOME_STRING_VALUE',\n    'filters[from_activity]': 'SOME_STRING_VALUE',\n    'filters[to_activity]': 'SOME_STRING_VALUE',\n    'filters[updated_at][gt]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links?filters%5Bid%5D=SOME_STRING_VALUE&filters%5Bfrom_activity%5D=SOME_STRING_VALUE&filters%5Bto_activity%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links?filters%5Bid%5D=SOME_STRING_VALUE&filters%5Bfrom_activity%5D=SOME_STRING_VALUE&filters%5Bto_activity%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links?filters%5Bid%5D=SOME_STRING_VALUE&filters%5Bfrom_activity%5D=SOME_STRING_VALUE&filters%5Bto_activity%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D%5Bgt%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/activity_links/{activity_link_id}": {
+   "get": {
+    "tags": [
+     "activity-links-controller"
+    ],
+    "summary": "Get Activity Link by ID",
+    "description": "Get a single activity link by its id",
+    "operationId": "getActivityLinkById",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "activity_link_id",
+      "in": "path",
+      "description": "Activity Link ID",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d+$"
+      },
+      "example": "15"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved activity link",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The unique identifier for the activity link",
+             "example": "98765",
+             "pattern": "^\\d+$"
+            },
+            "from_activity": {
+             "type": "string",
+             "description": "The ID of the predecessor activity",
+             "example": "418600"
+            },
+            "to_activity": {
+             "type": "string",
+             "description": "The ID of the successor activity",
+             "example": "418700"
+            },
+            "relationship_type": {
+             "type": "string",
+             "description": "The type of dependency relationship (SS, SF, FS, FF)",
+             "example": "FS"
+            },
+            "lag": {
+             "type": "number",
+             "format": "float",
+             "description": "The time delay between the activities",
+             "example": 2.5
+            },
+            "lag_unit": {
+             "type": "string",
+             "description": "The unit of time for the lag",
+             "example": "hour"
+            },
+            "lag_display_unit": {
+             "type": "string",
+             "description": "The unit in which lag is displayed in the UI",
+             "example": "hours"
+            },
+            "active": {
+             "type": "boolean",
+             "description": "Indicates whether the dependency is active",
+             "example": true
+            },
+            "schedule_id": {
+             "type": "string",
+             "description": "The ID of the schedule",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            },
+            "created_at": {
+             "type": "string",
+             "description": "The date and time the link was created (ISO 8601 format)",
+             "example": "2024-05-14T13:30:00Z"
+            },
+            "created_by": {
+             "type": "string",
+             "description": "The ID of the user who created the link",
+             "example": "1001",
+             "pattern": "^\\d+$"
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time the link was updated (ISO 8601 format)",
+             "example": "2024-05-15T10:30:00Z"
+            },
+            "updated_by": {
+             "type": "string",
+             "description": "The ID of the user who updated the link",
+             "example": "1002",
+             "pattern": "^\\d+$"
+            }
+           },
+           "required": [
+            "company_id",
+            "created_at",
+            "created_by",
+            "from_activity",
+            "id",
+            "project_id",
+            "relationship_type",
+            "schedule_id",
+            "to_activity"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links/15'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links/15\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links/15"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/activity_links/15\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

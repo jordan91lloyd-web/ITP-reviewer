@@ -1,0 +1,4001 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Checklist Items",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Inspections",
+  "x-resource-name": "Checklist Items",
+  "version": "1.1",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.1/projects/{project_id}/checklist/list_items": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Checklist (Inspections) Items",
+    "description": "Lists Checklist (Inspections) Items in a specified Project.\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[section_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Checklist Section IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[list_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Checklist List IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "title": "Checklist List Item",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "ID",
+            "example": 2
+           },
+           "details": {
+            "type": "string",
+            "description": "Details",
+            "example": "+/- 1 degrees"
+           },
+           "company_template_item_details": {
+            "type": "string",
+            "description": "Details from the company template item",
+            "example": "+/- 1 degrees"
+           },
+           "item_response": {
+            "title": "ChecklistItemResponse",
+            "type": "object",
+            "description": "Item Response",
+            "nullable": true,
+            "properties": {
+             "item_id": {
+              "type": "integer",
+              "description": "Item ID",
+              "example": 4323
+             },
+             "item_type": {
+              "title": "ChecklistItemType",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 1
+               },
+               "category": {
+                "type": "string",
+                "description": "The category of the Item Type",
+                "example": "multiple_choice"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the Item Type",
+                "example": "default"
+               }
+              }
+             },
+             "payload": {
+              "type": "object",
+              "properties": {
+               "text_value": {
+                "type": "string",
+                "description": "Response for an Open Ended Text Item",
+                "example": "Supplies arrived at 10:00 AM"
+               },
+               "number_value": {
+                "type": "integer",
+                "description": "Response for an Open Ended Number Item",
+                "example": 4232
+               },
+               "date_value": {
+                "type": "string",
+                "format": "date",
+                "description": "Response for an Open Ended Date Item",
+                "example": "2019-01-20"
+               },
+               "response_option": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Response Option ID",
+                  "example": 3432
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Response Option Name",
+                  "example": "Safe"
+                 }
+                }
+               }
+              }
+             },
+             "responded_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp indicating when Response was added",
+              "example": "2018-10-23T21:39:40Z"
+             },
+             "responder": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             },
+             "status": {
+              "type": "string",
+              "description": "Item Status",
+              "example": "conforming"
+             }
+            }
+           },
+           "list_id": {
+            "type": "integer",
+            "description": "List ID",
+            "example": 1
+           },
+           "name": {
+            "type": "string",
+            "description": "Name",
+            "example": "Item 1"
+           },
+           "position": {
+            "type": "integer",
+            "description": "Position",
+            "example": 1
+           },
+           "number": {
+            "type": "string",
+            "description": "Number",
+            "example": "1.1"
+           },
+           "relative_position": {
+            "type": "integer",
+            "description": "Relative Position",
+            "example": 1
+           },
+           "parent_item_id": {
+            "type": "integer",
+            "description": "Parent Inspection Item ID",
+            "example": 34
+           },
+           "responded_with": {
+            "type": "string",
+            "description": "Representation of an Item's Response",
+            "example": "Safe - Knowledge"
+           },
+           "response": {
+            "title": "ChecklistResponse",
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Response",
+              "example": "Safe - Knowledge"
+             },
+             "corresponding_status": {
+              "type": "string",
+              "description": "Corresponding Checklist Item status",
+              "enum": [
+               "yes",
+               "no",
+               "n/a",
+               "none"
+              ],
+              "example": "yes"
+             }
+            }
+           },
+           "response_set": {
+            "title": "ChecklistItemResponseSet",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Item Response Set",
+              "example": "Safety Responses"
+             },
+             "active": {
+              "type": "boolean",
+              "description": "Indicates whether an Item Response Set is available for use.",
+              "example": true
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Represents when an Item Response Set was created",
+              "example": "2012-10-02T21:00:00Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Represents when a Item Response Set was last updated",
+              "example": "2012-10-02T21:00:00Z"
+             },
+             "responses": {
+              "type": "array",
+              "description": "Responses",
+              "items": {
+               "title": "Checklist Response",
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "ID",
+                 "example": 1
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the Response",
+                 "example": "Safe - Knowledge"
+                },
+                "status": {
+                 "type": "string",
+                 "description": "Checklist Item status",
+                 "enum": [
+                  "conforming",
+                  "non_conforming",
+                  "not_applicable"
+                 ],
+                 "example": "non_conforming"
+                },
+                "item_status_id": {
+                 "type": "integer",
+                 "description": "Checklist Item Status ID",
+                 "example": 1
+                }
+               }
+              }
+             },
+             "deletable": {
+              "type": "boolean",
+              "description": "Indicates whether a Response Set is deletable.",
+              "example": true
+             },
+             "procore_standard": {
+              "type": "boolean",
+              "description": "Indicates whether a Response Set is a Procore standard set.",
+              "example": false
+             }
+            }
+           },
+           "section_id": {
+            "type": "integer",
+            "description": "Checklist Section ID",
+            "example": 21
+           },
+           "status": {
+            "type": "string",
+            "description": "Status",
+            "enum": [
+             "yes",
+             "no",
+             "n/a",
+             "none"
+            ],
+            "example": "yes"
+           },
+           "template_item_id": {
+            "type": "integer",
+            "description": "Template Item ID",
+            "example": 3,
+            "nullable": true
+           },
+           "type": {
+            "title": "ChecklistItemType",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "category": {
+              "type": "string",
+              "description": "The category of the Item Type",
+              "example": "multiple_choice"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Item Type",
+              "example": "default"
+             }
+            }
+           },
+           "display_conditions": {
+            "type": "array",
+            "description": "Display Conditions",
+            "items": {
+             "title": "InspectionItemDisplayCondition",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 1
+              },
+              "child_item_id": {
+               "type": "integer",
+               "description": "Child Inspection Item ID",
+               "example": 34
+              },
+              "status_ids": {
+               "type": "array",
+               "description": "Status IDs",
+               "items": {
+                "type": "integer"
+               }
+              },
+              "response_option_ids": {
+               "type": "array",
+               "description": "Response Option IDs",
+               "items": {
+                "type": "integer"
+               }
+              },
+              "created_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Represents when the Item Display Condition was created",
+               "example": "2024-10-02T21:00:00Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Represents when the Item Display Condition was last updated",
+               "example": "2024-10-02T21:00:00Z"
+              }
+             }
+            }
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of last update",
+            "example": "2012-10-23T21:39:40Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/checklist/list_items',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[section_id]': 'SOME_ARRAY_VALUE',\n    'filters[list_id]': 'SOME_ARRAY_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/checklist/list_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bsection_id%5D=SOME_ARRAY_VALUE&filters%5Blist_id%5D=SOME_ARRAY_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/checklist/list_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bsection_id%5D=SOME_ARRAY_VALUE&filters%5Blist_id%5D=SOME_ARRAY_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/checklist/list_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bsection_id%5D=SOME_ARRAY_VALUE&filters%5Blist_id%5D=SOME_ARRAY_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Checklist (Inspections) Items list endpoint",
+      "description": "Get a list of Checklist (Inspections) Items in a specified Project.\nRemoved `default_response_phrasing` from JSON response. Default type Checklist Items now have a Response Set.",
+      "endpoint": "GET /projects/{project_id}/checklist/list_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-05-25",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-items?version=1.1#list-checklist-inspections-items"
+     },
+     {
+      "summary": "Added Display Condition related fields to Checklist (Inspections) Items list endpoint",
+      "description": "Added number, relative_position, parent_item_id, and display_conditions fields to Checklist (Inspections) Items list endpoint.",
+      "endpoint": "GET /projects/{project_id}/checklist/list_items",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2024-12-17",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-items?version=1.1#list-checklist-inspections-items"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/checklist/lists/{list_id}/items/{item_id}/item_attachments": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "list_id",
+     "in": "path",
+     "description": "Checklist ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "item_id",
+     "in": "path",
+     "description": "Checklist Item ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Checklist Item Attachment",
+    "description": "Uploads an Attachment to the specified Checklist Item",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "title": "ChecklistItemAttachment",
+        "type": "object",
+        "required": [
+         "project_id",
+         "section_id"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "The ID of the Project the Item belongs to"
+         },
+         "section_id": {
+          "type": "integer",
+          "description": "The ID of the Section the Item belongs to"
+         },
+         "attachment": {
+          "type": "string",
+          "format": "binary",
+          "description": "Item Attachment.\nTo upload an attachment you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with the `attachment` file."
+         },
+         "document_management_document_revision_id": {
+          "type": "string",
+          "description": "PDM document revision ID to attach to the Checklist Item."
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Checklist Item Attachment",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Attachment ID",
+           "example": 6485
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of creation",
+           "example": "2012-10-23T21:39:40Z"
+          },
+          "created_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "company_name": {
+             "type": "string",
+             "description": "User Company name",
+             "example": "Builders Inc."
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "exampleuser@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "attachment": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 5324
+            },
+            "url": {
+             "type": "string",
+             "description": "URL",
+             "example": "http://www.example.com/"
+            },
+            "filename": {
+             "type": "string",
+             "description": "Filename",
+             "example": "january_receipt_copy.jpg"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "january_receipt_copy.jpg"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "multipart/form-data",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bitem_id%7D/item_attachments',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'multipart/form-data; boundary=---011000010111000001101001'\n  },\n  formData: {\n    project_id: '0',\n    section_id: '0',\n    attachment: 'string',\n    document_management_document_revision_id: 'string'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "multipart/form-data",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"project_id\\\"\\r\\n\\r\\n0\\r\\n-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"section_id\\\"\\r\\n\\r\\n0\\r\\n-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"attachment\\\"\\r\\n\\r\\nstring\\r\\n-----011000010111000001101001\\r\\nContent-Disposition: form-data; name=\\\"document_management_document_revision_id\\\"\\r\\n\\r\\nstring\\r\\n-----011000010111000001101001--\\r\\n\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"multipart/form-data; boundary=---011000010111000001101001\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bitem_id%7D/item_attachments\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "multipart/form-data",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bitem_id%7D/item_attachments \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: multipart/form-data' \\\n  --form project_id=0 \\\n  --form section_id=0 \\\n  --form attachment=string \\\n  --form document_management_document_revision_id=string"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "multipart/form-data",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bitem_id%7D/item_attachments\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new MultipartFormDataContent\n    {\n        new StringContent(\"0\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"project_id\",\n                }\n            }\n        },\n        new StringContent(\"0\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"section_id\",\n                }\n            }\n        },\n        new StringContent(\"string\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"attachment\",\n                }\n            }\n        },\n        new StringContent(\"string\")\n        {\n            Headers =\n            {\n                ContentDisposition = new ContentDispositionHeaderValue(\"form-data\")\n                {\n                    Name = \"document_management_document_revision_id\",\n                }\n            }\n        },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added PDM document revision support to Create Checklist Item Attachment endpoint",
+      "description": "Updated Create Checklist Item Attachment endpoint to accept `document_management_document_revision_id`\nwhen creating item attachments.",
+      "endpoint": "POST /checklist/lists/{list_id}/items/{item_id}/item_attachments",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-05-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-items?version=1.0#create-checklist-item-attachment"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/checklist/lists/{list_id}/items/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "list_id",
+     "in": "path",
+     "description": "Checklist ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Item ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Checklist Item",
+    "description": "Retrieves Checklist Item in a specified Checklist",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "section_id",
+      "in": "query",
+      "description": "Checklist Section ID",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Checklist Section Item",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 2
+          },
+          "name": {
+           "type": "string",
+           "description": "Name",
+           "example": "Item 1"
+          },
+          "details": {
+           "type": "string",
+           "description": "Details",
+           "example": "+/- 1 degrees"
+          },
+          "status": {
+           "type": "string",
+           "description": "Status",
+           "enum": [
+            "yes",
+            "no",
+            "n/a",
+            "none"
+           ],
+           "example": "yes"
+          },
+          "responded_with": {
+           "type": "string",
+           "description": "Representation of an Item's Response",
+           "example": "Safe - Knowledge"
+          },
+          "origin_id": {
+           "type": "integer",
+           "description": "ID of Corresponding Checklist Template Item",
+           "example": 1,
+           "nullable": true
+          },
+          "section_id": {
+           "type": "integer",
+           "description": "Checklist Section ID",
+           "example": 21
+          },
+          "position": {
+           "type": "integer",
+           "description": "Position",
+           "example": 1
+          },
+          "observations": {
+           "type": "array",
+           "description": "Observations created from the Checklist Item",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 2085
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "number": {
+              "type": "string",
+              "description": "Number",
+              "example": 56
+             },
+             "status": {
+              "type": "string",
+              "description": "Status",
+              "example": "initiated"
+             },
+             "title": {
+              "type": "string",
+              "description": "Title",
+              "example": "Clean up paint splatter"
+             },
+             "type": {
+              "type": "object",
+              "description": "Observation Type",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 4952
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Deficiency"
+               }
+              }
+             },
+             "assignee": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             }
+            }
+           }
+          },
+          "attachment_histories": {
+           "type": "array",
+           "description": "Item attachment histories",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Attachment ID",
+              "example": 6485
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             },
+             "attachment": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 5324
+               },
+               "url": {
+                "type": "string",
+                "description": "URL",
+                "example": "http://www.example.com/"
+               },
+               "filename": {
+                "type": "string",
+                "description": "Filename",
+                "example": "january_receipt_copy.jpg"
+               }
+              }
+             }
+            }
+           }
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Item attachments",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Attachment ID",
+              "example": 34
+             },
+             "url": {
+              "type": "string",
+              "description": "Attachment URL",
+              "example": "http://www.example.com/test.pdf"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Attachment filename",
+              "example": "test.pdf"
+             }
+            }
+           }
+          },
+          "histories": {
+           "type": "array",
+           "description": "Item histories",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID"
+             },
+             "body": {
+              "type": "string",
+              "description": "Text describing the status change",
+              "example": "changed the status to yes"
+             },
+             "status": {
+              "type": "string",
+              "example": "yes"
+             },
+             "responded_with": {
+              "type": "string",
+              "description": "Name of Response at time of inspection",
+              "example": "Safe - Knowledge"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             }
+            }
+           }
+          },
+          "item_response": {
+           "title": "ChecklistItemResponse",
+           "type": "object",
+           "description": "Item Response",
+           "nullable": true,
+           "properties": {
+            "item_id": {
+             "type": "integer",
+             "description": "Item ID",
+             "example": 4323
+            },
+            "status": {
+             "type": "string",
+             "description": "Item Status",
+             "example": "conforming"
+            },
+            "responded_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp indicating when Response was added",
+             "example": "2018-10-23T21:39:40Z"
+            },
+            "responder": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 160586
+              },
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "exampleuser@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name",
+               "example": "Carl Contractor"
+              }
+             }
+            },
+            "item_type": {
+             "title": "ChecklistItemType",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 1
+              },
+              "category": {
+               "type": "string",
+               "description": "The category of the Item Type",
+               "example": "multiple_choice"
+              },
+              "name": {
+               "type": "string",
+               "description": "The name of the Item Type",
+               "example": "default"
+              }
+             }
+            },
+            "payload": {
+             "type": "object",
+             "properties": {
+              "text_value": {
+               "type": "string",
+               "description": "Response for an Open Ended Text Item",
+               "example": "Supplies arrived at 10:00 AM"
+              },
+              "number_value": {
+               "type": "integer",
+               "description": "Response for an Open Ended Number Item",
+               "example": 4232
+              },
+              "date_value": {
+               "type": "string",
+               "format": "date",
+               "description": "Response for an Open Ended Date Item",
+               "example": "2019-01-20"
+              },
+              "response_option": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Response Option ID",
+                 "example": 3432
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Response Option Name",
+                 "example": "Safe"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "comments": {
+           "type": "array",
+           "description": "Item comments",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 4798
+             },
+             "body": {
+              "type": "string",
+              "description": "Comment body",
+              "example": "Paint splatter is also on the top panel of the frame."
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             }
+            }
+           }
+          },
+          "response": {
+           "title": "ChecklistResponse",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the Response",
+             "example": "Safe - Knowledge"
+            },
+            "corresponding_status": {
+             "type": "string",
+             "description": "Corresponding Checklist Item status",
+             "enum": [
+              "yes",
+              "no",
+              "n/a",
+              "none"
+             ],
+             "example": "yes"
+            }
+           }
+          },
+          "response_set": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID of the response set",
+             "example": 83
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the response set",
+             "example": "Safety Responses"
+            },
+            "responses": {
+             "type": "array",
+             "items": {
+              "title": "ChecklistResponse",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the Response",
+                "example": "Safe - Knowledge"
+               },
+               "corresponding_status": {
+                "type": "string",
+                "description": "Corresponding Checklist Item status",
+                "enum": [
+                 "yes",
+                 "no",
+                 "n/a",
+                 "none"
+                ],
+                "example": "yes"
+               }
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of creation",
+             "example": "2012-10-23T21:39:40Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of last update",
+             "example": "2012-10-23T21:39:40Z"
+            }
+           }
+          },
+          "response_set_id": {
+           "type": "integer",
+           "description": "Response Set ID",
+           "example": 9,
+           "nullable": true
+          },
+          "type": {
+           "title": "ChecklistItemType",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 1
+            },
+            "category": {
+             "type": "string",
+             "description": "The category of the Item Type",
+             "example": "multiple_choice"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the Item Type",
+             "example": "default"
+            }
+           }
+          },
+          "template_item_id": {
+           "type": "integer",
+           "description": "Template Item ID",
+           "example": 3,
+           "nullable": true
+          },
+          "response_type_id": {
+           "type": "integer",
+           "description": "Response Type ID",
+           "example": 3
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of last update",
+           "example": "2012-10-23T21:39:40Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE', section_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D?project_id=SOME_INTEGER_VALUE&section_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D?project_id=SOME_INTEGER_VALUE&section_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D?project_id=SOME_INTEGER_VALUE&section_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Checklist Item",
+    "description": "Updates Checklist Item in a specified Checklist",
+    "x-deprecated-at": "2022-01-27",
+    "deprecated": true,
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "ChecklistItemBody",
+        "type": "object",
+        "required": [
+         "project_id",
+         "section_id",
+         "item"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "The ID of the Project the Item belongs to"
+         },
+         "section_id": {
+          "type": "integer",
+          "description": "The ID of the Section the Item belongs to"
+         },
+         "item": {
+          "title": "Item",
+          "type": "object",
+          "description": "Item object",
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "The Name of the Item"
+           },
+           "position": {
+            "type": "integer",
+            "description": "The Position of the Item"
+           },
+           "status": {
+            "type": "string",
+            "description": "The Status of the item",
+            "example": "yes",
+            "enum": [
+             "yes",
+             "no",
+             "n/a",
+             "none"
+            ]
+           },
+           "response_id": {
+            "type": "integer",
+            "description": "ID of the response if using multiple response sets, otherwise null",
+            "example": 5
+           },
+           "item_attachments_attributes": {
+            "type": "array",
+            "description": "An array of the Item's Attachments attributes",
+            "items": {
+             "type": "object",
+             "properties": {
+              "prostore_file_id": {
+               "type": "integer",
+               "description": "Attachment prostore file id"
+              },
+              "created_by_id": {
+               "type": "integer",
+               "description": "Attachment created by id"
+              },
+              "item_id": {
+               "type": "integer",
+               "description": "Attachment item id"
+              },
+              "from_mobile": {
+               "type": "boolean",
+               "description": "Attachment from mobile status",
+               "default": false
+              }
+             }
+            }
+           }
+          }
+         },
+         "attachments": {
+          "type": "array",
+          "description": "Item's Attachments.\nTo upload attachments you must upload the entire payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `attachments[]` as files.",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Checklist Section Item",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 2
+          },
+          "name": {
+           "type": "string",
+           "description": "Name",
+           "example": "Item 1"
+          },
+          "details": {
+           "type": "string",
+           "description": "Details",
+           "example": "+/- 1 degrees"
+          },
+          "status": {
+           "type": "string",
+           "description": "Status",
+           "enum": [
+            "yes",
+            "no",
+            "n/a",
+            "none"
+           ],
+           "example": "yes"
+          },
+          "responded_with": {
+           "type": "string",
+           "description": "Representation of an Item's Response",
+           "example": "Safe - Knowledge"
+          },
+          "origin_id": {
+           "type": "integer",
+           "description": "ID of Corresponding Checklist Template Item",
+           "example": 1,
+           "nullable": true
+          },
+          "section_id": {
+           "type": "integer",
+           "description": "Checklist Section ID",
+           "example": 21
+          },
+          "position": {
+           "type": "integer",
+           "description": "Position",
+           "example": 1
+          },
+          "observations": {
+           "type": "array",
+           "description": "Observations created from the Checklist Item",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 2085
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "number": {
+              "type": "string",
+              "description": "Number",
+              "example": 56
+             },
+             "status": {
+              "type": "string",
+              "description": "Status",
+              "example": "initiated"
+             },
+             "title": {
+              "type": "string",
+              "description": "Title",
+              "example": "Clean up paint splatter"
+             },
+             "type": {
+              "type": "object",
+              "description": "Observation Type",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 4952
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Deficiency"
+               }
+              }
+             },
+             "assignee": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             }
+            }
+           }
+          },
+          "attachment_histories": {
+           "type": "array",
+           "description": "Item attachment histories",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Attachment ID",
+              "example": 6485
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             },
+             "attachment": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 5324
+               },
+               "url": {
+                "type": "string",
+                "description": "URL",
+                "example": "http://www.example.com/"
+               },
+               "filename": {
+                "type": "string",
+                "description": "Filename",
+                "example": "january_receipt_copy.jpg"
+               }
+              }
+             }
+            }
+           }
+          },
+          "attachments": {
+           "type": "array",
+           "description": "Item attachments",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Attachment ID",
+              "example": 34
+             },
+             "url": {
+              "type": "string",
+              "description": "Attachment URL",
+              "example": "http://www.example.com/test.pdf"
+             },
+             "filename": {
+              "type": "string",
+              "description": "Attachment filename",
+              "example": "test.pdf"
+             }
+            }
+           }
+          },
+          "histories": {
+           "type": "array",
+           "description": "Item histories",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID"
+             },
+             "body": {
+              "type": "string",
+              "description": "Text describing the status change",
+              "example": "changed the status to yes"
+             },
+             "status": {
+              "type": "string",
+              "example": "yes"
+             },
+             "responded_with": {
+              "type": "string",
+              "description": "Name of Response at time of inspection",
+              "example": "Safe - Knowledge"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             }
+            }
+           }
+          },
+          "item_response": {
+           "title": "ChecklistItemResponse",
+           "type": "object",
+           "description": "Item Response",
+           "nullable": true,
+           "properties": {
+            "item_id": {
+             "type": "integer",
+             "description": "Item ID",
+             "example": 4323
+            },
+            "status": {
+             "type": "string",
+             "description": "Item Status",
+             "example": "conforming"
+            },
+            "responded_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp indicating when Response was added",
+             "example": "2018-10-23T21:39:40Z"
+            },
+            "responder": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 160586
+              },
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "exampleuser@example.com"
+              },
+              "name": {
+               "type": "string",
+               "description": "Name",
+               "example": "Carl Contractor"
+              }
+             }
+            },
+            "item_type": {
+             "title": "ChecklistItemType",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 1
+              },
+              "category": {
+               "type": "string",
+               "description": "The category of the Item Type",
+               "example": "multiple_choice"
+              },
+              "name": {
+               "type": "string",
+               "description": "The name of the Item Type",
+               "example": "default"
+              }
+             }
+            },
+            "payload": {
+             "type": "object",
+             "properties": {
+              "text_value": {
+               "type": "string",
+               "description": "Response for an Open Ended Text Item",
+               "example": "Supplies arrived at 10:00 AM"
+              },
+              "number_value": {
+               "type": "integer",
+               "description": "Response for an Open Ended Number Item",
+               "example": 4232
+              },
+              "date_value": {
+               "type": "string",
+               "format": "date",
+               "description": "Response for an Open Ended Date Item",
+               "example": "2019-01-20"
+              },
+              "response_option": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "Response Option ID",
+                 "example": 3432
+                },
+                "name": {
+                 "type": "string",
+                 "description": "Response Option Name",
+                 "example": "Safe"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "comments": {
+           "type": "array",
+           "description": "Item comments",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 4798
+             },
+             "body": {
+              "type": "string",
+              "description": "Comment body",
+              "example": "Paint splatter is also on the top panel of the frame."
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             }
+            }
+           }
+          },
+          "response": {
+           "title": "ChecklistResponse",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 1
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the Response",
+             "example": "Safe - Knowledge"
+            },
+            "corresponding_status": {
+             "type": "string",
+             "description": "Corresponding Checklist Item status",
+             "enum": [
+              "yes",
+              "no",
+              "n/a",
+              "none"
+             ],
+             "example": "yes"
+            }
+           }
+          },
+          "response_set": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID of the response set",
+             "example": 83
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the response set",
+             "example": "Safety Responses"
+            },
+            "responses": {
+             "type": "array",
+             "items": {
+              "title": "ChecklistResponse",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the Response",
+                "example": "Safe - Knowledge"
+               },
+               "corresponding_status": {
+                "type": "string",
+                "description": "Corresponding Checklist Item status",
+                "enum": [
+                 "yes",
+                 "no",
+                 "n/a",
+                 "none"
+                ],
+                "example": "yes"
+               }
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of creation",
+             "example": "2012-10-23T21:39:40Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Timestamp of last update",
+             "example": "2012-10-23T21:39:40Z"
+            }
+           }
+          },
+          "response_set_id": {
+           "type": "integer",
+           "description": "Response Set ID",
+           "example": 9,
+           "nullable": true
+          },
+          "type": {
+           "title": "ChecklistItemType",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 1
+            },
+            "category": {
+             "type": "string",
+             "description": "The category of the Item Type",
+             "example": "multiple_choice"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the Item Type",
+             "example": "default"
+            }
+           }
+          },
+          "template_item_id": {
+           "type": "integer",
+           "description": "Template Item ID",
+           "example": 3,
+           "nullable": true
+          },
+          "response_type_id": {
+           "type": "integer",
+           "description": "Response Type ID",
+           "example": 3
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp of last update",
+           "example": "2012-10-23T21:39:40Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    project_id: 0,\n    section_id: 0,\n    item: {\n      name: 'string',\n      position: 0,\n      status: 'yes',\n      response_id: 5,\n      item_attachments_attributes: [{prostore_file_id: 0, created_by_id: 0, item_id: 0, from_mobile: false}]\n    },\n    attachments: ['string']\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":0,\\\"section_id\\\":0,\\\"item\\\":{\\\"name\\\":\\\"string\\\",\\\"position\\\":0,\\\"status\\\":\\\"yes\\\",\\\"response_id\\\":5,\\\"item_attachments_attributes\\\":[{\\\"prostore_file_id\\\":0,\\\"created_by_id\\\":0,\\\"item_id\\\":0,\\\"from_mobile\\\":false}]},\\\"attachments\\\":[\\\"string\\\"]}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":0,\"section_id\":0,\"item\":{\"name\":\"string\",\"position\":0,\"status\":\"yes\",\"response_id\":5,\"item_attachments_attributes\":[{\"prostore_file_id\":0,\"created_by_id\":0,\"item_id\":0,\"from_mobile\":false}]},\"attachments\":[\"string\"]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/checklist/lists/%7Blist_id%7D/items/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"project_id\\\":0,\\\"section_id\\\":0,\\\"item\\\":{\\\"name\\\":\\\"string\\\",\\\"position\\\":0,\\\"status\\\":\\\"yes\\\",\\\"response_id\\\":5,\\\"item_attachments_attributes\\\":[{\\\"prostore_file_id\\\":0,\\\"created_by_id\\\":0,\\\"item_id\\\":0,\\\"from_mobile\\\":false}]},\\\"attachments\\\":[\\\"string\\\"]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Update Checklist Item endpoint is deprecated",
+      "description": "This endpoint is deprecated. Please see\n\n'POST /rest/v1.0/projects/{project_id}/checklist/items/{item_id}/item_response'\n'DELETE /rest/v1.0/projects/{project_id}/checklist/items/{item_id}/item_response'\n\nwhich is related, but only creates/deletes an item response.\n\nLink to relevant documentation - [Create Checklist Item Response](https://developers.procore.com/reference/rest/v1/checklist-items?version=1.0#create-checklist-item-response)\nand [Delete Checklist Item Response](https://developers.procore.com/reference/rest/v1/checklist-items?version=1.0#delete-checklist-item-response)",
+      "endpoint": "PATCH /checklist/lists/{list_id}/items/{id}",
+      "type": "deprecated",
+      "breaking": false,
+      "datestamp": "2022-01-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-items?version=1.0#update-checklist-item"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/checklist/items/{item_id}/item_response": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "item_id",
+     "in": "path",
+     "description": "Checklist Item ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Checklist Item Response",
+    "description": "Create Checklist Item Response for a specified Checklist Item\n\nChecklist Item Response can have one of the following payload formats (text_value, number_value, date_value, response_option, status)\n\nA specific Item Type can only leverage its corresponding format.\n\n*For instance, Number Items can only leverage a number_value while Date Items can only leverage a date_value.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Checklist Item Response Body",
+        "type": "object",
+        "required": [
+         "item_response"
+        ],
+        "properties": {
+         "item_response": {
+          "title": "Item Response",
+          "type": "object",
+          "description": "Item Response object",
+          "properties": {
+           "status": {
+            "type": "string",
+            "description": "Item Status - Value for Default-Typed items. Allowed values are 'conforming', 'non_conforming', and 'not_applicable'.",
+            "example": "not_applicable"
+           },
+           "response_option_id": {
+            "type": "integer",
+            "description": "Response Option ID - Value for Multiple Choice Response Items",
+            "example": 546
+           },
+           "text_value": {
+            "type": "string",
+            "description": "Text Response - Value for Open Ended Text Items",
+            "example": "Supplies arrived at 10:00 AM"
+           },
+           "number_value": {
+            "type": "integer",
+            "description": "Number Response - Value for Open Ended Number Items",
+            "example": 7.54
+           },
+           "date_value": {
+            "type": "string",
+            "format": "date",
+            "description": "Date Response - Value for Open Ended Date Items. Format should be YYYY-MM-DD",
+            "example": "2019-04-21"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ChecklistItemResponse",
+         "type": "object",
+         "description": "Item Response",
+         "properties": {
+          "item_id": {
+           "type": "integer",
+           "description": "Item ID",
+           "example": 4323
+          },
+          "status": {
+           "type": "string",
+           "description": "Item Status. Possible values are 'conforming', 'non_conforming', and 'not_applicable'.",
+           "example": "conforming"
+          },
+          "responded_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp indicating when Response was added",
+           "example": "2018-10-23T21:39:40Z"
+          },
+          "responder": {
+           "type": "object",
+           "description": "Login Information",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Login Information ID",
+             "example": 1738090
+            },
+            "name": {
+             "type": "string",
+             "description": "User name",
+             "example": "John Doe"
+            },
+            "login": {
+             "type": "string",
+             "description": "User email",
+             "example": "johndoe@example.com"
+            }
+           }
+          },
+          "item_type": {
+           "title": "ChecklistItemType",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 1
+            },
+            "category": {
+             "type": "string",
+             "description": "The category of the Item Type",
+             "example": "multiple_choice"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the Item Type",
+             "example": "default"
+            }
+           }
+          },
+          "payload": {
+           "type": "object",
+           "properties": {
+            "text_value": {
+             "type": "string",
+             "description": "Response for an Open Ended Text Item",
+             "example": "Supplies arrived at 10:00 AM"
+            },
+            "number_value": {
+             "type": "integer",
+             "description": "Response for an Open Ended Number Item",
+             "example": 4232
+            },
+            "date_value": {
+             "type": "string",
+             "format": "date",
+             "description": "Response for an Open Ended Date Item",
+             "example": "2019-01-20"
+            },
+            "response_option": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Response Option ID",
+               "example": 3432
+              },
+              "name": {
+               "type": "string",
+               "description": "Response Option Name",
+               "example": "Safe"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    item_response: {\n      status: 'not_applicable',\n      response_option_id: 546,\n      text_value: 'Supplies arrived at 10:00 AM',\n      number_value: 7.54,\n      date_value: '2019-04-21'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"item_response\\\":{\\\"status\\\":\\\"not_applicable\\\",\\\"response_option_id\\\":546,\\\"text_value\\\":\\\"Supplies arrived at 10:00 AM\\\",\\\"number_value\\\":7.54,\\\"date_value\\\":\\\"2019-04-21\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"item_response\":{\"status\":\"not_applicable\",\"response_option_id\":546,\"text_value\":\"Supplies arrived at 10:00 AM\",\"number_value\":7.54,\"date_value\":\"2019-04-21\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"item_response\\\":{\\\"status\\\":\\\"not_applicable\\\",\\\"response_option_id\\\":546,\\\"text_value\\\":\\\"Supplies arrived at 10:00 AM\\\",\\\"number_value\\\":7.54,\\\"date_value\\\":\\\"2019-04-21\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Checklist Item Response",
+    "description": "Returns the Checklist Item Response for a specified Checklist Item",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ChecklistItemResponse",
+         "type": "object",
+         "description": "Item Response",
+         "properties": {
+          "item_id": {
+           "type": "integer",
+           "description": "Item ID",
+           "example": 4323
+          },
+          "status": {
+           "type": "string",
+           "description": "Item Status. Possible values are 'conforming', 'non_conforming', and 'not_applicable'.",
+           "example": "conforming"
+          },
+          "responded_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Timestamp indicating when Response was added",
+           "example": "2018-10-23T21:39:40Z"
+          },
+          "responder": {
+           "type": "object",
+           "description": "Login Information",
+           "nullable": true,
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Login Information ID",
+             "example": 1738090
+            },
+            "name": {
+             "type": "string",
+             "description": "User name",
+             "example": "John Doe"
+            },
+            "login": {
+             "type": "string",
+             "description": "User email",
+             "example": "johndoe@example.com"
+            }
+           }
+          },
+          "item_type": {
+           "title": "ChecklistItemType",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 1
+            },
+            "category": {
+             "type": "string",
+             "description": "The category of the Item Type",
+             "example": "multiple_choice"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the Item Type",
+             "example": "default"
+            }
+           }
+          },
+          "payload": {
+           "type": "object",
+           "properties": {
+            "text_value": {
+             "type": "string",
+             "description": "Response for an Open Ended Text Item",
+             "example": "Supplies arrived at 10:00 AM"
+            },
+            "number_value": {
+             "type": "integer",
+             "description": "Response for an Open Ended Number Item",
+             "example": 4232
+            },
+            "date_value": {
+             "type": "string",
+             "format": "date",
+             "description": "Response for an Open Ended Date Item",
+             "example": "2019-01-20"
+            },
+            "response_option": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Response Option ID",
+               "example": 3432
+              },
+              "name": {
+               "type": "string",
+               "description": "Response Option Name",
+               "example": "Safe"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Checklist Item Response",
+    "description": "Removes the Checklist Item Response for a specified Checklist Item",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/items/%7Bitem_id%7D/item_response\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/checklist/list_items": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Checklist (Inspections) Items",
+    "description": "Lists Checklist (Inspections) Items in a specified Project.\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[section_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Checklist Section IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[list_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Checklist List IDs",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[item_response_status]",
+      "in": "query",
+      "description": "Filter item(s) with matching item_response status.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "conforming",
+        "non_conforming",
+        "neutral",
+        "not_applicable",
+        "null"
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort item(s) by the chosen param; check below for a list of options. The direction of sorting is ascending by default; for descending sort, insert the - symbol before the param.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "position_by_section"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "title": "Checklist List Item",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "ID",
+            "example": 2
+           },
+           "details": {
+            "type": "string",
+            "description": "Details",
+            "example": "+/- 1 degrees"
+           },
+           "item_response": {
+            "title": "ChecklistItemResponse",
+            "type": "object",
+            "description": "Item Response",
+            "nullable": true,
+            "properties": {
+             "item_id": {
+              "type": "integer",
+              "description": "Item ID",
+              "example": 4323
+             },
+             "item_type": {
+              "title": "ChecklistItemType",
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 1
+               },
+               "category": {
+                "type": "string",
+                "description": "The category of the Item Type",
+                "example": "multiple_choice"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the Item Type",
+                "example": "default"
+               }
+              }
+             },
+             "payload": {
+              "type": "object",
+              "properties": {
+               "text_value": {
+                "type": "string",
+                "description": "Response for an Open Ended Text Item",
+                "example": "Supplies arrived at 10:00 AM"
+               },
+               "number_value": {
+                "type": "integer",
+                "description": "Response for an Open Ended Number Item",
+                "example": 4232
+               },
+               "date_value": {
+                "type": "string",
+                "format": "date",
+                "description": "Response for an Open Ended Date Item",
+                "example": "2019-01-20"
+               },
+               "response_option": {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "description": "Response Option ID",
+                  "example": 3432
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Response Option Name",
+                  "example": "Safe"
+                 }
+                }
+               }
+              }
+             },
+             "responded_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp indicating when Response was added",
+              "example": "2018-10-23T21:39:40Z"
+             },
+             "responder": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "ID",
+                "example": 160586
+               },
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "name": {
+                "type": "string",
+                "description": "Name",
+                "example": "Carl Contractor"
+               }
+              }
+             },
+             "status": {
+              "type": "string",
+              "description": "Item Status",
+              "example": "conforming"
+             }
+            }
+           },
+           "list_id": {
+            "type": "integer",
+            "description": "List ID",
+            "example": 1
+           },
+           "name": {
+            "type": "string",
+            "description": "Name",
+            "example": "Item 1"
+           },
+           "position": {
+            "type": "integer",
+            "description": "Position",
+            "example": 1
+           },
+           "responded_with": {
+            "type": "string",
+            "description": "Representation of an Item's Response",
+            "example": "Safe - Knowledge"
+           },
+           "response": {
+            "title": "ChecklistResponse",
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Response",
+              "example": "Safe - Knowledge"
+             },
+             "corresponding_status": {
+              "type": "string",
+              "description": "Corresponding Checklist Item status",
+              "enum": [
+               "yes",
+               "no",
+               "n/a",
+               "none"
+              ],
+              "example": "yes"
+             }
+            }
+           },
+           "response_set": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID of the response set",
+              "example": 83
+             },
+             "name": {
+              "type": "string",
+              "description": "Name of the response set",
+              "example": "Safety Responses"
+             },
+             "responses": {
+              "type": "array",
+              "items": {
+               "title": "ChecklistResponse",
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "ID",
+                 "example": 1
+                },
+                "name": {
+                 "type": "string",
+                 "description": "The name of the Response",
+                 "example": "Safe - Knowledge"
+                },
+                "corresponding_status": {
+                 "type": "string",
+                 "description": "Corresponding Checklist Item status",
+                 "enum": [
+                  "yes",
+                  "no",
+                  "n/a",
+                  "none"
+                 ],
+                 "example": "yes"
+                },
+                "item_status_id": {
+                 "type": "integer",
+                 "description": "Checklist Item Status ID",
+                 "example": 1
+                }
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of creation",
+              "example": "2012-10-23T21:39:40Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of last update",
+              "example": "2012-10-23T21:39:40Z"
+             }
+            }
+           },
+           "response_type_id": {
+            "type": "integer",
+            "description": "Response Type ID",
+            "example": 9,
+            "nullable": true
+           },
+           "section_id": {
+            "type": "integer",
+            "description": "Checklist Section ID",
+            "example": 21
+           },
+           "status": {
+            "type": "string",
+            "description": "Status",
+            "enum": [
+             "yes",
+             "no",
+             "n/a",
+             "none"
+            ],
+            "example": "yes"
+           },
+           "template_item_id": {
+            "type": "integer",
+            "description": "Template Item ID",
+            "example": 3,
+            "nullable": true
+           },
+           "type": {
+            "title": "ChecklistItemType",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "category": {
+              "type": "string",
+              "description": "The category of the Item Type",
+              "example": "multiple_choice"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Item Type",
+              "example": "default"
+             }
+            }
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of last update",
+            "example": "2012-10-23T21:39:40Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_items',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[section_id]': 'SOME_ARRAY_VALUE',\n    'filters[list_id]': 'SOME_ARRAY_VALUE',\n    'filters[item_response_status]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bsection_id%5D=SOME_ARRAY_VALUE&filters%5Blist_id%5D=SOME_ARRAY_VALUE&filters%5Bitem_response_status%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bsection_id%5D=SOME_ARRAY_VALUE&filters%5Blist_id%5D=SOME_ARRAY_VALUE&filters%5Bitem_response_status%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/checklist/list_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bsection_id%5D=SOME_ARRAY_VALUE&filters%5Blist_id%5D=SOME_ARRAY_VALUE&filters%5Bitem_response_status%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Checklist (Inspections) Items list endpoint",
+      "description": "Get a list of Checklist (Inspections) Items in a specified Project.",
+      "endpoint": "GET /projects/{project_id}/checklist/list_items",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2020-03-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-items?version=1.0#list-checklist-inspections-items"
+     },
+     {
+      "summary": "Added ability to filter Checklist (Inspections) Items by status",
+      "description": "Updated Checklist (Inspections) Item list endpoint to be able to filter by item response status",
+      "endpoint": "GET /projects/{project_id}/checklist/list_items",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-05-30",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-items?version=1.0#list-checklist-inspections-items"
+     },
+     {
+      "summary": "Added ability to sort Checklist (Inspections) Items by position within the Checklist (Inspection) Section",
+      "description": "Updated Checklist (Inspections) Items list endpoint to be able to sort by section and item position.",
+      "endpoint": "GET /projects/{project_id}/checklist/list_items",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-05-30",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "checklist-items?version=1.0#list-checklist-inspections-items"
+     }
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

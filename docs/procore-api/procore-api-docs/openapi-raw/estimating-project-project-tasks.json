@@ -1,0 +1,1007 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Estimating Project Project Tasks",
+  "version": "2.0",
+  "x-product-category": "Preconstruction",
+  "x-tool-category": "Estimating",
+  "x-resource-name": "Estimating Project Project Tasks",
+  "x-product-lines": [
+   "Preconstruction"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/estimating/tasks": {
+   "get": {
+    "tags": [
+     "ProjectTask"
+    ],
+    "summary": "Get project tasks",
+    "operationId": "ProjectTask_GetProjectTasks",
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page number",
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      },
+      "x-position": 1,
+      "required": false
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Items per page",
+      "schema": {
+       "type": "integer",
+       "format": "int32",
+       "default": 10,
+       "maximum": 100
+      },
+      "x-position": 2,
+      "required": false
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 4
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "headers": {
+       "Total": {
+        "description": "Total number of items",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Per-Page": {
+        "description": "Number of items per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Links to other pages",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "array",
+           "nullable": true,
+           "items": {
+            "type": "object",
+            "description": "Represents a task within a bid board project.",
+            "additionalProperties": false,
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The unique identifier of the task.",
+              "nullable": true
+             },
+             "value": {
+              "type": "string",
+              "description": "The description of the task.",
+              "nullable": true
+             },
+             "created_on": {
+              "type": "string",
+              "description": "The date and time when the task was created.",
+              "format": "date-time"
+             },
+             "due_date": {
+              "type": "string",
+              "description": "The due date of the task.",
+              "format": "date-time",
+              "nullable": true,
+              "example": "2027-01-22T16:40:00Z"
+             },
+             "assigned_to_user_id": {
+              "type": "string",
+              "description": "The identifier of the user to whom the task is assigned. For getting assigned_to_user_id look \"company users\" endpoint.",
+              "nullable": true
+             },
+             "completed_by_user_id": {
+              "type": "string",
+              "description": "The identifier of the user who completed the task.",
+              "nullable": true
+             },
+             "completed_on": {
+              "type": "string",
+              "description": "The date and time when the task was completed.",
+              "format": "date-time",
+              "nullable": true
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "The date and time when the task was last updated.",
+              "format": "date-time",
+              "nullable": true,
+              "example": "2026-03-25T13:25:00Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to get Bid Board project tasks",
+      "description": "This endpoint allows retrieving all tasks for a Bid Board project.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/tasks",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-08-23",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/tasks",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "tags": [
+     "ProjectTask"
+    ],
+    "summary": "Create project task",
+    "operationId": "ProjectTask_CreateProjectTask",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "requestBody": {
+     "x-name": "model",
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Represents the data required to create a new bid board project task.",
+        "additionalProperties": false,
+        "required": [
+         "value"
+        ],
+        "properties": {
+         "value": {
+          "type": "string",
+          "description": "The description of the task.",
+          "minLength": 1
+         },
+         "due_date": {
+          "type": "string",
+          "description": "The due date of the task.",
+          "format": "date-time",
+          "nullable": true,
+          "example": "2027-01-22T16:40:00Z"
+         },
+         "assigned_to_user_id": {
+          "type": "string",
+          "description": "The identifier of the user to whom the task is assigned. For getting assigned_to_user_id look \"company users\" endpoint.",
+          "nullable": true
+         }
+        }
+       }
+      }
+     },
+     "required": true,
+     "x-position": 1
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Represents a task within a bid board project.",
+           "additionalProperties": false,
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The unique identifier of the task.",
+             "nullable": true
+            },
+            "value": {
+             "type": "string",
+             "description": "The description of the task.",
+             "nullable": true
+            },
+            "created_on": {
+             "type": "string",
+             "description": "The date and time when the task was created.",
+             "format": "date-time"
+            },
+            "due_date": {
+             "type": "string",
+             "description": "The due date of the task.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2027-01-22T16:40:00Z"
+            },
+            "assigned_to_user_id": {
+             "type": "string",
+             "description": "The identifier of the user to whom the task is assigned. For getting assigned_to_user_id look \"company users\" endpoint.",
+             "nullable": true
+            },
+            "completed_by_user_id": {
+             "type": "string",
+             "description": "The identifier of the user who completed the task.",
+             "nullable": true
+            },
+            "completed_on": {
+             "type": "string",
+             "description": "The date and time when the task was completed.",
+             "format": "date-time",
+             "nullable": true
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time when the task was last updated.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2026-03-25T13:25:00Z"
+            }
+           },
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to create Bid Board project task",
+      "description": "This endpoint allows creating a new task for a Bid Board project.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/estimating/tasks",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-08-23",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/estimating/tasks",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks',\n  headers: {'content-type': 'application/json'},\n  body: {\n    value: 'string',\n    due_date: '2027-01-22T16:40:00Z',\n    assigned_to_user_id: 'string'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"value\\\":\\\"string\\\",\\\"due_date\\\":\\\"2027-01-22T16:40:00Z\\\",\\\"assigned_to_user_id\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks \\\n  --header 'content-type: application/json' \\\n  --data '{\"value\":\"string\",\"due_date\":\"2027-01-22T16:40:00Z\",\"assigned_to_user_id\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks\"),\n    Content = new StringContent(\"{\\\"value\\\":\\\"string\\\",\\\"due_date\\\":\\\"2027-01-22T16:40:00Z\\\",\\\"assigned_to_user_id\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/estimating/tasks/{task_id}": {
+   "get": {
+    "tags": [
+     "ProjectTask"
+    ],
+    "summary": "Get project task by id",
+    "operationId": "ProjectTask_GetProjectTask",
+    "parameters": [
+     {
+      "name": "task_id",
+      "in": "path",
+      "required": true,
+      "description": "Task Id",
+      "schema": {
+       "type": "string",
+       "format": "int64"
+      },
+      "x-position": 1
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Represents a task within a bid board project.",
+           "additionalProperties": false,
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The unique identifier of the task.",
+             "nullable": true
+            },
+            "value": {
+             "type": "string",
+             "description": "The description of the task.",
+             "nullable": true
+            },
+            "created_on": {
+             "type": "string",
+             "description": "The date and time when the task was created.",
+             "format": "date-time"
+            },
+            "due_date": {
+             "type": "string",
+             "description": "The due date of the task.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2027-01-22T16:40:00Z"
+            },
+            "assigned_to_user_id": {
+             "type": "string",
+             "description": "The identifier of the user to whom the task is assigned. For getting assigned_to_user_id look \"company users\" endpoint.",
+             "nullable": true
+            },
+            "completed_by_user_id": {
+             "type": "string",
+             "description": "The identifier of the user who completed the task.",
+             "nullable": true
+            },
+            "completed_on": {
+             "type": "string",
+             "description": "The date and time when the task was completed.",
+             "format": "date-time",
+             "nullable": true
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time when the task was last updated.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2026-03-25T13:25:00Z"
+            }
+           },
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to get Bid Board project task by ID",
+      "description": "This endpoint allows retrieving a task for a Bid Board project by its ID.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/tasks/{task_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-08-23",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/estimating/tasks/{task_id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "tags": [
+     "ProjectTask"
+    ],
+    "summary": "Update project task",
+    "operationId": "ProjectTask_UpdateProjectTask",
+    "parameters": [
+     {
+      "name": "task_id",
+      "in": "path",
+      "required": true,
+      "description": "Task Id",
+      "schema": {
+       "type": "string",
+       "format": "int64"
+      },
+      "x-position": 1
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 4
+     }
+    ],
+    "requestBody": {
+     "x-name": "patch_model",
+     "content": {
+      "application/merge-patch+json": {
+       "schema": {
+        "type": "object",
+        "description": "Represents the data required to update an existing bid board project task.",
+        "additionalProperties": false,
+        "properties": {
+         "value": {
+          "description": "The updated description of the task.",
+          "type": "string",
+          "additionalProperties": false
+         },
+         "due_date": {
+          "description": "The updated due date of the task.",
+          "example": "2027-01-22T16:40:00Z",
+          "type": "string",
+          "additionalProperties": false
+         },
+         "assigned_to_user_id": {
+          "description": "The updated identifier of the user to whom the task is assigned. For getting assigned_to_user_id look \"company users\" endpoint.",
+          "type": "string",
+          "additionalProperties": false
+         },
+         "completed": {
+          "description": "Indicates whether the task is completed. This property is only used for updating completion status via patch request.",
+          "type": "boolean",
+          "additionalProperties": false
+         }
+        }
+       }
+      }
+     },
+     "required": true,
+     "x-position": 2
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "Represents a task within a bid board project.",
+           "additionalProperties": false,
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The unique identifier of the task.",
+             "nullable": true
+            },
+            "value": {
+             "type": "string",
+             "description": "The description of the task.",
+             "nullable": true
+            },
+            "created_on": {
+             "type": "string",
+             "description": "The date and time when the task was created.",
+             "format": "date-time"
+            },
+            "due_date": {
+             "type": "string",
+             "description": "The due date of the task.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2027-01-22T16:40:00Z"
+            },
+            "assigned_to_user_id": {
+             "type": "string",
+             "description": "The identifier of the user to whom the task is assigned. For getting assigned_to_user_id look \"company users\" endpoint.",
+             "nullable": true
+            },
+            "completed_by_user_id": {
+             "type": "string",
+             "description": "The identifier of the user who completed the task.",
+             "nullable": true
+            },
+            "completed_on": {
+             "type": "string",
+             "description": "The date and time when the task was completed.",
+             "format": "date-time",
+             "nullable": true
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "The date and time when the task was last updated.",
+             "format": "date-time",
+             "nullable": true,
+             "example": "2026-03-25T13:25:00Z"
+            }
+           },
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to update Bid Board project task",
+      "description": "This endpoint allows updating a Bid Board project task.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/estimating/tasks/{task_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-08-23",
+      "versions": [
+       "v2.0"
+      ]
+     },
+     {
+      "summary": "Introducing new field to the response models: updated_at",
+      "description": "This field indicates the last time the entity was updated.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/estimating/tasks/{task_id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-04-01",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "tags": [
+     "ProjectTask"
+    ],
+    "summary": "Delete project task",
+    "operationId": "ProjectTask_DeleteProjectTask",
+    "parameters": [
+     {
+      "name": "task_id",
+      "in": "path",
+      "required": true,
+      "description": "Task Id",
+      "schema": {
+       "type": "string",
+       "format": "int64"
+      },
+      "x-position": 1
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": ""
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to delete Bid Board project task",
+      "description": "This endpoint allows deleting a task for a Bid Board project.",
+      "endpoint": "DELETE /companies/{company_id}/projects/{project_id}/estimating/tasks/{task_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-08-23",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/%7Btask_id%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/estimating/tasks/bulk_destroy": {
+   "delete": {
+    "tags": [
+     "ProjectTask"
+    ],
+    "summary": "Bulk delete project tasks",
+    "description": "The request body should be an array of task IDs, representing the tasks to be deleted.",
+    "operationId": "ProjectTask_DeleteProjectTasks",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique company identifier associated with the Procore User Account.",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 2
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique project identifier",
+      "schema": {
+       "type": "string"
+      },
+      "x-position": 3
+     }
+    ],
+    "requestBody": {
+     "x-name": "task_ids",
+     "description": "Array of task IDs",
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "required": true,
+     "x-position": 1
+    },
+    "responses": {
+     "200": {
+      "description": ""
+     }
+    },
+    "x-doc": {
+     "stage": "beta",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-changelog": [
+     {
+      "summary": "Introducing new endpoint to bulk delete Bid Board project tasks",
+      "description": "This endpoint allows bulk deleting tasks for a Bid Board project.",
+      "endpoint": "DELETE /companies/{company_id}/projects/{project_id}/estimating/tasks/bulk_destroy",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-08-23",
+      "versions": [
+       "v2.0"
+      ]
+     }
+    ],
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/bulk_destroy',\n  headers: {'content-type': 'application/json'},\n  body: ['string'],\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"[\\\"string\\\"]\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/bulk_destroy\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/bulk_destroy \\\n  --header 'content-type: application/json' \\\n  --data '[\"string\"]'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/estimating/tasks/bulk_destroy\"),\n    Content = new StringContent(\"[\\\"string\\\"]\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

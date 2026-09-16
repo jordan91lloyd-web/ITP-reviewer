@@ -1,0 +1,3025 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Budget Project Status Snapshots",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Budget Project Status Snapshots",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "budget_view_id",
+     "in": "path",
+     "description": "ID of the budget view",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Project Status Snapshots",
+    "description": "Returns a paginated list of project-level project status snapshots with optional filtering and sorting",
+    "tags": [
+     "Budget",
+     "Project Status Snapshots"
+    ],
+    "parameters": [
+     {
+      "name": "filters[status_id]",
+      "in": "query",
+      "description": "Filter snapshots by PSS custom status ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[approval_status]",
+      "in": "query",
+      "description": "Filter snapshots by approval status.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "approved",
+        "under_review",
+        "custom"
+       ],
+       "example": "approved"
+      }
+     },
+     {
+      "name": "filters[financial_period_id][]",
+      "in": "query",
+      "description": "Filter snapshots by financial period ID. Accepts one or more IDs. Pass the token `null` (or `nil`) as a value to match snapshots that have no financial period. Tokens and IDs can be combined \u2014 e.g. `[\"42\", \"null\"]` matches snapshots in period 42 or with no period.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "example": [
+        "42",
+        "null"
+       ]
+      }
+     },
+     {
+      "name": "comparison_budget_column_ids",
+      "in": "query",
+      "description": "Restrict comparison data to these budget column IDs. When omitted, comparison is returned for all columns.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "example": [
+        "12345",
+        "6789"
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort order for the returned snapshots. Prefix a value with `-` for descending order. `created_at` sorts by when the snapshot was taken; `financial_period` sorts by the associated financial period's date range (snapshots without a financial period sort last when ascending).",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "default": "-created_at",
+       "enum": [
+        "created_at",
+        "-created_at",
+        "financial_period",
+        "-financial_period"
+       ],
+       "example": "-created_at"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The ID of the snapshot",
+              "example": "1234"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the snapshot",
+              "example": "Q4 Budget Review"
+             },
+             "description": {
+              "type": "string",
+              "nullable": true,
+              "description": "A description of the snapshot",
+              "example": "Description"
+             },
+             "approval_status": {
+              "type": "string",
+              "nullable": true,
+              "description": "Approval state of the project status snapshot. Null for ad-hoc snapshots that have no approval workflow.",
+              "enum": [
+               "approved",
+               "under_review",
+               "custom"
+              ],
+              "example": "approved"
+             },
+             "status": {
+              "nullable": true,
+              "allOf": [
+               {
+                "type": "object",
+                "description": "Custom status object.",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "ID of the custom status",
+                  "example": "1234"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Name of the custom status",
+                  "example": "Approved"
+                 },
+                 "mapped_to_status": {
+                  "type": "string",
+                  "enum": [
+                   "open",
+                   "closed",
+                   "void",
+                   "pending"
+                  ],
+                  "description": "The default status this custom status maps to",
+                  "example": "closed"
+                 },
+                 "available": {
+                  "type": "boolean",
+                  "description": "Whether the status is available for selection",
+                  "example": true
+                 },
+                 "initial": {
+                  "type": "boolean",
+                  "description": "Whether this is the initial status for new snapshots",
+                  "example": false
+                 },
+                 "standard_type": {
+                  "type": "string",
+                  "enum": [
+                   "approved",
+                   "under_review",
+                   "custom"
+                  ],
+                  "description": "Origin/category of the status: approved and under_review are Procore-provided; custom is company-defined.",
+                  "example": "approved"
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Created At timestamp",
+                  "example": "2024-01-17T18:09:03Z"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Updated At timestamp",
+                  "example": "2024-01-17T18:09:03Z"
+                 }
+                }
+               }
+              ]
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The ID of the user who created the snapshot",
+                "example": "5678"
+               },
+               "display": {
+                "type": "string",
+                "description": "The display name of the user who created the snapshot",
+                "example": "John Doe"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The time the snapshot request was created",
+              "example": "2024-10-29T14:00:00Z"
+             },
+             "currency_configuration": {
+              "type": "object",
+              "description": "Currency configuration object, the currency for the snapshot",
+              "properties": {
+               "currency_iso_code": {
+                "type": "string",
+                "description": "Currency Configuration ISO code",
+                "example": "USD"
+               }
+              }
+             },
+             "financial_period": {
+              "type": "object",
+              "nullable": true,
+              "description": "The financial period associated with this snapshot. Null when the snapshot was not created within a financial period.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The ID of the financial period",
+                "example": "42"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the financial period",
+                "example": "Q1 2026"
+               },
+               "group_name": {
+                "type": "string",
+                "description": "A user-defined label used to group related financial periods together (e.g., 'FY 2026').",
+                "example": "FY 2026"
+               },
+               "status": {
+                "type": "string",
+                "description": "The status of the financial period. One of open or closed.",
+                "enum": [
+                 "open",
+                 "closed"
+                ],
+                "example": "open"
+               },
+               "start_date": {
+                "type": "string",
+                "format": "date",
+                "description": "The start date of the financial period",
+                "example": "2026-01-01"
+               },
+               "end_date": {
+                "type": "string",
+                "format": "date",
+                "description": "The end date of the financial period",
+                "example": "2026-03-31"
+               }
+              }
+             },
+             "column_totals": {
+              "type": "array",
+              "description": "Array of snapshot totals",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "The ID of the total",
+                 "example": "9012"
+                },
+                "total": {
+                 "type": "string",
+                 "format": "decimal",
+                 "description": "The Snapshot Total",
+                 "example": "1000000.50"
+                },
+                "budget_column_id": {
+                 "type": "string",
+                 "description": "The id of the related budget column",
+                 "example": "1234"
+                },
+                "comparison": {
+                 "type": "object",
+                 "description": "Shows comparison if comparison exists",
+                 "properties": {
+                  "value": {
+                   "type": "string",
+                   "format": "decimal",
+                   "description": "The comparison value",
+                   "example": "950000.00"
+                  },
+                  "delta": {
+                   "type": "string",
+                   "format": "decimal",
+                   "nullable": true,
+                   "description": "The difference between the total and comparison value",
+                   "example": "50000.50"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots',\n  qs: {\n    'filters[status_id]': 'SOME_STRING_VALUE',\n    'filters[approval_status]': 'approved',\n    'filters[financial_period_id][]': ['42', 'null'],\n    comparison_budget_column_ids: ['12345', '6789'],\n    sort: '-created_at',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&comparison_budget_column_ids=12345&comparison_budget_column_ids=6789&sort=-created_at&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&comparison_budget_column_ids=12345&comparison_budget_column_ids=6789&sort=-created_at&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&comparison_budget_column_ids=12345&comparison_budget_column_ids=6789&sort=-created_at&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing Budget Project Status Snapshots",
+      "description": "Introduction of API endpoint for Budget Project Status Snapshot Timeline",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-06-02",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Added status_id filter to Budget Project Status Snapshots endpoint",
+      "description": "Added the ability to filter snapshots by PSS custom status ID on project-level endpoint",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-01-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Add custom value to approval_status",
+      "description": "The `approval_status` field now includes `custom` as a possible value, in addition to `approved` and `under_review`.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-01-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Add status object to response",
+      "description": "Project Status Snapshots now include a `status` object in the response containing custom status details.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Remove approval_status from response and filters",
+      "description": "The `approval_status` field and `filters[approval_status]` parameter have been removed.\nUse the `status` object and `filters[status_id]` instead.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-02-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Add financial_period_id filter to project timeline endpoint",
+      "description": "Add the ability to filter snapshots by one or more financial period IDs.\nPass a single ID or an array of IDs via filters[financial_period_id][].",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Add financial_period to project timeline response",
+      "description": "Each snapshot in the response now includes a `financial_period` object\ncontaining the id, name, group_name, status, start_date, and end_date\nof the associated financial period. Null when no period is associated.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Add financial_period sort option to project timeline endpoint",
+      "description": "The `sort` parameter now accepts `financial_period` and `-financial_period`,\nordering snapshots by their associated financial period's date range.\nSnapshots without a financial period sort last when ascending.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-14",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     },
+     {
+      "summary": "Filter project timeline snapshots by absence of a financial period",
+      "description": "The `filters[financial_period_id][]` parameter now accepts the token `null`\n(or `nil`) to match snapshots that have no financial period. Tokens and IDs\ncan be combined \u2014 e.g. `[\"42\", \"null\"]` returns snapshots in period 42 or with\nno period.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-project-status-snapshots"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "budget_view_id",
+     "in": "path",
+     "description": "ID of the budget view",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Company Project Status Snapshots",
+    "description": "Returns a paginated list of company-level Project Status snapshots with optional filtering and sorting",
+    "tags": [
+     "Budget",
+     "Project Status Snapshots"
+    ],
+    "parameters": [
+     {
+      "name": "filters[status_id]",
+      "in": "query",
+      "description": "Filter snapshots by PSS custom status ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[approval_status]",
+      "in": "query",
+      "description": "Filter snapshots by approval status.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "approved",
+        "under_review",
+        "custom"
+       ],
+       "example": "approved"
+      }
+     },
+     {
+      "name": "filters[financial_period_id][]",
+      "in": "query",
+      "description": "Filter snapshots by financial period ID. Accepts one or more IDs. Pass the token `null` (or `nil`) as a value to match snapshots that have no financial period. Tokens and IDs can be combined \u2014 e.g. `[\"42\", \"null\"]` matches snapshots in period 42 or with no period.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "example": [
+        "42",
+        "null"
+       ]
+      }
+     },
+     {
+      "name": "filters[project_id]",
+      "in": "query",
+      "description": "Filter snapshots by project ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[project_number][]",
+      "in": "query",
+      "description": "Filter snapshots by one or more project numbers",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "filters[program_id]",
+      "in": "query",
+      "description": "Filter snapshots by program ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[region_id]",
+      "in": "query",
+      "description": "Filter snapshots by region ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[stage_id]",
+      "in": "query",
+      "description": "Filter snapshots by stage ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[office_id]",
+      "in": "query",
+      "description": "Filter snapshots by office ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[department_id]",
+      "in": "query",
+      "description": "Filter snapshots by department ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[created_by_id]",
+      "in": "query",
+      "description": "Filter snapshots by created_by_id",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Filter snapshots by created_at date range, inclusive",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "example": "2024-12-01T00:00:00Z...2024-12-31T00:00:00Z"
+      }
+     },
+     {
+      "name": "comparison_financial_period_id",
+      "in": "query",
+      "description": "ID of the financial period to use as the comparison baseline. When omitted, no comparison data is returned.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "comparison_budget_column_ids",
+      "in": "query",
+      "description": "Restrict comparison data to these budget column IDs. When omitted, comparison is returned for all columns.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "example": [
+        "12345",
+        "6789"
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort parameter",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "default": "-created_at",
+       "enum": [
+        "created_at",
+        "-created_at",
+        "project_number",
+        "-project_number",
+        "status",
+        "-status"
+       ],
+       "example": "-created_at"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The ID of the snapshot",
+              "example": "12345"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the snapshot",
+              "example": "May 2016"
+             },
+             "description": {
+              "type": "string",
+              "nullable": true,
+              "description": "The description of the snapshot",
+              "example": "New Snapshot for May"
+             },
+             "approval_status": {
+              "type": "string",
+              "nullable": true,
+              "description": "Approval state of the project status snapshot. Null for ad-hoc snapshots that have no approval workflow.",
+              "enum": [
+               "approved",
+               "under_review",
+               "custom"
+              ],
+              "example": "approved"
+             },
+             "status": {
+              "nullable": true,
+              "allOf": [
+               {
+                "type": "object",
+                "description": "Custom status object.",
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "ID of the custom status",
+                  "example": "1234"
+                 },
+                 "name": {
+                  "type": "string",
+                  "description": "Name of the custom status",
+                  "example": "Approved"
+                 },
+                 "mapped_to_status": {
+                  "type": "string",
+                  "enum": [
+                   "open",
+                   "closed",
+                   "void",
+                   "pending"
+                  ],
+                  "description": "The default status this custom status maps to",
+                  "example": "closed"
+                 },
+                 "available": {
+                  "type": "boolean",
+                  "description": "Whether the status is available for selection",
+                  "example": true
+                 },
+                 "initial": {
+                  "type": "boolean",
+                  "description": "Whether this is the initial status for new snapshots",
+                  "example": false
+                 },
+                 "standard_type": {
+                  "type": "string",
+                  "enum": [
+                   "approved",
+                   "under_review",
+                   "custom"
+                  ],
+                  "description": "Origin/category of the status: approved and under_review are Procore-provided; custom is company-defined.",
+                  "example": "approved"
+                 },
+                 "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Created At timestamp",
+                  "example": "2024-01-17T18:09:03Z"
+                 },
+                 "updated_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Updated At timestamp",
+                  "example": "2024-01-17T18:09:03Z"
+                 }
+                }
+               }
+              ]
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The ID of the user who created the snapshot",
+                "example": "67890"
+               },
+               "display": {
+                "type": "string",
+                "description": "The display name of the user who created the snapshot",
+                "example": "John Doe"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The timestamp when the snapshot was created",
+              "example": "2025-01-09T23:35:27Z"
+             },
+             "project": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The ID of the project",
+                "example": "54321"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the project",
+                "example": "Main Street Development"
+               },
+               "project_number": {
+                "type": "string",
+                "nullable": true,
+                "description": "The user-assigned project number/code. Null when the project has no number set.",
+                "example": "PRJ-001"
+               }
+              }
+             },
+             "currency_configuration": {
+              "type": "object",
+              "description": "Currency configuration object, the currency for the snapshot",
+              "properties": {
+               "currency_iso_code": {
+                "type": "string",
+                "description": "Currency Configuration ISO code",
+                "example": "USD"
+               }
+              }
+             },
+             "financial_period": {
+              "type": "object",
+              "nullable": true,
+              "description": "The financial period associated with this snapshot. Null when the snapshot was not created within a financial period.",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The ID of the financial period",
+                "example": "42"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the financial period",
+                "example": "Q1 2026"
+               },
+               "group_name": {
+                "type": "string",
+                "description": "A user-defined label used to group related financial periods together (e.g., 'FY 2026').",
+                "example": "FY 2026"
+               },
+               "status": {
+                "type": "string",
+                "description": "The status of the financial period. One of open or closed.",
+                "enum": [
+                 "open",
+                 "closed"
+                ],
+                "example": "open"
+               },
+               "start_date": {
+                "type": "string",
+                "format": "date",
+                "description": "The start date of the financial period",
+                "example": "2026-01-01"
+               },
+               "end_date": {
+                "type": "string",
+                "format": "date",
+                "description": "The end date of the financial period",
+                "example": "2026-03-31"
+               }
+              }
+             },
+             "column_totals": {
+              "type": "array",
+              "description": "Array of per-budget-column totals for the snapshot.",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string",
+                 "description": "The ID of the total",
+                 "example": "11111"
+                },
+                "total": {
+                 "type": "number",
+                 "description": "The total value",
+                 "example": 1000.5
+                },
+                "budget_column_id": {
+                 "type": "string",
+                 "description": "The ID of the budget column",
+                 "example": "22222"
+                },
+                "comparison": {
+                 "type": "object",
+                 "description": "Comparison data relative to the matching snapshot in the requested comparison financial period. Present for every column by default, but omitted for a column when the comparison_budget_column_ids filter is supplied and does not include that column's budget_column_id. When present, the value and delta sub-properties may still be individually null (see their descriptions).\n",
+                 "properties": {
+                  "value": {
+                   "type": "number",
+                   "nullable": true,
+                   "description": "The total value of the comparison snapshot for this column. Null when the requested comparison financial period has no snapshot total for this column (e.g. no comparison snapshot exists for the project).\n",
+                   "example": 900
+                  },
+                  "delta": {
+                   "type": "number",
+                   "nullable": true,
+                   "description": "Difference between the current total and the comparison value. Computed only when both the current total and the comparison value are present; null if either is null.\n",
+                   "example": 100.5
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots',\n  qs: {\n    'filters[status_id]': 'SOME_STRING_VALUE',\n    'filters[approval_status]': 'approved',\n    'filters[financial_period_id][]': ['42', 'null'],\n    'filters[project_id]': 'SOME_STRING_VALUE',\n    'filters[project_number][]': 'SOME_ARRAY_VALUE',\n    'filters[program_id]': 'SOME_STRING_VALUE',\n    'filters[region_id]': 'SOME_STRING_VALUE',\n    'filters[stage_id]': 'SOME_STRING_VALUE',\n    'filters[office_id]': 'SOME_STRING_VALUE',\n    'filters[department_id]': 'SOME_STRING_VALUE',\n    'filters[created_by_id]': 'SOME_STRING_VALUE',\n    'filters[created_at]': '2024-12-01T00:00:00Z...2024-12-31T00:00:00Z',\n    comparison_financial_period_id: 'SOME_STRING_VALUE',\n    comparison_budget_column_ids: ['12345', '6789'],\n    sort: '-created_at',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&filters%5Bproject_id%5D=SOME_STRING_VALUE&filters%5Bproject_number%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bprogram_id%5D=SOME_STRING_VALUE&filters%5Bregion_id%5D=SOME_STRING_VALUE&filters%5Bstage_id%5D=SOME_STRING_VALUE&filters%5Boffice_id%5D=SOME_STRING_VALUE&filters%5Bdepartment_id%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=2024-12-01T00%3A00%3A00Z...2024-12-31T00%3A00%3A00Z&comparison_financial_period_id=SOME_STRING_VALUE&comparison_budget_column_ids=12345&comparison_budget_column_ids=6789&sort=-created_at&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&filters%5Bproject_id%5D=SOME_STRING_VALUE&filters%5Bproject_number%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bprogram_id%5D=SOME_STRING_VALUE&filters%5Bregion_id%5D=SOME_STRING_VALUE&filters%5Bstage_id%5D=SOME_STRING_VALUE&filters%5Boffice_id%5D=SOME_STRING_VALUE&filters%5Bdepartment_id%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=2024-12-01T00%3A00%3A00Z...2024-12-31T00%3A00%3A00Z&comparison_financial_period_id=SOME_STRING_VALUE&comparison_budget_column_ids=12345&comparison_budget_column_ids=6789&sort=-created_at&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&filters%5Bproject_id%5D=SOME_STRING_VALUE&filters%5Bproject_number%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bprogram_id%5D=SOME_STRING_VALUE&filters%5Bregion_id%5D=SOME_STRING_VALUE&filters%5Bstage_id%5D=SOME_STRING_VALUE&filters%5Boffice_id%5D=SOME_STRING_VALUE&filters%5Bdepartment_id%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=2024-12-01T00%3A00%3A00Z...2024-12-31T00%3A00%3A00Z&comparison_financial_period_id=SOME_STRING_VALUE&comparison_budget_column_ids=12345&comparison_budget_column_ids=6789&sort=-created_at&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added status_id filter to Budget Project Status Snapshots company endpoint",
+      "description": "Added the ability to filter snapshots by PSS custom status ID on company-level endpoint",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-01-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Add custom value to approval_status",
+      "description": "The `approval_status` field now includes `custom` as a possible value, in addition to `approved` and `under_review`.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-01-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Add status object to response",
+      "description": "Project Status Snapshots now include a `status` object in the response containing custom status details.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-01-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Remove approval_status from response and filters",
+      "description": "The `approval_status` field and `filters[approval_status]` parameter have been removed.\nUse the `status` object and `filters[status_id]` instead.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-02-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Added program_id and department_id filters",
+      "description": "Added the ability to filter snapshots by program ID and department ID on company-level endpoint",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Added project_number filter",
+      "description": "Added the ability to filter snapshots by project number on company-level endpoint",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-16",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Added comparison support to company timeline endpoint",
+      "description": "Added optional `comparison_financial_period_id` and `comparison_budget_column_ids` parameters.\nWhen `comparison_financial_period_id` is supplied, each item in `column_totals` gains a\n`comparison` object containing `value` (the comparison snapshot total) and `delta` (current minus comparison).\n`comparison_budget_column_ids` limits which columns carry comparison data; when omitted, all columns are compared.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Add financial_period_id filter to company timeline endpoint",
+      "description": "Add the ability to filter snapshots by one or more financial period IDs.\nPass a single ID or an array of IDs via filters[financial_period_id][].",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Add financial_period to company timeline response",
+      "description": "Each snapshot in the response now includes a `financial_period` object\ncontaining the id, name, group_name, status, start_date, and end_date\nof the associated financial period. Null when no period is associated.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Updated project_number filter to array format for company timeline endpoint",
+      "description": "`filters[project_number]` now expects an array of strings (`filters[project_number][]`).\nScalar input is no longer accepted and returns `400 Bad Request`.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Added project_number and status sort options to company timeline endpoint",
+      "description": "The `sort` parameter now accepts `project_number`, `-project_number`, `status`, and `-status`\nin addition to `created_at` and `-created_at`. `status` sorts by the associated PSS custom\nstatus name.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-13",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     },
+     {
+      "summary": "Filter company timeline snapshots by absence of a financial period",
+      "description": "The `filters[financial_period_id][]` parameter now accepts the token `null`\n(or `nil`) to match snapshots that have no financial period. Tokens and IDs\ncan be combined \u2014 e.g. `[\"42\", \"null\"]` returns snapshots in period 42 or with\nno period.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#list-company-project-status-snapshots"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "budget_view_id",
+     "in": "path",
+     "description": "ID of the budget view",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Get Company Snapshots Summary",
+    "description": "Returns a summary of all selected snapshots for a company",
+    "tags": [
+     "Budget",
+     "Project Status Snapshots"
+    ],
+    "parameters": [
+     {
+      "name": "filters[status_id]",
+      "in": "query",
+      "description": "Filter snapshots by PSS custom status ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[approval_status]",
+      "in": "query",
+      "description": "Filter snapshots by approval status.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "approved",
+        "under_review",
+        "custom"
+       ],
+       "example": "approved"
+      }
+     },
+     {
+      "name": "filters[financial_period_id][]",
+      "in": "query",
+      "description": "Filter snapshots by financial period ID. Accepts one or more IDs. Pass the token `null` (or `nil`) as a value to match snapshots that have no financial period. Tokens and IDs can be combined \u2014 e.g. `[\"42\", \"null\"]` matches snapshots in period 42 or with no period.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "example": [
+        "42",
+        "null"
+       ]
+      }
+     },
+     {
+      "name": "filters[project_id]",
+      "in": "query",
+      "description": "Filter snapshots by project ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[project_number][]",
+      "in": "query",
+      "description": "Filter snapshots by one or more project numbers",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "filters[program_id]",
+      "in": "query",
+      "description": "Filter snapshots by program ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[region_id]",
+      "in": "query",
+      "description": "Filter snapshots by region ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[stage_id]",
+      "in": "query",
+      "description": "Filter snapshots by stage ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[office_id]",
+      "in": "query",
+      "description": "Filter snapshots by office ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[department_id]",
+      "in": "query",
+      "description": "Filter snapshots by department ID",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[created_by_id]",
+      "in": "query",
+      "description": "Filter snapshots by created_by_id",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Filter snapshots by created_at date range, inclusive",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "example": "2024-12-01T00:00:00Z...2024-12-31T00:00:00Z"
+      }
+     },
+     {
+      "name": "comparison_financial_period_id",
+      "in": "query",
+      "description": "ID of the financial period to use as the comparison baseline. When omitted, no comparison data is returned.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "company_id": {
+             "type": "string",
+             "description": "The ID of the company the snapshots belong to",
+             "example": "12345"
+            },
+            "currency_configuration": {
+             "type": "object",
+             "description": "Currency configuration object that contains information about company currency",
+             "properties": {
+              "currency_iso_code": {
+               "type": "string",
+               "description": "Currency Configuration ISO code",
+               "example": "USD"
+              }
+             }
+            },
+            "grand_total": {
+             "type": "array",
+             "description": "Array of totals grouped by budget column id",
+             "items": {
+              "type": "object",
+              "properties": {
+               "budget_column_id": {
+                "type": "string",
+                "description": "The ID of the budget column being aggregated",
+                "example": "22222"
+               },
+               "total": {
+                "type": "number",
+                "description": "The total value of all project snapshots with this budget column",
+                "example": 1000.5
+               },
+               "comparison": {
+                "type": "object",
+                "description": "Comparison data relative to snapshots in the requested comparison financial period. Present only when a comparison financial period is requested; otherwise this object is omitted. When present, the value and delta sub-properties may still be individually null (see their descriptions).\n",
+                "properties": {
+                 "value": {
+                  "type": "number",
+                  "nullable": true,
+                  "description": "The aggregated total of comparison snapshots for this column. Null when the requested comparison financial period has no snapshot total for this column.\n",
+                  "example": 900
+                 },
+                 "delta": {
+                  "type": "number",
+                  "nullable": true,
+                  "description": "Difference between the current grand total and the comparison value. Computed only when both the current grand total and the comparison value are present; null if either is null.\n",
+                  "example": 100.5
+                 }
+                }
+               }
+              }
+             }
+            },
+            "unique_projects_count": {
+             "type": "integer",
+             "description": "Count of distinct projects represented in the snapshots that match the filter\nset used to compute this summary. The grand_total array is computed across all\nmatching snapshots (which can include multiple snapshots for the same project);\nunique_projects_count tells consumers how many distinct projects contributed to\nthose totals.\n",
+             "example": 47
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots/summary',\n  qs: {\n    'filters[status_id]': 'SOME_STRING_VALUE',\n    'filters[approval_status]': 'approved',\n    'filters[financial_period_id][]': ['42', 'null'],\n    'filters[project_id]': 'SOME_STRING_VALUE',\n    'filters[project_number][]': 'SOME_ARRAY_VALUE',\n    'filters[program_id]': 'SOME_STRING_VALUE',\n    'filters[region_id]': 'SOME_STRING_VALUE',\n    'filters[stage_id]': 'SOME_STRING_VALUE',\n    'filters[office_id]': 'SOME_STRING_VALUE',\n    'filters[department_id]': 'SOME_STRING_VALUE',\n    'filters[created_by_id]': 'SOME_STRING_VALUE',\n    'filters[created_at]': '2024-12-01T00:00:00Z...2024-12-31T00:00:00Z',\n    comparison_financial_period_id: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots/summary?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&filters%5Bproject_id%5D=SOME_STRING_VALUE&filters%5Bproject_number%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bprogram_id%5D=SOME_STRING_VALUE&filters%5Bregion_id%5D=SOME_STRING_VALUE&filters%5Bstage_id%5D=SOME_STRING_VALUE&filters%5Boffice_id%5D=SOME_STRING_VALUE&filters%5Bdepartment_id%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=2024-12-01T00%3A00%3A00Z...2024-12-31T00%3A00%3A00Z&comparison_financial_period_id=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots/summary?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&filters%5Bproject_id%5D=SOME_STRING_VALUE&filters%5Bproject_number%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bprogram_id%5D=SOME_STRING_VALUE&filters%5Bregion_id%5D=SOME_STRING_VALUE&filters%5Bstage_id%5D=SOME_STRING_VALUE&filters%5Boffice_id%5D=SOME_STRING_VALUE&filters%5Bdepartment_id%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=2024-12-01T00%3A00%3A00Z...2024-12-31T00%3A00%3A00Z&comparison_financial_period_id=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/budget_views/%7Bbudget_view_id%7D/project_status_snapshots/summary?filters%5Bstatus_id%5D=SOME_STRING_VALUE&filters%5Bapproval_status%5D=approved&filters%5Bfinancial_period_id%5D%5B%5D=42&filters%5Bfinancial_period_id%5D%5B%5D=null&filters%5Bproject_id%5D=SOME_STRING_VALUE&filters%5Bproject_number%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bprogram_id%5D=SOME_STRING_VALUE&filters%5Bregion_id%5D=SOME_STRING_VALUE&filters%5Bstage_id%5D=SOME_STRING_VALUE&filters%5Boffice_id%5D=SOME_STRING_VALUE&filters%5Bdepartment_id%5D=SOME_STRING_VALUE&filters%5Bcreated_by_id%5D=SOME_STRING_VALUE&filters%5Bcreated_at%5D=2024-12-01T00%3A00%3A00Z...2024-12-31T00%3A00%3A00Z&comparison_financial_period_id=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing Budget Project Status Snapshot Summary endpoint",
+      "description": "Introduction of API endpoint for Budget Project Status Snapshot Summary",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-06-02",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Added status_id filter to Budget Project Status Snapshots summary endpoint",
+      "description": "Added the ability to filter snapshots by PSS custom status ID on summary endpoint",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-01-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Remove approval_status from filters",
+      "description": "The `filters[approval_status]` parameter has been removed.\nUse `filters[status_id]` instead.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-02-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Added program_id and department_id filters",
+      "description": "Added the ability to filter snapshots by program ID and department ID on summary endpoint",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-02-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Added project_number filter",
+      "description": "Added the ability to filter snapshots by project number on summary endpoint",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-16",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Added comparison support to company snapshots summary endpoint",
+      "description": "Added optional `comparison_financial_period_id` parameter.\nWhen supplied, each item in `grand_total` gains a `comparison` object containing `value`\n(aggregated comparison total) and `delta` (current minus comparison).",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Add financial_period_id filter to company summary endpoint",
+      "description": "Add the ability to filter the snapshot summary by one or more financial period IDs.\nPass a single ID or an array of IDs via filters[financial_period_id][].",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Added unique_projects_count to summary response",
+      "description": "The response now includes `unique_projects_count`, the number of distinct projects\nrepresented in the snapshots that match the filter set. The `grand_total` continues\nto be computed across all matching snapshots (including multiple snapshots for the\nsame project); this new field exposes how many distinct projects contributed.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-08",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Updated project_number filter to array format for company snapshots summary endpoint",
+      "description": "`filters[project_number]` now expects an array of strings (`filters[project_number][]`).\nScalar input is no longer accepted and returns `400 Bad Request`.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-06-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     },
+     {
+      "summary": "Filter company snapshots summary by absence of a financial period",
+      "description": "The `filters[financial_period_id][]` parameter now accepts the token `null`\n(or `nil`) to match snapshots that have no financial period. Tokens and IDs\ncan be combined \u2014 e.g. `[\"42\", \"null\"]` returns snapshots in period 42 or with\nno period.",
+      "endpoint": "GET /companies/{company_id}/budget_views/{budget_view_id}/project_status_snapshots/summary",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-07-15",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-project-status-snapshots?version=2.0#get-company-snapshots-summary"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/project_status_snapshots/budget_views": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Get Budget View Options",
+    "description": "Returns available budget views for company Project Status snapshots",
+    "tags": [
+     "Budget",
+     "Project Status Snapshots"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The ID of the budget view",
+              "example": "12345"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the budget view",
+              "example": "Master Budget"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The ID of the user who created the budget view",
+                "example": "67890"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the user who created the budget view",
+                "example": "John Doe"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The timestamp when the budget view was created",
+              "example": "2025-01-09T23:35:27Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/project_status_snapshots/budget_views',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/project_status_snapshots/budget_views?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/project_status_snapshots/budget_views?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/project_status_snapshots/budget_views?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/project_status_snapshots/budget_views": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Get Project Budget View Options",
+    "description": "Returns available budget views for project Project Status snapshots",
+    "tags": [
+     "Budget",
+     "Project Status Snapshots"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "The ID of the budget view",
+              "example": "12345"
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the budget view",
+              "example": "Master Budget"
+             },
+             "created_by": {
+              "type": "object",
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "The ID of the user who created the budget view",
+                "example": "67890"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the user who created the budget view",
+                "example": "John Doe"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The timestamp when the budget view was created",
+              "example": "2025-01-09T23:35:27Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/project_status_snapshots/budget_views',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/project_status_snapshots/budget_views?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/project_status_snapshots/budget_views?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/project_status_snapshots/budget_views?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

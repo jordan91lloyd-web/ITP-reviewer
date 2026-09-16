@@ -1,0 +1,1895 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Segments",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Work Breakdown Structure",
+  "x-resource-name": "Segments",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/work_breakdown_structure/segments": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Company WBS Segments",
+    "description": "All Segments for a given company",
+    "tags": [
+     "WBS Segments"
+    ],
+    "parameters": [
+     {
+      "name": "include[]",
+      "in": "query",
+      "description": "Optional sideloads to include in each segment object. Valid values: 'tier_depth' (adds the tier_depth integer field), 'action_policy' (adds the action_policy object with permitted actions for the current user). Multiple values may be passed as include[]=tier_depth&include[]=action_policy.",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "tier_depth",
+         "action_policy"
+        ]
+       }
+      }
+     },
+     {
+      "name": "include_action_policy",
+      "in": "query",
+      "description": "Convenience flag equivalent to passing include[]=action_policy. When true, each segment includes an action_policy object describing permitted actions for the current user.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "A work breakdown structure segment",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique integer identifier for this WBS Segment. Use as the {id} path parameter in GET/PATCH/DELETE /rest/v1.0/companies/{company_id}/work_breakdown_structure/segments/{id}.",
+            "example": 4567
+           },
+           "type": {
+            "type": "string",
+            "enum": [
+             "sub_job",
+             "cost_code",
+             "line_item_type",
+             "custom",
+             "attribute"
+            ],
+            "description": "The segment type. One of: 'sub_job' (sub-job dimension), 'cost_code' (cost code dimension), 'line_item_type' (line item type dimension), 'custom' (user-defined custom segment), 'attribute' (attribute dimension). Only 'custom' segments can be created via the API.",
+            "example": "custom"
+           },
+           "name": {
+            "type": "string",
+            "description": "Localized display name of this WBS Segment shown in the UI (e.g. \"Cost Code\", \"Phase\"). Corresponds to the i18n label, not the internal segment_type value.",
+            "example": "Phase"
+           },
+           "position": {
+            "type": "integer",
+            "description": "Ordinal position of this segment within the company WBS pattern. Lower values appear first. Use to determine column order in budget code displays.",
+            "example": 1
+           },
+           "segment_items_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Total number of segment items belonging to this segment. Use to gauge  whether a segment has been populated before attempting to list segment items.",
+            "example": 200
+           },
+           "required": {
+            "type": "boolean",
+            "description": "Whether this segment must have a value assigned when creating a WBS Code. When true, budget codes cannot be created without selecting an item from this segment.",
+            "example": true
+           },
+           "delimiter": {
+            "type": "string",
+            "description": "Character that separates this segment's value from the next segment's value in a formatted WBS code string (e.g. '.' produces \"01.02\").",
+            "example": "."
+           },
+           "project_can_modify_origin_project": {
+            "type": "boolean",
+            "description": "Whether project-specific segment items can be added, edited, or removed from a project. When true, project admins may manage items in this segment independently of the company list.",
+            "example": true
+           },
+           "project_can_delete_origin_company": {
+            "type": "boolean",
+            "description": "Whether segment items inherited from the company level can be deleted from a project. When true, project admins may remove company-defined items from the project's visible list.",
+            "example": true
+           },
+           "structure": {
+            "type": "string",
+            "enum": [
+             "tiered",
+             "flat"
+            ],
+            "description": "Hierarchy structure of this segment. 'tiered' means items can have parent-child relationships forming a multi-level tree; 'flat' means all items are at a single level with no hierarchy.",
+            "example": "tiered"
+           },
+           "tier_depth": {
+            "type": "integer",
+            "description": "Present only when include[]=tier_depth is requested (list endpoints only).  Flat segments (sub_job, line_item_type) return 1; tiered segments return  the number of levels. Omitted (not null) when not requested.",
+            "example": 3
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when this segment was created. Use to sort or filter segments by creation date.",
+            "example": "2016-06-30T20:41:58Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when this segment was last modified. Use to detect whether cached segment data needs to be refreshed.",
+            "example": "2016-08-30T18:11:43Z"
+           },
+           "wbs_pattern_id": {
+            "type": "integer",
+            "description": "ID of the WBS Pattern this segment belongs to. Use to correlate this segment with its parent pattern returned by GET /rest/v1.0/companies/{company_id}/work_breakdown_structure/patterns.",
+            "example": 4567
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments',\n  qs: {'include[]': 'SOME_ARRAY_VALUE', include_action_policy: 'SOME_BOOLEAN_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments?include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments?include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments?include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new fields",
+      "description": "Added created_at, updated_at, and wbs_pattern_id",
+      "endpoint": "GET /companies/{company_id}/work_breakdown_structure/segments",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-01-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "segments?version=1.0#list-company-wbs-segments"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Company WBS Segment",
+    "description": "Create a new company level WBS Segment",
+    "tags": [
+     "WBS Segments"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "segment"
+        ],
+        "properties": {
+         "segment": {
+          "title": "Segment",
+          "type": "object",
+          "required": [
+           "name",
+           "structure"
+          ],
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "Human-readable display name for this segment (e.g. \"Phase\", \"Sub-Job\"). Shown in budget code pickers and column headers.",
+            "example": "Phase"
+           },
+           "project_can_modify_origin_project": {
+            "type": "boolean",
+            "description": "Whether project-specific Segment Items are able to be added/edited/removed from a Project.",
+            "example": true
+           },
+           "project_can_delete_origin_company": {
+            "type": "boolean",
+            "description": "Whether Segment Items inherited from the company-level are able to be deleted from a Project.",
+            "example": true
+           },
+           "structure": {
+            "type": "string",
+            "enum": [
+             "tiered",
+             "flat"
+            ],
+            "description": "Hierarchy structure of this segment. 'tiered' means items can have parent-child relationships forming a multi-level tree; 'flat' means all items are at a single level with no hierarchy.",
+            "example": "flat"
+           },
+           "required": {
+            "type": "boolean",
+            "description": "Whether this segment must have a value assigned when creating a WBS Code. Only settable by users with permission to mark segments as required. Defaults to false.",
+            "example": false
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A work breakdown structure segment",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique integer identifier for this WBS Segment. Use as the {id} path parameter in GET/PATCH/DELETE /rest/v1.0/companies/{company_id}/work_breakdown_structure/segments/{id}.",
+           "example": 4567
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "sub_job",
+            "cost_code",
+            "line_item_type",
+            "custom",
+            "attribute"
+           ],
+           "description": "The segment type. One of: 'sub_job' (sub-job dimension), 'cost_code' (cost code dimension), 'line_item_type' (line item type dimension), 'custom' (user-defined custom segment), 'attribute' (attribute dimension). Only 'custom' segments can be created via the API.",
+           "example": "custom"
+          },
+          "name": {
+           "type": "string",
+           "description": "Localized display name of this WBS Segment shown in the UI (e.g. \"Cost Code\", \"Phase\"). Corresponds to the i18n label, not the internal segment_type value.",
+           "example": "Phase"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Ordinal position of this segment within the company WBS pattern. Lower values appear first. Use to determine column order in budget code displays.",
+           "example": 1
+          },
+          "segment_items_count": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Total number of segment items belonging to this segment. Use to gauge  whether a segment has been populated before attempting to list segment items.",
+           "example": 200
+          },
+          "required": {
+           "type": "boolean",
+           "description": "Whether this segment must have a value assigned when creating a WBS Code. When true, budget codes cannot be created without selecting an item from this segment.",
+           "example": true
+          },
+          "delimiter": {
+           "type": "string",
+           "description": "Character that separates this segment's value from the next segment's value in a formatted WBS code string (e.g. '.' produces \"01.02\").",
+           "example": "."
+          },
+          "project_can_modify_origin_project": {
+           "type": "boolean",
+           "description": "Whether project-specific segment items can be added, edited, or removed from a project. When true, project admins may manage items in this segment independently of the company list.",
+           "example": true
+          },
+          "project_can_delete_origin_company": {
+           "type": "boolean",
+           "description": "Whether segment items inherited from the company level can be deleted from a project. When true, project admins may remove company-defined items from the project's visible list.",
+           "example": true
+          },
+          "structure": {
+           "type": "string",
+           "enum": [
+            "tiered",
+            "flat"
+           ],
+           "description": "Hierarchy structure of this segment. 'tiered' means items can have parent-child relationships forming a multi-level tree; 'flat' means all items are at a single level with no hierarchy.",
+           "example": "tiered"
+          },
+          "tier_depth": {
+           "type": "integer",
+           "description": "Present only when include[]=tier_depth is requested (list endpoints only).  Flat segments (sub_job, line_item_type) return 1; tiered segments return  the number of levels. Omitted (not null) when not requested.",
+           "example": 3
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp of when this segment was created. Use to sort or filter segments by creation date.",
+           "example": "2016-06-30T20:41:58Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp of when this segment was last modified. Use to detect whether cached segment data needs to be refreshed.",
+           "example": "2016-08-30T18:11:43Z"
+          },
+          "wbs_pattern_id": {
+           "type": "integer",
+           "description": "ID of the WBS Pattern this segment belongs to. Use to correlate this segment with its parent pattern returned by GET /rest/v1.0/companies/{company_id}/work_breakdown_structure/patterns.",
+           "example": 4567
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments',\n  headers: {'content-type': 'application/json'},\n  body: {\n    segment: {\n      name: 'Phase',\n      project_can_modify_origin_project: true,\n      project_can_delete_origin_company: true,\n      structure: 'flat',\n      required: false\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"segment\\\":{\\\"name\\\":\\\"Phase\\\",\\\"project_can_modify_origin_project\\\":true,\\\"project_can_delete_origin_company\\\":true,\\\"structure\\\":\\\"flat\\\",\\\"required\\\":false}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments \\\n  --header 'content-type: application/json' \\\n  --data '{\"segment\":{\"name\":\"Phase\",\"project_can_modify_origin_project\":true,\"project_can_delete_origin_company\":true,\"structure\":\"flat\",\"required\":false}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments\"),\n    Content = new StringContent(\"{\\\"segment\\\":{\\\"name\\\":\\\"Phase\\\",\\\"project_can_modify_origin_project\\\":true,\\\"project_can_delete_origin_company\\\":true,\\\"structure\\\":\\\"flat\\\",\\\"required\\\":false}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new fields",
+      "description": "Added created_at, updated_at, and wbs_pattern_id",
+      "endpoint": "POST /companies/{company_id}/work_breakdown_structure/segments",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-01-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "segments?version=1.0#create-a-company-wbs-segment"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/companies/{company_id}/work_breakdown_structure/segments/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique integer ID of the WBS Segment to operate on. Retrieve valid IDs from the segments[].id field in the list endpoint response.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "segment_item_list_id",
+     "in": "query",
+     "description": "ID of the Segment Item List to scope the show response to. When provided the response includes list-specific metadata for the segment. Retrieve valid IDs from GET /rest/v1.0/companies/{company_id}/work_breakdown_structure/segments/{segment_id}/lists.",
+     "required": false,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "include[]",
+     "in": "query",
+     "description": "Optional sideloads to include in the segment object. Valid values: 'action_policy' (adds the action_policy object with permitted actions  for the current user).",
+     "required": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "action_policy"
+       ]
+      }
+     }
+    },
+    {
+     "name": "include_action_policy",
+     "in": "query",
+     "description": "Convenience flag equivalent to passing include[]=action_policy. When true, the segment includes an action_policy object describing permitted actions for the current user.",
+     "required": false,
+     "schema": {
+      "type": "boolean"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Company WBS Segment",
+    "description": "Show a company level segment",
+    "tags": [
+     "WBS Segment"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A work breakdown structure project segment",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique integer identifier for this WBS Segment. Use as the {id} path parameter in GET /rest/v1.0/projects/{project_id}/work_breakdown_structure/segments/{id}.",
+           "example": 12345
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "sub_job",
+            "cost_code",
+            "line_item_type",
+            "custom",
+            "attribute"
+           ],
+           "description": "The segment type. One of: 'sub_job' (sub-job dimension), 'cost_code' (cost code dimension), 'line_item_type' (line item type dimension), 'custom' (user-defined custom segment), 'attribute' (attribute dimension). Only 'custom' segments can be created via the API.",
+           "example": "custom"
+          },
+          "name": {
+           "type": "string",
+           "description": "Localized display name of this WBS Segment shown in the UI (e.g. \"Cost Code\", \"Phase\"). Corresponds to the i18n label, not the internal segment_type value.",
+           "example": "Phase"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Ordinal position of this segment within the project WBS pattern. Lower values appear first. Use to determine column order in budget code displays.",
+           "example": 1
+          },
+          "segment_items_count": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Total number of segment items belonging to this segment. Null when the count has not been computed. Use to gauge whether a segment has been populated before attempting to list segment items.",
+           "example": 200
+          },
+          "required": {
+           "type": "boolean",
+           "description": "Whether this segment must have a value assigned when creating a WBS Code. When true, budget codes cannot be created without selecting an item from this segment.",
+           "example": true
+          },
+          "delimiter": {
+           "type": "string",
+           "description": "Character that separates this segment's value from the next segment's value in a formatted WBS code string (e.g. '.' produces \"01.02\").",
+           "example": "."
+          },
+          "project_can_modify_origin_project": {
+           "type": "boolean",
+           "description": "Whether project-specific segment items can be added, edited, or removed from a project. When true, project admins may manage items in this segment independently of the company list.",
+           "example": true
+          },
+          "project_can_delete_origin_company": {
+           "type": "boolean",
+           "description": "Whether segment items inherited from the company level can be deleted from a project. When true, project admins may remove company-defined items from the project's visible list.",
+           "example": true
+          },
+          "structure": {
+           "type": "string",
+           "enum": [
+            "tiered",
+            "flat"
+           ],
+           "description": "Hierarchy structure of this segment. 'tiered' means items can have parent-child relationships forming a multi-level tree; 'flat' means all items are at a single level with no hierarchy.",
+           "example": "tiered"
+          },
+          "tier_depth": {
+           "type": "integer",
+           "description": "Present only when include[]=tier_depth is requested (list endpoints only). Flat segments (sub_job, line_item_type) return 1; tiered segments return the number of levels. Omitted (not null) when not requested.",
+           "example": 3
+          },
+          "selectable_tiers": {
+           "type": "boolean",
+           "description": "Whether non-leaf segment items can be selected in the Budget Code picker. Only relevant for tiered segments; when true, intermediate parent nodes are selectable, not just leaf nodes.",
+           "example": true
+          },
+          "is_included_in_project_pattern": {
+           "type": "boolean",
+           "description": "Whether this segment is included in the project's WBS pattern. When false the segment exists at the company level but is not active for this project.",
+           "example": true
+          },
+          "tiered": {
+           "type": "boolean",
+           "description": "Convenience boolean indicating whether this segment's structure is tiered. True when structure == 'tiered', false when structure == 'flat'. Equivalent to checking structure directly.",
+           "example": true
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp of when this segment was created. Use to sort or filter segments by creation date.",
+           "example": "2016-06-30T20:41:58Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp of when this segment was last modified. Use to detect whether cached segment data needs to be refreshed.",
+           "example": "2016-08-30T18:11:43Z"
+          },
+          "wbs_pattern_id": {
+           "type": "integer",
+           "description": "ID of the WBS Pattern this segment belongs to. Use to correlate this segment with its parent pattern returned by GET /rest/v1.0/projects/{project_id}/work_breakdown_structure/patterns.",
+           "example": 4567
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D',\n  qs: {\n    segment_item_list_id: 'SOME_INTEGER_VALUE',\n    'include[]': 'SOME_ARRAY_VALUE',\n    include_action_policy: 'SOME_BOOLEAN_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new fields",
+      "description": "Added created_at, updated_at, and wbs_pattern_id",
+      "endpoint": "GET /companies/{company_id}/work_breakdown_structure/segments/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-01-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "segments?version=1.0#show-company-wbs-segment"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Company WBS Segment",
+    "description": "Update company level WBS Segment",
+    "tags": [
+     "WBS Segments"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "segment"
+        ],
+        "properties": {
+         "segment": {
+          "title": "Segment",
+          "type": "object",
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "Human-readable display name for this segment (e.g. \"Phase\", \"Sub-Job\"). Shown in budget code pickers and column headers.",
+            "example": "Phase"
+           },
+           "project_can_modify_origin_project": {
+            "type": "boolean",
+            "description": "Whether project-specific Segment Items are able to be added/edited/removed from a Project.",
+            "example": true
+           },
+           "project_can_delete_origin_company": {
+            "type": "boolean",
+            "description": "Whether Segment Items inherited from the company-level are able to be deleted from a Project.",
+            "example": true
+           },
+           "required": {
+            "type": "boolean",
+            "description": "Whether this segment must have a value assigned when creating a WBS Code. Only settable by users with permission to mark segments as required.",
+            "example": false
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D',\n  qs: {\n    segment_item_list_id: 'SOME_INTEGER_VALUE',\n    'include[]': 'SOME_ARRAY_VALUE',\n    include_action_policy: 'SOME_BOOLEAN_VALUE'\n  },\n  headers: {'content-type': 'application/json'},\n  body: {\n    segment: {\n      name: 'Phase',\n      project_can_modify_origin_project: true,\n      project_can_delete_origin_company: true,\n      required: false\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"segment\\\":{\\\"name\\\":\\\"Phase\\\",\\\"project_can_modify_origin_project\\\":true,\\\"project_can_delete_origin_company\\\":true,\\\"required\\\":false}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"segment\":{\"name\":\"Phase\",\"project_can_modify_origin_project\":true,\"project_can_delete_origin_company\":true,\"required\":false}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\"),\n    Content = new StringContent(\"{\\\"segment\\\":{\\\"name\\\":\\\"Phase\\\",\\\"project_can_modify_origin_project\\\":true,\\\"project_can_delete_origin_company\\\":true,\\\"required\\\":false}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete WBS Segment",
+    "description": "Delete WBS Segment",
+    "tags": [
+     "WBS Segments"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D',\n  qs: {\n    segment_item_list_id: 'SOME_INTEGER_VALUE',\n    'include[]': 'SOME_ARRAY_VALUE',\n    include_action_policy: 'SOME_BOOLEAN_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/work_breakdown_structure/segments/%7Bid%7D?segment_item_list_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/work_breakdown_structure/segments": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Project WBS Segments",
+    "description": "All Segments for a given project",
+    "tags": [
+     "WBS Segments"
+    ],
+    "parameters": [
+     {
+      "name": "include[]",
+      "in": "query",
+      "description": "Optional sideloads to include in each segment object. Valid values: 'tier_depth' (adds the tier_depth integer field), 'action_policy' (adds the action_policy object with permitted actions for the current user).",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "tier_depth",
+         "action_policy"
+        ]
+       }
+      }
+     },
+     {
+      "name": "include_action_policy",
+      "in": "query",
+      "description": "Convenience flag equivalent to passing include[]=action_policy. When true, each segment includes an action_policy object describing permitted actions for the current user.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "A work breakdown structure project segment",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique integer identifier for this WBS Segment. Use as the {id} path parameter in GET /rest/v1.0/projects/{project_id}/work_breakdown_structure/segments/{id}.",
+            "example": 12345
+           },
+           "type": {
+            "type": "string",
+            "enum": [
+             "sub_job",
+             "cost_code",
+             "line_item_type",
+             "custom",
+             "attribute"
+            ],
+            "description": "The segment type. One of: 'sub_job' (sub-job dimension), 'cost_code' (cost code dimension), 'line_item_type' (line item type dimension), 'custom' (user-defined custom segment), 'attribute' (attribute dimension). Only 'custom' segments can be created via the API.",
+            "example": "custom"
+           },
+           "name": {
+            "type": "string",
+            "description": "Localized display name of this WBS Segment shown in the UI (e.g. \"Cost Code\", \"Phase\"). Corresponds to the i18n label, not the internal segment_type value.",
+            "example": "Phase"
+           },
+           "position": {
+            "type": "integer",
+            "description": "Ordinal position of this segment within the project WBS pattern. Lower values appear first. Use to determine column order in budget code displays.",
+            "example": 1
+           },
+           "segment_items_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Total number of segment items belonging to this segment. Null when the count has not been computed. Use to gauge whether a segment has been populated before attempting to list segment items.",
+            "example": 200
+           },
+           "required": {
+            "type": "boolean",
+            "description": "Whether this segment must have a value assigned when creating a WBS Code. When true, budget codes cannot be created without selecting an item from this segment.",
+            "example": true
+           },
+           "delimiter": {
+            "type": "string",
+            "description": "Character that separates this segment's value from the next segment's value in a formatted WBS code string (e.g. '.' produces \"01.02\").",
+            "example": "."
+           },
+           "project_can_modify_origin_project": {
+            "type": "boolean",
+            "description": "Whether project-specific segment items can be added, edited, or removed from a project. When true, project admins may manage items in this segment independently of the company list.",
+            "example": true
+           },
+           "project_can_delete_origin_company": {
+            "type": "boolean",
+            "description": "Whether segment items inherited from the company level can be deleted from a project. When true, project admins may remove company-defined items from the project's visible list.",
+            "example": true
+           },
+           "structure": {
+            "type": "string",
+            "enum": [
+             "tiered",
+             "flat"
+            ],
+            "description": "Hierarchy structure of this segment. 'tiered' means items can have parent-child relationships forming a multi-level tree; 'flat' means all items are at a single level with no hierarchy.",
+            "example": "tiered"
+           },
+           "tier_depth": {
+            "type": "integer",
+            "description": "Present only when include[]=tier_depth is requested (list endpoints only). Flat segments (sub_job, line_item_type) return 1; tiered segments return the number of levels. Omitted (not null) when not requested.",
+            "example": 3
+           },
+           "selectable_tiers": {
+            "type": "boolean",
+            "description": "Whether non-leaf segment items can be selected in the Budget Code picker. Only relevant for tiered segments; when true, intermediate parent nodes are selectable, not just leaf nodes.",
+            "example": true
+           },
+           "is_included_in_project_pattern": {
+            "type": "boolean",
+            "description": "Whether this segment is included in the project's WBS pattern. When false the segment exists at the company level but is not active for this project.",
+            "example": true
+           },
+           "tiered": {
+            "type": "boolean",
+            "description": "Convenience boolean indicating whether this segment's structure is tiered. True when structure == 'tiered', false when structure == 'flat'. Equivalent to checking structure directly.",
+            "example": true
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when this segment was created. Use to sort or filter segments by creation date.",
+            "example": "2016-06-30T20:41:58Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of when this segment was last modified. Use to detect whether cached segment data needs to be refreshed.",
+            "example": "2016-08-30T18:11:43Z"
+           },
+           "wbs_pattern_id": {
+            "type": "integer",
+            "description": "ID of the WBS Pattern this segment belongs to. Use to correlate this segment with its parent pattern returned by GET /rest/v1.0/projects/{project_id}/work_breakdown_structure/patterns.",
+            "example": 4567
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments',\n  qs: {'include[]': 'SOME_ARRAY_VALUE', include_action_policy: 'SOME_BOOLEAN_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments?include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments?include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments?include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new fields",
+      "description": "Added created_at, updated_at, and wbs_pattern_id",
+      "endpoint": "GET /projects/{project_id}/work_breakdown_structure/segments",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-01-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "segments?version=1.0#list-project-wbs-segments"
+     },
+     {
+      "summary": "Dropped permission checking",
+      "description": "Any authenticated user can now access this endpoint.",
+      "endpoint": "GET /projects/{project_id}/work_breakdown_structure/segments",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2020-07-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "segments?version=1.0#list-project-wbs-segments"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/projects/{project_id}/work_breakdown_structure/segments/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique integer ID of the WBS Segment to operate on. Retrieve valid IDs from the segments[].id field in the list endpoint response.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "legacy_sub_job_id",
+     "in": "query",
+     "description": "Legacy sub-job integer ID used to scope the segment response to a specific sub-job context. Pass when querying segments on projects that use sub-jobs.",
+     "required": false,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "include[]",
+     "in": "query",
+     "description": "Optional sideloads to include in the segment object. Valid values: 'action_policy' (adds the action_policy object with permitted actions  for the current user).",
+     "required": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "action_policy"
+       ]
+      }
+     }
+    },
+    {
+     "name": "include_action_policy",
+     "in": "query",
+     "description": "Convenience flag equivalent to passing include[]=action_policy. When true, the segment includes an action_policy object describing permitted actions for the current user.",
+     "required": false,
+     "schema": {
+      "type": "boolean"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Project WBS Segment",
+    "description": "Show a project level segment",
+    "tags": [
+     "WBS Segments"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "A work breakdown structure project segment",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique integer identifier for this WBS Segment. Use as the {id} path parameter in GET /rest/v1.0/projects/{project_id}/work_breakdown_structure/segments/{id}.",
+           "example": 12345
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "sub_job",
+            "cost_code",
+            "line_item_type",
+            "custom",
+            "attribute"
+           ],
+           "description": "The segment type. One of: 'sub_job' (sub-job dimension), 'cost_code' (cost code dimension), 'line_item_type' (line item type dimension), 'custom' (user-defined custom segment), 'attribute' (attribute dimension). Only 'custom' segments can be created via the API.",
+           "example": "custom"
+          },
+          "name": {
+           "type": "string",
+           "description": "Localized display name of this WBS Segment shown in the UI (e.g. \"Cost Code\", \"Phase\"). Corresponds to the i18n label, not the internal segment_type value.",
+           "example": "Phase"
+          },
+          "position": {
+           "type": "integer",
+           "description": "Ordinal position of this segment within the project WBS pattern. Lower values appear first. Use to determine column order in budget code displays.",
+           "example": 1
+          },
+          "segment_items_count": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Total number of segment items belonging to this segment. Null when the count has not been computed. Use to gauge whether a segment has been populated before attempting to list segment items.",
+           "example": 200
+          },
+          "required": {
+           "type": "boolean",
+           "description": "Whether this segment must have a value assigned when creating a WBS Code. When true, budget codes cannot be created without selecting an item from this segment.",
+           "example": true
+          },
+          "delimiter": {
+           "type": "string",
+           "description": "Character that separates this segment's value from the next segment's value in a formatted WBS code string (e.g. '.' produces \"01.02\").",
+           "example": "."
+          },
+          "project_can_modify_origin_project": {
+           "type": "boolean",
+           "description": "Whether project-specific segment items can be added, edited, or removed from a project. When true, project admins may manage items in this segment independently of the company list.",
+           "example": true
+          },
+          "project_can_delete_origin_company": {
+           "type": "boolean",
+           "description": "Whether segment items inherited from the company level can be deleted from a project. When true, project admins may remove company-defined items from the project's visible list.",
+           "example": true
+          },
+          "structure": {
+           "type": "string",
+           "enum": [
+            "tiered",
+            "flat"
+           ],
+           "description": "Hierarchy structure of this segment. 'tiered' means items can have parent-child relationships forming a multi-level tree; 'flat' means all items are at a single level with no hierarchy.",
+           "example": "tiered"
+          },
+          "tier_depth": {
+           "type": "integer",
+           "description": "Present only when include[]=tier_depth is requested (list endpoints only). Flat segments (sub_job, line_item_type) return 1; tiered segments return the number of levels. Omitted (not null) when not requested.",
+           "example": 3
+          },
+          "selectable_tiers": {
+           "type": "boolean",
+           "description": "Whether non-leaf segment items can be selected in the Budget Code picker. Only relevant for tiered segments; when true, intermediate parent nodes are selectable, not just leaf nodes.",
+           "example": true
+          },
+          "is_included_in_project_pattern": {
+           "type": "boolean",
+           "description": "Whether this segment is included in the project's WBS pattern. When false the segment exists at the company level but is not active for this project.",
+           "example": true
+          },
+          "tiered": {
+           "type": "boolean",
+           "description": "Convenience boolean indicating whether this segment's structure is tiered. True when structure == 'tiered', false when structure == 'flat'. Equivalent to checking structure directly.",
+           "example": true
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp of when this segment was created. Use to sort or filter segments by creation date.",
+           "example": "2016-06-30T20:41:58Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "ISO 8601 timestamp of when this segment was last modified. Use to detect whether cached segment data needs to be refreshed.",
+           "example": "2016-08-30T18:11:43Z"
+          },
+          "wbs_pattern_id": {
+           "type": "integer",
+           "description": "ID of the WBS Pattern this segment belongs to. Use to correlate this segment with its parent pattern returned by GET /rest/v1.0/projects/{project_id}/work_breakdown_structure/patterns.",
+           "example": 4567
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments/%7Bid%7D',\n  qs: {\n    legacy_sub_job_id: 'SOME_INTEGER_VALUE',\n    'include[]': 'SOME_ARRAY_VALUE',\n    include_action_policy: 'SOME_BOOLEAN_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments/%7Bid%7D?legacy_sub_job_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments/%7Bid%7D?legacy_sub_job_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_breakdown_structure/segments/%7Bid%7D?legacy_sub_job_id=SOME_INTEGER_VALUE&include%5B%5D=SOME_ARRAY_VALUE&include_action_policy=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new fields",
+      "description": "Added created_at, updated_at, and wbs_pattern_id",
+      "endpoint": "GET /projects/{project_id}/work_breakdown_structure/segments/{id}",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-01-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "segments?version=1.0#show-project-wbs-segment"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

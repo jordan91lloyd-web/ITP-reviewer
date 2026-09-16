@@ -1,0 +1,634 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Workflow Template Versions",
+  "x-product-category": "Core",
+  "x-tool-category": "Workflows",
+  "x-resource-name": "Workflow Template Versions",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/workflows/templates/versions/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Unique identifier for the resource.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a Workflow Template Version",
+    "description": "Returns the details of a specific workflow template version.",
+    "tags": [
+     "Workflow Template Versions"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Workflows Templates Version (Show)",
+         "properties": {
+          "data": {
+           "type": "object",
+           "description": "View of a template version",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Unique identifier for the version",
+             "example": "1318"
+            },
+            "version": {
+             "type": "string",
+             "description": "Version number",
+             "example": "1.0.0"
+            },
+            "created_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the version was created",
+             "example": "2018-04-20T16:20:57Z"
+            },
+            "updated_at": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Date when the version was last updated",
+             "example": "2018-04-20T16:20:57Z"
+            },
+            "tool_type": {
+             "type": "string",
+             "example": "purchase_order_contract",
+             "description": "The type of tool this template is for"
+            },
+            "tool_subtype": {
+             "type": "string",
+             "nullable": true,
+             "example": "-1234",
+             "description": "The subtype of tool this template is for (only applies to \"correspondence\" types)"
+            },
+            "format": {
+             "type": "string",
+             "description": "Workflow layout format (`diagram` or `linear`).",
+             "enum": [
+              "diagram",
+              "linear"
+             ],
+             "example": "diagram"
+            },
+            "steps": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "uuid": {
+                "type": "string",
+                "description": "UUID of the step",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "name": {
+                "type": "string",
+                "description": "The step name",
+                "example": "Step 1"
+               },
+               "type": {
+                "type": "string",
+                "description": "The step type",
+                "example": "STANDARD"
+               },
+               "responsible_groups": {
+                "type": "array",
+                "description": "List of responsible groups for the step",
+                "items": {
+                 "type": "object",
+                 "properties": {
+                  "uuid": {
+                   "type": "string",
+                   "description": "UUID of the responsible group",
+                   "example": "39091882-2593-4a60-85fb-689d42b55a55"
+                  },
+                  "responses_required": {
+                   "type": "string",
+                   "description": "The number of responses required",
+                   "example": "ONE"
+                  },
+                  "role_type": {
+                   "type": "string",
+                   "description": "Role of the responsible group on the step.",
+                   "example": "responder",
+                   "enum": [
+                    "responder",
+                    "commenter"
+                   ]
+                  },
+                  "deferred": {
+                   "type": "boolean",
+                   "description": "When true, the assignee for this responsible group is chosen at item configuration time rather than in the template. Defaults to `false` when omitted.",
+                   "example": false
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "dynamic_steps": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "uuid": {
+                "type": "string",
+                "description": "UUID of the step",
+                "example": "2d931510-d99f-494a-8c67-87feb05e1594"
+               },
+               "name": {
+                "type": "string",
+                "description": "The step name",
+                "example": "Step 1"
+               },
+               "type": {
+                "type": "string",
+                "description": "The step type",
+                "example": "WORKFLOW"
+               },
+               "configuration": {
+                "type": "object",
+                "description": "Configuration for the dynamic step",
+                "additionalProperties": true
+               }
+              }
+             }
+            },
+            "responsible_groups": {
+             "type": "array",
+             "description": "List of responsible groups for the step",
+             "items": {
+              "type": "object",
+              "properties": {
+               "uuid": {
+                "type": "string",
+                "description": "UUID of the responsible group",
+                "example": "39091882-2593-4a60-85fb-689d42b55a55"
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the responsible group",
+                "example": "Item Creator"
+               },
+               "type": {
+                "type": "string",
+                "description": "The responsible group type",
+                "example": "ITEM_CREATOR"
+               }
+              }
+             }
+            },
+            "flow_visualizer_settings": {
+             "type": "object",
+             "description": "React-flow visualization settings for the workflow template",
+             "nullable": true,
+             "properties": {
+              "nodes": {
+               "type": "array",
+               "description": "React-flow nodes configuration",
+               "items": {
+                "type": "object",
+                "description": "Node configuration object",
+                "required": [
+                 "id",
+                 "type",
+                 "position"
+                ],
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Unique identifier for the node",
+                  "example": "node1"
+                 },
+                 "type": {
+                  "type": "string",
+                  "description": "Type of node (e.g., step, start, end)",
+                  "example": "step"
+                 },
+                 "position": {
+                  "type": "object",
+                  "required": [
+                   "x",
+                   "y"
+                  ],
+                  "properties": {
+                   "x": {
+                    "type": "number",
+                    "description": "X coordinate position",
+                    "example": 100
+                   },
+                   "y": {
+                    "type": "number",
+                    "description": "Y coordinate position",
+                    "example": 200
+                   }
+                  }
+                 },
+                 "data": {
+                  "type": "object",
+                  "description": "Additional node data",
+                  "additionalProperties": true,
+                  "example": {
+                   "label": "Start Step"
+                  }
+                 }
+                },
+                "additionalProperties": true
+               }
+              },
+              "edges": {
+               "type": "array",
+               "description": "React-flow edges configuration",
+               "items": {
+                "type": "object",
+                "description": "Edge configuration object",
+                "required": [
+                 "id",
+                 "source",
+                 "target"
+                ],
+                "properties": {
+                 "id": {
+                  "type": "string",
+                  "description": "Unique identifier for the edge",
+                  "example": "edge1"
+                 },
+                 "source": {
+                  "type": "string",
+                  "description": "Source node ID",
+                  "example": "node1"
+                 },
+                 "target": {
+                  "type": "string",
+                  "description": "Target node ID",
+                  "example": "node2"
+                 },
+                 "type": {
+                  "type": "string",
+                  "description": "Type of edge (e.g., default, smoothstep)",
+                  "example": "default"
+                 },
+                 "sourceHandle": {
+                  "type": "string",
+                  "description": "Source handle ID",
+                  "example": "handle1"
+                 },
+                 "targetHandle": {
+                  "type": "string",
+                  "description": "Target handle ID",
+                  "example": "handle2"
+                 }
+                },
+                "additionalProperties": true
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates/versions/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates/versions/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates/versions/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/workflows/templates/versions/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added deferred to responsible_groups on template version steps",
+      "description": "Added a `deferred` field on each `responsible_groups[]` entry under `steps[]` in the workflow template version GET response. When `true`, the assignee for that group is chosen at item configuration time rather than in the template. Defaults to `false`.",
+      "endpoint": "GET /companies/{company_id}/workflows/templates/versions/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-11",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-template-versions?version=2.0#get-a-workflow-template-version"
+     },
+     {
+      "summary": "Added role_type to responsible_groups on template version steps",
+      "description": "Added a `role_type` field on each `responsible_groups[]` entry under `steps[]` in the workflow template version GET response. Indicates the responsibility role of the group on the step: `responder` or `commenter`.",
+      "endpoint": "GET /companies/{company_id}/workflows/templates/versions/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-06-02",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-template-versions?version=2.0#get-a-workflow-template-version"
+     },
+     {
+      "summary": "V2 API Release",
+      "description": "Part of our new batch of V2 APIs for Workflows.",
+      "endpoint": "GET /companies/{company_id}/workflows/templates/versions/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-23",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "workflow-template-versions?version=2.0#get-a-workflow-template-version"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

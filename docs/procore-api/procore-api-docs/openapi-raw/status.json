@@ -1,0 +1,865 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Status",
+  "version": "2.0",
+  "x-product-category": "Resource Management",
+  "x-resource-name": "Status",
+  "x-tool-category": "Equipment",
+  "x-product-lines": [
+   "equipment-register"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/equipment_register/statuses": {
+   "get": {
+    "tags": [
+     "Status"
+    ],
+    "summary": "Get all equipment Statuses (Company)",
+    "operationId": "getAllEquipmentStatuses",
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve. Default is 1.",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "filters[is_active]",
+      "in": "query",
+      "description": "Is active filter",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Operation",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of records",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link to pages",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "example": "01J3F36T5VVPR9RN20328Q2275"
+             },
+             "name": {
+              "type": "string",
+              "example": "Active"
+             },
+             "type": {
+              "type": "string",
+              "example": "Utilised"
+             },
+             "in_use": {
+              "type": "boolean"
+             },
+             "is_active": {
+              "type": "boolean",
+              "example": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[is_active]': 'SOME_BOOLEAN_VALUE'\n  },\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/equipment_register/statuses?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All Statuses Endpoint At Company Level",
+      "description": "Get all statuses (Company)",
+      "endpoint": "GET /companies/{company_id}/equipment_register/statuses",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "status?version=2.0#get-all-equipment-statuses-company"
+     }
+    ]
+   },
+   "post": {
+    "tags": [
+     "Status"
+    ],
+    "summary": "Create equipment status (Company)",
+    "operationId": "createEquipmentStatus",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment status save request",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the equipment status.",
+          "example": "Active",
+          "minLength": 1
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of the equipment status.",
+          "enum": [
+           "AVAILABLE",
+           "UNAVAILABLE",
+           "IN_USE"
+          ],
+          "example": "Utilised"
+         },
+         "is_active": {
+          "type": "boolean",
+          "description": "Active/Inactive indicator for Equipment Status.",
+          "example": true
+         }
+        },
+        "required": [
+         "name",
+         "type"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "example": "01J3F36T5VVPR9RN20328Q2275"
+            },
+            "name": {
+             "type": "string",
+             "example": "Active"
+            },
+            "type": {
+             "type": "string",
+             "example": "Utilised"
+            },
+            "in_use": {
+             "type": "boolean"
+            },
+            "is_active": {
+             "type": "boolean",
+             "example": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {name: 'Active', type: 'Utilised', is_active: true},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"Active\\\",\\\"type\\\":\\\"Utilised\\\",\\\"is_active\\\":true}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/equipment_register/statuses\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Active\",\"type\":\"Utilised\",\"is_active\":true}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"name\\\":\\\"Active\\\",\\\"type\\\":\\\"Utilised\\\",\\\"is_active\\\":true}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Status Endpoint At Company Level",
+      "description": "Create status (Company)",
+      "endpoint": "POST /companies/{company_id}/equipment_register/statuses",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "status?version=2.0#create-equipment-status-company"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/equipment_register/statuses/{status_id}": {
+   "delete": {
+    "tags": [
+     "Status"
+    ],
+    "summary": "Delete equipment status (Company)",
+    "operationId": "deleteEquipmentStatus",
+    "parameters": [
+     {
+      "name": "status_id",
+      "in": "path",
+      "description": "Status id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "boolean"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Status Endpoint At Company Level",
+      "description": "Delete status (Company)",
+      "endpoint": "DELETE /companies/{company_id}/equipment_register/statuses/{status_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "status?version=2.0#delete-equipment-status-company"
+     }
+    ]
+   },
+   "patch": {
+    "tags": [
+     "Status"
+    ],
+    "summary": "Update equipment status (Company)",
+    "operationId": "updateEquipmentStatus",
+    "parameters": [
+     {
+      "name": "status_id",
+      "in": "path",
+      "description": "Status id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment status update request",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the equipment status.",
+          "example": "Active"
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of the equipment status.",
+          "enum": [
+           "AVAILABLE",
+           "UNAVAILABLE",
+           "IN_USE"
+          ],
+          "example": "Available"
+         },
+         "is_active": {
+          "type": "boolean",
+          "description": "Active/Inactive indicator for Equipment Status.",
+          "example": true
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "example": "01J3F36T5VVPR9RN20328Q2275"
+            },
+            "name": {
+             "type": "string",
+             "example": "Active"
+            },
+            "type": {
+             "type": "string",
+             "example": "Utilised"
+            },
+            "in_use": {
+             "type": "boolean"
+            },
+            "is_active": {
+             "type": "boolean",
+             "example": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {name: 'Active', type: 'Available', is_active: true},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"Active\\\",\\\"type\\\":\\\"Available\\\",\\\"is_active\\\":true}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Active\",\"type\":\"Available\",\"is_active\":true}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/statuses/%7Bstatus_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"name\\\":\\\"Active\\\",\\\"type\\\":\\\"Available\\\",\\\"is_active\\\":true}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Status Endpoint At Company Level",
+      "description": "Update status (Company)",
+      "endpoint": "PATCH /companies/{company_id}/equipment_register/statuses/{status_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "status?version=2.0#update-equipment-status-company"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/equipment_register/statuses": {
+   "get": {
+    "tags": [
+     "Status"
+    ],
+    "summary": "Get all equipment Statuses (Project)",
+    "operationId": "getAllEquipmentStatuses_1",
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve. Default is 1.",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "filters[is_active]",
+      "in": "query",
+      "description": "Is active filter",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Operation",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of records",
+        "style": "simple",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link to pages",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "example": "01J3F36T5VVPR9RN20328Q2275"
+             },
+             "name": {
+              "type": "string",
+              "example": "Active"
+             },
+             "type": {
+              "type": "string",
+              "example": "Utilised"
+             },
+             "in_use": {
+              "type": "boolean"
+             },
+             "is_active": {
+              "type": "boolean",
+              "example": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/statuses',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[is_active]': 'SOME_BOOLEAN_VALUE'\n  },\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/statuses?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/statuses?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/statuses?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bis_active%5D=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All Statuses Endpoint At Project Level",
+      "description": "Get all status (Project)",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/equipment_register/statuses",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "status?version=2.0#get-all-equipment-statuses-project"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

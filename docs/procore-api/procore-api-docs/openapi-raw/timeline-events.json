@@ -1,0 +1,1305 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Timeline Events",
+  "version": "2.0",
+  "x-product-category": "Project Management",
+  "x-resource-name": "Timeline Events",
+  "x-tool-category": "Scheduling",
+  "x-product-lines": [
+   "schedule-management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/timeline_events": {
+   "get": {
+    "tags": [
+     "timeline-events-controller"
+    ],
+    "summary": "List Timeline Events",
+    "description": "List all timeline events in a schedule",
+    "operationId": "listTimelineEvents",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "filters[timeline_event_id]",
+      "in": "query",
+      "description": "Filter timeline events by timeline_event_id",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[timeline_event_name]",
+      "in": "query",
+      "description": "Filter timeline events by timeline_event_name",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[source_activity_deleted]",
+      "in": "query",
+      "description": "Filter timeline events by source activity deleted status",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Sort by supported fields. Accepts comma separated values to sort by multiple fields. Order is ascending by default, prefix field with '-' for descending",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "timeline_event_id",
+        "timeline_event_name",
+        "start_date",
+        "finish_date"
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "The page number to retrieve",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "format": "int32"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Number of records per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "maximum": 100
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved timeline events",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of records per page",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int32"
+        }
+       },
+       "Total": {
+        "description": "Total number of records available",
+        "style": "simple",
+        "schema": {
+         "type": "integer",
+         "format": "int64"
+        }
+       },
+       "Link": {
+        "description": "Link header for the first, prev, next, and the last page links",
+        "style": "simple",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "timeline_event_id": {
+              "type": "string",
+              "description": "The unique identifier for the timeline event",
+              "example": "15",
+              "pattern": "^\\d+$"
+             },
+             "timeline_event_name": {
+              "type": "string",
+              "description": "The descriptive name of the timeline event",
+              "example": "Phase 1"
+             },
+             "start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "The timeline event start date (ISO 8601 format)",
+              "example": "2024-05-01"
+             },
+             "finish_date": {
+              "type": "string",
+              "format": "date",
+              "description": "The timeline event finish date (ISO 8601 format)",
+              "example": "2024-05-15"
+             },
+             "is_source_event": {
+              "type": "boolean",
+              "description": "Indicates if the timeline event is a source event (imported from an external schedule)",
+              "example": false
+             },
+             "activity_code": {
+              "type": "string",
+              "description": "Activity code associated with the source activity",
+              "example": "A1010"
+             },
+             "source_activity_deleted": {
+              "type": "boolean",
+              "description": "Indicates if the source activity was deleted",
+              "example": false
+             },
+             "timeline_event_type": {
+              "type": "string",
+              "description": "Timeline event type",
+              "enum": [
+               "time_range",
+               "start_milestone",
+               "finish_milestone"
+              ],
+              "example": "time_range"
+             },
+             "color": {
+              "type": "string",
+              "description": "Timeline event color",
+              "enum": [
+               "FIREBRICK",
+               "SALMON",
+               "CRIMSON",
+               "TOMATO",
+               "DARKORANGE",
+               "KHAKI",
+               "DARKKHAKI",
+               "LIMEGREEN",
+               "YELLOWGREEN",
+               "PALEGREEN",
+               "SEAGREEN",
+               "OLIVE",
+               "OLIVEDRAB",
+               "AQUAMARINE",
+               "MEDIUMTURQUOISE",
+               "DARKCYAN",
+               "SKYBLUE",
+               "DODGERBLUE",
+               "ROYALBLUE",
+               "MEDIUMBLUE",
+               "MEDIUMSLATEBLUE",
+               "PLUM",
+               "MEDIUMORCHID",
+               "BLUEVIOLET",
+               "PURPLE",
+               "LIGHTPINK",
+               "MEDIUMVIOLETRED",
+               "HONEYDEW",
+               "DARKGRAY",
+               "DARKSLATEGRAY",
+               "WHEAT",
+               "GOLDENROD",
+               "SIENNA"
+              ],
+              "example": "SALMON"
+             },
+             "schedule_id": {
+              "type": "string",
+              "description": "The ID of the schedule",
+              "example": "15",
+              "pattern": "^\\d+$"
+             },
+             "project_id": {
+              "type": "string",
+              "description": "Procore Project ID",
+              "example": "12345",
+              "pattern": "^\\d+$"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Procore Company ID",
+              "example": "67890",
+              "pattern": "^\\d+$"
+             }
+            },
+            "required": [
+             "company_id",
+             "project_id",
+             "schedule_id",
+             "timeline_event_id",
+             "timeline_event_name"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events',\n  qs: {\n    'filters[timeline_event_id]': 'SOME_STRING_VALUE',\n    'filters[timeline_event_name]': 'SOME_STRING_VALUE',\n    'filters[source_activity_deleted]': 'SOME_BOOLEAN_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events?filters%5Btimeline_event_id%5D=SOME_STRING_VALUE&filters%5Btimeline_event_name%5D=SOME_STRING_VALUE&filters%5Bsource_activity_deleted%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events?filters%5Btimeline_event_id%5D=SOME_STRING_VALUE&filters%5Btimeline_event_name%5D=SOME_STRING_VALUE&filters%5Bsource_activity_deleted%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events?filters%5Btimeline_event_id%5D=SOME_STRING_VALUE&filters%5Btimeline_event_name%5D=SOME_STRING_VALUE&filters%5Bsource_activity_deleted%5D=SOME_BOOLEAN_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "tags": [
+     "timeline-events-controller"
+    ],
+    "summary": "Create Timeline Event",
+    "description": "Create a timeline event in a schedule",
+    "operationId": "createTimelineEvents",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "timeline_event_name": {
+          "type": "string",
+          "description": "The descriptive name of the timeline event",
+          "example": "Inspector visit"
+         },
+         "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "The timeline event start date (ISO 8601 format)",
+          "example": "2024-05-01"
+         },
+         "finish_date": {
+          "type": "string",
+          "format": "date",
+          "description": "The timeline event finish date (ISO 8601 format)",
+          "example": "2024-05-15"
+         },
+         "color": {
+          "type": "string",
+          "description": "Timeline event color",
+          "enum": [
+           "FIREBRICK",
+           "SALMON",
+           "CRIMSON",
+           "TOMATO",
+           "DARKORANGE",
+           "KHAKI",
+           "DARKKHAKI",
+           "LIMEGREEN",
+           "YELLOWGREEN",
+           "PALEGREEN",
+           "SEAGREEN",
+           "OLIVE",
+           "OLIVEDRAB",
+           "AQUAMARINE",
+           "MEDIUMTURQUOISE",
+           "DARKCYAN",
+           "SKYBLUE",
+           "DODGERBLUE",
+           "ROYALBLUE",
+           "MEDIUMBLUE",
+           "MEDIUMSLATEBLUE",
+           "PLUM",
+           "MEDIUMORCHID",
+           "BLUEVIOLET",
+           "PURPLE",
+           "LIGHTPINK",
+           "MEDIUMVIOLETRED",
+           "HONEYDEW",
+           "DARKGRAY",
+           "DARKSLATEGRAY",
+           "WHEAT",
+           "GOLDENROD",
+           "SIENNA"
+          ],
+          "example": "SALMON"
+         },
+         "timeline_event_type": {
+          "type": "string",
+          "description": "Timeline event type",
+          "enum": [
+           "time_range",
+           "start_milestone",
+           "finish_milestone"
+          ],
+          "example": "time_range"
+         }
+        },
+        "required": [
+         "color",
+         "finish_date",
+         "start_date",
+         "timeline_event_name",
+         "timeline_event_type"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successfully created timeline event",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "timeline_event_id": {
+             "type": "string",
+             "description": "The unique identifier for the timeline event",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "timeline_event_name": {
+             "type": "string",
+             "description": "The descriptive name of the timeline event",
+             "example": "Phase 1"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "The timeline event start date (ISO 8601 format)",
+             "example": "2024-05-01"
+            },
+            "finish_date": {
+             "type": "string",
+             "format": "date",
+             "description": "The timeline event finish date (ISO 8601 format)",
+             "example": "2024-05-15"
+            },
+            "is_source_event": {
+             "type": "boolean",
+             "description": "Indicates if the timeline event is a source event (imported from an external schedule)",
+             "example": false
+            },
+            "activity_code": {
+             "type": "string",
+             "description": "Activity code associated with the source activity",
+             "example": "A1010"
+            },
+            "source_activity_deleted": {
+             "type": "boolean",
+             "description": "Indicates if the source activity was deleted",
+             "example": false
+            },
+            "timeline_event_type": {
+             "type": "string",
+             "description": "Timeline event type",
+             "enum": [
+              "time_range",
+              "start_milestone",
+              "finish_milestone"
+             ],
+             "example": "time_range"
+            },
+            "color": {
+             "type": "string",
+             "description": "Timeline event color",
+             "enum": [
+              "FIREBRICK",
+              "SALMON",
+              "CRIMSON",
+              "TOMATO",
+              "DARKORANGE",
+              "KHAKI",
+              "DARKKHAKI",
+              "LIMEGREEN",
+              "YELLOWGREEN",
+              "PALEGREEN",
+              "SEAGREEN",
+              "OLIVE",
+              "OLIVEDRAB",
+              "AQUAMARINE",
+              "MEDIUMTURQUOISE",
+              "DARKCYAN",
+              "SKYBLUE",
+              "DODGERBLUE",
+              "ROYALBLUE",
+              "MEDIUMBLUE",
+              "MEDIUMSLATEBLUE",
+              "PLUM",
+              "MEDIUMORCHID",
+              "BLUEVIOLET",
+              "PURPLE",
+              "LIGHTPINK",
+              "MEDIUMVIOLETRED",
+              "HONEYDEW",
+              "DARKGRAY",
+              "DARKSLATEGRAY",
+              "WHEAT",
+              "GOLDENROD",
+              "SIENNA"
+             ],
+             "example": "SALMON"
+            },
+            "schedule_id": {
+             "type": "string",
+             "description": "The ID of the schedule",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            }
+           },
+           "required": [
+            "company_id",
+            "project_id",
+            "schedule_id",
+            "timeline_event_id",
+            "timeline_event_name"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events',\n  headers: {'content-type': 'application/json'},\n  body: {\n    timeline_event_name: 'Inspector visit',\n    start_date: '2024-05-01',\n    finish_date: '2024-05-15',\n    color: 'SALMON',\n    timeline_event_type: 'time_range'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"timeline_event_name\\\":\\\"Inspector visit\\\",\\\"start_date\\\":\\\"2024-05-01\\\",\\\"finish_date\\\":\\\"2024-05-15\\\",\\\"color\\\":\\\"SALMON\\\",\\\"timeline_event_type\\\":\\\"time_range\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events \\\n  --header 'content-type: application/json' \\\n  --data '{\"timeline_event_name\":\"Inspector visit\",\"start_date\":\"2024-05-01\",\"finish_date\":\"2024-05-15\",\"color\":\"SALMON\",\"timeline_event_type\":\"time_range\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events\"),\n    Content = new StringContent(\"{\\\"timeline_event_name\\\":\\\"Inspector visit\\\",\\\"start_date\\\":\\\"2024-05-01\\\",\\\"finish_date\\\":\\\"2024-05-15\\\",\\\"color\\\":\\\"SALMON\\\",\\\"timeline_event_type\\\":\\\"time_range\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/schedules/{schedule_id}/timeline_events/{timeline_event_id}": {
+   "get": {
+    "tags": [
+     "timeline-events-controller"
+    ],
+    "summary": "Get Timeline Event by ID",
+    "description": "Get a single timeline event by its id",
+    "operationId": "getTimelineEventsById",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "timeline_event_id",
+      "in": "path",
+      "description": "Timeline Events ID",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d+$"
+      },
+      "example": "15"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successfully retrieved timeline event",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "timeline_event_id": {
+             "type": "string",
+             "description": "The unique identifier for the timeline event",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "timeline_event_name": {
+             "type": "string",
+             "description": "The descriptive name of the timeline event",
+             "example": "Phase 1"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "The timeline event start date (ISO 8601 format)",
+             "example": "2024-05-01"
+            },
+            "finish_date": {
+             "type": "string",
+             "format": "date",
+             "description": "The timeline event finish date (ISO 8601 format)",
+             "example": "2024-05-15"
+            },
+            "is_source_event": {
+             "type": "boolean",
+             "description": "Indicates if the timeline event is a source event (imported from an external schedule)",
+             "example": false
+            },
+            "activity_code": {
+             "type": "string",
+             "description": "Activity code associated with the source activity",
+             "example": "A1010"
+            },
+            "source_activity_deleted": {
+             "type": "boolean",
+             "description": "Indicates if the source activity was deleted",
+             "example": false
+            },
+            "timeline_event_type": {
+             "type": "string",
+             "description": "Timeline event type",
+             "enum": [
+              "time_range",
+              "start_milestone",
+              "finish_milestone"
+             ],
+             "example": "time_range"
+            },
+            "color": {
+             "type": "string",
+             "description": "Timeline event color",
+             "enum": [
+              "FIREBRICK",
+              "SALMON",
+              "CRIMSON",
+              "TOMATO",
+              "DARKORANGE",
+              "KHAKI",
+              "DARKKHAKI",
+              "LIMEGREEN",
+              "YELLOWGREEN",
+              "PALEGREEN",
+              "SEAGREEN",
+              "OLIVE",
+              "OLIVEDRAB",
+              "AQUAMARINE",
+              "MEDIUMTURQUOISE",
+              "DARKCYAN",
+              "SKYBLUE",
+              "DODGERBLUE",
+              "ROYALBLUE",
+              "MEDIUMBLUE",
+              "MEDIUMSLATEBLUE",
+              "PLUM",
+              "MEDIUMORCHID",
+              "BLUEVIOLET",
+              "PURPLE",
+              "LIGHTPINK",
+              "MEDIUMVIOLETRED",
+              "HONEYDEW",
+              "DARKGRAY",
+              "DARKSLATEGRAY",
+              "WHEAT",
+              "GOLDENROD",
+              "SIENNA"
+             ],
+             "example": "SALMON"
+            },
+            "schedule_id": {
+             "type": "string",
+             "description": "The ID of the schedule",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            }
+           },
+           "required": [
+            "company_id",
+            "project_id",
+            "schedule_id",
+            "timeline_event_id",
+            "timeline_event_name"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "tags": [
+     "timeline-events-controller"
+    ],
+    "summary": "Delete Timeline Event",
+    "description": "Delete a timeline event from the schedule",
+    "operationId": "deleteTimelineEvents",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "timeline_event_id",
+      "in": "path",
+      "description": "Timeline Events ID",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d+$"
+      },
+      "example": "15"
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successfully deleted timeline event"
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "tags": [
+     "timeline-events-controller"
+    ],
+    "summary": "Update Timeline Event",
+    "description": "Partially update a timeline event. Only provided fields will be updated",
+    "operationId": "updateTimelineEvents",
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "5678"
+     },
+     {
+      "name": "schedule_id",
+      "in": "path",
+      "description": "Unique identifier for the schedule",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "timeline_event_id",
+      "in": "path",
+      "description": "Timeline Events ID",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "pattern": "^\\d+$"
+      },
+      "example": "15"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "timeline_event_name": {
+          "type": "string",
+          "description": "The descriptive name of the timeline event",
+          "example": "Updated Event Name",
+          "maxLength": 255,
+          "minLength": 1
+         },
+         "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "The timeline event start date (ISO 8601 format)",
+          "example": "2024-05-01"
+         },
+         "finish_date": {
+          "type": "string",
+          "format": "date",
+          "description": "The timeline event finish date (ISO 8601 format)",
+          "example": "2024-05-15"
+         },
+         "color": {
+          "type": "string",
+          "description": "Timeline event color",
+          "enum": [
+           "FIREBRICK",
+           "SALMON",
+           "CRIMSON",
+           "TOMATO",
+           "DARKORANGE",
+           "KHAKI",
+           "DARKKHAKI",
+           "LIMEGREEN",
+           "YELLOWGREEN",
+           "PALEGREEN",
+           "SEAGREEN",
+           "OLIVE",
+           "OLIVEDRAB",
+           "AQUAMARINE",
+           "MEDIUMTURQUOISE",
+           "DARKCYAN",
+           "SKYBLUE",
+           "DODGERBLUE",
+           "ROYALBLUE",
+           "MEDIUMBLUE",
+           "MEDIUMSLATEBLUE",
+           "PLUM",
+           "MEDIUMORCHID",
+           "BLUEVIOLET",
+           "PURPLE",
+           "LIGHTPINK",
+           "MEDIUMVIOLETRED",
+           "HONEYDEW",
+           "DARKGRAY",
+           "DARKSLATEGRAY",
+           "WHEAT",
+           "GOLDENROD",
+           "SIENNA"
+          ],
+          "example": "SALMON"
+         },
+         "timeline_event_type": {
+          "type": "string",
+          "description": "Timeline event type",
+          "enum": [
+           "time_range",
+           "start_milestone",
+           "finish_milestone"
+          ],
+          "example": "time_range"
+         }
+        },
+        "required": [
+         "timeline_event_type"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successfully updated timeline event",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "timeline_event_id": {
+             "type": "string",
+             "description": "The unique identifier for the timeline event",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "timeline_event_name": {
+             "type": "string",
+             "description": "The descriptive name of the timeline event",
+             "example": "Phase 1"
+            },
+            "start_date": {
+             "type": "string",
+             "format": "date",
+             "description": "The timeline event start date (ISO 8601 format)",
+             "example": "2024-05-01"
+            },
+            "finish_date": {
+             "type": "string",
+             "format": "date",
+             "description": "The timeline event finish date (ISO 8601 format)",
+             "example": "2024-05-15"
+            },
+            "is_source_event": {
+             "type": "boolean",
+             "description": "Indicates if the timeline event is a source event (imported from an external schedule)",
+             "example": false
+            },
+            "activity_code": {
+             "type": "string",
+             "description": "Activity code associated with the source activity",
+             "example": "A1010"
+            },
+            "source_activity_deleted": {
+             "type": "boolean",
+             "description": "Indicates if the source activity was deleted",
+             "example": false
+            },
+            "timeline_event_type": {
+             "type": "string",
+             "description": "Timeline event type",
+             "enum": [
+              "time_range",
+              "start_milestone",
+              "finish_milestone"
+             ],
+             "example": "time_range"
+            },
+            "color": {
+             "type": "string",
+             "description": "Timeline event color",
+             "enum": [
+              "FIREBRICK",
+              "SALMON",
+              "CRIMSON",
+              "TOMATO",
+              "DARKORANGE",
+              "KHAKI",
+              "DARKKHAKI",
+              "LIMEGREEN",
+              "YELLOWGREEN",
+              "PALEGREEN",
+              "SEAGREEN",
+              "OLIVE",
+              "OLIVEDRAB",
+              "AQUAMARINE",
+              "MEDIUMTURQUOISE",
+              "DARKCYAN",
+              "SKYBLUE",
+              "DODGERBLUE",
+              "ROYALBLUE",
+              "MEDIUMBLUE",
+              "MEDIUMSLATEBLUE",
+              "PLUM",
+              "MEDIUMORCHID",
+              "BLUEVIOLET",
+              "PURPLE",
+              "LIGHTPINK",
+              "MEDIUMVIOLETRED",
+              "HONEYDEW",
+              "DARKGRAY",
+              "DARKSLATEGRAY",
+              "WHEAT",
+              "GOLDENROD",
+              "SIENNA"
+             ],
+             "example": "SALMON"
+            },
+            "schedule_id": {
+             "type": "string",
+             "description": "The ID of the schedule",
+             "example": "15",
+             "pattern": "^\\d+$"
+            },
+            "project_id": {
+             "type": "string",
+             "description": "Procore Project ID",
+             "example": "12345",
+             "pattern": "^\\d+$"
+            },
+            "company_id": {
+             "type": "string",
+             "description": "Procore Company ID",
+             "example": "67890",
+             "pattern": "^\\d+$"
+            }
+           },
+           "required": [
+            "company_id",
+            "project_id",
+            "schedule_id",
+            "timeline_event_id",
+            "timeline_event_name"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15',\n  headers: {'content-type': 'application/json'},\n  body: {\n    timeline_event_name: 'Updated Event Name',\n    start_date: '2024-05-01',\n    finish_date: '2024-05-15',\n    color: 'SALMON',\n    timeline_event_type: 'time_range'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"timeline_event_name\\\":\\\"Updated Event Name\\\",\\\"start_date\\\":\\\"2024-05-01\\\",\\\"finish_date\\\":\\\"2024-05-15\\\",\\\"color\\\":\\\"SALMON\\\",\\\"timeline_event_type\\\":\\\"time_range\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15 \\\n  --header 'content-type: application/json' \\\n  --data '{\"timeline_event_name\":\"Updated Event Name\",\"start_date\":\"2024-05-01\",\"finish_date\":\"2024-05-15\",\"color\":\"SALMON\",\"timeline_event_type\":\"time_range\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/5678/schedules/1234/timeline_events/15\"),\n    Content = new StringContent(\"{\\\"timeline_event_name\\\":\\\"Updated Event Name\\\",\\\"start_date\\\":\\\"2024-05-01\\\",\\\"finish_date\\\":\\\"2024-05-15\\\",\\\"color\\\":\\\"SALMON\\\",\\\"timeline_event_type\\\":\\\"time_range\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,1570 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Attachment",
+  "version": "2.0",
+  "x-product-category": "Resource Management",
+  "x-resource-name": "Attachment",
+  "x-tool-category": "Equipment",
+  "x-product-lines": [
+   "equipment-register"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com",
+   "description": "Procore API server"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/equipment_register/{equipment_id}/attachment": {
+   "post": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Create equipment attachment (Project)",
+    "operationId": "createEquipmentAttachment",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "resource_id",
+      "in": "query",
+      "description": "ID of the specific resource to associate this attachment with (e.g., maintenance record ID). Used to link attachments to specific resources under this equipment.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment attachment save request",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the file.",
+          "example": "Test file"
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of the equipment attachment.",
+          "enum": [
+           "DOCUMENT",
+           "PROFILE",
+           "MAINTENANCE"
+          ],
+          "example": "DOCUMENT"
+         }
+        },
+        "required": [
+         "name",
+         "type"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The equipment attachment id.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "upload_url": {
+             "type": "string",
+             "description": "The upload url for the equipment attachment.",
+             "example": "Url"
+            },
+            "download_url": {
+             "type": "string",
+             "description": "The download url for the equipment attachment.",
+             "example": "Url"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of the equipment attachment.",
+             "enum": [
+              "DOCUMENT",
+              "PROFILE",
+              "MAINTENANCE"
+             ],
+             "example": "DOCUMENT"
+            },
+            "file_id": {
+             "type": "string",
+             "description": "The file id of the equipment attachment.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the file.",
+             "example": "Test file"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment',\n  qs: {resource_id: 'SOME_STRING_VALUE'},\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {name: 'Test file', type: 'DOCUMENT'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"Test file\\\",\\\"type\\\":\\\"DOCUMENT\\\"}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment?resource_id=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment?resource_id=SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Test file\",\"type\":\"DOCUMENT\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment?resource_id=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"name\\\":\\\"Test file\\\",\\\"type\\\":\\\"DOCUMENT\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/equipment_register/{equipment_id}/attachment": {
+   "post": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Create equipment attachment (Company)",
+    "operationId": "createEquipmentAttachment_1",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "resource_id",
+      "in": "query",
+      "description": "ID of the specific resource to associate this attachment with (e.g., maintenance record ID). Used to link attachments to specific resources under this equipment.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Equipment attachment save request",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The name of the file.",
+          "example": "Test file"
+         },
+         "type": {
+          "type": "string",
+          "description": "The type of the equipment attachment.",
+          "enum": [
+           "DOCUMENT",
+           "PROFILE",
+           "MAINTENANCE"
+          ],
+          "example": "DOCUMENT"
+         }
+        },
+        "required": [
+         "name",
+         "type"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The equipment attachment id.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "upload_url": {
+             "type": "string",
+             "description": "The upload url for the equipment attachment.",
+             "example": "Url"
+            },
+            "download_url": {
+             "type": "string",
+             "description": "The download url for the equipment attachment.",
+             "example": "Url"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of the equipment attachment.",
+             "enum": [
+              "DOCUMENT",
+              "PROFILE",
+              "MAINTENANCE"
+             ],
+             "example": "DOCUMENT"
+            },
+            "file_id": {
+             "type": "string",
+             "description": "The file id of the equipment attachment.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the file.",
+             "example": "Test file"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     },
+     "422": {
+      "description": "The request was well-formed but was unable to be followed due to semantic errors."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment',\n  qs: {resource_id: 'SOME_STRING_VALUE'},\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE', 'content-type': 'application/json'},\n  body: {name: 'Test file', type: 'DOCUMENT'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"Test file\\\",\\\"type\\\":\\\"DOCUMENT\\\"}\"\n\nheaders = {\n    'Procore-Company-Id': \"SOME_INTEGER_VALUE\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment?resource_id=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment?resource_id=SOME_STRING_VALUE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Test file\",\"type\":\"DOCUMENT\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment?resource_id=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n    Content = new StringContent(\"{\\\"name\\\":\\\"Test file\\\",\\\"type\\\":\\\"DOCUMENT\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Attachment For Equipment Endpoint At Company Level",
+      "description": "Create equipment attachment (Company)",
+      "endpoint": "POST /companies/{company_id}/equipment_register/{equipment_id}/attachment",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "attachment?version=2.0#create-equipment-attachment-company"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/equipment_register/{equipment_id}/attachment/{attachment_id}": {
+   "get": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Fetch attachment by Id (Project)",
+    "operationId": "fetchEquipmentAttachmentById",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "attachment_id",
+      "in": "path",
+      "description": "Attachment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The equipment attachment id.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "upload_url": {
+             "type": "string",
+             "description": "The upload url for the equipment attachment.",
+             "example": "Url"
+            },
+            "download_url": {
+             "type": "string",
+             "description": "The download url for the equipment attachment.",
+             "example": "Url"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of the equipment attachment.",
+             "enum": [
+              "DOCUMENT",
+              "PROFILE",
+              "MAINTENANCE"
+             ],
+             "example": "DOCUMENT"
+            },
+            "file_id": {
+             "type": "string",
+             "description": "The file id of the equipment attachment.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the file.",
+             "example": "Test file"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Delete equipment attachment (Project)",
+    "operationId": "deleteEquipmentAttachment",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipmnet Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "attachment_id",
+      "in": "path",
+      "description": "Attachment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "boolean"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "patch": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Update equipment attachment (Project)",
+    "operationId": "updateEquipmentAttachment",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "attachment_id",
+      "in": "path",
+      "description": "Attachment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "object",
+            "properties": {
+             "message": {
+              "type": "string",
+              "example": "Success"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/equipment_register/{equipment_id}/attachment/{attachment_id}": {
+   "get": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Fetch attachment by Id (Company)",
+    "operationId": "fetchEquipmentAttachmentById_1",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "attachment_id",
+      "in": "path",
+      "description": "Attachment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "The equipment attachment id.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "upload_url": {
+             "type": "string",
+             "description": "The upload url for the equipment attachment.",
+             "example": "Url"
+            },
+            "download_url": {
+             "type": "string",
+             "description": "The download url for the equipment attachment.",
+             "example": "Url"
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of the equipment attachment.",
+             "enum": [
+              "DOCUMENT",
+              "PROFILE",
+              "MAINTENANCE"
+             ],
+             "example": "DOCUMENT"
+            },
+            "file_id": {
+             "type": "string",
+             "description": "The file id of the equipment attachment.",
+             "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+            },
+            "name": {
+             "type": "string",
+             "description": "The name of the file.",
+             "example": "Test file"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Fetch Attachment For Equipment By Attachment Id Endpoint At Company Level",
+      "description": "Fetch attachment by Id (Company)",
+      "endpoint": "GET /companies/{company_id}/equipment_register/{equipment_id}/attachment/{attachment_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "attachment?version=2.0#fetch-attachment-by-id-company"
+     }
+    ]
+   },
+   "delete": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Delete equipment attachment (Company)",
+    "operationId": "deleteEquipmentAttachment_1",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipmnet Id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "attachment_id",
+      "in": "path",
+      "description": "Attachment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "boolean"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Attachment For Equipment By Attachment Id Endpoint At Company Level",
+      "description": "Delete equipment attachment (Company)",
+      "endpoint": "DELETE /companies/{company_id}/equipment_register/{equipment_id}/attachment/{attachment_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "attachment?version=2.0#delete-equipment-attachment-company"
+     }
+    ]
+   },
+   "patch": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Update equipment attachment (Company)",
+    "operationId": "updateEquipmentAttachment_1",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "attachment_id",
+      "in": "path",
+      "description": "Attachment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "object",
+            "properties": {
+             "message": {
+              "type": "string",
+              "example": "Success"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D',\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachment/%7Battachment_id%7D\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Attachment For Equipment By Attachment Id Endpoint At Company Level",
+      "description": "Update equipment attachment (Company)",
+      "endpoint": "PATCH /companies/{company_id}/equipment_register/{equipment_id}/attachment/{attachment_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "attachment?version=2.0#update-equipment-attachment-company"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/equipment_register/{equipment_id}/attachments": {
+   "get": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Get all attachments for equipment (Project)",
+    "operationId": "getAllEquipmentAttachments",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "resource_id",
+      "in": "query",
+      "description": "ID of the specific resource to filter attachments by (e.g., maintenance record ID). Only attachments associated with this resource will be returned.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "resource_type",
+      "in": "query",
+      "description": "Type of resource to filter attachments by. Currently supported: 'MAINTENANCE' for maintenance-related attachments.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "MAINTENANCE"
+     },
+     {
+      "name": "project_id",
+      "in": "path",
+      "description": "Unique identifier for the project.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "attachments": {
+             "type": "array",
+             "description": "The list of attachments.",
+             "items": {
+              "type": "object",
+              "properties": {
+               "attached_to_item_id": {
+                "type": "string",
+                "description": "Attachment id.",
+                "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+               },
+               "attached_to_item_type": {
+                "type": "string",
+                "description": "The type of the item the attachment is attached to."
+               },
+               "id": {
+                "type": "string",
+                "description": "Attachment Uid.",
+                "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+               },
+               "type": {
+                "type": "string",
+                "description": "The type of the equipment attachment.",
+                "example": "DOCUMENT"
+               },
+               "url": {
+                "type": "string",
+                "description": "The download url for the equipment attachment.",
+                "example": "url"
+               },
+               "filename": {
+                "type": "string",
+                "description": "The name of the file.",
+                "example": "Test file"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachments',\n  qs: {resource_id: 'SOME_STRING_VALUE', resource_type: 'MAINTENANCE'},\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachments?resource_id=SOME_STRING_VALUE&resource_type=MAINTENANCE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachments?resource_id=SOME_STRING_VALUE&resource_type=MAINTENANCE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/projects/1234/equipment_register/%7Bequipment_id%7D/attachments?resource_id=SOME_STRING_VALUE&resource_type=MAINTENANCE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v2.0/companies/{company_id}/equipment_register/{equipment_id}/attachments": {
+   "get": {
+    "tags": [
+     "Attachment"
+    ],
+    "summary": "Get all attachments for equipment (Company)",
+    "operationId": "getAllEquipmentAttachments_1",
+    "parameters": [
+     {
+      "name": "equipment_id",
+      "in": "path",
+      "description": "Equipment id",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "resource_id",
+      "in": "query",
+      "description": "ID of the specific resource to filter attachments by (e.g., maintenance record ID). Only attachments associated with this resource will be returned.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "resource_type",
+      "in": "query",
+      "description": "Type of resource to filter attachments by. Currently supported: 'MAINTENANCE' for maintenance-related attachments.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "MAINTENANCE"
+     },
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "example": "1234"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "attachments": {
+             "type": "array",
+             "description": "The list of attachments.",
+             "items": {
+              "type": "object",
+              "properties": {
+               "attached_to_item_id": {
+                "type": "string",
+                "description": "Attachment id.",
+                "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+               },
+               "attached_to_item_type": {
+                "type": "string",
+                "description": "The type of the item the attachment is attached to."
+               },
+               "id": {
+                "type": "string",
+                "description": "Attachment Uid.",
+                "example": "01J3F5HR0NVJFAP90BCX9NAP1B"
+               },
+               "type": {
+                "type": "string",
+                "description": "The type of the equipment attachment.",
+                "example": "DOCUMENT"
+               },
+               "url": {
+                "type": "string",
+                "description": "The download url for the equipment attachment.",
+                "example": "url"
+               },
+               "filename": {
+                "type": "string",
+                "description": "The name of the file.",
+                "example": "Test file"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The server could not understand the request due to invalid syntax or parameters that fail to meet validation requirements."
+     },
+     "401": {
+      "description": "Although the HTTP standard specifies \"unauthorized\", semantically this response means \"unauthenticated\". That is, the client must authenticate itself to get the requested response."
+     },
+     "403": {
+      "description": "The client does not have access rights to the content; that is, it is authenticated, but the server is refusing to give the requested resource. Unlike 401, the client's identity is known to the server."
+     },
+     "404": {
+      "description": "The server can not find the requested resource. This can mean either the URL is not recognized, or the resource itself does not exist. Servers may also send this response instead of 403 to hide the existence of a resource from an unauthorized client."
+     }
+    },
+    "x-doc": {
+     "stage": "ga",
+     "visibility": "public",
+     "exposure": "public"
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachments',\n  qs: {resource_id: 'SOME_STRING_VALUE', resource_type: 'MAINTENANCE'},\n  headers: {'Procore-Company-Id': 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Procore-Company-Id': \"SOME_INTEGER_VALUE\" }\n\nconn.request(\"GET\", \"/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachments?resource_id=SOME_STRING_VALUE&resource_type=MAINTENANCE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachments?resource_id=SOME_STRING_VALUE&resource_type=MAINTENANCE' \\\n  --header 'Procore-Company-Id: SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/1234/equipment_register/%7Bequipment_id%7D/attachments?resource_id=SOME_STRING_VALUE&resource_type=MAINTENANCE\"),\n    Headers =\n    {\n        { \"Procore-Company-Id\", \"SOME_INTEGER_VALUE\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All Attachment For Equipment Endpoint At Company Level",
+      "description": "Get all attachments for equipment (Company)",
+      "endpoint": "GET /companies/{company_id}/equipment_register/{equipment_id}/attachments",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-06",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "stage": "ga",
+       "visibility": "public",
+       "exposure": "public"
+      },
+      "link": "attachment?version=2.0#get-all-attachments-for-equipment-company"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

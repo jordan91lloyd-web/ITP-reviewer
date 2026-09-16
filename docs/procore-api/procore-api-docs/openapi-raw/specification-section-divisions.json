@@ -1,0 +1,1895 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Specification Section Divisions",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Specifications",
+  "x-resource-name": "Specification Section Divisions",
+  "version": "2.1",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.1/companies/{company_id}/projects/{project_id}/specification_section_divisions": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Specification Section Divisions",
+    "description": "Returns a paginated list of Specification Section Divisions for a Project.",
+    "tags": [
+     "Specifications"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "specification_area_id",
+      "in": "query",
+      "required": false,
+      "description": "Unique identifier for the specification area.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "id",
+      "in": "query",
+      "required": false,
+      "description": "Filter by specification section division ID.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "search_string",
+      "in": "query",
+      "required": false,
+      "description": "Search string to filter divisions by number or description (case-insensitive).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "specification_set_ids",
+      "in": "query",
+      "required": false,
+      "description": "Array of specification set IDs to filter divisions by. Use 'none' in the array to include divisions with sections that have no specification set.",
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     {
+      "name": "with_sections",
+      "in": "query",
+      "required": false,
+      "description": "When set to 'true', returns only divisions that contain at least one non-obsolete specification section.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "true",
+        "false"
+       ]
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "required": false,
+      "description": "Blueprint view to render when `no_filter` is provided.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "default",
+        "api_v21",
+        "with_sections"
+       ]
+      }
+     },
+     {
+      "name": "no_filter",
+      "in": "query",
+      "required": false,
+      "description": "When present, returns all divisions without section-based filtering.",
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "SpecificationSectionDivisionV2_1",
+         "description": "Represents a construction division, which is used to group specification sections. Each SpecificationSectionDivision can contain many SpecificationSections. This version includes a 'deletable' property.",
+         "properties": {
+          "data": {
+           "description": "List of specification section divisions",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Specification Division",
+            "properties": {
+             "id": {
+              "type": "string",
+              "example": "12",
+              "description": "Unique identifier of the specification section division."
+             },
+             "number": {
+              "type": "string",
+              "example": "00",
+              "description": "Division number used to group specification sections."
+             },
+             "description": {
+              "type": "string",
+              "example": "Procurement and Contracting Requirements",
+              "description": "Name of the construction division."
+             },
+             "deletable": {
+              "type": "boolean",
+              "description": "Indicates if the division can be deleted",
+              "example": true
+             },
+             "sections_ids": {
+              "type": "array",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               5,
+               6,
+               12
+              ],
+              "description": "IDs of the specification sections that belong to this division."
+             },
+             "specification_section_revision_ids": {
+              "type": "array",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               1,
+               2,
+               3
+              ],
+              "description": "IDs of the specification section revisions within this division."
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    specification_area_id: 'SOME_STRING_VALUE',\n    id: 'SOME_STRING_VALUE',\n    search_string: 'SOME_STRING_VALUE',\n    specification_set_ids: 'SOME_ARRAY_VALUE',\n    with_sections: 'SOME_STRING_VALUE',\n    view: 'SOME_STRING_VALUE',\n    no_filter: 'SOME_BOOLEAN_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE&id=SOME_STRING_VALUE&search_string=SOME_STRING_VALUE&specification_set_ids=SOME_ARRAY_VALUE&with_sections=SOME_STRING_VALUE&view=SOME_STRING_VALUE&no_filter=SOME_BOOLEAN_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE&id=SOME_STRING_VALUE&search_string=SOME_STRING_VALUE&specification_set_ids=SOME_ARRAY_VALUE&with_sections=SOME_STRING_VALUE&view=SOME_STRING_VALUE&no_filter=SOME_BOOLEAN_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE&id=SOME_STRING_VALUE&search_string=SOME_STRING_VALUE&specification_set_ids=SOME_ARRAY_VALUE&with_sections=SOME_STRING_VALUE&view=SOME_STRING_VALUE&no_filter=SOME_BOOLEAN_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "List specification section divisions endpoint",
+      "description": "List Specification Section Divisions.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-06-26",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#list-specification-section-divisions"
+     },
+     {
+      "summary": "Added 'sections_ids' attribute to GET divisions endpoint",
+      "description": "Added 'sections_ids' attribute to GET divisions endpoint",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-21",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#list-specification-section-divisions"
+     },
+     {
+      "summary": "Added 'specification_section_revision_ids' attribute for GET divisions endpoint",
+      "description": "Added 'specification_section_revision_ids' attribute to GET divisions endpoint",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-09-03",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#list-specification-section-divisions"
+     },
+     {
+      "summary": "Added new query params for GET divisions endpoint",
+      "description": "Added 'search_string' and 'specification_set_ids' query params for GET divisions endpoint",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-10-08",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#list-specification-section-divisions"
+     },
+     {
+      "summary": "Added 'with_sections' query parameter for GET divisions endpoint",
+      "description": "Added 'with_sections' query parameter to filter and return only divisions that contain at least one non-obsolete specification section",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-10-28",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#list-specification-section-divisions"
+     },
+     {
+      "summary": "Enhanced 'specification_set_ids' to support 'none' value",
+      "description": "Enhanced 'specification_set_ids' query parameter to support 'none' value in the array for filtering divisions with sections that have no specification set",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-03",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#list-specification-section-divisions"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Specification Section Division",
+    "description": "This endpoint creates a specification section division.",
+    "tags": [
+     "Specifications"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "specification_section_division"
+        ],
+        "properties": {
+         "specification_section_division": {
+          "type": "object",
+          "required": [
+           "number",
+           "description"
+          ],
+          "properties": {
+           "number": {
+            "type": "string",
+            "description": "Division number."
+           },
+           "description": {
+            "type": "string",
+            "description": "Division description."
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "SpecificationSectionDivision",
+         "description": "Represents a construction division, which is used to group specification sections. Each SpecificationSectionDivision can contain many SpecificationSections.",
+         "properties": {
+          "data": {
+           "description": "List of specification section divisions",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Specification Division",
+            "properties": {
+             "id": {
+              "type": "string",
+              "example": "209260",
+              "description": "Unique identifier of the specification section division."
+             },
+             "description": {
+              "type": "string",
+              "example": "Mechanical",
+              "description": "Name of the construction division."
+             },
+             "number": {
+              "type": "string",
+              "example": "15",
+              "description": "Division number used to group specification sections."
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request - validation failed or required parameters are missing",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions',\n  headers: {'content-type': 'application/json'},\n  body: {specification_section_division: {number: 'string', description: 'string'}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"specification_section_division\\\":{\\\"number\\\":\\\"string\\\",\\\"description\\\":\\\"string\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions \\\n  --header 'content-type: application/json' \\\n  --data '{\"specification_section_division\":{\"number\":\"string\",\"description\":\"string\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions\"),\n    Content = new StringContent(\"{\\\"specification_section_division\\\":{\\\"number\\\":\\\"string\\\",\\\"description\\\":\\\"string\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added specification_section_divisions create endpoint",
+      "description": "Added specification_section_divisions create endpoint\nTo create a specification section division, add the following endpoint:",
+      "endpoint": "POST /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-07-22",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#create-a-specification-section-division"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Specification Section Divisions",
+    "description": "Bulk creates, updates, and deletes Specification Section Divisions for a Project.",
+    "tags": [
+     "Specifications"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "creation_params": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Optional client-supplied identifier used to correlate validation errors."
+            },
+            "number": {
+             "type": "string"
+            },
+            "description": {
+             "type": "string"
+            }
+           }
+          }
+         },
+         "updation_params": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "required": [
+            "id"
+           ],
+           "properties": {
+            "id": {
+             "type": "string"
+            },
+            "number": {
+             "type": "string"
+            },
+            "description": {
+             "type": "string"
+            }
+           }
+          }
+         },
+         "deletion_params": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "required": [
+            "id"
+           ],
+           "properties": {
+            "id": {
+             "type": "string"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "SpecificationSectionDivisionV2_1",
+         "description": "Represents a construction division, which is used to group specification sections. Each SpecificationSectionDivision can contain many SpecificationSections. This version includes a 'deletable' property.",
+         "properties": {
+          "data": {
+           "description": "List of specification section divisions",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Specification Division",
+            "properties": {
+             "id": {
+              "type": "string",
+              "example": "12",
+              "description": "Unique identifier of the specification section division."
+             },
+             "number": {
+              "type": "string",
+              "example": "00",
+              "description": "Division number used to group specification sections."
+             },
+             "description": {
+              "type": "string",
+              "example": "Procurement and Contracting Requirements",
+              "description": "Name of the construction division."
+             },
+             "deletable": {
+              "type": "boolean",
+              "description": "Indicates if the division can be deleted",
+              "example": true
+             },
+             "sections_ids": {
+              "type": "array",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               5,
+               6,
+               12
+              ],
+              "description": "IDs of the specification sections that belong to this division."
+             },
+             "specification_section_revision_ids": {
+              "type": "array",
+              "items": {
+               "type": "integer"
+              },
+              "example": [
+               1,
+               2,
+               3
+              ],
+              "description": "IDs of the specification section revisions within this division."
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request - validation failed",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions',\n  headers: {'content-type': 'application/json'},\n  body: {\n    creation_params: [{id: 'string', number: 'string', description: 'string'}],\n    updation_params: [{id: 'string', number: 'string', description: 'string'}],\n    deletion_params: [{id: 'string'}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"creation_params\\\":[{\\\"id\\\":\\\"string\\\",\\\"number\\\":\\\"string\\\",\\\"description\\\":\\\"string\\\"}],\\\"updation_params\\\":[{\\\"id\\\":\\\"string\\\",\\\"number\\\":\\\"string\\\",\\\"description\\\":\\\"string\\\"}],\\\"deletion_params\\\":[{\\\"id\\\":\\\"string\\\"}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions \\\n  --header 'content-type: application/json' \\\n  --data '{\"creation_params\":[{\"id\":\"string\",\"number\":\"string\",\"description\":\"string\"}],\"updation_params\":[{\"id\":\"string\",\"number\":\"string\",\"description\":\"string\"}],\"deletion_params\":[{\"id\":\"string\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.1/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions\"),\n    Content = new StringContent(\"{\\\"creation_params\\\":[{\\\"id\\\":\\\"string\\\",\\\"number\\\":\\\"string\\\",\\\"description\\\":\\\"string\\\"}],\\\"updation_params\\\":[{\\\"id\\\":\\\"string\\\",\\\"number\\\":\\\"string\\\",\\\"description\\\":\\\"string\\\"}],\\\"deletion_params\\\":[{\\\"id\\\":\\\"string\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Update specification section divisions endpoint",
+      "description": "Update Specification Section Divisions.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/specification_section_divisions",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-07-09",
+      "versions": [
+       "2.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-section-divisions?version=2.1#update-specification-section-divisions"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/specification_section_divisions": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Specification Section Divisions for a Project",
+    "tags": [
+     "Specifications"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "title": "SpecificationSectionDivision",
+          "description": "Represents a construction division, which is used to group specification sections. Each SpecificationSectionDivision can contain many SpecificationSections.",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "example": 209260
+           },
+           "number": {
+            "type": "string",
+            "example": "15"
+           },
+           "description": {
+            "type": "string",
+            "example": "Mechanical"
+           },
+           "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Address of a PDF file containing the PDFs for all of the SpecificationSections in this division, concatenated into one."
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/specification_section_divisions',\n  qs: {\n    project_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/specification_section_divisions?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/specification_section_divisions?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/specification_section_divisions?project_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Specification Section Division for a Project",
+    "tags": [
+     "Specifications"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": false,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "specification_section_division"
+        ],
+        "properties": {
+         "specification_section_division": {
+          "title": "Specification Section Division",
+          "type": "object",
+          "required": [
+           "number",
+           "description"
+          ],
+          "properties": {
+           "number": {
+            "type": "string",
+            "example": "15"
+           },
+           "description": {
+            "type": "string",
+            "example": "Mechanical"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "SpecificationSectionDivision",
+         "description": "Represents a construction division, which is used to group specification sections. Each SpecificationSectionDivision can contain many SpecificationSections.",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "example": 209260
+          },
+          "number": {
+           "type": "string",
+           "example": "15"
+          },
+          "description": {
+           "type": "string",
+           "example": "Mechanical"
+          },
+          "url": {
+           "type": "string",
+           "nullable": true,
+           "description": "Address of a PDF file containing the PDFs for all of the SpecificationSections in this division, concatenated into one."
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/specification_section_divisions',\n  qs: {project_id: 'SOME_INTEGER_VALUE'},\n  headers: {'content-type': 'application/json'},\n  body: {specification_section_division: {number: '15', description: 'Mechanical'}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"specification_section_division\\\":{\\\"number\\\":\\\"15\\\",\\\"description\\\":\\\"Mechanical\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/specification_section_divisions?project_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/specification_section_divisions?project_id=SOME_INTEGER_VALUE' \\\n  --header 'content-type: application/json' \\\n  --data '{\"specification_section_division\":{\"number\":\"15\",\"description\":\"Mechanical\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/specification_section_divisions?project_id=SOME_INTEGER_VALUE\"),\n    Content = new StringContent(\"{\\\"specification_section_division\\\":{\\\"number\\\":\\\"15\\\",\\\"description\\\":\\\"Mechanical\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/specification_section_divisions": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Specification Sections Divisions",
+    "description": "This endpoint returns a paginated list of Specification Sections Division for a Project.",
+    "tags": [
+     "Specifications"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "specification_area_id",
+      "in": "query",
+      "required": false,
+      "description": "Unique identifier for the specification area.",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "SpecificationSectionDivision",
+         "description": "Represents a construction division, which is used to group specification sections. Each SpecificationSectionDivision can contain many SpecificationSections.",
+         "properties": {
+          "data": {
+           "description": "List of specification section divisions",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Specification Division",
+            "properties": {
+             "id": {
+              "type": "string",
+              "example": "209260",
+              "description": "Unique identifier of the specification section division."
+             },
+             "description": {
+              "type": "string",
+              "example": "Mechanical",
+              "description": "Name of the construction division."
+             },
+             "number": {
+              "type": "string",
+              "example": "15",
+              "description": "Division number used to group specification sections."
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    specification_area_id: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_section_divisions?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "partial"
+  }
+ }
+}

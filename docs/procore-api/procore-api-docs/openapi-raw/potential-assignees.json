@@ -1,0 +1,303 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Potential Assignees",
+  "x-product-category": "Project Management",
+  "x-tool-category": "RFI",
+  "x-resource-name": "Potential Assignees",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/rfis/potential_assignees": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "page",
+     "in": "query",
+     "description": "Page",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "per_page",
+     "in": "query",
+     "description": "Elements per page",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a list of possible assignees for an RFI",
+    "description": "Returns all potential Assignees for an RFI.",
+    "tags": [
+     "RFIs"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "allOf": [
+           {
+            "type": "object",
+            "properties": {
+             "login": {
+              "type": "string",
+              "description": "Email address (login) of the user. Uniquely identifies the account across Procore.",
+              "example": "carl.contractor@example.com"
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique integer identifier for this user.",
+              "example": 161072
+             },
+             "name": {
+              "type": "string",
+              "description": "Full display name of the user, formatted as first + last name.",
+              "example": "Carl the Contractor"
+             },
+             "locale": {
+              "type": "string",
+              "nullable": true,
+              "description": "Locale preference of the user, e.g. `en-US`. Null if not explicitly set.",
+              "example": "en-US"
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/potential_assignees',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/rfis/potential_assignees?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/potential_assignees?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/rfis/potential_assignees?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added the ability to get potential_assignees including groups",
+      "description": "You can now send a parameter `include_groups=true` in the request, which will return a list of users, and groups like `{ users: [], groups: [] }`",
+      "endpoint": "GET /projects/{project_id}/rfis/potential_assignees",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-01-05",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "potential-assignees?version=1.0#get-a-list-of-possible-assignees-for-an-rfi"
+     },
+     {
+      "summary": "Use the `view` and `name_format` query params on potential_assignees endpoint",
+      "description": "You can combine `view` and `name_format` query params in the request, which will return a list of users with the corresponding fields and name format",
+      "endpoint": "GET /projects/{project_id}/rfis/potential_assignees",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "potential-assignees?version=1.0#get-a-list-of-possible-assignees-for-an-rfi"
+     },
+     {
+      "summary": "Added pagination and the ability to filter by name and ids",
+      "description": "We added pagination functionality and introduced the ability to filter users by name using `&filters[query]=searchTerm` param. Similarly, now we allow filtering options by ids using the `&filters[ids]=[3,100, 500]` param. Sorting related, now the options will be returned sorted by first name.",
+      "endpoint": "GET /projects/{project_id}/rfis/potential_assignees",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-07-24",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "potential-assignees?version=1.0#get-a-list-of-possible-assignees-for-an-rfi"
+     },
+     {
+      "summary": "Added the ability to filter by full name",
+      "description": "We introduced the ability to filter users by full name using `&filters[query]=first_name last_name` param.",
+      "endpoint": "GET /projects/{project_id}/rfis/potential_assignees",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2023-08-09",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "potential-assignees?version=1.0#get-a-list-of-possible-assignees-for-an-rfi"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  }
+ }
+}

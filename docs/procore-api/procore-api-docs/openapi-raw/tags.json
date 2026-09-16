@@ -1,0 +1,1725 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Tags",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "Tags",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/tags": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Resource Planning Tag for a Group",
+    "description": "Gets all of the Resource Planning Tags belonging to a Group",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a single Tag.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Tag.",
+            "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+           },
+           "name": {
+            "type": "string",
+            "description": "The name of the Tag.",
+            "example": "Google Certification"
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "Array of UUIDs representing Groups this Tag is assigned to. Can be empty if `globally_accessible` is true.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": []
+           },
+           "globally_accessible": {
+            "type": "boolean",
+            "description": "Indicates if the Tag is globally available to all current and future Groups.",
+            "example": true
+           },
+           "abbreviation": {
+            "type": "string",
+            "maxLength": 5,
+            "description": "A 5-character max abbreviation for the Tag.",
+            "example": "GOOGl"
+           },
+           "require_expr_date": {
+            "type": "boolean",
+            "description": "Indicates whether an expiration date is required when applying the Tag to a Person.",
+            "example": true
+           },
+           "expr_days_warning": {
+            "type": "integer",
+            "description": "Number of days before expiration when the Tag enters \"warning\" mode. Only applicable if `require_expr_date` is true.",
+            "minimum": 1,
+            "example": 30
+           },
+           "color": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6})$",
+            "description": "Hexadecimal color code for the Tag.",
+            "example": "#53A9FF"
+           },
+           "categories": {
+            "type": "array",
+            "description": "Array of Tag Categories the Tag belongs to. Can be empty if not categorized.",
+            "items": {
+             "type": "string"
+            },
+            "example": []
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get group tags",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/tags",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#get-all-resource-planning-tag-for-a-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/tags": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get All Resource Planning Tag for a Company",
+    "description": "Gets all of the Resource Planning Tags belonging to a Company",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a single Tag.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Tag.",
+            "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+           },
+           "name": {
+            "type": "string",
+            "description": "The name of the Tag.",
+            "example": "Google Certification"
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "Array of UUIDs representing Groups this Tag is assigned to. Can be empty if `globally_accessible` is true.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": []
+           },
+           "globally_accessible": {
+            "type": "boolean",
+            "description": "Indicates if the Tag is globally available to all current and future Groups.",
+            "example": true
+           },
+           "abbreviation": {
+            "type": "string",
+            "maxLength": 5,
+            "description": "A 5-character max abbreviation for the Tag.",
+            "example": "GOOGl"
+           },
+           "require_expr_date": {
+            "type": "boolean",
+            "description": "Indicates whether an expiration date is required when applying the Tag to a Person.",
+            "example": true
+           },
+           "expr_days_warning": {
+            "type": "integer",
+            "description": "Number of days before expiration when the Tag enters \"warning\" mode. Only applicable if `require_expr_date` is true.",
+            "minimum": 1,
+            "example": 30
+           },
+           "color": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6})$",
+            "description": "Hexadecimal color code for the Tag.",
+            "example": "#53A9FF"
+           },
+           "categories": {
+            "type": "array",
+            "description": "Array of Tag Categories the Tag belongs to. Can be empty if not categorized.",
+            "items": {
+             "type": "string"
+            },
+            "example": []
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All Tags endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/tags",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#get-all-resource-planning-tag-for-a-company"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Company Tag",
+    "description": "Creates a Resource Planning Tag for the given company",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for creating a new Tag.",
+        "required": [
+         "company_id",
+         "globally_accessible",
+         "group_ids",
+         "name"
+        ],
+        "properties": {
+         "company_id": {
+          "type": "integer",
+          "description": "Unique identifier for the company. NOTE - this is a Laborchart company ID.",
+          "example": 12345
+         },
+         "name": {
+          "type": "string",
+          "description": "The Tag's name.",
+          "example": "High Priority"
+         },
+         "abbreviation": {
+          "type": "string",
+          "maxLength": 5,
+          "description": "A 5-character max String representing the abbreviation that will appear in most Tag views. Defaults to the first 5 characters of the name if not provided.",
+          "example": "PRIOR"
+         },
+         "categories": {
+          "type": "array",
+          "description": "Array of Tag Categories this Tag should be available to, if Tag Categories are enabled.",
+          "items": {
+           "type": "string"
+          },
+          "example": [
+           "Safety",
+           "Urgent",
+           "Training"
+          ]
+         },
+         "color": {
+          "type": "string",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "description": "Hexadecimal color code for the Tag, used for categorization and visual distinction.",
+          "example": "#53A9FF"
+         },
+         "expr_days_warning": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of days before expiration when the Tag should be in \"warning\" mode. Only relevant if `require_expr_date` is true.",
+          "example": 30
+         },
+         "globally_accessible": {
+          "type": "boolean",
+          "description": "Controls whether the Tag should be globally available to all current and future Groups.",
+          "example": true
+         },
+         "group_ids": {
+          "type": "array",
+          "description": "Array of UUIDs for which Groups this Tag should be available to or be removed from depending on context. For adding availability, if `globally_accessible` is true, this can be an empty array.",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "example": [
+           "550e8400-e29b-41d4-a716-446655440000",
+           "4f7e9e5b-d4f5-4a73-8a97-4e6b72fb5c19"
+          ]
+         },
+         "require_expr_date": {
+          "type": "boolean",
+          "description": "Controls whether the Tag should require an expiration date when applied to a Person.",
+          "example": true
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a created Tag.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Tag.",
+            "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Tag endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/tags",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#create-company-tag"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/tags/{tag_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a Single Resource Planning Tag",
+    "description": "Gets a single Resource Planning Tag",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "tag_id",
+      "in": "path",
+      "description": "Unique identifier for the tag.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Tag.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Tag.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Tag.",
+           "example": "Google Certification"
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "Array of UUIDs representing Groups this Tag is assigned to. Can be empty if `globally_accessible` is true.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": []
+          },
+          "globally_accessible": {
+           "type": "boolean",
+           "description": "Indicates if the Tag is globally available to all current and future Groups.",
+           "example": true
+          },
+          "abbreviation": {
+           "type": "string",
+           "maxLength": 5,
+           "description": "A 5-character max abbreviation for the Tag.",
+           "example": "GOOGl"
+          },
+          "require_expr_date": {
+           "type": "boolean",
+           "description": "Indicates whether an expiration date is required when applying the Tag to a Person.",
+           "example": true
+          },
+          "expr_days_warning": {
+           "type": "integer",
+           "description": "Number of days before expiration when the Tag enters \"warning\" mode. Only applicable if `require_expr_date` is true.",
+           "minimum": 1,
+           "example": 30
+          },
+          "color": {
+           "type": "string",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "description": "Hexadecimal color code for the Tag.",
+           "example": "#53A9FF"
+          },
+          "categories": {
+           "type": "array",
+           "description": "Array of Tag Categories the Tag belongs to. Can be empty if not categorized.",
+           "items": {
+            "type": "string"
+           },
+           "example": []
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Single Tag endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/tags/{tag_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#get-a-single-resource-planning-tag"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Company Tag",
+    "description": "Updates a Resource Planning Tag for the given company",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "tag_id",
+      "in": "path",
+      "description": "Unique identifier for the tag.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for updating a Tag.",
+        "required": [
+         "company_id",
+         "globally_accessible",
+         "group_ids",
+         "name"
+        ],
+        "properties": {
+         "company_id": {
+          "type": "integer",
+          "description": "Unique identifier for the company. NOTE - this is a Laborchart company ID.",
+          "example": 12345
+         },
+         "name": {
+          "type": "string",
+          "description": "The Tag's name.",
+          "example": "High Priority"
+         },
+         "abbreviation": {
+          "type": "string",
+          "maxLength": 5,
+          "description": "A 5-character max String representing the abbreviation that will appear in most Tag views. Defaults to the first 5 characters of the name if not provided.",
+          "example": "PRIOR"
+         },
+         "categories": {
+          "type": "array",
+          "description": "Array of Tag Categories this Tag should be available to, if Tag Categories are enabled.",
+          "items": {
+           "type": "string"
+          },
+          "example": [
+           "Safety",
+           "Urgent",
+           "Training"
+          ]
+         },
+         "color": {
+          "type": "string",
+          "pattern": "^#([A-Fa-f0-9]{6})$",
+          "description": "Hexadecimal color code for the Tag, used for categorization and visual distinction.",
+          "example": "#53A9FF"
+         },
+         "expr_days_warning": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of days before expiration when the Tag should be in \"warning\" mode. Only relevant if `require_expr_date` is true.",
+          "example": 30
+         },
+         "globally_accessible": {
+          "type": "boolean",
+          "description": "Controls whether the Tag should be globally available to all current and future Groups.",
+          "example": true
+         },
+         "group_ids": {
+          "type": "array",
+          "description": "Array of UUIDs for which Groups this Tag should be available to or be removed from depending on context. For adding availability, if `globally_accessible` is true, this can be an empty array.",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "example": [
+           "550e8400-e29b-41d4-a716-446655440000",
+           "4f7e9e5b-d4f5-4a73-8a97-4e6b72fb5c19"
+          ]
+         },
+         "require_expr_date": {
+          "type": "boolean",
+          "description": "Controls whether the Tag should require an expiration date when applied to a Person.",
+          "example": true
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Tag.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Tag.",
+           "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Tag.",
+           "example": "Google Certification"
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "Array of UUIDs representing Groups this Tag is assigned to. Can be empty if `globally_accessible` is true.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": []
+          },
+          "globally_accessible": {
+           "type": "boolean",
+           "description": "Indicates if the Tag is globally available to all current and future Groups.",
+           "example": true
+          },
+          "abbreviation": {
+           "type": "string",
+           "maxLength": 5,
+           "description": "A 5-character max abbreviation for the Tag.",
+           "example": "GOOGl"
+          },
+          "require_expr_date": {
+           "type": "boolean",
+           "description": "Indicates whether an expiration date is required when applying the Tag to a Person.",
+           "example": true
+          },
+          "expr_days_warning": {
+           "type": "integer",
+           "description": "Number of days before expiration when the Tag enters \"warning\" mode. Only applicable if `require_expr_date` is true.",
+           "minimum": 1,
+           "example": 30
+          },
+          "color": {
+           "type": "string",
+           "pattern": "^#([A-Fa-f0-9]{6})$",
+           "description": "Hexadecimal color code for the Tag.",
+           "example": "#53A9FF"
+          },
+          "categories": {
+           "type": "array",
+           "description": "Array of Tag Categories the Tag belongs to. Can be empty if not categorized.",
+           "items": {
+            "type": "string"
+           },
+           "example": []
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Tag endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/tags/{tag_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#update-company-tag"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Resource Planning Tag",
+    "description": "Deletes a Resource Planning Tag",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "tag_id",
+      "in": "path",
+      "description": "Unique identifier for the tag.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a created Tag.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Tag.",
+            "example": "bc107873-b2fe-4f8f-9879-6d95b4a0684f"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Tag endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/tags/{tag_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#delete-a-resource-planning-tag"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/tags/{tag_id}/groups": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Make Tag from being Available to Group",
+    "description": "Makes a Resource Planning Tag from being Available to a given Group",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "tag_id",
+      "in": "path",
+      "description": "Unique identifier for the tag.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for making a Tag available to Groups.",
+        "required": [
+         "group_ids"
+        ],
+        "properties": {
+         "group_ids": {
+          "type": "array",
+          "description": "Array of UUIDs for which Groups this Tag should be available to or removed from, depending on the context. If `globally_accessible` is true, this can be an empty array.",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "example": [
+           "550e8400-e29b-41d4-a716-446655440000",
+           "4f7e9e5b-d4f5-4a73-8a97-4e6b72fb5c19"
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema containing a list of Group IDs.",
+          "properties": {
+           "group_ids": {
+            "type": "array",
+            "description": "Array of unique identifiers for Groups.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+             "2d2ad78e-c6de-467e-8413-c616b55294a5",
+             "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Add Tag to Group endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/tags/{tag_id}/groups",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#make-tag-from-being-available-to-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/tags/{tag_id}/groups/{group_id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove Tag Availablility to Group",
+    "description": "Removes a Resource Planning Tag from being available to a given group or groups",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "tag_id",
+      "in": "path",
+      "description": "Unique identifier for the tag.",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "group_ids",
+      "in": "query",
+      "description": "Array of UUIDs for which Groups this Tag should be available to or be removed from depending on context. For adding availability, if globally_accessible is true, this can be an empty array.",
+      "required": true,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "format": "uuid"
+       }
+      },
+      "example": [
+       "550e8400-e29b-41d4-a716-446655440000",
+       "4f7e9e5b-d4f5-4a73-8a97-4e6b72fb5c19"
+      ]
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Response schema containing a list of Group IDs.",
+          "properties": {
+           "group_ids": {
+            "type": "array",
+            "description": "Array of unique identifiers for Groups.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "bc107873-b2fe-4f8f-9879-6d95b4a0684f",
+             "2d2ad78e-c6de-467e-8413-c616b55294a5",
+             "ea8fac53-e05f-49bc-a630-dd0c7739570b"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Remove Tag from Group endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/tags/{tag_id}/groups/{group_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "tags?version=1.0#remove-tag-availablility-to-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

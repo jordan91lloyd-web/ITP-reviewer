@@ -1,0 +1,3065 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Project Users",
+  "x-product-category": "Core",
+  "x-tool-category": "Directory",
+  "x-resource-name": "Project Users",
+  "version": "1.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "PM Starter Pack",
+   "Total Quality and Safety Management",
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/users": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Project Users",
+    "description": "Returns a list of active users associated with a project.\n\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "tags": [
+     "Project Users"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "Specifies which view of the resource to return (which attributes should be present in the response). Users without read permissions to Directory are limited to the compact view. Otherwise, the default view is normal.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "compact",
+        "normal"
+       ]
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[permission_template]",
+      "in": "query",
+      "description": "Permission Template ID. Returns item(s) assiociated with the specified Permission Template ID.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[vendor_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Vendor IDs.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[origin_id]",
+      "in": "query",
+      "description": "Origin ID. Returns item(s) with the specified Origin ID.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[trade_id][]",
+      "in": "query",
+      "description": "Returns users whose vendor record is associated with the specified trade id(s).",
+      "explode": true,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[search]",
+      "in": "query",
+      "description": "Returns users where the search string matches the user's first name, last name, email address, keywords, job title, or company name",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "filters[employee]",
+      "in": "query",
+      "description": "Returns users whose is_employee attribute matches the parameter.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "filters[id][]",
+      "in": "query",
+      "description": "Returns users whose id attribute matches the parameter.",
+      "required": false,
+      "explode": true,
+      "style": "form",
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[search_by_full_name]",
+      "in": "query",
+      "description": "Returns users whose full_name matches the parameter.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "description": "Returns items with the specified sort.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "enum": [
+        "name",
+        "vendor_name",
+        "permission_template"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of project users",
+         "items": {
+          "oneOf": [
+           {
+            "type": "object",
+            "title": "Compact View",
+            "description": "Project User Compact View",
+            "properties": {
+             "first_name": {
+              "type": "string",
+              "description": "User first name",
+              "example": "Jane",
+              "nullable": true
+             },
+             "id": {
+              "type": "integer",
+              "description": "User id",
+              "example": 381006
+             },
+             "initials": {
+              "type": "string",
+              "description": "User initials",
+              "example": "JD",
+              "nullable": true
+             },
+             "last_name": {
+              "type": "string",
+              "description": "User last name",
+              "example": "Doe"
+             },
+             "name": {
+              "type": "string",
+              "description": "User full name",
+              "example": "Jane Doe"
+             },
+             "party_id": {
+              "type": "integer",
+              "description": "The Directory Party ID for this user, resolved via Contact \u2192 Person \u2192 Party. Null when the user has no associated person record. Use this ID when calling endpoints that require a party identifier (e.g. certification assignments).",
+              "example": 12345,
+              "nullable": true
+             },
+             "vendor": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "example": "SID Architecture"
+               }
+              }
+             }
+            }
+           },
+           {
+            "type": "object",
+            "title": "Normal View",
+            "description": "Project User Normal View",
+            "properties": {
+             "address": {
+              "type": "string",
+              "description": "User address",
+              "example": "6305 Carpinteria Ave",
+              "nullable": true
+             },
+             "avatar": {
+              "type": "string",
+              "description": "User avatar url",
+              "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D",
+              "nullable": true
+             },
+             "business_id": {
+              "description": "Business id",
+              "example": "89cac92d-fbd8-40ec-a1fc-24bbbd035a78",
+              "nullable": true,
+              "type": "string"
+             },
+             "business_phone": {
+              "type": "string",
+              "description": "User business phone",
+              "example": "1234567890",
+              "nullable": true
+             },
+             "business_phone_extension": {
+              "type": "integer",
+              "description": "User business phone extension",
+              "example": 21,
+              "nullable": true
+             },
+             "city": {
+              "type": "string",
+              "description": "User city",
+              "example": "Carpinteria",
+              "nullable": true
+             },
+             "country_code": {
+              "type": "string",
+              "description": "User country code (ISO-3166 Alpha-2 format)",
+              "example": "US",
+              "nullable": true
+             },
+             "email_address": {
+              "type": "string",
+              "format": "email",
+              "description": "User email",
+              "example": "jane.doe@example.com",
+              "nullable": true
+             },
+             "email_signature": {
+              "type": "string",
+              "description": "User email signature",
+              "example": "<p>Sent from Procore.</p>",
+              "nullable": true
+             },
+             "employee_id": {
+              "type": "string",
+              "description": "User employee id",
+              "example": "123456789",
+              "nullable": true
+             },
+             "erp_integrated_accountant": {
+              "type": "boolean",
+              "description": "User ERP integrated accountant status",
+              "example": true
+             },
+             "fax_number": {
+              "type": "string",
+              "description": "User fax number",
+              "example": "5555555555",
+              "nullable": true
+             },
+             "first_name": {
+              "type": "string",
+              "description": "User first name",
+              "example": "Jane",
+              "nullable": true
+             },
+             "id": {
+              "type": "integer",
+              "description": "User id",
+              "example": 381006
+             },
+             "initials": {
+              "type": "string",
+              "description": "User initials",
+              "example": "JD",
+              "nullable": true
+             },
+             "is_active": {
+              "type": "boolean",
+              "description": "User active status",
+              "example": true,
+              "nullable": true
+             },
+             "is_employee": {
+              "type": "boolean",
+              "description": "User employee status",
+              "example": false,
+              "nullable": true
+             },
+             "job_title": {
+              "type": "string",
+              "description": "User job title",
+              "example": "QA Manager",
+              "nullable": true
+             },
+             "last_login_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "User last login at",
+              "example": "2016-06-30T20:41:58Z",
+              "nullable": true
+             },
+             "last_name": {
+              "type": "string",
+              "description": "User last name",
+              "example": "Doe"
+             },
+             "mobile_phone": {
+              "type": "string",
+              "description": "User mobile phone",
+              "example": "5555555555",
+              "nullable": true
+             },
+             "name": {
+              "type": "string",
+              "description": "User full name",
+              "example": "Jane Doe"
+             },
+             "notes": {
+              "type": "string",
+              "description": "User notes",
+              "example": "notes",
+              "nullable": true
+             },
+             "state_code": {
+              "type": "string",
+              "description": "User state code (ISO-3166 Alpha-2 format)",
+              "example": "CA",
+              "nullable": true
+             },
+             "welcome_email_sent_at": {
+              "type": "string",
+              "nullable": true,
+              "format": "date-time",
+              "description": "User welcome email sent at",
+              "example": "2013-05-30T20:41:58Z"
+             },
+             "zip": {
+              "type": "string",
+              "description": "User zip code",
+              "example": "93013",
+              "nullable": true
+             },
+             "origin_id": {
+              "type": "string",
+              "nullable": true,
+              "example": "foobar",
+              "description": "User origin id"
+             },
+             "origin_data": {
+              "type": "string",
+              "nullable": true,
+              "description": "User origin data",
+              "example": "OD-2398273424"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "User created at",
+              "example": "2016-10-23T21:39:40Z"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "User updated at",
+              "example": "2016-10-23T21:39:40Z"
+             },
+             "vendor": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "example": "SID Architecture"
+               },
+               "is_connected": {
+                "type": "boolean",
+                "example": true
+               },
+               "origin_id": {
+                "type": "integer",
+                "example": 56238
+               },
+               "business_register_id": {
+                "type": "integer",
+                "example": 123
+               }
+              }
+             },
+             "contact_id": {
+              "type": "integer",
+              "example": 523
+             },
+             "work_classification_id": {
+              "type": "integer",
+              "description": "Work classification id",
+              "example": 13,
+              "nullable": true
+             },
+             "party_id": {
+              "type": "integer",
+              "description": "The Directory Party ID for this user, resolved via Contact \u2192 Person \u2192 Party. Null when the user has no associated person record. Use this ID when calling endpoints that require a party identifier (e.g. certification assignments).",
+              "example": 12345,
+              "nullable": true
+             },
+             "permission_template": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for the Permission Template",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the Permission Template",
+                "example": "General Contractor"
+               },
+               "project_specific": {
+                "type": "boolean",
+                "description": "If the Permission Template is project specific",
+                "example": true
+               },
+               "type": {
+                "type": "string",
+                "description": "The type of the Permission Template",
+                "enum": [
+                 "global",
+                 "project_specific"
+                ]
+               }
+              },
+              "example": {
+               "id": 1,
+               "name": "General Contractor",
+               "project_specific": true,
+               "type": "global"
+              }
+             },
+             "company_permission_template": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Unique identifier for the Permission Template",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "The name of the Permission Template",
+                "example": "General Contractor"
+               },
+               "project_specific": {
+                "type": "boolean",
+                "description": "If the Permission Template is project specific",
+                "example": true
+               },
+               "type": {
+                "type": "string",
+                "description": "The type of the Permission Template",
+                "enum": [
+                 "company_tools"
+                ]
+               }
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    view: 'SOME_STRING_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[permission_template]': 'SOME_INTEGER_VALUE',\n    'filters[vendor_id]': 'SOME_ARRAY_VALUE',\n    'filters[origin_id]': 'SOME_STRING_VALUE',\n    'filters[trade_id][]': 'SOME_ARRAY_VALUE',\n    'filters[search]': 'SOME_STRING_VALUE',\n    'filters[employee]': 'SOME_BOOLEAN_VALUE',\n    'filters[id][]': 'SOME_ARRAY_VALUE',\n    'filters[search_by_full_name]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/users?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bpermission_template%5D=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_ARRAY_VALUE&filters%5Borigin_id%5D=SOME_STRING_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&filters%5Bemployee%5D=SOME_BOOLEAN_VALUE&filters%5Bid%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch_by_full_name%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bpermission_template%5D=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_ARRAY_VALUE&filters%5Borigin_id%5D=SOME_STRING_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&filters%5Bemployee%5D=SOME_BOOLEAN_VALUE&filters%5Bid%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch_by_full_name%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bpermission_template%5D=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_ARRAY_VALUE&filters%5Borigin_id%5D=SOME_STRING_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch%5D=SOME_STRING_VALUE&filters%5Bemployee%5D=SOME_BOOLEAN_VALUE&filters%5Bid%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bsearch_by_full_name%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added party_id for List project users",
+      "description": "Added `party_id` to the response body of the List project users endpoint in\nthe compact and normal views. `party_id` is the Directory Party ID for the\nuser and is nullable for users without an associated person record.",
+      "endpoint": "GET /projects/{project_id}/users",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-08-07",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#list-project-users"
+     },
+     {
+      "summary": "Corrected filters[id] to accept an array of IDs",
+      "description": "The `filters[id]` parameter on GET /projects/{project_id}/users was documented\nas accepting a single integer, but the API has always accepted an array of IDs\n(filters[id][]=1&filters[id][]=2) via procore-sift, consistent with other array\nfilters on the same endpoint (filters[vendor_id][], filters[trade_id][]). The\nparameter is now correctly documented as filters[id][] with type: array of integer.",
+      "endpoint": "GET /projects/{project_id}/users",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-05-07",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#list-project-users"
+     },
+     {
+      "summary": "Added Business Id for List project users",
+      "description": "Added `business_id` to payload response body.",
+      "endpoint": "GET /projects/{project_id}/users",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-06-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#list-project-users"
+     },
+     {
+      "summary": "Added Id filter for List project users",
+      "description": "Added `filters[id]` to request body.",
+      "endpoint": "GET /projects/{project_id}/users",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-08-22",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#list-project-users"
+     },
+     {
+      "summary": "Documented available views List Project Users",
+      "description": "Documented the different available views for List Project Users, correcting the responses provided for each view param.\nUsers without Read access to the Directory were already limited to only the compact view, this has now been documented.",
+      "endpoint": "GET /projects/{project_id}/users",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2023-06-12",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#list-project-users"
+     },
+     {
+      "summary": "Added new vendor keys to response body for List project users",
+      "description": "Added is_connected, origin_id, and business_register_id to payload response body.",
+      "endpoint": "GET /projects/{project_id}/users",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2024-12-06",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#list-project-users"
+     },
+     {
+      "summary": "Added search_by_full_name filter for List project users",
+      "description": "Added `filters[search_by_full_name]` to request body.",
+      "endpoint": "GET /projects/{project_id}/users",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2026-04-16",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#list-project-users"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create project user",
+    "description": "Creates a new user in the specified project.\n\n#### Country and State codes\nThe `country_code` and `state_code` parameter values must conform to the ISO-3166 Alpha-2 specification.\nSee [Working with Country Codes](/documentation/country-codes) for additional information.\n\n#### Created Response\nFor null values, the key won't be returned",
+    "tags": [
+     "Project Users"
+    ],
+    "parameters": [
+     {
+      "name": "run_configurable_validations",
+      "in": "query",
+      "required": false,
+      "description": "If true, validations are run for the corresponding Configurable Field Set.",
+      "schema": {
+       "type": "boolean",
+       "default": false
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Project User Body",
+        "type": "object",
+        "required": [
+         "user"
+        ],
+        "properties": {
+         "user": {
+          "title": "Project User",
+          "type": "object",
+          "required": [
+           "email_address",
+           "last_name"
+          ],
+          "properties": {
+           "address": {
+            "type": "string",
+            "description": "The street Address of the Project User",
+            "example": "6305 Carpinteria Ave"
+           },
+           "avatar": {
+            "type": "string",
+            "description": "Project User Avatar.\nTo upload avatar you must upload whole payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `user[avatar]` as file.",
+            "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+           },
+           "business_phone": {
+            "type": "string",
+            "description": "The Business Phone number of the Project User",
+            "example": "1-555-555-1234"
+           },
+           "business_phone_extension": {
+            "type": "integer",
+            "description": "The Business Phone Extension of the Project User",
+            "example": 123
+           },
+           "city": {
+            "type": "string",
+            "description": "The City in which the Project User resides",
+            "example": "Carpinteria"
+           },
+           "country_code": {
+            "type": "string",
+            "description": "The Country Code of the Project User (ISO-3166 Alpha-2 format)",
+            "example": "US"
+           },
+           "email_address": {
+            "type": "string",
+            "format": "email",
+            "description": "The Email Address of the Project User",
+            "example": "jane.doe@example.com"
+           },
+           "email_signature": {
+            "type": "string",
+            "description": "The Email Signature of the Project User",
+            "example": "<p>Sent from Procore.</p>"
+           },
+           "employee_id": {
+            "type": "string",
+            "description": "The Employee ID of the Project User",
+            "example": "123456789"
+           },
+           "fax_number": {
+            "type": "string",
+            "description": "The Fax Number of the Project User",
+            "example": "1-555-555-5555"
+           },
+           "first_name": {
+            "type": "string",
+            "description": "The First Name of the Project User",
+            "example": "Jane"
+           },
+           "initials": {
+            "type": "string",
+            "description": "The Initials of the Project User",
+            "example": "LR"
+           },
+           "is_active": {
+            "type": "boolean",
+            "description": "The Active status of the Project User",
+            "example": true
+           },
+           "is_employee": {
+            "type": "boolean",
+            "description": "The Employee status of the Project User",
+            "default": false,
+            "example": false
+           },
+           "job_title": {
+            "type": "string",
+            "description": "The Job Title of the Project User",
+            "example": "QA Manager"
+           },
+           "last_name": {
+            "type": "string",
+            "description": "The Last Name of the Project User",
+            "example": "Doe"
+           },
+           "mobile_phone": {
+            "type": "string",
+            "description": "The Mobile Phone number of the Project User",
+            "example": "1-555-555-1234"
+           },
+           "notes": {
+            "type": "string",
+            "description": "The Notes (notes/keywords/tags) of the Project User",
+            "example": "notes"
+           },
+           "permission_template_id": {
+            "type": "integer",
+            "description": "The Permission Template ID of the Project User",
+            "example": 27
+           },
+           "state_code": {
+            "type": "string",
+            "description": "The State Code of the Project User (ISO-3166 Alpha-2 format)",
+            "example": "CA"
+           },
+           "vendor_id": {
+            "type": "integer",
+            "description": "The Vendor ID of the Project User",
+            "example": 161072
+           },
+           "zip": {
+            "type": "string",
+            "description": "The Zip Code of the Project User",
+            "example": "93013"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "User",
+         "description": "Company User",
+         "properties": {
+          "address": {
+           "type": "string",
+           "description": "User address",
+           "example": "6305 Carpinteria Ave"
+          },
+          "avatar": {
+           "type": "string",
+           "description": "User avatar url",
+           "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+          },
+          "business_id": {
+           "description": "Business id",
+           "example": "89cac92d-fbd8-40ec-a1fc-24bbbd035a78",
+           "nullable": true,
+           "type": "string"
+          },
+          "business_phone": {
+           "type": "string",
+           "description": "User business phone",
+           "example": "1-555-555-1234"
+          },
+          "business_phone_extension": {
+           "type": "integer",
+           "description": "User business phone extension",
+           "example": 123
+          },
+          "city": {
+           "type": "string",
+           "description": "User city",
+           "example": "Carpinteria"
+          },
+          "country_code": {
+           "type": "string",
+           "description": "User country code (ISO-3166 Alpha-2 format)",
+           "example": "US"
+          },
+          "email_address": {
+           "type": "string",
+           "format": "email",
+           "description": "User email",
+           "example": "jane.doe@example.com"
+          },
+          "email_signature": {
+           "type": "string",
+           "description": "User email signature",
+           "example": "<p>Sent from Procore.</p>"
+          },
+          "employee_id": {
+           "type": "string",
+           "description": "User employee id",
+           "example": "123456789"
+          },
+          "fax_number": {
+           "type": "string",
+           "description": "User fax number",
+           "example": "1-555-555-1234"
+          },
+          "first_name": {
+           "type": "string",
+           "description": "User first name",
+           "example": "Jane"
+          },
+          "name": {
+           "type": "string",
+           "description": "User full name",
+           "example": "Jane Doe"
+          },
+          "id": {
+           "type": "integer",
+           "description": "User id",
+           "example": 381006
+          },
+          "initials": {
+           "type": "string",
+           "description": "User initials",
+           "example": "JD"
+          },
+          "is_active": {
+           "type": "boolean",
+           "description": "User active status",
+           "example": true
+          },
+          "is_employee": {
+           "type": "boolean",
+           "description": "User employee status",
+           "example": false
+          },
+          "is_insurance_manager": {
+           "type": "boolean",
+           "description": "Is user an insurance manager",
+           "example": false
+          },
+          "job_title": {
+           "type": "string",
+           "description": "User job title",
+           "example": "QA Manager"
+          },
+          "last_login_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User last login at",
+           "example": "2016-06-30T20:41:58Z"
+          },
+          "last_name": {
+           "type": "string",
+           "description": "User last name",
+           "example": "Doe"
+          },
+          "mobile_phone": {
+           "type": "string",
+           "description": "User mobile phone",
+           "example": "1-555-555-1234"
+          },
+          "notes": {
+           "type": "string",
+           "description": "User notes",
+           "example": "notes"
+          },
+          "state_code": {
+           "type": "string",
+           "description": "User state code (ISO-3166 Alpha-2 format)",
+           "example": "CA"
+          },
+          "zip": {
+           "type": "string",
+           "description": "User zip code",
+           "example": "93013"
+          },
+          "default_permission_template_id": {
+           "type": "integer",
+           "description": "User default permission template id",
+           "example": 27
+          },
+          "company_permission_template_id": {
+           "type": "integer",
+           "description": "User Company Permission Template id",
+           "example": 28
+          },
+          "origin_id": {
+           "type": "string",
+           "example": "foobar",
+           "description": "User origin id"
+          },
+          "origin_data": {
+           "type": "string",
+           "description": "User origin data",
+           "example": "OD-2398273424"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User created at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User updated at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "work_classification_id": {
+           "type": "integer",
+           "description": "Work classification id",
+           "example": 13
+          },
+          "vendor": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 161072
+            },
+            "name": {
+             "type": "string",
+             "example": "SID Architecture"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users',\n  qs: {run_configurable_validations: 'SOME_BOOLEAN_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    user: {\n      address: '6305 Carpinteria Ave',\n      avatar: 'http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D',\n      business_phone: '1-555-555-1234',\n      business_phone_extension: 123,\n      city: 'Carpinteria',\n      country_code: 'US',\n      email_address: 'jane.doe@example.com',\n      email_signature: '<p>Sent from Procore.</p>',\n      employee_id: '123456789',\n      fax_number: '1-555-555-5555',\n      first_name: 'Jane',\n      initials: 'LR',\n      is_active: true,\n      is_employee: false,\n      job_title: 'QA Manager',\n      last_name: 'Doe',\n      mobile_phone: '1-555-555-1234',\n      notes: 'notes',\n      permission_template_id: 27,\n      state_code: 'CA',\n      vendor_id: 161072,\n      zip: '93013'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"user\\\":{\\\"address\\\":\\\"6305 Carpinteria Ave\\\",\\\"avatar\\\":\\\"http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D\\\",\\\"business_phone\\\":\\\"1-555-555-1234\\\",\\\"business_phone_extension\\\":123,\\\"city\\\":\\\"Carpinteria\\\",\\\"country_code\\\":\\\"US\\\",\\\"email_address\\\":\\\"jane.doe@example.com\\\",\\\"email_signature\\\":\\\"<p>Sent from Procore.</p>\\\",\\\"employee_id\\\":\\\"123456789\\\",\\\"fax_number\\\":\\\"1-555-555-5555\\\",\\\"first_name\\\":\\\"Jane\\\",\\\"initials\\\":\\\"LR\\\",\\\"is_active\\\":true,\\\"is_employee\\\":false,\\\"job_title\\\":\\\"QA Manager\\\",\\\"last_name\\\":\\\"Doe\\\",\\\"mobile_phone\\\":\\\"1-555-555-1234\\\",\\\"notes\\\":\\\"notes\\\",\\\"permission_template_id\\\":27,\\\"state_code\\\":\\\"CA\\\",\\\"vendor_id\\\":161072,\\\"zip\\\":\\\"93013\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/users?run_configurable_validations=SOME_BOOLEAN_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users?run_configurable_validations=SOME_BOOLEAN_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"user\":{\"address\":\"6305 Carpinteria Ave\",\"avatar\":\"http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D\",\"business_phone\":\"1-555-555-1234\",\"business_phone_extension\":123,\"city\":\"Carpinteria\",\"country_code\":\"US\",\"email_address\":\"jane.doe@example.com\",\"email_signature\":\"<p>Sent from Procore.</p>\",\"employee_id\":\"123456789\",\"fax_number\":\"1-555-555-5555\",\"first_name\":\"Jane\",\"initials\":\"LR\",\"is_active\":true,\"is_employee\":false,\"job_title\":\"QA Manager\",\"last_name\":\"Doe\",\"mobile_phone\":\"1-555-555-1234\",\"notes\":\"notes\",\"permission_template_id\":27,\"state_code\":\"CA\",\"vendor_id\":161072,\"zip\":\"93013\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users?run_configurable_validations=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"user\\\":{\\\"address\\\":\\\"6305 Carpinteria Ave\\\",\\\"avatar\\\":\\\"http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D\\\",\\\"business_phone\\\":\\\"1-555-555-1234\\\",\\\"business_phone_extension\\\":123,\\\"city\\\":\\\"Carpinteria\\\",\\\"country_code\\\":\\\"US\\\",\\\"email_address\\\":\\\"jane.doe@example.com\\\",\\\"email_signature\\\":\\\"<p>Sent from Procore.</p>\\\",\\\"employee_id\\\":\\\"123456789\\\",\\\"fax_number\\\":\\\"1-555-555-5555\\\",\\\"first_name\\\":\\\"Jane\\\",\\\"initials\\\":\\\"LR\\\",\\\"is_active\\\":true,\\\"is_employee\\\":false,\\\"job_title\\\":\\\"QA Manager\\\",\\\"last_name\\\":\\\"Doe\\\",\\\"mobile_phone\\\":\\\"1-555-555-1234\\\",\\\"notes\\\":\\\"notes\\\",\\\"permission_template_id\\\":27,\\\"state_code\\\":\\\"CA\\\",\\\"vendor_id\\\":161072,\\\"zip\\\":\\\"93013\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Business Id for Create project user",
+      "description": "Added `business_id` to payload response body.",
+      "endpoint": "POST /projects/{project_id}/users",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-06-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#create-project-user"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/users/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the user",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show project user",
+    "description": "Show detail on a specified Project User.\n\n#### OK Response\nFor null values, the key won't be returned",
+    "tags": [
+     "Project Users"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "User",
+         "description": "Company User",
+         "properties": {
+          "address": {
+           "type": "string",
+           "description": "User address",
+           "example": "6305 Carpinteria Ave"
+          },
+          "avatar": {
+           "type": "string",
+           "description": "User avatar url",
+           "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+          },
+          "business_id": {
+           "description": "Business id",
+           "example": "89cac92d-fbd8-40ec-a1fc-24bbbd035a78",
+           "nullable": true,
+           "type": "string"
+          },
+          "business_phone": {
+           "type": "string",
+           "description": "User business phone",
+           "example": "1-555-555-1234"
+          },
+          "business_phone_extension": {
+           "type": "integer",
+           "description": "User business phone extension",
+           "example": 123
+          },
+          "city": {
+           "type": "string",
+           "description": "User city",
+           "example": "Carpinteria"
+          },
+          "country_code": {
+           "type": "string",
+           "description": "User country code (ISO-3166 Alpha-2 format)",
+           "example": "US"
+          },
+          "email_address": {
+           "type": "string",
+           "format": "email",
+           "description": "User email",
+           "example": "jane.doe@example.com"
+          },
+          "email_signature": {
+           "type": "string",
+           "description": "User email signature",
+           "example": "<p>Sent from Procore.</p>"
+          },
+          "employee_id": {
+           "type": "string",
+           "description": "User employee id",
+           "example": "123456789"
+          },
+          "fax_number": {
+           "type": "string",
+           "description": "User fax number",
+           "example": "1-555-555-1234"
+          },
+          "first_name": {
+           "type": "string",
+           "description": "User first name",
+           "example": "Jane"
+          },
+          "name": {
+           "type": "string",
+           "description": "User full name",
+           "example": "Jane Doe"
+          },
+          "id": {
+           "type": "integer",
+           "description": "User id",
+           "example": 381006
+          },
+          "initials": {
+           "type": "string",
+           "description": "User initials",
+           "example": "JD"
+          },
+          "is_active": {
+           "type": "boolean",
+           "description": "User active status",
+           "example": true
+          },
+          "is_employee": {
+           "type": "boolean",
+           "description": "User employee status",
+           "example": false
+          },
+          "is_insurance_manager": {
+           "type": "boolean",
+           "description": "Is user an insurance manager",
+           "example": false
+          },
+          "job_title": {
+           "type": "string",
+           "description": "User job title",
+           "example": "QA Manager"
+          },
+          "last_login_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User last login at",
+           "example": "2016-06-30T20:41:58Z"
+          },
+          "last_name": {
+           "type": "string",
+           "description": "User last name",
+           "example": "Doe"
+          },
+          "mobile_phone": {
+           "type": "string",
+           "description": "User mobile phone",
+           "example": "1-555-555-1234"
+          },
+          "notes": {
+           "type": "string",
+           "description": "User notes",
+           "example": "notes"
+          },
+          "state_code": {
+           "type": "string",
+           "description": "User state code (ISO-3166 Alpha-2 format)",
+           "example": "CA"
+          },
+          "zip": {
+           "type": "string",
+           "description": "User zip code",
+           "example": "93013"
+          },
+          "default_permission_template_id": {
+           "type": "integer",
+           "description": "User default permission template id",
+           "example": 27
+          },
+          "company_permission_template_id": {
+           "type": "integer",
+           "description": "User Company Permission Template id",
+           "example": 28
+          },
+          "origin_id": {
+           "type": "string",
+           "example": "foobar",
+           "description": "User origin id"
+          },
+          "origin_data": {
+           "type": "string",
+           "description": "User origin data",
+           "example": "OD-2398273424"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User created at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User updated at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "work_classification_id": {
+           "type": "integer",
+           "description": "Work classification id",
+           "example": 13
+          },
+          "vendor": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 161072
+            },
+            "name": {
+             "type": "string",
+             "example": "SID Architecture"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Business Id for Show project user",
+      "description": "Added `business_id` to payload response body.",
+      "endpoint": "GET /projects/{project_id}/users/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-06-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#show-project-user"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update project user",
+    "description": "Updates the specified project user. The `country_code` and `state_code` parameter values must conform to the ISO-3166 Alpha-2 specification.\nSee [Working with Country Codes](/documentation/country-codes) for additional information. For OK responses with null values, the key will not be returned.\n\nNote: The `is_active` parameter value requires\na boolean value to be passed in. Setting this parameter to false deactivates the user.\nIf you have deactivated a user by setting `is_active` to false and then try to\nreactivate the user by setting `is_active` to true, you will receive an error message.\nTo reactivate the user via API, you need to call the\n[Sync Company Users](/reference/rest/v1/company-users#sync-company-users) method.\n",
+    "tags": [
+     "Project Users"
+    ],
+    "parameters": [
+     {
+      "name": "run_configurable_validations",
+      "in": "query",
+      "required": false,
+      "description": "If true, validations are run for the corresponding Configurable Field Set.",
+      "schema": {
+       "type": "boolean",
+       "default": false
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Project User Body",
+        "type": "object",
+        "required": [
+         "user"
+        ],
+        "properties": {
+         "user": {
+          "title": "Project User",
+          "type": "object",
+          "properties": {
+           "abbreviated_name": {
+            "type": "string",
+            "description": "The Initials of the Project User",
+            "example": "JD"
+           },
+           "address": {
+            "type": "string",
+            "description": "The street Address of the Project User",
+            "example": "6305 Carpinteria Ave"
+           },
+           "avatar": {
+            "type": "string",
+            "description": "Project User Avatar.\nTo upload avatar you must upload whole payload as `multipart/form-data` content-type and\nspecify each parameter as form-data together with `user[avatar]` as file.",
+            "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+           },
+           "business_phone": {
+            "type": "string",
+            "description": "The Business Phone number of the Project User",
+            "example": "1-555-555-1234"
+           },
+           "business_phone_extension": {
+            "type": "integer",
+            "description": "The Business Phone Extension of the Project User",
+            "example": 123
+           },
+           "city": {
+            "type": "string",
+            "description": "The City in which the Project User resides",
+            "example": "Carpinteria"
+           },
+           "country_code": {
+            "type": "string",
+            "description": "The Country Code of the Project User (ISO-3166 Alpha-2 format)",
+            "example": "US"
+           },
+           "email_address": {
+            "type": "string",
+            "format": "email",
+            "description": "The Email Address of the Project User",
+            "example": "jane.doe@example.com"
+           },
+           "email_signature": {
+            "type": "string",
+            "description": "The Email Signature of the Project User",
+            "example": "<p>Sent from Procore.</p>"
+           },
+           "employee_id": {
+            "type": "string",
+            "description": "The Employee ID of the Project User",
+            "example": "123456789"
+           },
+           "fax_number": {
+            "type": "string",
+            "description": "The Fax Number of the Project User",
+            "example": "1-555-555-5555"
+           },
+           "first_name": {
+            "type": "string",
+            "description": "The First Name of the Project User",
+            "example": "Jane"
+           },
+           "is_active": {
+            "type": "boolean",
+            "description": "The Active status of the Project User",
+            "example": true
+           },
+           "is_employee": {
+            "type": "boolean",
+            "description": "The Employee status of the Project User",
+            "default": false,
+            "example": false
+           },
+           "job_title": {
+            "type": "string",
+            "description": "The Job Title of the Project User",
+            "example": "QA Manager"
+           },
+           "last_name": {
+            "type": "string",
+            "description": "The Last Name of the Project User",
+            "example": "Doe"
+           },
+           "mobile_phone": {
+            "type": "string",
+            "description": "The Mobile Phone number of the Project User",
+            "example": "1-555-555-1234"
+           },
+           "notes": {
+            "type": "string",
+            "description": "The Notes (notes/keywords/tags) of the Project User",
+            "example": "notes"
+           },
+           "state_code": {
+            "type": "string",
+            "description": "The State Code of the Project User (ISO-3166 Alpha-2 format)",
+            "example": "CA"
+           },
+           "vendor_id": {
+            "type": "integer",
+            "description": "The Vendor ID of the Project User",
+            "example": 161072
+           },
+           "zip": {
+            "type": "string",
+            "description": "The Zip Code of the Project User",
+            "example": "93013"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "User",
+         "description": "Company User",
+         "properties": {
+          "address": {
+           "type": "string",
+           "description": "User address",
+           "example": "6305 Carpinteria Ave"
+          },
+          "avatar": {
+           "type": "string",
+           "description": "User avatar url",
+           "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+          },
+          "business_id": {
+           "description": "Business id",
+           "example": "89cac92d-fbd8-40ec-a1fc-24bbbd035a78",
+           "nullable": true,
+           "type": "string"
+          },
+          "business_phone": {
+           "type": "string",
+           "description": "User business phone",
+           "example": "1-555-555-1234"
+          },
+          "business_phone_extension": {
+           "type": "integer",
+           "description": "User business phone extension",
+           "example": 123
+          },
+          "city": {
+           "type": "string",
+           "description": "User city",
+           "example": "Carpinteria"
+          },
+          "country_code": {
+           "type": "string",
+           "description": "User country code (ISO-3166 Alpha-2 format)",
+           "example": "US"
+          },
+          "email_address": {
+           "type": "string",
+           "format": "email",
+           "description": "User email",
+           "example": "jane.doe@example.com"
+          },
+          "email_signature": {
+           "type": "string",
+           "description": "User email signature",
+           "example": "<p>Sent from Procore.</p>"
+          },
+          "employee_id": {
+           "type": "string",
+           "description": "User employee id",
+           "example": "123456789"
+          },
+          "fax_number": {
+           "type": "string",
+           "description": "User fax number",
+           "example": "1-555-555-1234"
+          },
+          "first_name": {
+           "type": "string",
+           "description": "User first name",
+           "example": "Jane"
+          },
+          "name": {
+           "type": "string",
+           "description": "User full name",
+           "example": "Jane Doe"
+          },
+          "id": {
+           "type": "integer",
+           "description": "User id",
+           "example": 381006
+          },
+          "initials": {
+           "type": "string",
+           "description": "User initials",
+           "example": "JD"
+          },
+          "is_active": {
+           "type": "boolean",
+           "description": "User active status",
+           "example": true
+          },
+          "is_employee": {
+           "type": "boolean",
+           "description": "User employee status",
+           "example": false
+          },
+          "is_insurance_manager": {
+           "type": "boolean",
+           "description": "Is user an insurance manager",
+           "example": false
+          },
+          "job_title": {
+           "type": "string",
+           "description": "User job title",
+           "example": "QA Manager"
+          },
+          "last_login_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User last login at",
+           "example": "2016-06-30T20:41:58Z"
+          },
+          "last_name": {
+           "type": "string",
+           "description": "User last name",
+           "example": "Doe"
+          },
+          "mobile_phone": {
+           "type": "string",
+           "description": "User mobile phone",
+           "example": "1-555-555-1234"
+          },
+          "notes": {
+           "type": "string",
+           "description": "User notes",
+           "example": "notes"
+          },
+          "state_code": {
+           "type": "string",
+           "description": "User state code (ISO-3166 Alpha-2 format)",
+           "example": "CA"
+          },
+          "zip": {
+           "type": "string",
+           "description": "User zip code",
+           "example": "93013"
+          },
+          "default_permission_template_id": {
+           "type": "integer",
+           "description": "User default permission template id",
+           "example": 27
+          },
+          "company_permission_template_id": {
+           "type": "integer",
+           "description": "User Company Permission Template id",
+           "example": 28
+          },
+          "origin_id": {
+           "type": "string",
+           "example": "foobar",
+           "description": "User origin id"
+          },
+          "origin_data": {
+           "type": "string",
+           "description": "User origin data",
+           "example": "OD-2398273424"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User created at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User updated at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "work_classification_id": {
+           "type": "integer",
+           "description": "Work classification id",
+           "example": 13
+          },
+          "vendor": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 161072
+            },
+            "name": {
+             "type": "string",
+             "example": "SID Architecture"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D',\n  qs: {run_configurable_validations: 'SOME_BOOLEAN_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    user: {\n      abbreviated_name: 'JD',\n      address: '6305 Carpinteria Ave',\n      avatar: 'http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D',\n      business_phone: '1-555-555-1234',\n      business_phone_extension: 123,\n      city: 'Carpinteria',\n      country_code: 'US',\n      email_address: 'jane.doe@example.com',\n      email_signature: '<p>Sent from Procore.</p>',\n      employee_id: '123456789',\n      fax_number: '1-555-555-5555',\n      first_name: 'Jane',\n      is_active: true,\n      is_employee: false,\n      job_title: 'QA Manager',\n      last_name: 'Doe',\n      mobile_phone: '1-555-555-1234',\n      notes: 'notes',\n      state_code: 'CA',\n      vendor_id: 161072,\n      zip: '93013'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"user\\\":{\\\"abbreviated_name\\\":\\\"JD\\\",\\\"address\\\":\\\"6305 Carpinteria Ave\\\",\\\"avatar\\\":\\\"http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D\\\",\\\"business_phone\\\":\\\"1-555-555-1234\\\",\\\"business_phone_extension\\\":123,\\\"city\\\":\\\"Carpinteria\\\",\\\"country_code\\\":\\\"US\\\",\\\"email_address\\\":\\\"jane.doe@example.com\\\",\\\"email_signature\\\":\\\"<p>Sent from Procore.</p>\\\",\\\"employee_id\\\":\\\"123456789\\\",\\\"fax_number\\\":\\\"1-555-555-5555\\\",\\\"first_name\\\":\\\"Jane\\\",\\\"is_active\\\":true,\\\"is_employee\\\":false,\\\"job_title\\\":\\\"QA Manager\\\",\\\"last_name\\\":\\\"Doe\\\",\\\"mobile_phone\\\":\\\"1-555-555-1234\\\",\\\"notes\\\":\\\"notes\\\",\\\"state_code\\\":\\\"CA\\\",\\\"vendor_id\\\":161072,\\\"zip\\\":\\\"93013\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D?run_configurable_validations=SOME_BOOLEAN_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D?run_configurable_validations=SOME_BOOLEAN_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"user\":{\"abbreviated_name\":\"JD\",\"address\":\"6305 Carpinteria Ave\",\"avatar\":\"http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D\",\"business_phone\":\"1-555-555-1234\",\"business_phone_extension\":123,\"city\":\"Carpinteria\",\"country_code\":\"US\",\"email_address\":\"jane.doe@example.com\",\"email_signature\":\"<p>Sent from Procore.</p>\",\"employee_id\":\"123456789\",\"fax_number\":\"1-555-555-5555\",\"first_name\":\"Jane\",\"is_active\":true,\"is_employee\":false,\"job_title\":\"QA Manager\",\"last_name\":\"Doe\",\"mobile_phone\":\"1-555-555-1234\",\"notes\":\"notes\",\"state_code\":\"CA\",\"vendor_id\":161072,\"zip\":\"93013\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D?run_configurable_validations=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"user\\\":{\\\"abbreviated_name\\\":\\\"JD\\\",\\\"address\\\":\\\"6305 Carpinteria Ave\\\",\\\"avatar\\\":\\\"http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=XXXXXXXX&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D\\\",\\\"business_phone\\\":\\\"1-555-555-1234\\\",\\\"business_phone_extension\\\":123,\\\"city\\\":\\\"Carpinteria\\\",\\\"country_code\\\":\\\"US\\\",\\\"email_address\\\":\\\"jane.doe@example.com\\\",\\\"email_signature\\\":\\\"<p>Sent from Procore.</p>\\\",\\\"employee_id\\\":\\\"123456789\\\",\\\"fax_number\\\":\\\"1-555-555-5555\\\",\\\"first_name\\\":\\\"Jane\\\",\\\"is_active\\\":true,\\\"is_employee\\\":false,\\\"job_title\\\":\\\"QA Manager\\\",\\\"last_name\\\":\\\"Doe\\\",\\\"mobile_phone\\\":\\\"1-555-555-1234\\\",\\\"notes\\\":\\\"notes\\\",\\\"state_code\\\":\\\"CA\\\",\\\"vendor_id\\\":161072,\\\"zip\\\":\\\"93013\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Business Id for Update project user",
+      "description": "Added `business_id` to payload response body.",
+      "endpoint": "PATCH /projects/{project_id}/users/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-06-27",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#update-project-user"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/users/{id}/actions/add": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the user",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add company user to project",
+    "description": "Adds a user from the Company Directory to the Project Directory.\n#### Created Response\nFor null values, the key won't be returned\n",
+    "tags": [
+     "Project Users"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "user": {
+          "type": "object",
+          "properties": {
+           "permission_template_id": {
+            "type": "integer",
+            "description": "User permission template identifier"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "User",
+         "description": "Company User",
+         "properties": {
+          "address": {
+           "type": "string",
+           "description": "User address",
+           "example": "6305 Carpinteria Ave"
+          },
+          "avatar": {
+           "type": "string",
+           "description": "User avatar url",
+           "example": "http://s3.amazonaws.com/pro-core.com/prostore/20150713184222_production_74548228.gif?AWSAccessKeyId=0PFNH01C4MZVXKXZNK82&Expires=2067964943&Signature=l4zpZIM3bgxydrr4hn6lM%2FdtreQ%3D"
+          },
+          "business_id": {
+           "description": "Business id",
+           "example": "89cac92d-fbd8-40ec-a1fc-24bbbd035a78",
+           "nullable": true,
+           "type": "string"
+          },
+          "business_phone": {
+           "type": "string",
+           "description": "User business phone",
+           "example": "1-555-555-1234"
+          },
+          "business_phone_extension": {
+           "type": "integer",
+           "description": "User business phone extension",
+           "example": 123
+          },
+          "city": {
+           "type": "string",
+           "description": "User city",
+           "example": "Carpinteria"
+          },
+          "country_code": {
+           "type": "string",
+           "description": "User country code (ISO-3166 Alpha-2 format)",
+           "example": "US"
+          },
+          "email_address": {
+           "type": "string",
+           "format": "email",
+           "description": "User email",
+           "example": "jane.doe@example.com"
+          },
+          "email_signature": {
+           "type": "string",
+           "description": "User email signature",
+           "example": "<p>Sent from Procore.</p>"
+          },
+          "employee_id": {
+           "type": "string",
+           "description": "User employee id",
+           "example": "123456789"
+          },
+          "fax_number": {
+           "type": "string",
+           "description": "User fax number",
+           "example": "1-555-555-1234"
+          },
+          "first_name": {
+           "type": "string",
+           "description": "User first name",
+           "example": "Jane"
+          },
+          "name": {
+           "type": "string",
+           "description": "User full name",
+           "example": "Jane Doe"
+          },
+          "id": {
+           "type": "integer",
+           "description": "User id",
+           "example": 381006
+          },
+          "initials": {
+           "type": "string",
+           "description": "User initials",
+           "example": "JD"
+          },
+          "is_active": {
+           "type": "boolean",
+           "description": "User active status",
+           "example": true
+          },
+          "is_employee": {
+           "type": "boolean",
+           "description": "User employee status",
+           "example": false
+          },
+          "is_insurance_manager": {
+           "type": "boolean",
+           "description": "Is user an insurance manager",
+           "example": false
+          },
+          "job_title": {
+           "type": "string",
+           "description": "User job title",
+           "example": "QA Manager"
+          },
+          "last_login_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User last login at",
+           "example": "2016-06-30T20:41:58Z"
+          },
+          "last_name": {
+           "type": "string",
+           "description": "User last name",
+           "example": "Doe"
+          },
+          "mobile_phone": {
+           "type": "string",
+           "description": "User mobile phone",
+           "example": "1-555-555-1234"
+          },
+          "notes": {
+           "type": "string",
+           "description": "User notes",
+           "example": "notes"
+          },
+          "state_code": {
+           "type": "string",
+           "description": "User state code (ISO-3166 Alpha-2 format)",
+           "example": "CA"
+          },
+          "zip": {
+           "type": "string",
+           "description": "User zip code",
+           "example": "93013"
+          },
+          "default_permission_template_id": {
+           "type": "integer",
+           "description": "User default permission template id",
+           "example": 27
+          },
+          "company_permission_template_id": {
+           "type": "integer",
+           "description": "User Company Permission Template id",
+           "example": 28
+          },
+          "origin_id": {
+           "type": "string",
+           "example": "foobar",
+           "description": "User origin id"
+          },
+          "origin_data": {
+           "type": "string",
+           "description": "User origin data",
+           "example": "OD-2398273424"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User created at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "User updated at",
+           "example": "2016-10-23T21:39:40Z"
+          },
+          "work_classification_id": {
+           "type": "integer",
+           "description": "Work classification id",
+           "example": 13
+          },
+          "vendor": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "example": 161072
+            },
+            "name": {
+             "type": "string",
+             "example": "SID Architecture"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/add',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {user: {permission_template_id: 0}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"user\\\":{\\\"permission_template_id\\\":0}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/add\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/add \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"user\":{\"permission_template_id\":0}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/add\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"user\\\":{\\\"permission_template_id\\\":0}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/users/{id}/actions/remove": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the user",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove a user from the project",
+    "description": "Removes a specified user from a project.",
+    "tags": [
+     "Project Users"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity. Returned when the user's Project Membership is managed by Groups and the Groups feature is enabled; the user is not removed (USER-2168).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "string",
+           "description": "Stable machine-readable error code for a group-managed membership.",
+           "example": "MEMBERSHIP_GROUP_MANAGED"
+          },
+          "message": {
+           "type": "string",
+           "description": "Human readable message describing the error.",
+           "example": "This project membership is managed by Groups and cannot be modified directly."
+          },
+          "hint": {
+           "type": "string",
+           "description": "Machine-actionable hint; indicates the membership is group-managed.",
+           "example": "group_managed"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/remove',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/remove\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/remove \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/%7Bid%7D/actions/remove\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Group-managed memberships are protected from removal",
+      "description": "When the Groups feature is enabled, removing a user whose Project\nMembership is managed by Groups now returns `422 Unprocessable Entity`\nwith a structured error (`code: MEMBERSHIP_GROUP_MANAGED`,\n`hint: group_managed`) instead of silently returning `204`. Behavior is\nunchanged when the feature is off.",
+      "endpoint": "DELETE /projects/{project_id}/users/{id}/actions/remove",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2026-06-22",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#remove-a-user-from-the-project"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/users/pdf": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Generates PDF Document",
+    "description": "Generate PDF Document from a project. The endpoint returns url to PDF file.\nSee [Filtering on List Actions](https://developers.procore.com/documentation/filtering-on-list-actions) for information on using the filtering capabilities provided by this endpoint.",
+    "tags": [
+     "Project Users"
+    ],
+    "parameters": [
+     {
+      "name": "filters[permission_template]",
+      "in": "query",
+      "description": "Permission Template ID. Returns item(s) assiociated with the specified Permission Template ID.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[vendor_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Vendor IDs.",
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[id][]",
+      "in": "query",
+      "description": "Returns users whose id attribute matches the parameter.",
+      "required": false,
+      "explode": true,
+      "style": "form",
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[except_id]",
+      "in": "query",
+      "description": "Returns users except as specified.",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[trade_id][]",
+      "in": "query",
+      "description": "Returns users whose vendor record is associated with the specified trade id(s).",
+      "explode": true,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "contact",
+      "in": "query",
+      "description": "Indicates whether contacts should be included in PDF document.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "vendor",
+      "in": "query",
+      "description": "Indicates whether vendor should be included in PDF document.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "user_role",
+      "in": "query",
+      "description": "Indicates whether user_role should be included in PDF document.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "grouped_by_vendor",
+      "in": "query",
+      "description": "Indicates whether users should be grouped by vendor.",
+      "required": false,
+      "schema": {
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "pdf_file_url": {
+           "type": "string",
+           "description": "URL to PDF file",
+           "example": "http://example.com/pdf_file.pdf"
+          }
+         }
+        }
+       }
+      }
+     },
+     "202": {
+      "description": "Accepted \u2014 the directory exceeds the synchronous size threshold (500 contacts). The PDF is being generated asynchronously and will be emailed to the requesting user when complete. The response body is empty."
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/pdf',\n  qs: {\n    'filters[permission_template]': 'SOME_INTEGER_VALUE',\n    'filters[vendor_id]': 'SOME_ARRAY_VALUE',\n    'filters[id][]': 'SOME_ARRAY_VALUE',\n    'filters[except_id]': 'SOME_INTEGER_VALUE',\n    'filters[trade_id][]': 'SOME_ARRAY_VALUE',\n    contact: 'SOME_BOOLEAN_VALUE',\n    vendor: 'SOME_BOOLEAN_VALUE',\n    user_role: 'SOME_BOOLEAN_VALUE',\n    grouped_by_vendor: 'SOME_BOOLEAN_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/users/pdf?filters%5Bpermission_template%5D=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_ARRAY_VALUE&filters%5Bid%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bexcept_id%5D=SOME_INTEGER_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&contact=SOME_BOOLEAN_VALUE&vendor=SOME_BOOLEAN_VALUE&user_role=SOME_BOOLEAN_VALUE&grouped_by_vendor=SOME_BOOLEAN_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/pdf?filters%5Bpermission_template%5D=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_ARRAY_VALUE&filters%5Bid%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bexcept_id%5D=SOME_INTEGER_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&contact=SOME_BOOLEAN_VALUE&vendor=SOME_BOOLEAN_VALUE&user_role=SOME_BOOLEAN_VALUE&grouped_by_vendor=SOME_BOOLEAN_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/users/pdf?filters%5Bpermission_template%5D=SOME_INTEGER_VALUE&filters%5Bvendor_id%5D=SOME_ARRAY_VALUE&filters%5Bid%5D%5B%5D=SOME_ARRAY_VALUE&filters%5Bexcept_id%5D=SOME_INTEGER_VALUE&filters%5Btrade_id%5D%5B%5D=SOME_ARRAY_VALUE&contact=SOME_BOOLEAN_VALUE&vendor=SOME_BOOLEAN_VALUE&user_role=SOME_BOOLEAN_VALUE&grouped_by_vendor=SOME_BOOLEAN_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "PDF endpoint returns 202 Accepted for large directories",
+      "description": "POST /projects/{project_id}/users/pdf now returns HTTP 202 Accepted\n(empty body) when the directory exceeds the 500-contact synchronous\nthreshold. In this case the PDF is generated asynchronously and\nemailed to the requesting user. Previously the endpoint raised a\nNoMethodError in this scenario.",
+      "endpoint": "POST /projects/{project_id}/users/pdf",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-08-28",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#generates-pdf-document"
+     },
+     {
+      "summary": "Created PDF generation endpoint",
+      "description": "Created endpoint for generation of PDF Document from a project.",
+      "endpoint": "POST /projects/{project_id}/users/pdf",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-01-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#generates-pdf-document"
+     },
+     {
+      "summary": "Added filters to PDF generation endpoint",
+      "description": "Added filtering by ID and vendor_id to PDF generation endpoint.",
+      "endpoint": "POST /projects/{project_id}/users/pdf",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-05",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "project-users?version=1.0#generates-pdf-document"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

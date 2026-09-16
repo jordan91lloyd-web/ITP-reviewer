@@ -1,0 +1,1260 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Company Exchange Rates",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Currency Configurations",
+  "x-resource-name": "Company Exchange Rates",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/currency_configuration/exchange_rates": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Integer ID of the Procore company whose exchange rates are being queried or modified. Obtainable from GET /rest/v1.0/companies.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get Company Exchange Rates",
+    "description": "Returns the collection of active company-level exchange rates. Each rate quotes how many units of `quote_currency_iso_code` equal one unit of the company base currency. Returns an empty array when no rates have been configured.",
+    "tags": [
+     "Currency Configuration"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Company Exchange Rates",
+         "description": "Collection of exchange rates configured at the company level. Each rate quotes how many units of `quote_currency_iso_code` equal one unit of `base_currency_iso_code`.",
+         "type": "object",
+         "properties": {
+          "exchange_rates": {
+           "type": "array",
+           "description": "Array of company-level exchange rates. Empty when no rates have been configured for the company. Only active rates are returned (this V1 GET does not accept an include_inactive query parameter).",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Integer identifier of the exchange rate. Pass this value as `exchange_rates[].id` in the PATCH body to update or activate/deactivate this rate.",
+              "example": 1
+             },
+             "company_id": {
+              "type": "integer",
+              "description": "Procore company ID that owns this exchange rate. Matches the {company_id} path parameter.",
+              "example": 43
+             },
+             "base_currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 three-letter code of the company's base currency. All rates in this collection share the same base. One unit of this currency equals `exchange_rate` units of `quote_currency_iso_code`.",
+              "example": "USD"
+             },
+             "quote_currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 three-letter code of the quote currency. `(base_currency_iso_code, quote_currency_iso_code)` uniquely identifies the currency pair this rate covers.",
+              "example": "CAD"
+             },
+             "exchange_rate": {
+              "type": "string",
+              "description": "Decimal exchange rate, returned as a string to preserve precision. Number of units of `quote_currency_iso_code` per one unit of `base_currency_iso_code` at the rate's effective date.",
+              "example": "1.0"
+             },
+             "is_active": {
+              "type": "boolean",
+              "description": "Whether this exchange rate is currently active. Active rates are used to convert between the currency pair at runtime. Inactive rates are retained for audit history but not used for new conversions.",
+              "example": true
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp marking when the exchange rate was last updated.",
+              "example": "2023-07-10T00:00:00Z"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp marking when the exchange rate was created.",
+              "example": "2023-07-10T00:00:00Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Company Exchange Rate endpoint",
+      "description": "Added endpoint to get company exchange rate. Included in the Multi-Currency feature release.",
+      "endpoint": "GET /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#get-company-exchange-rates"
+     },
+     {
+      "summary": "Remove query parameters from Company Exchange Rates GET endpoint",
+      "description": "Remove \"quote_currency_iso_code\" and \"include_inactive\" query parameters to streamline the API interface",
+      "endpoint": "GET /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2025-08-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#get-company-exchange-rates"
+     },
+     {
+      "summary": "Add response codes to Company Exchange Rates endpoints",
+      "description": "Add 400, 500, and 503 response codes to GET, POST, and PATCH endpoints for comprehensive error handling documentation",
+      "endpoint": "GET /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2025-08-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#get-company-exchange-rates"
+     },
+     {
+      "summary": "Add Optional include_inactive And quote_currency_iso_code Query Parameters",
+      "description": "Add new query parameter `include_inactive` and `quote_currency_iso_code`. The `include_inactive` parameter for including inactive exchange rates in the response, while the `quote_currency_iso_code` filter allows filtering exchange rates by specific quote currency ISO codes.",
+      "endpoint": "GET /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2024-12-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#get-company-exchange-rates"
+     },
+     {
+      "summary": "Add Company Exchange Rates Read v1.0 endpoint",
+      "description": "Retrieve a Company Exchange Rate by Company ID",
+      "endpoint": "GET /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#get-company-exchange-rates"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Company Exchange Rates",
+    "description": "Creates one or more exchange rates for the company. Every rate is created against the supplied `base_currency_iso_code`, which must match the company's existing base currency. Returns 400 if any (base, quote) pair already exists for this company.",
+    "tags": [
+     "Currency Configuration"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "base_currency_iso_code",
+         "exchange_rates"
+        ],
+        "properties": {
+         "base_currency_iso_code": {
+          "type": "string",
+          "description": "ISO 4217 three-letter code of the company's base currency (e.g., 'USD'). Required. Every rate in the `exchange_rates` array will be created against this base. Must match the company's existing currency_iso_code.",
+          "example": "USD"
+         },
+         "exchange_rates": {
+          "type": "array",
+          "description": "Array of new exchange rates to create. Each item must specify a unique `quote_currency_iso_code` (the currency pair must not already exist for this company).",
+          "items": {
+           "type": "object",
+           "required": [
+            "quote_currency_iso_code",
+            "exchange_rate"
+           ],
+           "properties": {
+            "quote_currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 three-letter code of the quote currency (e.g., 'CAD'). Required. Combined with `base_currency_iso_code` it identifies the currency pair this rate covers.",
+             "example": "CAD"
+            },
+            "exchange_rate": {
+             "type": "string",
+             "description": "Decimal exchange rate, sent as a string to preserve precision. Number of units of `quote_currency_iso_code` per one unit of `base_currency_iso_code`. Required.",
+             "example": "1.0"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Company Exchange Rates",
+         "description": "Collection of exchange rates configured at the company level. Each rate quotes how many units of `quote_currency_iso_code` equal one unit of `base_currency_iso_code`.",
+         "type": "object",
+         "properties": {
+          "exchange_rates": {
+           "type": "array",
+           "description": "Array of company-level exchange rates. Empty when no rates have been configured for the company. Only active rates are returned (this V1 GET does not accept an include_inactive query parameter).",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Integer identifier of the exchange rate. Pass this value as `exchange_rates[].id` in the PATCH body to update or activate/deactivate this rate.",
+              "example": 1
+             },
+             "company_id": {
+              "type": "integer",
+              "description": "Procore company ID that owns this exchange rate. Matches the {company_id} path parameter.",
+              "example": 43
+             },
+             "base_currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 three-letter code of the company's base currency. All rates in this collection share the same base. One unit of this currency equals `exchange_rate` units of `quote_currency_iso_code`.",
+              "example": "USD"
+             },
+             "quote_currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 three-letter code of the quote currency. `(base_currency_iso_code, quote_currency_iso_code)` uniquely identifies the currency pair this rate covers.",
+              "example": "CAD"
+             },
+             "exchange_rate": {
+              "type": "string",
+              "description": "Decimal exchange rate, returned as a string to preserve precision. Number of units of `quote_currency_iso_code` per one unit of `base_currency_iso_code` at the rate's effective date.",
+              "example": "1.0"
+             },
+             "is_active": {
+              "type": "boolean",
+              "description": "Whether this exchange rate is currently active. Active rates are used to convert between the currency pair at runtime. Inactive rates are retained for audit history but not used for new conversions.",
+              "example": true
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp marking when the exchange rate was last updated.",
+              "example": "2023-07-10T00:00:00Z"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp marking when the exchange rate was created.",
+              "example": "2023-07-10T00:00:00Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates',\n  headers: {'content-type': 'application/json'},\n  body: {\n    base_currency_iso_code: 'USD',\n    exchange_rates: [{quote_currency_iso_code: 'CAD', exchange_rate: '1.0'}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"base_currency_iso_code\\\":\\\"USD\\\",\\\"exchange_rates\\\":[{\\\"quote_currency_iso_code\\\":\\\"CAD\\\",\\\"exchange_rate\\\":\\\"1.0\\\"}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates \\\n  --header 'content-type: application/json' \\\n  --data '{\"base_currency_iso_code\":\"USD\",\"exchange_rates\":[{\"quote_currency_iso_code\":\"CAD\",\"exchange_rate\":\"1.0\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates\"),\n    Content = new StringContent(\"{\\\"base_currency_iso_code\\\":\\\"USD\\\",\\\"exchange_rates\\\":[{\\\"quote_currency_iso_code\\\":\\\"CAD\\\",\\\"exchange_rate\\\":\\\"1.0\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Company Exchange Rate endpoint",
+      "description": "Added endpoint to create company exchange rate. Included in the Multi-Currency feature release.",
+      "endpoint": "POST /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#create-company-exchange-rates"
+     },
+     {
+      "summary": "Remove The id, is_active and company_id Fields From The Request Body",
+      "description": "Remove the `id`, `is_active` and `company_id` fields from the request body when creating new company exchange rates.",
+      "endpoint": "POST /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2024-12-19",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#create-company-exchange-rates"
+     },
+     {
+      "summary": "Add Company Exchange Rates Create v1.0 endpoint",
+      "description": "Create a Company Exchange Rate by Company ID",
+      "endpoint": "POST /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#create-company-exchange-rates"
+     },
+     {
+      "summary": "Fixed Create Company Exchange Rates operation description",
+      "description": "Corrected the Create Company Exchange Rates operation description to \"Create company exchange rates by company ID\".",
+      "endpoint": "POST /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "fix",
+      "breaking": false,
+      "datestamp": "2026-04-17",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#create-company-exchange-rates"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Company Exchange Rates",
+    "description": "Updates existing company exchange rates in bulk. Each item in the `exchange_rates` array must include an integer `id` from a prior GET response; other fields are optional and only modified when present. Use `is_active` to soft-delete or reactivate a rate without losing its audit history.",
+    "tags": [
+     "Currency Configuration"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "exchange_rates"
+        ],
+        "properties": {
+         "exchange_rates": {
+          "type": "array",
+          "description": "Array of existing exchange rates to update. Each item must include the integer `id` of the rate being updated; other fields are optional and only updated if present.",
+          "items": {
+           "type": "object",
+           "required": [
+            "id"
+           ],
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Integer ID of the exchange rate to update. Required. Obtain from a prior GET /rest/v1.0/companies/{company_id}/currency_configuration/exchange_rates response.",
+             "example": 1
+            },
+            "quote_currency_iso_code": {
+             "type": "string",
+             "description": "Optional. ISO 4217 three-letter code of the new quote currency for this rate.\nMust not match the base currency. Must not conflict with an existing rate for\nthe same base currency pair \u2014 returns 400 if a rate for that quote currency already exists.\n",
+             "example": "CAD"
+            },
+            "exchange_rate": {
+             "type": "string",
+             "description": "Optional decimal exchange rate (sent as a string for precision). Updated rate value, expressed as number of units of `quote_currency_iso_code` per one unit of `base_currency_iso_code`.",
+             "example": "1.0"
+            },
+            "is_active": {
+             "type": "boolean",
+             "description": "Optional. Set to false to deactivate this rate. Set to true to reactivate a previously inactive rate.",
+             "example": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Company Exchange Rates",
+         "description": "Collection of exchange rates configured at the company level. Each rate quotes how many units of `quote_currency_iso_code` equal one unit of `base_currency_iso_code`.",
+         "type": "object",
+         "properties": {
+          "exchange_rates": {
+           "type": "array",
+           "description": "Array of company-level exchange rates. Empty when no rates have been configured for the company. Only active rates are returned (this V1 GET does not accept an include_inactive query parameter).",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Integer identifier of the exchange rate. Pass this value as `exchange_rates[].id` in the PATCH body to update or activate/deactivate this rate.",
+              "example": 1
+             },
+             "company_id": {
+              "type": "integer",
+              "description": "Procore company ID that owns this exchange rate. Matches the {company_id} path parameter.",
+              "example": 43
+             },
+             "base_currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 three-letter code of the company's base currency. All rates in this collection share the same base. One unit of this currency equals `exchange_rate` units of `quote_currency_iso_code`.",
+              "example": "USD"
+             },
+             "quote_currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 three-letter code of the quote currency. `(base_currency_iso_code, quote_currency_iso_code)` uniquely identifies the currency pair this rate covers.",
+              "example": "CAD"
+             },
+             "exchange_rate": {
+              "type": "string",
+              "description": "Decimal exchange rate, returned as a string to preserve precision. Number of units of `quote_currency_iso_code` per one unit of `base_currency_iso_code` at the rate's effective date.",
+              "example": "1.0"
+             },
+             "is_active": {
+              "type": "boolean",
+              "description": "Whether this exchange rate is currently active. Active rates are used to convert between the currency pair at runtime. Inactive rates are retained for audit history but not used for new conversions.",
+              "example": true
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp marking when the exchange rate was last updated.",
+              "example": "2023-07-10T00:00:00Z"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp marking when the exchange rate was created.",
+              "example": "2023-07-10T00:00:00Z"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates',\n  headers: {'content-type': 'application/json'},\n  body: {\n    exchange_rates: [{id: 1, quote_currency_iso_code: 'CAD', exchange_rate: '1.0', is_active: true}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"exchange_rates\\\":[{\\\"id\\\":1,\\\"quote_currency_iso_code\\\":\\\"CAD\\\",\\\"exchange_rate\\\":\\\"1.0\\\",\\\"is_active\\\":true}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates \\\n  --header 'content-type: application/json' \\\n  --data '{\"exchange_rates\":[{\"id\":1,\"quote_currency_iso_code\":\"CAD\",\"exchange_rate\":\"1.0\",\"is_active\":true}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/currency_configuration/exchange_rates\"),\n    Content = new StringContent(\"{\\\"exchange_rates\\\":[{\\\"id\\\":1,\\\"quote_currency_iso_code\\\":\\\"CAD\\\",\\\"exchange_rate\\\":\\\"1.0\\\",\\\"is_active\\\":true}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Company Exchange Rate endpoint",
+      "description": "Added endpoint to update company exchange rate. Included in the Multi-Currency feature release.",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#update-company-exchange-rates"
+     },
+     {
+      "summary": "Add Company Exchange Rates Update v1.0 endpoint",
+      "description": "Update a Company Exchange Rate by Company ID",
+      "endpoint": "PATCH /companies/{company_id}/currency_configuration/exchange_rates",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2023-07-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "company-exchange-rates?version=1.0#update-company-exchange-rates"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

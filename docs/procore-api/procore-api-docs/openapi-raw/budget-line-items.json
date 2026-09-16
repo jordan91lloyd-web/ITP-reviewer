@@ -1,0 +1,3945 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Budget Line Items",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Budget Line Items",
+  "version": "2.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/budget_line_items": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "ID of the company",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "description": "ID of the project",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "List Budget Line Items",
+    "description": "Returns a paginated list of budget line items for a project. Each page has a maximum of 100 items.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "filters[wbs_code_id]",
+      "in": "query",
+      "description": "Work Breakdown Structure Code ID(s). Returns only budget line items for the specified WBS Code ID(s).",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Link": {
+        "description": "Link headers for applicable first, prev, next, and last page links",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Page": {
+        "description": "Number of the page retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items available to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "array",
+           "description": "Array of budget line items",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Budget line item ID",
+              "example": "123"
+             },
+             "original_budget_amount": {
+              "type": "string",
+              "description": "Original budget amount",
+              "example": "10000.0"
+             },
+             "quantity": {
+              "type": "number",
+              "nullable": true,
+              "description": "Quantity",
+              "example": 250.5
+             },
+             "uom": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unit of measure",
+              "example": "hours"
+             },
+             "unit_cost": {
+              "type": "string",
+              "nullable": true,
+              "description": "Unit cost",
+              "example": "40.0"
+             },
+             "calculation_strategy": {
+              "type": "string",
+              "description": "Calculation strategy",
+              "example": "manual",
+              "enum": [
+               "automatic",
+               "manual"
+              ]
+             },
+             "project_id": {
+              "type": "string",
+              "description": "Project ID",
+              "example": "456"
+             },
+             "company_id": {
+              "type": "string",
+              "description": "Company ID",
+              "example": "789"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Last updated timestamp"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Created timestamp"
+             },
+             "wbs_code": {
+              "type": "object",
+              "description": "WBS Code details for the line item",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "string",
+                "description": "WBS Code ID",
+                "example": "999"
+               },
+               "flat_code": {
+                "type": "string",
+                "description": "WBS Code flat code",
+                "example": "01-011.CT1",
+                "nullable": true
+               },
+               "description": {
+                "type": "string",
+                "description": "WBS Code description",
+                "example": "Earthwork.Equipment",
+                "nullable": true
+               }
+              }
+             },
+             "currency_configuration": {
+              "type": "object",
+              "allOf": [
+               {
+                "properties": {
+                 "base_currency_iso_code": {
+                  "type": "string",
+                  "description": "Base Currency ISO Code configured from project level; It'll be populated only when multicurrency phase two feature flag is enabled",
+                  "example": "USD",
+                  "nullable": true
+                 },
+                 "currency_iso_code": {
+                  "type": "string",
+                  "description": "Currency ISO Code configured for the financial entity",
+                  "example": "EUR",
+                  "nullable": true
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "currency_exchange_rate": {
+                  "nullable": true,
+                  "description": "Exchange Rate from currency_iso_code to base_currency_iso_code; It will be populated only when multicurrency phase two feature flag is enabled",
+                  "example": "1.234567",
+                  "type": "string",
+                  "pattern": "^[-+]?[0-9]*\\.?[0-9]+$"
+                 }
+                }
+               }
+              ]
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[wbs_code_id]': 'SOME_ARRAY_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bwbs_code_id%5D=SOME_ARRAY_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bwbs_code_id%5D=SOME_ARRAY_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bwbs_code_id%5D=SOME_ARRAY_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "v2.0 List Budget Line Items endpoint is now public",
+      "description": "The v2.0 List Budget Line Items endpoint is now public. It matches the response shape of the\nv1.1 List endpoint, and is the intended replacement for the deprecated v1.0/v1.1 List Budget\nLine Items endpoints.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/budget_line_items",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2026-08-12",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=2.0#list-budget-line-items"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/budget_line_items/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "ID of the company",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "description": "ID of the project",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID of the budget line item",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Budget Line Item",
+    "description": "Deletes a specified budget line item.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "Internal Server Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/budget_line_items/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added budget line item delete endpoint",
+      "description": "Added a delete endpoint for individual budget line items.",
+      "endpoint": "DELETE /companies/{company_id}/projects/{project_id}/budget_line_items/{id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-29",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=2.0#delete-budget-line-item"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/budget_line_items": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Budget Line Item",
+    "description": "Add a new line item to a budget.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "budget_line_item"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 12345
+         },
+         "budget_line_item": {
+          "title": "Budget Line Item",
+          "type": "object",
+          "description": "Budget Line Item object",
+          "required": [
+           "wbs_code_id"
+          ],
+          "properties": {
+           "wbs_code_id": {
+            "type": "integer",
+            "description": "ID of the Work Breakdown Structure (WBS) code to budget this line against. Required.",
+            "example": 67890
+           },
+           "original_budget_amount": {
+            "type": "number",
+            "format": "float",
+            "description": "Original budgeted amount for this line.",
+            "example": "10000.00"
+           },
+           "uom": {
+            "type": "string",
+            "description": "Unit of measure for the quantity, such as hours. Must be a value from the company's Units of Measure list.",
+            "example": "hours",
+            "enum": [
+             "Any value present in the Company list of Units of Measure"
+            ]
+           },
+           "quantity": {
+            "type": "number",
+            "format": "float",
+            "description": "Budgeted quantity in the unit of measure. Used with unit_cost when calculation_strategy is 'automatic'.",
+            "example": 250.5
+           },
+           "unit_cost": {
+            "type": "number",
+            "format": "float",
+            "description": "Cost per unit of measure. Used with quantity when calculation_strategy is 'automatic'.",
+            "example": 123.5
+           },
+           "calculation_strategy": {
+            "type": "string",
+            "description": "Determines how the budgeted amount is derived for this line.",
+            "example": "manual",
+            "enum": [
+             "automatic",
+             "manual"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Budget Line Item",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this budget line item. Use as the {id} path parameter for the Show and Update endpoints.",
+           "example": 75414
+          },
+          "original_budget_amount": {
+           "type": "number",
+           "format": "float",
+           "description": "Original budgeted amount for this line, before any budget changes.",
+           "example": "20000.0"
+          },
+          "uom": {
+           "type": "string",
+           "description": "Unit of measure for the line's quantity, such as hours. Any value from the company's configured Units of Measure list.",
+           "example": "hours"
+          },
+          "quantity": {
+           "type": "number",
+           "format": "float",
+           "description": "Budgeted quantity in the line's unit of measure. Multiplied by unit_cost when calculation_strategy is 'automatic'.",
+           "example": "250.5"
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure. Multiplied by quantity when calculation_strategy is 'automatic'.",
+           "example": "123.5"
+          },
+          "calculation_strategy": {
+           "type": "string",
+           "description": "How original_budget_amount is derived, such as entered directly ('manual') or computed from quantity and unit_cost ('automatic').",
+           "example": "manual"
+          },
+          "wbs_code": {
+           "type": "object",
+           "description": "Work Breakdown Structure (WBS) code this line item is budgeted against.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the WBS code. Pass as wbs_code_id when creating or updating a line item.",
+             "example": 999
+            },
+            "flat_code": {
+             "type": "string",
+             "description": "Flattened WBS code string combining all segment values.",
+             "example": "01-011.CT1"
+            },
+            "description": {
+             "type": "string",
+             "description": "Human-readable description of the WBS code.",
+             "example": "Project Engineer.Cost Type 1"
+            }
+           },
+           "example": {
+            "id": 44,
+            "flat_code": "2.E",
+            "description": "Earthwork.Equipment"
+           }
+          },
+          "currency_configuration": {
+           "type": "object",
+           "description": "Currency in which this line item's monetary amounts are denominated.",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 currency code for the line item's amounts.",
+             "example": "USD"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.1/budget_line_items',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 12345,\n    budget_line_item: {\n      wbs_code_id: 67890,\n      original_budget_amount: '10000.00',\n      uom: 'hours',\n      quantity: 250.5,\n      unit_cost: 123.5,\n      calculation_strategy: 'manual'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"wbs_code_id\\\":67890,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.1/budget_line_items\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.1/budget_line_items \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"budget_line_item\":{\"wbs_code_id\":67890,\"original_budget_amount\":\"10000.00\",\"uom\":\"hours\",\"quantity\":250.5,\"unit_cost\":123.5,\"calculation_strategy\":\"manual\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/budget_line_items\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"wbs_code_id\\\":67890,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.1 Create Budget Line Items endpoint",
+      "description": "'wbs_code_id' is replacing the 'cost_code_id' and 'line_item_type_id' parameters for creating Budget Line Items.\nPreviously, we required 'cost_code_id' and 'line_item_type_id', along with all other attributes in order to create a Budget Line Item.\nNow, developers may only send 'wbs_code_id' and succesfully create a Budget Line Item.\n\nAs well, 'wbs_code' is now a property of the response of a successful Budget Line Item creation.\nThe new endpoint will also no longer respond with fields related to Budget columns, e.g. \"approved_budget_changes\", \"projected_costs\", \"direct_costs\", etc...\n\nWhen migrating from v1.0 to v1.1, cost_code_id and line_item_type_id params must be converted to a Work Breakdown Structure Code, which can be found using the Work Breakdown Structure Codes List endpoint (https://developers.procore.com/reference/rest/v1/codes#list-project-wbs-codes).\nOnce the Work Breakdown Structure containing the same Cost Code and Line Item Type is found, the ID can be used as the 'wbs_code_id' parameter for the Budget Line Item Create request.",
+      "endpoint": "POST /budget_line_items",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2021-07-08",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.1#create-budget-line-item"
+     },
+     {
+      "summary": "Added new currency_configuration property to the budget_line_item object after creation",
+      "description": "The budget line item object now contains the currency_configuration object.",
+      "endpoint": "POST /budget_line_items",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-14",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#create-budget-line-item"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/budget_line_items/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Budget Line Item",
+    "description": "Return information about a Budget Line Item.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Budget Line Item",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this budget line item. Use as the {id} path parameter for the Show and Update endpoints.",
+           "example": 75414
+          },
+          "original_budget_amount": {
+           "type": "number",
+           "format": "float",
+           "description": "Original budgeted amount for this line, before any budget changes.",
+           "example": "20000.0"
+          },
+          "uom": {
+           "type": "string",
+           "description": "Unit of measure for the line's quantity, such as hours. Any value from the company's configured Units of Measure list.",
+           "example": "hours"
+          },
+          "quantity": {
+           "type": "number",
+           "format": "float",
+           "description": "Budgeted quantity in the line's unit of measure. Multiplied by unit_cost when calculation_strategy is 'automatic'.",
+           "example": "250.5"
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure. Multiplied by quantity when calculation_strategy is 'automatic'.",
+           "example": "123.5"
+          },
+          "calculation_strategy": {
+           "type": "string",
+           "description": "How original_budget_amount is derived, such as entered directly ('manual') or computed from quantity and unit_cost ('automatic').",
+           "example": "manual"
+          },
+          "wbs_code": {
+           "type": "object",
+           "description": "Work Breakdown Structure (WBS) code this line item is budgeted against.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the WBS code. Pass as wbs_code_id when creating or updating a line item.",
+             "example": 999
+            },
+            "flat_code": {
+             "type": "string",
+             "description": "Flattened WBS code string combining all segment values.",
+             "example": "01-011.CT1"
+            },
+            "description": {
+             "type": "string",
+             "description": "Human-readable description of the WBS code.",
+             "example": "Project Engineer.Cost Type 1"
+            }
+           },
+           "example": {
+            "id": 44,
+            "flat_code": "2.E",
+            "description": "Earthwork.Equipment"
+           }
+          },
+          "currency_configuration": {
+           "type": "object",
+           "description": "Currency in which this line item's monetary amounts are denominated.",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 currency code for the line item's amounts.",
+             "example": "USD"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/budget_line_items/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.1/budget_line_items/%7Bid%7D?project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/budget_line_items/%7Bid%7D?project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/budget_line_items/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.1 Budget Line Item Show endpoint",
+      "description": "'wbs_code' is now a property of the response of a Budget Line Item entity.\nThe new endpoint will also no longer respond with fields related to Budget columns, e.g. \"approved_budget_changes\", \"projected_costs\", \"direct_costs\", etc...\n\nWhen migrating from v1.0 to v1.1, cost_code_id and line_item_type_id params must be converted to a Work Breakdown Structure Code, which can be found using the Work Breakdown Structure Codes List endpoint (https://developers.procore.com/reference/rest/v1/codes#list-project-wbs-codes).\nOnce the Work Breakdown Structure containing the same Cost Code and Line Item Type is found, the ID can be used as the 'wbs_code_id' parameter for the Budget Line Item Create request.",
+      "endpoint": "GET /budget_line_items/{id}",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2021-08-24",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.1#show-budget-line-item"
+     },
+     {
+      "summary": "Added new currency_configuration property to the budget_line_item object in the show endpoint",
+      "description": "The budget line item object now contains the currency_configuration object.",
+      "endpoint": "GET /budget_line_items/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-14",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#show-budget-line-item"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Budget Line Item",
+    "description": "Update a line item of a specified budget.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "budget_line_item"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 12345
+         },
+         "budget_line_item": {
+          "title": "Budget Line Item",
+          "type": "object",
+          "description": "Budget Line Item object",
+          "properties": {
+           "wbs_code_id": {
+            "type": "integer",
+            "description": "ID of the Work Breakdown Structure (WBS) code to budget this line against.",
+            "example": 67890
+           },
+           "original_budget_amount": {
+            "type": "number",
+            "format": "float",
+            "description": "Original budgeted amount for this line, before any budget changes.",
+            "example": "10000.00"
+           },
+           "uom": {
+            "type": "string",
+            "description": "Unit of measure for the quantity, such as hours. Must be a value from the company's Units of Measure list.",
+            "example": "hours",
+            "enum": [
+             "Any value present in the Company list of Units of Measure"
+            ]
+           },
+           "quantity": {
+            "type": "number",
+            "format": "float",
+            "description": "Budgeted quantity in the unit of measure. Used with unit_cost when calculation_strategy is 'automatic'.",
+            "example": 250.5
+           },
+           "unit_cost": {
+            "type": "number",
+            "format": "float",
+            "description": "Cost per unit of measure. Used with quantity when calculation_strategy is 'automatic'.",
+            "example": 123.5
+           },
+           "calculation_strategy": {
+            "type": "string",
+            "description": "Determines how the budgeted amount is derived for this line.",
+            "example": "manual",
+            "enum": [
+             "automatic",
+             "manual"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Budget Line Item",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this budget line item. Use as the {id} path parameter for the Show and Update endpoints.",
+           "example": 75414
+          },
+          "original_budget_amount": {
+           "type": "number",
+           "format": "float",
+           "description": "Original budgeted amount for this line, before any budget changes.",
+           "example": "20000.0"
+          },
+          "uom": {
+           "type": "string",
+           "description": "Unit of measure for the line's quantity, such as hours. Any value from the company's configured Units of Measure list.",
+           "example": "hours"
+          },
+          "quantity": {
+           "type": "number",
+           "format": "float",
+           "description": "Budgeted quantity in the line's unit of measure. Multiplied by unit_cost when calculation_strategy is 'automatic'.",
+           "example": "250.5"
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure. Multiplied by quantity when calculation_strategy is 'automatic'.",
+           "example": "123.5"
+          },
+          "calculation_strategy": {
+           "type": "string",
+           "description": "How original_budget_amount is derived, such as entered directly ('manual') or computed from quantity and unit_cost ('automatic').",
+           "example": "manual"
+          },
+          "wbs_code": {
+           "type": "object",
+           "description": "Work Breakdown Structure (WBS) code this line item is budgeted against.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the WBS code. Pass as wbs_code_id when creating or updating a line item.",
+             "example": 999
+            },
+            "flat_code": {
+             "type": "string",
+             "description": "Flattened WBS code string combining all segment values.",
+             "example": "01-011.CT1"
+            },
+            "description": {
+             "type": "string",
+             "description": "Human-readable description of the WBS code.",
+             "example": "Project Engineer.Cost Type 1"
+            }
+           },
+           "example": {
+            "id": 44,
+            "flat_code": "2.E",
+            "description": "Earthwork.Equipment"
+           }
+          },
+          "currency_configuration": {
+           "type": "object",
+           "description": "Currency in which this line item's monetary amounts are denominated.",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 currency code for the line item's amounts.",
+             "example": "USD"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.1/budget_line_items/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 12345,\n    budget_line_item: {\n      wbs_code_id: 67890,\n      original_budget_amount: '10000.00',\n      uom: 'hours',\n      quantity: 250.5,\n      unit_cost: 123.5,\n      calculation_strategy: 'manual'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"wbs_code_id\\\":67890,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.1/budget_line_items/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.1/budget_line_items/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"budget_line_item\":{\"wbs_code_id\":67890,\"original_budget_amount\":\"10000.00\",\"uom\":\"hours\",\"quantity\":250.5,\"unit_cost\":123.5,\"calculation_strategy\":\"manual\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/budget_line_items/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"wbs_code_id\\\":67890,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.1 Update Budget Line Items endpoint",
+      "description": "'wbs_code_id' is replacing the 'cost_code_id' and 'line_item_type_id' parameters for updating Budget Line Items.\nPreviously, we required 'cost_code_id' and 'line_item_type_id', along with all other attributes in order to create a Budget Line Item.\nNow, developers may only send 'wbs_code_id' and succesfully create a Budget Line Item.\n\nAs well, 'wbs_code' is now a property of the response of a successful Budget Line Item creation.\nThe new endpoint will also no longer respond with fields related to Budget columns, e.g. \"approved_budget_changes\", \"projected_costs\", \"direct_costs\", etc...\n\nWhen migrating from v1.0 to v1.1, cost_code_id and line_item_type_id params must be converted to a Work Breakdown Structure Code, which can be found using the Work Breakdown Structure Codes List endpoint (https://developers.procore.com/reference/rest/v1/codes#list-project-wbs-codes).\nOnce the Work Breakdown Structure containing the same Cost Code and Line Item Type is found, the ID can be used as the 'wbs_code_id' parameter for the Budget Line Item Create request.",
+      "endpoint": "PATCH /budget_line_items/{id}",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2021-08-16",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.1#update-budget-line-item"
+     },
+     {
+      "summary": "Added new currency_configuration property to the budget_line_item object after update",
+      "description": "The budget line item object now contains the currency_configuration object.",
+      "endpoint": "PATCH /budget_line_items/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-14",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#update-budget-line-item"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/budget_line_items/sync": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "beta",
+     "exposure": "public"
+    },
+    "summary": "Sync Budget Line Items",
+    "description": "Create or update multiple Budget Line Items",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "budget_line_items"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Project ID",
+          "example": 12345
+         },
+         "budget_line_items": {
+          "type": "array",
+          "items": {
+           "allOf": [
+            {
+             "title": "Budget Line Item",
+             "type": "object",
+             "description": "Budget Line Item object",
+             "required": [
+              "wbs_code_id"
+             ],
+             "properties": {
+              "wbs_code_id": {
+               "type": "integer",
+               "description": "ID of the Work Breakdown Structure (WBS) code to budget this line against. Required.",
+               "example": 67890
+              },
+              "original_budget_amount": {
+               "type": "number",
+               "format": "float",
+               "description": "Original budgeted amount for this line.",
+               "example": "10000.00"
+              },
+              "uom": {
+               "type": "string",
+               "description": "Unit of measure for the quantity, such as hours. Must be a value from the company's Units of Measure list.",
+               "example": "hours",
+               "enum": [
+                "Any value present in the Company list of Units of Measure"
+               ]
+              },
+              "quantity": {
+               "type": "number",
+               "format": "float",
+               "description": "Budgeted quantity in the unit of measure. Used with unit_cost when calculation_strategy is 'automatic'.",
+               "example": 250.5
+              },
+              "unit_cost": {
+               "type": "number",
+               "format": "float",
+               "description": "Cost per unit of measure. Used with quantity when calculation_strategy is 'automatic'.",
+               "example": 123.5
+              },
+              "calculation_strategy": {
+               "type": "string",
+               "description": "Determines how the budgeted amount is derived for this line.",
+               "example": "manual",
+               "enum": [
+                "automatic",
+                "manual"
+               ]
+              }
+             }
+            },
+            {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Budget Line Item ID",
+               "example": 1232
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "description": "Budget Line Item",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this budget line item. Use as the {id} path parameter for the Show and Update endpoints.",
+            "example": 75414
+           },
+           "original_budget_amount": {
+            "type": "number",
+            "format": "float",
+            "description": "Original budgeted amount for this line, before any budget changes.",
+            "example": "20000.0"
+           },
+           "uom": {
+            "type": "string",
+            "description": "Unit of measure for the line's quantity, such as hours. Any value from the company's configured Units of Measure list.",
+            "example": "hours"
+           },
+           "quantity": {
+            "type": "number",
+            "format": "float",
+            "description": "Budgeted quantity in the line's unit of measure. Multiplied by unit_cost when calculation_strategy is 'automatic'.",
+            "example": "250.5"
+           },
+           "unit_cost": {
+            "type": "number",
+            "format": "float",
+            "description": "Cost per unit of measure. Multiplied by quantity when calculation_strategy is 'automatic'.",
+            "example": "123.5"
+           },
+           "calculation_strategy": {
+            "type": "string",
+            "description": "How original_budget_amount is derived, such as entered directly ('manual') or computed from quantity and unit_cost ('automatic').",
+            "example": "manual"
+           },
+           "wbs_code": {
+            "type": "object",
+            "description": "Work Breakdown Structure (WBS) code this line item is budgeted against.",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Unique identifier of the WBS code. Pass as wbs_code_id when creating or updating a line item.",
+              "example": 999
+             },
+             "flat_code": {
+              "type": "string",
+              "description": "Flattened WBS code string combining all segment values.",
+              "example": "01-011.CT1"
+             },
+             "description": {
+              "type": "string",
+              "description": "Human-readable description of the WBS code.",
+              "example": "Project Engineer.Cost Type 1"
+             }
+            },
+            "example": {
+             "id": 44,
+             "flat_code": "2.E",
+             "description": "Earthwork.Equipment"
+            }
+           },
+           "currency_configuration": {
+            "type": "object",
+            "description": "Currency in which this line item's monetary amounts are denominated.",
+            "properties": {
+             "currency_iso_code": {
+              "type": "string",
+              "description": "ISO 4217 currency code for the line item's amounts.",
+              "example": "USD"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Currency",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the Budget Currency error.",
+           "type": "string",
+           "example": "422 - Unprocessable Currency",
+           "nullable": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/budget_line_items/sync',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 12345,\n    budget_line_items: [\n      {\n        wbs_code_id: 67890,\n        original_budget_amount: '10000.00',\n        uom: 'hours',\n        quantity: 250.5,\n        unit_cost: 123.5,\n        calculation_strategy: 'manual',\n        id: 1232\n      }\n    ]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"budget_line_items\\\":[{\\\"wbs_code_id\\\":67890,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\",\\\"id\\\":1232}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/budget_line_items/sync\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/budget_line_items/sync \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"budget_line_items\":[{\"wbs_code_id\":67890,\"original_budget_amount\":\"10000.00\",\"uom\":\"hours\",\"quantity\":250.5,\"unit_cost\":123.5,\"calculation_strategy\":\"manual\",\"id\":1232}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/budget_line_items/sync\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"budget_line_items\\\":[{\\\"wbs_code_id\\\":67890,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\",\\\"id\\\":1232}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Introducing v1.0 Sync Budget Line Items endpoint",
+      "description": "The Sync Budget Line Items endpoint is a new endpoint that allows developers to create and update Budget Line Items in bulk.\nIt has a limit of 500 updates/inserts per request.\n\nFor each Budget Line Item one of two parameters are necessary, 'wbs_code_id' or 'id'.\nIn case of using 'wbs_code_id' and already exists a Budget Line Item assigned to a WBS Code, it will update the Budget Line Item, otherwise, it will create a new Budget Line Item.",
+      "endpoint": "POST /budget_line_items/sync",
+      "type": "new",
+      "breaking": true,
+      "datestamp": "2023-04-10",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#sync-budget-line-items"
+     },
+     {
+      "summary": "Added new currency_configuration property to each budget_line_item object in the sync endpoint",
+      "description": "Each budget line item object now contains the currency_configuration object.",
+      "endpoint": "POST /budget_line_items/sync",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "beta",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#sync-budget-line-items"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/budget_line_items": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Budget Line Item",
+    "description": "Add a new line item to a budget.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "budget_line_item"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 12345
+         },
+         "budget_line_item": {
+          "title": "Budget Line Item",
+          "type": "object",
+          "description": "Budget Line Item object",
+          "required": [
+           "cost_code_id",
+           "line_item_type_id"
+          ],
+          "properties": {
+           "cost_code_id": {
+            "type": "integer",
+            "description": "ID of the cost code to budget this line against. Must belong to the project or one of its sub jobs.",
+            "example": 12345
+           },
+           "line_item_type_id": {
+            "type": "integer",
+            "description": "ID of the line item type (cost type), such as Labor or Equipment. Must belong to the project's company.",
+            "example": 12345
+           },
+           "original_budget_amount": {
+            "type": "number",
+            "format": "float",
+            "description": "Original budgeted amount for this line, before any budget changes.",
+            "example": "10000.00"
+           },
+           "uom": {
+            "type": "string",
+            "description": "Unit of measure for the quantity, such as hours. Must be a value from the company's Units of Measure list.",
+            "example": "hours",
+            "enum": [
+             "Any value present in the Company list of Units of Measure"
+            ]
+           },
+           "quantity": {
+            "type": "number",
+            "format": "float",
+            "description": "Budgeted quantity in the unit of measure. Used with unit_cost when calculation_strategy is 'automatic'.",
+            "example": 250.5
+           },
+           "unit_cost": {
+            "type": "number",
+            "format": "float",
+            "description": "Cost per unit of measure. Used with quantity when calculation_strategy is 'automatic'.",
+            "example": 123.5
+           },
+           "calculation_strategy": {
+            "type": "string",
+            "description": "Determines how the budgeted amount is derived for this line.",
+            "example": "manual",
+            "enum": [
+             "automatic",
+             "manual"
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Budget Line Item",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this budget line item. Use as the {id} path parameter for the Show and Update endpoints.",
+           "example": 75414
+          },
+          "original_budget_amount": {
+           "type": "number",
+           "format": "float",
+           "description": "Original budgeted amount for this line.",
+           "example": "20000.0"
+          },
+          "uom": {
+           "type": "string",
+           "description": "Unit of measure for the line's quantity (e.g., hours, each, sq ft). Any value from the company's configured Units of Measure list.",
+           "example": "hours"
+          },
+          "quantity": {
+           "type": "number",
+           "format": "float",
+           "description": "Budgeted quantity in the line's unit of measure. Multiplied by unit_cost when calculation_strategy is 'automatic' to become the original_budget_amount.",
+           "example": "250.5"
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure. Multiplied by quantity when calculation_strategy is 'automatic'.",
+           "example": "123.5"
+          },
+          "calculation_strategy": {
+           "type": "string",
+           "description": "How original_budget_amount is derived, such as entered directly ('manual') or computed from quantity and unit_cost ('automatic').",
+           "example": "manual"
+          },
+          "approved_budget_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of approved budget changes applied to this line.",
+           "example": "0.0"
+          },
+          "revised_budget": {
+           "type": "number",
+           "format": "float",
+           "description": "Current budget after approved budget changes (original_budget_amount plus approved_budget_changes).",
+           "example": "20000.0"
+          },
+          "pending_budget_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of budget changes that are proposed but not yet approved.",
+           "example": "0.0"
+          },
+          "projected_budget": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted budget including both approved and pending budget changes.",
+           "example": "20000.0"
+          },
+          "committed_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Total costs committed against this line through commitments such as purchase orders and subcontracts.",
+           "example": "0.0"
+          },
+          "direct_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Total direct costs (e.g., invoices, expenses, timecards) recorded against this line.",
+           "example": "0.0"
+          },
+          "pending_cost_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of cost changes that are proposed but not yet approved.",
+           "example": "0.0"
+          },
+          "projected_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted total cost at completion, including committed costs, direct costs, and pending cost changes.",
+           "example": "0.0"
+          },
+          "budget_modifications": {
+           "type": "number",
+           "format": "float",
+           "description": "Net amount transferred to or from this line via budget modifications. Positive when funds are transferred in, negative when transferred out.",
+           "example": "0.0"
+          },
+          "budget_forecast": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted budget amount for this line, used when projecting costs over the schedule.",
+           "example": "20000.0"
+          },
+          "estimated_cost_at_completion": {
+           "type": "number",
+           "format": "float",
+           "description": "Estimated final cost of this line when work is complete.",
+           "example": "20000.0"
+          },
+          "projected_over_under": {
+           "type": "number",
+           "format": "float",
+           "description": "Projected budget surplus or shortfall (projected_budget minus projected_costs). Negative values indicate an expected overrun.",
+           "example": "0.0"
+          },
+          "cost_code": {
+           "type": "object",
+           "description": "Cost code this line item is budgeted against.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the cost code.",
+             "example": 32780682
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the cost code.",
+             "example": "Wood Sub-floors"
+            },
+            "code": {
+             "type": "string",
+             "description": "Short cost code segment for this level.",
+             "example": "162"
+            },
+            "full_code": {
+             "type": "string",
+             "description": "Fully qualified cost code including parent segments.",
+             "example": "17-162"
+            }
+           }
+          },
+          "division": {
+           "type": "object",
+           "description": "Root cost code (division) that groups this line item.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the division (root cost code).",
+             "example": 236246
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the division.",
+             "example": "Wood floors"
+            },
+            "full_code": {
+             "type": "string",
+             "description": "Cost code of the division.",
+             "example": "11-123"
+            }
+           }
+          },
+          "line_item_type": {
+           "type": "object",
+           "description": "Line item type (cost type) categorizing this line, such as Labor or Equipment.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the line item type.",
+             "example": 23107
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the line item type.",
+             "example": "Equipment"
+            }
+           }
+          },
+          "currency_configuration": {
+           "type": "object",
+           "description": "Currency in which this line item's monetary amounts are denominated.",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 currency code for the line item's amounts.",
+             "example": "USD"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Currency",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the Budget Currency error.",
+           "type": "string",
+           "example": "422 - Unprocessable Currency",
+           "nullable": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/budget_line_items',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 12345,\n    budget_line_item: {\n      cost_code_id: 12345,\n      line_item_type_id: 12345,\n      original_budget_amount: '10000.00',\n      uom: 'hours',\n      quantity: 250.5,\n      unit_cost: 123.5,\n      calculation_strategy: 'manual'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"cost_code_id\\\":12345,\\\"line_item_type_id\\\":12345,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/budget_line_items\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/budget_line_items \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"budget_line_item\":{\"cost_code_id\":12345,\"line_item_type_id\":12345,\"original_budget_amount\":\"10000.00\",\"uom\":\"hours\",\"quantity\":250.5,\"unit_cost\":123.5,\"calculation_strategy\":\"manual\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/budget_line_items\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"cost_code_id\\\":12345,\\\"line_item_type_id\\\":12345,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new currency_configuration property to the budget_line_item object after creation",
+      "description": "The budget line item object now contains the currency_configuration object.",
+      "endpoint": "POST /budget_line_items",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-14",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#create-budget-line-item"
+     }
+    ],
+    "x-superseded": true
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/budget_line_items/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Budget Line Item",
+    "description": "Return information about a Budget Line Item.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Budget Line Item",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this budget line item. Use as the {id} path parameter for the Show and Update endpoints.",
+           "example": 75414
+          },
+          "original_budget_amount": {
+           "type": "number",
+           "format": "float",
+           "description": "Original budgeted amount for this line.",
+           "example": "20000.0"
+          },
+          "uom": {
+           "type": "string",
+           "description": "Unit of measure for the line's quantity (e.g., hours, each, sq ft). Any value from the company's configured Units of Measure list.",
+           "example": "hours"
+          },
+          "quantity": {
+           "type": "number",
+           "format": "float",
+           "description": "Budgeted quantity in the line's unit of measure. Multiplied by unit_cost when calculation_strategy is 'automatic' to become the original_budget_amount.",
+           "example": "250.5"
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure. Multiplied by quantity when calculation_strategy is 'automatic'.",
+           "example": "123.5"
+          },
+          "calculation_strategy": {
+           "type": "string",
+           "description": "How original_budget_amount is derived, such as entered directly ('manual') or computed from quantity and unit_cost ('automatic').",
+           "example": "manual"
+          },
+          "approved_budget_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of approved budget changes applied to this line.",
+           "example": "0.0"
+          },
+          "revised_budget": {
+           "type": "number",
+           "format": "float",
+           "description": "Current budget after approved budget changes (original_budget_amount plus approved_budget_changes).",
+           "example": "20000.0"
+          },
+          "pending_budget_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of budget changes that are proposed but not yet approved.",
+           "example": "0.0"
+          },
+          "projected_budget": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted budget including both approved and pending budget changes.",
+           "example": "20000.0"
+          },
+          "committed_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Total costs committed against this line through commitments such as purchase orders and subcontracts.",
+           "example": "0.0"
+          },
+          "direct_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Total direct costs (e.g., invoices, expenses, timecards) recorded against this line.",
+           "example": "0.0"
+          },
+          "pending_cost_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of cost changes that are proposed but not yet approved.",
+           "example": "0.0"
+          },
+          "projected_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted total cost at completion, including committed costs, direct costs, and pending cost changes.",
+           "example": "0.0"
+          },
+          "budget_modifications": {
+           "type": "number",
+           "format": "float",
+           "description": "Net amount transferred to or from this line via budget modifications. Positive when funds are transferred in, negative when transferred out.",
+           "example": "0.0"
+          },
+          "budget_forecast": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted budget amount for this line, used when projecting costs over the schedule.",
+           "example": "20000.0"
+          },
+          "estimated_cost_at_completion": {
+           "type": "number",
+           "format": "float",
+           "description": "Estimated final cost of this line when work is complete.",
+           "example": "20000.0"
+          },
+          "projected_over_under": {
+           "type": "number",
+           "format": "float",
+           "description": "Projected budget surplus or shortfall (projected_budget minus projected_costs). Negative values indicate an expected overrun.",
+           "example": "0.0"
+          },
+          "cost_code": {
+           "type": "object",
+           "description": "Cost code this line item is budgeted against.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the cost code.",
+             "example": 32780682
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the cost code.",
+             "example": "Wood Sub-floors"
+            },
+            "code": {
+             "type": "string",
+             "description": "Short cost code segment for this level.",
+             "example": "162"
+            },
+            "full_code": {
+             "type": "string",
+             "description": "Fully qualified cost code including parent segments.",
+             "example": "17-162"
+            }
+           }
+          },
+          "division": {
+           "type": "object",
+           "description": "Root cost code (division) that groups this line item.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the division (root cost code).",
+             "example": 236246
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the division.",
+             "example": "Wood floors"
+            },
+            "full_code": {
+             "type": "string",
+             "description": "Cost code of the division.",
+             "example": "11-123"
+            }
+           }
+          },
+          "line_item_type": {
+           "type": "object",
+           "description": "Line item type (cost type) categorizing this line, such as Labor or Equipment.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the line item type.",
+             "example": 23107
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the line item type.",
+             "example": "Equipment"
+            }
+           }
+          },
+          "currency_configuration": {
+           "type": "object",
+           "description": "Currency in which this line item's monetary amounts are denominated.",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 currency code for the line item's amounts.",
+             "example": "USD"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/budget_line_items/%7Bid%7D',\n  qs: {project_id: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/budget_line_items/%7Bid%7D?project_id=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/budget_line_items/%7Bid%7D?project_id=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/budget_line_items/%7Bid%7D?project_id=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new currency_configuration property to the budget_line_item object in the show endpoint",
+      "description": "The budget line item object now contains the currency_configuration object.",
+      "endpoint": "GET /budget_line_items/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-14",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#show-budget-line-item"
+     }
+    ],
+    "x-superseded": true
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Budget Line Item",
+    "description": "Update a line item of a specified budget.",
+    "tags": [
+     "Budget Line Items"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "required": [
+         "project_id",
+         "budget_line_item"
+        ],
+        "properties": {
+         "project_id": {
+          "type": "integer",
+          "description": "Unique identifier for the project.",
+          "example": 12345
+         },
+         "budget_line_item": {
+          "title": "Budget Line Item",
+          "type": "object",
+          "description": "Budget Line Item object",
+          "properties": {
+           "cost_code_id": {
+            "type": "integer",
+            "description": "ID of the cost code to budget this line against. Must belong to the project or one of its sub jobs.",
+            "example": 12345
+           },
+           "line_item_type_id": {
+            "type": "integer",
+            "description": "ID of the line item type (cost type), such as Labor or Equipment. Must belong to the project's company.",
+            "example": 12345
+           },
+           "original_budget_amount": {
+            "type": "number",
+            "format": "float",
+            "description": "Original budgeted amount for this line, before any budget changes.",
+            "example": "10000.00"
+           },
+           "uom": {
+            "type": "string",
+            "description": "Unit of measure for the quantity, such as hours. Must be a value from the company's Units of Measure list.",
+            "example": "hours",
+            "enum": [
+             "Any value present in the Company list of Units of Measure"
+            ]
+           },
+           "quantity": {
+            "type": "number",
+            "format": "float",
+            "description": "Budgeted quantity in the unit of measure. Used with unit_cost when calculation_strategy is 'automatic'.",
+            "example": 250.5
+           },
+           "unit_cost": {
+            "type": "number",
+            "format": "float",
+            "description": "Cost per unit of measure. Used with quantity when calculation_strategy is 'automatic'.",
+            "example": 123.5
+           },
+           "calculation_strategy": {
+            "type": "string",
+            "description": "Determines how the budgeted amount is derived for this line.",
+            "example": "manual",
+            "enum": [
+             "automatic",
+             "manual"
+            ]
+           },
+           "direct_costs": {
+            "type": "number",
+            "format": "float",
+            "description": "Direct costs recorded against this line. Include only when the Direct Costs tool is turned off for the project.",
+            "example": "2450.35"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Budget Line Item",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this budget line item. Use as the {id} path parameter for the Show and Update endpoints.",
+           "example": 75414
+          },
+          "original_budget_amount": {
+           "type": "number",
+           "format": "float",
+           "description": "Original budgeted amount for this line.",
+           "example": "20000.0"
+          },
+          "uom": {
+           "type": "string",
+           "description": "Unit of measure for the line's quantity (e.g., hours, each, sq ft). Any value from the company's configured Units of Measure list.",
+           "example": "hours"
+          },
+          "quantity": {
+           "type": "number",
+           "format": "float",
+           "description": "Budgeted quantity in the line's unit of measure. Multiplied by unit_cost when calculation_strategy is 'automatic' to become the original_budget_amount.",
+           "example": "250.5"
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure. Multiplied by quantity when calculation_strategy is 'automatic'.",
+           "example": "123.5"
+          },
+          "calculation_strategy": {
+           "type": "string",
+           "description": "How original_budget_amount is derived, such as entered directly ('manual') or computed from quantity and unit_cost ('automatic').",
+           "example": "manual"
+          },
+          "approved_budget_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of approved budget changes applied to this line.",
+           "example": "0.0"
+          },
+          "revised_budget": {
+           "type": "number",
+           "format": "float",
+           "description": "Current budget after approved budget changes (original_budget_amount plus approved_budget_changes).",
+           "example": "20000.0"
+          },
+          "pending_budget_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of budget changes that are proposed but not yet approved.",
+           "example": "0.0"
+          },
+          "projected_budget": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted budget including both approved and pending budget changes.",
+           "example": "20000.0"
+          },
+          "committed_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Total costs committed against this line through commitments such as purchase orders and subcontracts.",
+           "example": "0.0"
+          },
+          "direct_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Total direct costs (e.g., invoices, expenses, timecards) recorded against this line.",
+           "example": "0.0"
+          },
+          "pending_cost_changes": {
+           "type": "number",
+           "format": "float",
+           "description": "Sum of cost changes that are proposed but not yet approved.",
+           "example": "0.0"
+          },
+          "projected_costs": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted total cost at completion, including committed costs, direct costs, and pending cost changes.",
+           "example": "0.0"
+          },
+          "budget_modifications": {
+           "type": "number",
+           "format": "float",
+           "description": "Net amount transferred to or from this line via budget modifications. Positive when funds are transferred in, negative when transferred out.",
+           "example": "0.0"
+          },
+          "budget_forecast": {
+           "type": "number",
+           "format": "float",
+           "description": "Forecasted budget amount for this line, used when projecting costs over the schedule.",
+           "example": "20000.0"
+          },
+          "estimated_cost_at_completion": {
+           "type": "number",
+           "format": "float",
+           "description": "Estimated final cost of this line when work is complete.",
+           "example": "20000.0"
+          },
+          "projected_over_under": {
+           "type": "number",
+           "format": "float",
+           "description": "Projected budget surplus or shortfall (projected_budget minus projected_costs). Negative values indicate an expected overrun.",
+           "example": "0.0"
+          },
+          "cost_code": {
+           "type": "object",
+           "description": "Cost code this line item is budgeted against.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the cost code.",
+             "example": 32780682
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the cost code.",
+             "example": "Wood Sub-floors"
+            },
+            "code": {
+             "type": "string",
+             "description": "Short cost code segment for this level.",
+             "example": "162"
+            },
+            "full_code": {
+             "type": "string",
+             "description": "Fully qualified cost code including parent segments.",
+             "example": "17-162"
+            }
+           }
+          },
+          "division": {
+           "type": "object",
+           "description": "Root cost code (division) that groups this line item.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the division (root cost code).",
+             "example": 236246
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the division.",
+             "example": "Wood floors"
+            },
+            "full_code": {
+             "type": "string",
+             "description": "Cost code of the division.",
+             "example": "11-123"
+            }
+           }
+          },
+          "line_item_type": {
+           "type": "object",
+           "description": "Line item type (cost type) categorizing this line, such as Labor or Equipment.",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Unique identifier of the line item type.",
+             "example": 23107
+            },
+            "name": {
+             "type": "string",
+             "description": "Human-readable name of the line item type.",
+             "example": "Equipment"
+            }
+           }
+          },
+          "currency_configuration": {
+           "type": "object",
+           "description": "Currency in which this line item's monetary amounts are denominated.",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "ISO 4217 currency code for the line item's amounts.",
+             "example": "USD"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Currency",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the Budget Currency error.",
+           "type": "string",
+           "example": "422 - Unprocessable Currency",
+           "nullable": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/budget_line_items/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    project_id: 12345,\n    budget_line_item: {\n      cost_code_id: 12345,\n      line_item_type_id: 12345,\n      original_budget_amount: '10000.00',\n      uom: 'hours',\n      quantity: 250.5,\n      unit_cost: 123.5,\n      calculation_strategy: 'manual',\n      direct_costs: '2450.35'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"cost_code_id\\\":12345,\\\"line_item_type_id\\\":12345,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\",\\\"direct_costs\\\":\\\"2450.35\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/budget_line_items/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/budget_line_items/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"project_id\":12345,\"budget_line_item\":{\"cost_code_id\":12345,\"line_item_type_id\":12345,\"original_budget_amount\":\"10000.00\",\"uom\":\"hours\",\"quantity\":250.5,\"unit_cost\":123.5,\"calculation_strategy\":\"manual\",\"direct_costs\":\"2450.35\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/budget_line_items/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"project_id\\\":12345,\\\"budget_line_item\\\":{\\\"cost_code_id\\\":12345,\\\"line_item_type_id\\\":12345,\\\"original_budget_amount\\\":\\\"10000.00\\\",\\\"uom\\\":\\\"hours\\\",\\\"quantity\\\":250.5,\\\"unit_cost\\\":123.5,\\\"calculation_strategy\\\":\\\"manual\\\",\\\"direct_costs\\\":\\\"2450.35\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added new currency_configuration property to the budget_line_item object after update",
+      "description": "The budget line item object now contains the currency_configuration object.",
+      "endpoint": "PATCH /budget_line_items/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-07-14",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "budget-line-items?version=1.0#update-budget-line-item"
+     }
+    ],
+    "x-superseded": true
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,1008 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Task Requested Changes",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Schedule (Legacy)",
+  "x-resource-name": "Task Requested Changes",
+  "version": "1.1",
+  "x-product-lines": [
+   "PM Starter Pack",
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.1/projects/{project_id}/schedule/requested_changes": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List requested changes for a Schedule or a Task",
+    "description": "Returns the requested change list.",
+    "tags": [
+     "Requested Change"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "task_id",
+      "description": "Task ID",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "view",
+      "in": "query",
+      "description": "The `with_task` view includes an additional task data for correspondent requested changes",
+      "schema": {
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Requested change id",
+            "example": 333713
+           },
+           "change_requested": {
+            "type": "string",
+            "description": "Requested change",
+            "example": "<ul><li>Other change: why7</li></ul>"
+           },
+           "created_by": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 160586
+             },
+             "login": {
+              "type": "string",
+              "description": "Email",
+              "example": "carl.contractor@example.com"
+             },
+             "name": {
+              "type": "string",
+              "description": "Name",
+              "example": "Carl Contractor"
+             }
+            }
+           },
+           "new_finish": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Requested change finish date",
+            "example": "2022-03-04T00:00:00Z"
+           },
+           "new_start": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Requested change start date",
+            "example": "2022-01-31T00:00:00Z"
+           },
+           "new_percentage": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Requested change percentage",
+            "example": 50
+           },
+           "old_finish": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Current finish date",
+            "example": "2022-03-04T00:00:00Z"
+           },
+           "old_start": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Current start date",
+            "example": "2022-01-31T00:00:00Z"
+           },
+           "old_percentage": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Current percentage",
+            "example": 50
+           },
+           "other_change": {
+            "type": "string",
+            "description": "Other change",
+            "example": "Add as milestone"
+           },
+           "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Requested change reason",
+            "example": "<p>this is a description</p>"
+           },
+           "status": {
+            "type": "string",
+            "description": "Localized requested change status",
+            "example": "Pending"
+           },
+           "status_not_localized": {
+            "type": "string",
+            "description": "Requested change status not localized",
+            "enum": [
+             "approved",
+             "rejected",
+             "pending"
+            ],
+            "example": "pending"
+           },
+           "notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Requested change notes",
+            "example": "Notes"
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Requested change created date",
+            "example": "2022-03-04T00:00:00Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes',\n  qs: {\n    task_id: 'SOME_INTEGER_VALUE',\n    view: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes?task_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes?task_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes?task_id=SOME_INTEGER_VALUE&view=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added requested changes endpoint",
+      "description": "Added requested changes query endpoint",
+      "endpoint": "GET /projects/{project_id}/schedule/requested_changes",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-03-16",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "task-requested-changes?version=1.1#list-requested-changes-for-a-schedule-or-a-task"
+     },
+     {
+      "summary": "Add `with_task` view",
+      "description": "Add possibility to return task data for requested changes specifiying `view` param as `with_task`",
+      "endpoint": "GET /projects/{project_id}/schedule/requested_changes",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2022-09-05",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "task-requested-changes?version=1.1#list-requested-changes-for-a-schedule-or-a-task"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/projects/{project_id}/schedule/tasks/{task_id}/requested_changes": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Requested Change",
+    "description": "Create a new requested change on a Task.",
+    "tags": [
+     "Requested Change"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "task_id",
+      "description": "Task ID",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "requested_change": {
+          "type": "object",
+          "properties": {
+           "change_reason": {
+            "type": "string",
+            "description": "Requested change reason",
+            "example": "Change schedule request"
+           },
+           "other_change": {
+            "type": "string",
+            "example": "Other change"
+           },
+           "task": {
+            "type": "object",
+            "properties": {
+             "start": {
+              "type": "string",
+              "description": "Requested change start date",
+              "example": "2022-01-31"
+             },
+             "finish": {
+              "type": "string",
+              "description": "Requested change finish date",
+              "example": "2022-02-15"
+             },
+             "percentage": {
+              "type": "integer",
+              "description": "Requested change percentage",
+              "example": 50
+             }
+            }
+           },
+           "notes": {
+            "type": "string",
+            "description": "Requested change notes",
+            "example": "Delayed due to weather"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Requested change id",
+           "example": 333713
+          },
+          "change_requested": {
+           "type": "string",
+           "description": "Requested change",
+           "example": "<ul><li>Other change: why7</li></ul>"
+          },
+          "created_by": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "ID",
+             "example": 160586
+            },
+            "login": {
+             "type": "string",
+             "description": "Email",
+             "example": "carl.contractor@example.com"
+            },
+            "name": {
+             "type": "string",
+             "description": "Name",
+             "example": "Carl Contractor"
+            }
+           }
+          },
+          "new_finish": {
+           "type": "string",
+           "format": "date",
+           "nullable": true,
+           "description": "Requested change finish date",
+           "example": "2022-03-04T00:00:00Z"
+          },
+          "new_start": {
+           "type": "string",
+           "format": "date",
+           "nullable": true,
+           "description": "Requested change start date",
+           "example": "2022-01-31T00:00:00Z"
+          },
+          "new_percentage": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Requested change percentage",
+           "example": 50
+          },
+          "old_finish": {
+           "type": "string",
+           "format": "date",
+           "nullable": true,
+           "description": "Current finish date",
+           "example": "2022-03-04T00:00:00Z"
+          },
+          "old_start": {
+           "type": "string",
+           "format": "date",
+           "nullable": true,
+           "description": "Current start date",
+           "example": "2022-01-31T00:00:00Z"
+          },
+          "old_percentage": {
+           "type": "integer",
+           "nullable": true,
+           "description": "Current percentage",
+           "example": 50
+          },
+          "other_change": {
+           "type": "string",
+           "description": "Other change",
+           "example": "Add as milestone"
+          },
+          "reason": {
+           "type": "string",
+           "nullable": true,
+           "description": "Requested change reason",
+           "example": "<p>this is a description</p>"
+          },
+          "status": {
+           "type": "string",
+           "description": "Localized requested change status",
+           "example": "Pending"
+          },
+          "status_not_localized": {
+           "type": "string",
+           "description": "Requested change status not localized",
+           "enum": [
+            "approved",
+            "rejected",
+            "pending"
+           ],
+           "example": "pending"
+          },
+          "notes": {
+           "type": "string",
+           "nullable": true,
+           "description": "Requested change notes",
+           "example": "Notes"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date",
+           "nullable": true,
+           "description": "Requested change created date",
+           "example": "2022-03-04T00:00:00Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/tasks/%7Btask_id%7D/requested_changes',\n  headers: {'content-type': 'application/json'},\n  body: {\n    requested_change: {\n      change_reason: 'Change schedule request',\n      other_change: 'Other change',\n      task: {start: '2022-01-31', finish: '2022-02-15', percentage: 50},\n      notes: 'Delayed due to weather'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"requested_change\\\":{\\\"change_reason\\\":\\\"Change schedule request\\\",\\\"other_change\\\":\\\"Other change\\\",\\\"task\\\":{\\\"start\\\":\\\"2022-01-31\\\",\\\"finish\\\":\\\"2022-02-15\\\",\\\"percentage\\\":50},\\\"notes\\\":\\\"Delayed due to weather\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.1/projects/%7Bproject_id%7D/schedule/tasks/%7Btask_id%7D/requested_changes\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/tasks/%7Btask_id%7D/requested_changes \\\n  --header 'content-type: application/json' \\\n  --data '{\"requested_change\":{\"change_reason\":\"Change schedule request\",\"other_change\":\"Other change\",\"task\":{\"start\":\"2022-01-31\",\"finish\":\"2022-02-15\",\"percentage\":50},\"notes\":\"Delayed due to weather\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/tasks/%7Btask_id%7D/requested_changes\"),\n    Content = new StringContent(\"{\\\"requested_change\\\":{\\\"change_reason\\\":\\\"Change schedule request\\\",\\\"other_change\\\":\\\"Other change\\\",\\\"task\\\":{\\\"start\\\":\\\"2022-01-31\\\",\\\"finish\\\":\\\"2022-02-15\\\",\\\"percentage\\\":50},\\\"notes\\\":\\\"Delayed due to weather\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added requested changes create endpoint",
+      "description": "Added requested changes endpoint",
+      "endpoint": "POST /projects/{project_id}/schedule/tasks/{task_id}/requested_changes",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2022-03-16",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "task-requested-changes?version=1.1#create-requested-change"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.1/projects/{project_id}/schedule/requested_changes/review": {
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Review Requested Changes",
+    "description": "Review Requested Changes for Tasks.",
+    "tags": [
+     "Requested Changes"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "requested_changes": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Requested Change ID",
+             "example": 1
+            },
+            "approved": {
+             "type": "boolean",
+             "description": "Review result"
+            },
+            "disposition_reason": {
+             "type": "string",
+             "description": "reason of review",
+             "example": "Looks reasonable"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Requested change id",
+            "example": 333713
+           },
+           "requested_by": {
+            "type": "string",
+            "description": "Requested change requested by",
+            "example": "Bob Dole on Nov. 24"
+           },
+           "change_requested": {
+            "type": "string",
+            "description": "Requested change",
+            "example": "<ul><li>Other change: why7</li></ul>"
+           },
+           "reason": {
+            "type": "string",
+            "description": "Requested change reason",
+            "example": "<p>this is a description</p>"
+           },
+           "status": {
+            "type": "string",
+            "description": "Requested change status localized",
+            "enum": [
+             "Approved",
+             "Rejected",
+             "Pending"
+            ],
+            "example": "Pending"
+           },
+           "status_not_localized": {
+            "type": "string",
+            "description": "Requested change status not localized",
+            "enum": [
+             "approved",
+             "rejected",
+             "pending"
+            ],
+            "example": "pending"
+           },
+           "notes": {
+            "type": "string",
+            "description": "Requested change notes",
+            "example": "Notes"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes/review',\n  headers: {'content-type': 'application/json'},\n  body: {\n    requested_changes: [{id: 1, approved: true, disposition_reason: 'Looks reasonable'}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"requested_changes\\\":[{\\\"id\\\":1,\\\"approved\\\":true,\\\"disposition_reason\\\":\\\"Looks reasonable\\\"}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes/review\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes/review \\\n  --header 'content-type: application/json' \\\n  --data '{\"requested_changes\":[{\"id\":1,\"approved\":true,\"disposition_reason\":\"Looks reasonable\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.1/projects/%7Bproject_id%7D/schedule/requested_changes/review\"),\n    Content = new StringContent(\"{\\\"requested_changes\\\":[{\\\"id\\\":1,\\\"approved\\\":true,\\\"disposition_reason\\\":\\\"Looks reasonable\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added review endpoint",
+      "description": "Added review requested changes endpoint",
+      "endpoint": "PATCH /projects/{project_id}/schedule/requested_changes/review",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-03-16",
+      "versions": [
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "task-requested-changes?version=1.1#review-requested-changes"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

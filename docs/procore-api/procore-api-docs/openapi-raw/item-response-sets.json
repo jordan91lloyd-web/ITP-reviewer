@@ -1,0 +1,1403 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Item Response Sets",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Inspections",
+  "x-resource-name": "Item Response Sets",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/companies/{company_id}/checklist/item/response_sets": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Item Response Sets",
+    "description": "List Checklist Item Response Sets for a specified Company.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "parameters": [
+     {
+      "name": "sort",
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "name"
+       ]
+      }
+     },
+     {
+      "name": "filters[id]",
+      "in": "query",
+      "description": "Return item(s) with the specified IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[updated_at]",
+      "in": "query",
+      "description": "Return item(s) last updated within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00`...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[active]",
+      "in": "query",
+      "description": "If true, returns item(s) with a status of 'active'.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Array of Response Sets",
+         "items": {
+          "title": "ChecklistItemResponseSet",
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "ID",
+            "example": 1
+           },
+           "name": {
+            "type": "string",
+            "description": "The name of the Item Response Set",
+            "example": "Safety Responses"
+           },
+           "active": {
+            "type": "boolean",
+            "description": "Indicates whether an Item Response Set is available for use.",
+            "example": true
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Represents when an Item Response Set was created",
+            "example": "2012-10-02T21:00:00Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Represents when a Item Response Set was last updated",
+            "example": "2012-10-02T21:00:00Z"
+           },
+           "responses": {
+            "type": "array",
+            "description": "Responses",
+            "items": {
+             "title": "Checklist Response",
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "ID",
+               "example": 1
+              },
+              "item_status_id": {
+               "type": "integer",
+               "description": "Checklist Item Status ID",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "The name of the Response",
+               "example": "Safe - Knowledge"
+              },
+              "corresponding_status": {
+               "type": "string",
+               "description": "Corresponding Checklist Item status",
+               "enum": [
+                "yes",
+                "no",
+                "n/a"
+               ],
+               "example": "yes"
+              }
+             }
+            }
+           },
+           "in_use": {
+            "type": "boolean",
+            "description": "Indicates whether a Response Set is being used by an Inspection Template Item",
+            "example": false
+           },
+           "deletable": {
+            "type": "boolean",
+            "description": "Indicates whether a Response Set is deletable.",
+            "example": true
+           },
+           "procore_standard": {
+            "type": "boolean",
+            "description": "Indicates whether a Response Set is a Procore standard set.",
+            "example": false
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets',\n  qs: {\n    sort: 'SOME_STRING_VALUE',\n    'filters[id]': 'SOME_ARRAY_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[updated_at]': 'SOME_STRING_VALUE',\n    'filters[active]': 'SOME_BOOLEAN_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets?sort=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bactive%5D=SOME_BOOLEAN_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets?sort=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bactive%5D=SOME_BOOLEAN_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets?sort=SOME_STRING_VALUE&filters%5Bid%5D=SOME_ARRAY_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Bupdated_at%5D=SOME_STRING_VALUE&filters%5Bactive%5D=SOME_BOOLEAN_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added `procore_standard` to Company Checklist Item Response Set index endpoint",
+      "description": "Added `procore_standard` to Company Checklist Item Response set index endpoint response payload.",
+      "endpoint": "GET /companies/{company_id}/checklist/item/response_sets",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-05-02",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "item-response-sets?version=1.0#list-item-response-sets"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Item Response Set",
+    "description": "Creates a Company Checklist Item Response Set for a specified Company.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "ChecklistItemResponseSetBody",
+        "type": "object",
+        "required": [
+         "response_set"
+        ],
+        "properties": {
+         "response_set": {
+          "title": "Item Response Set",
+          "type": "object",
+          "description": "Item Response Set object",
+          "required": [
+           "name"
+          ],
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "Name of the Response Set",
+            "example": "Safety Responses"
+           },
+           "active": {
+            "type": "boolean",
+            "description": "Indicates whether a Response Set is available for use",
+            "example": true
+           },
+           "memberships_attributes": {
+            "type": "array",
+            "description": "Array of Response Set Memberships (Responses)",
+            "items": {
+             "type": "object",
+             "properties": {
+              "response_attributes": {
+               "type": "object",
+               "description": "Response to be included in the Response Set",
+               "required": [
+                "name",
+                "corresponding_status"
+               ],
+               "properties": {
+                "name": {
+                 "type": "string",
+                 "description": "Name of the Response",
+                 "example": "Safe - Knowledge"
+                },
+                "corresponding_status": {
+                 "type": "string",
+                 "description": "Item Status that the Response corresponds to",
+                 "enum": [
+                  "yes",
+                  "no",
+                  "n/a"
+                 ],
+                 "example": "yes"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ChecklistItemResponseSet",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 1
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Item Response Set",
+           "example": "Safety Responses"
+          },
+          "active": {
+           "type": "boolean",
+           "description": "Indicates whether an Item Response Set is available for use.",
+           "example": true
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Represents when an Item Response Set was created",
+           "example": "2012-10-02T21:00:00Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Represents when a Item Response Set was last updated",
+           "example": "2012-10-02T21:00:00Z"
+          },
+          "responses": {
+           "type": "array",
+           "description": "Responses",
+           "items": {
+            "title": "Checklist Response",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "item_status_id": {
+              "type": "integer",
+              "description": "Checklist Item Status ID",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Response",
+              "example": "Safe - Knowledge"
+             },
+             "corresponding_status": {
+              "type": "string",
+              "description": "Corresponding Checklist Item status",
+              "enum": [
+               "yes",
+               "no",
+               "n/a"
+              ],
+              "example": "yes"
+             }
+            }
+           }
+          },
+          "in_use": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is being used by an Inspection Template Item",
+           "example": false
+          },
+          "deletable": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is deletable.",
+           "example": true
+          },
+          "procore_standard": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is a Procore standard set.",
+           "example": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    response_set: {\n      name: 'Safety Responses',\n      active: true,\n      memberships_attributes: [{response_attributes: {name: 'Safe - Knowledge', corresponding_status: 'yes'}}]\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"response_set\\\":{\\\"name\\\":\\\"Safety Responses\\\",\\\"active\\\":true,\\\"memberships_attributes\\\":[{\\\"response_attributes\\\":{\\\"name\\\":\\\"Safe - Knowledge\\\",\\\"corresponding_status\\\":\\\"yes\\\"}}]}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"response_set\":{\"name\":\"Safety Responses\",\"active\":true,\"memberships_attributes\":[{\"response_attributes\":{\"name\":\"Safe - Knowledge\",\"corresponding_status\":\"yes\"}}]}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"response_set\\\":{\\\"name\\\":\\\"Safety Responses\\\",\\\"active\\\":true,\\\"memberships_attributes\\\":[{\\\"response_attributes\\\":{\\\"name\\\":\\\"Safe - Knowledge\\\",\\\"corresponding_status\\\":\\\"yes\\\"}}]}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added `procore_standard` to Company Checklist Item Response Set create endpoint",
+      "description": "Added `procore_standard` to Company Checklist Item Response set create endpoint response payload.",
+      "endpoint": "POST /companies/{company_id}/checklist/item/response_sets",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-05-02",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "item-response-sets?version=1.0#create-item-response-set"
+     }
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/companies/{company_id}/checklist/item/response_sets/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Item Response Set ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Item Response Set",
+    "description": "Returns a specified Checklist Item Response Set.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ChecklistItemResponseSet",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 1
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Item Response Set",
+           "example": "Safety Responses"
+          },
+          "active": {
+           "type": "boolean",
+           "description": "Indicates whether an Item Response Set is available for use.",
+           "example": true
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Represents when an Item Response Set was created",
+           "example": "2012-10-02T21:00:00Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Represents when a Item Response Set was last updated",
+           "example": "2012-10-02T21:00:00Z"
+          },
+          "responses": {
+           "type": "array",
+           "description": "Responses",
+           "items": {
+            "title": "Checklist Response",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "item_status_id": {
+              "type": "integer",
+              "description": "Checklist Item Status ID",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Response",
+              "example": "Safe - Knowledge"
+             },
+             "corresponding_status": {
+              "type": "string",
+              "description": "Corresponding Checklist Item status",
+              "enum": [
+               "yes",
+               "no",
+               "n/a"
+              ],
+              "example": "yes"
+             }
+            }
+           }
+          },
+          "in_use": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is being used by an Inspection Template Item",
+           "example": false
+          },
+          "deletable": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is deletable.",
+           "example": true
+          },
+          "procore_standard": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is a Procore standard set.",
+           "example": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added `procore_standard` to Company Checklist Item Response Set show endpoint",
+      "description": "Added `procore_standard` to Company Checklist Item Response set show endpoint response payload.",
+      "endpoint": "GET /companies/{company_id}/checklist/item/response_sets/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-05-02",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "item-response-sets?version=1.0#show-item-response-set"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Item Response Set",
+    "description": "Updates a Company Checklist Item Response Set for a specified Company.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "ChecklistItemResponseSetBody",
+        "type": "object",
+        "required": [
+         "response_set"
+        ],
+        "properties": {
+         "response_set": {
+          "title": "Item Response Set",
+          "type": "object",
+          "description": "Item Response Set object",
+          "properties": {
+           "name": {
+            "type": "string",
+            "description": "Name of the Response Set",
+            "example": "Modified Safety Responses"
+           },
+           "active": {
+            "type": "boolean",
+            "description": "Indicates whether a Response Set is available for use",
+            "example": true
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "ChecklistItemResponseSet",
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "ID",
+           "example": 1
+          },
+          "name": {
+           "type": "string",
+           "description": "The name of the Item Response Set",
+           "example": "Safety Responses"
+          },
+          "active": {
+           "type": "boolean",
+           "description": "Indicates whether an Item Response Set is available for use.",
+           "example": true
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Represents when an Item Response Set was created",
+           "example": "2012-10-02T21:00:00Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date-time",
+           "description": "Represents when a Item Response Set was last updated",
+           "example": "2012-10-02T21:00:00Z"
+          },
+          "responses": {
+           "type": "array",
+           "description": "Responses",
+           "items": {
+            "title": "Checklist Response",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "ID",
+              "example": 1
+             },
+             "item_status_id": {
+              "type": "integer",
+              "description": "Checklist Item Status ID",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the Response",
+              "example": "Safe - Knowledge"
+             },
+             "corresponding_status": {
+              "type": "string",
+              "description": "Corresponding Checklist Item status",
+              "enum": [
+               "yes",
+               "no",
+               "n/a"
+              ],
+              "example": "yes"
+             }
+            }
+           }
+          },
+          "in_use": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is being used by an Inspection Template Item",
+           "example": false
+          },
+          "deletable": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is deletable.",
+           "example": true
+          },
+          "procore_standard": {
+           "type": "boolean",
+           "description": "Indicates whether a Response Set is a Procore standard set.",
+           "example": false
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {response_set: {name: 'Modified Safety Responses', active: true}},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"response_set\\\":{\\\"name\\\":\\\"Modified Safety Responses\\\",\\\"active\\\":true}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"response_set\":{\"name\":\"Modified Safety Responses\",\"active\":true}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"response_set\\\":{\\\"name\\\":\\\"Modified Safety Responses\\\",\\\"active\\\":true}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added `procore_standard` to Company Checklist Item Response Set update endpoint",
+      "description": "Added `procore_standard` to Company Checklist Item Response set update endpoint response payload.",
+      "endpoint": "PATCH /companies/{company_id}/checklist/item/response_sets/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2022-05-02",
+      "versions": [
+       "1.0",
+       "1.1"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "item-response-sets?version=1.0#update-item-response-set"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Item Response Set",
+    "description": "Deletes a Company Checklist Item Response Set for a specified Company.",
+    "tags": [
+     "Checklists (Inspections)"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/companies/%7Bcompany_id%7D/checklist/item/response_sets/%7Bid%7D\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

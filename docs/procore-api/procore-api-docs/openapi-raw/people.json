@@ -1,0 +1,3574 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "People",
+  "x-product-category": "Resource Management",
+  "x-tool-category": "Resource Planning",
+  "x-resource-name": "People",
+  "version": "1.0",
+  "x-product-lines": [
+   "Resource Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get all People belonging to a Company",
+    "description": "Returns array of Person objects.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     },
+     {
+      "name": "first_name",
+      "in": "query",
+      "description": "Filter results by the exact first name of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "John"
+     },
+     {
+      "name": "last_name",
+      "in": "query",
+      "description": "Filter results by the exact last name of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "Doe"
+     },
+     {
+      "name": "email",
+      "in": "query",
+      "description": "Filter results by the exact email address of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "email"
+      },
+      "example": "johndoe@example.com"
+     },
+     {
+      "name": "employee_number",
+      "in": "query",
+      "description": "Filter results by the exact employee number of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "12345"
+     },
+     {
+      "name": "custom_fields_integration_name",
+      "in": "query",
+      "description": "Filter results by a **Custom Field's** `integration_name`. This allows searching based on custom-defined attributes in the system. Example usage: `/v2/companies/{company_id}/...?my_custom_field=northwest`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "northwest"
+     },
+     {
+      "name": "created_at",
+      "in": "query",
+      "description": "Filters items based on their creation timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_before",
+      "in": "query",
+      "description": "Filters items created on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_after",
+      "in": "query",
+      "description": "Filters items created on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_at",
+      "in": "query",
+      "description": "Filters items based on their last updated timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_before",
+      "in": "query",
+      "description": "Filters items updated on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_after",
+      "in": "query",
+      "description": "Filters items updated on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns array of Person objects.",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a single Person.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Person.",
+            "example": "174b9d85-c5d0-407f-83c6-fb0fb1375bd7"
+           },
+           "name": {
+            "type": "object",
+            "description": "First and Last Name of the Person.",
+            "properties": {
+             "first": {
+              "type": "string",
+              "description": "First Name.",
+              "example": "Anna"
+             },
+             "last": {
+              "type": "string",
+              "description": "Last Name.",
+              "example": "Richardson"
+             }
+            }
+           },
+           "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Company.",
+            "example": "c2c32240-311b-4993-8263-243aa8ba000e"
+           },
+           "is_user": {
+            "type": "boolean",
+            "description": "Determines if the Person can log into the app.",
+            "example": false
+           },
+           "is_assignable": {
+            "type": "boolean",
+            "description": "Determines if the Person can be assigned to tasks.",
+            "example": true
+           },
+           "status": {
+            "type": "string",
+            "enum": [
+             "active",
+             "inactive"
+            ],
+            "description": "Status of the Person.",
+            "example": "active"
+           },
+           "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "The email associated with the Person.",
+            "example": "nolak@example.com"
+           },
+           "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Person's phone number, if available.",
+            "example": null
+           },
+           "can_recieve_email": {
+            "type": "boolean",
+            "description": "Determines if the Person can receive email notifications.",
+            "example": true
+           },
+           "can_recieve_sms": {
+            "type": "boolean",
+            "description": "Determines if the Person can receive SMS notifications.",
+            "example": false
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "List of Group IDs the Person belongs to.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "9662f64f-74f4-478b-87a1-67fcbf14e803",
+             "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+             "77a23dd5-7576-42cb-ab80-db706cff434a"
+            ]
+           },
+           "job_title_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "UUID reference to the Person\u2019s Job Title.",
+            "example": "8cf15293-6e3f-4382-931a-9dd5c14bd289"
+           },
+           "hourly_wage": {
+            "type": "number",
+            "nullable": true,
+            "description": "Hourly wage rate for the Person.",
+            "example": 35
+           },
+           "employee_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "Internal employee identifier.",
+            "example": "123-a234s-456"
+           },
+           "hired_date": {
+            "type": "string",
+            "description": "Date the Person was hired.",
+            "example": "2017-04-26T13:45:15.919Z"
+           },
+           "dob": {
+            "type": "string",
+            "description": "Date of birth of the Person.",
+            "example": "2015-02-01T14:18:35.919Z"
+           },
+           "is_male": {
+            "type": "boolean",
+            "description": "Specifies if the Person identifies as male.",
+            "example": false
+           },
+           "address_1": {
+            "type": "string",
+            "description": "First part of the Person's address.",
+            "example": "1510 Walnut St"
+           },
+           "address_2": {
+            "type": "string",
+            "nullable": true,
+            "description": "Second part of the Person's address, if applicable.",
+            "example": null
+           },
+           "city_town": {
+            "type": "string",
+            "description": "The city or town where the Person is located.",
+            "example": "Kansas City"
+           },
+           "state_province": {
+            "type": "string",
+            "description": "The state or province where the Person is located.",
+            "example": "MO"
+           },
+           "zipcode": {
+            "type": "string",
+            "description": "The postal/zip code of the Person.",
+            "example": "66213"
+           },
+           "country": {
+            "type": "string",
+            "description": "The country where the Person is located.",
+            "example": "United States"
+           },
+           "emergency_contact_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of the Person\u2019s emergency contact.",
+            "example": null
+           },
+           "emergency_contact_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number of the emergency contact.",
+            "example": null
+           },
+           "emergency_contact_email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Email address of the emergency contact.",
+            "example": null
+           },
+           "emergency_contact_relation": {
+            "type": "string",
+            "nullable": true,
+            "description": "The relationship between the Person and their emergency contact.",
+            "example": null
+           },
+           "tag_instances": {
+            "type": "array",
+            "description": "List of tags applied to the Person.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "Unique identifier for the Tag Instance.",
+               "example": "3b24a193-202c-40f2-9b10-9f798a0ac3f9"
+              },
+              "tag_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID reference to the Tag.",
+               "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+              },
+              "expr_date": {
+               "type": "string",
+               "nullable": true,
+               "description": "Expiration date for the Tag, if applicable.",
+               "example": "2017-11-17T15:21:52.906Z"
+              }
+             }
+            }
+           },
+           "created_at": {
+            "type": "string",
+            "description": "Timestamp of when the Person was created.",
+            "example": "2017-11-17T13:45:15.680Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "description": "Timestamp of when the Person was last updated.",
+            "example": "2017-10-29T00:00:00.000Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get All People endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/people",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#get-all-people-belonging-to-a-company"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create a Person",
+    "description": "Creates a Person for a given company ID",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for creating a new Person.",
+        "required": [
+         "first_name",
+         "last_name",
+         "is_user",
+         "is_assignable",
+         "status",
+         "group_ids"
+        ],
+        "properties": {
+         "first_name": {
+          "type": "string",
+          "description": "First Name of the Person.",
+          "example": "John"
+         },
+         "last_name": {
+          "type": "string",
+          "description": "Last Name of the Person.",
+          "example": "Doe"
+         },
+         "is_user": {
+          "type": "boolean",
+          "description": "Determines if the Person can log into the app.",
+          "example": true
+         },
+         "is_assignable": {
+          "type": "boolean",
+          "description": "Determines if the Person can be assigned to tasks.",
+          "example": true
+         },
+         "status": {
+          "type": "string",
+          "enum": [
+           "active",
+           "inactive"
+          ],
+          "description": "The status of the Person. `active` means the person is visible in all pages, while `inactive` hides the person unless filtered. Inactive People do not count against billing plans.\n",
+          "example": "active"
+         },
+         "group_ids": {
+          "type": "array",
+          "description": "Array of UUIDs representing the Groups this Person belongs to. Can be empty if the Person is an Admin.",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "example": [
+           "550e8400-e29b-41d4-a716-446655440000",
+           "4f7e9e5b-d4f5-4a73-8a97-4e6b72fb5c19"
+          ]
+         },
+         "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email that the Person will log in with. Required if `is_user` is true.",
+          "example": "johndoe@example.com"
+         },
+         "permission_level_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Permission Level assigned to the Person.",
+          "example": "94186279-fa66-42c6-a2ca-f44dde84f584"
+         },
+         "no_invite": {
+          "type": "boolean",
+          "description": "If `true`, the Person will be created with all user properties but will not receive an invite until triggered manually by an Admin.\n",
+          "example": false
+         },
+         "password": {
+          "type": "string",
+          "description": "Password for logging in. If not provided, an email will be sent to the user to set their password. Must be at least 8 characters with one uppercase, one lowercase, and one number.\n",
+          "example": "SecurePass123!"
+         },
+         "notification_profile_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Notification Profile for the user.",
+          "example": "cc8e24bc-42b6-41f7-8a7b-0de98a09e97f"
+         },
+         "phone": {
+          "type": "string",
+          "description": "The Person's phone number, including country and area code. Must be unique among all registered People. **Note:** Pass `null` or exclude the field if the Person should not have a phone number.\n",
+          "example": "+1-213-555-1234"
+         },
+         "can_receive_sms": {
+          "type": "boolean",
+          "description": "Determines if the Person can receive SMS notifications.",
+          "example": false
+         },
+         "can_receive_email": {
+          "type": "boolean",
+          "description": "Determines if the Person can receive email notifications.",
+          "example": false
+         },
+         "can_receive_mobile": {
+          "type": "boolean",
+          "description": "Determines if the Person can receive mobile push notifications if they have the app installed.",
+          "default": true,
+          "example": true
+         },
+         "address_1": {
+          "type": "string",
+          "description": "First part of the Person's address.",
+          "example": "1111 S Figueroa St"
+         },
+         "address_2": {
+          "type": "string",
+          "nullable": true,
+          "description": "Second part of the Person's address (e.g., Apartment, Suite, Unit).",
+          "example": "Building 3"
+         },
+         "city_town": {
+          "type": "string",
+          "description": "The city or town where the Person is located.",
+          "example": "Los Angeles"
+         },
+         "state_province": {
+          "type": "string",
+          "description": "The state or province where the Person is located.",
+          "example": "CA"
+         },
+         "zipcode": {
+          "type": "string",
+          "description": "The postal/zip code of the Person.",
+          "example": "90015"
+         },
+         "country": {
+          "type": "string",
+          "description": "The country where the Person is located.",
+          "example": "United States"
+         },
+         "job_title_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID reference to a Job Title in the LaborChart System.",
+          "example": "f7c3b0e2-67e3-4238-95fc-1e913156fbdf"
+         },
+         "hourly_wage": {
+          "type": "number",
+          "description": "Hourly wage rate for the Person. Used for automatic spend tracking.",
+          "example": 45.75
+         },
+         "employee_number": {
+          "type": "string",
+          "description": "Internal employee identifier.",
+          "example": "EMP123456"
+         },
+         "emergency_contact_name": {
+          "type": "string",
+          "description": "Name of the Person's emergency contact.",
+          "example": "Jane Doe"
+         },
+         "emergency_contact_number": {
+          "type": "string",
+          "description": "Phone number of the emergency contact.",
+          "example": "+1-213-555-5678"
+         },
+         "emergency_contact_email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the emergency contact.",
+          "example": "jane.doe@example.com"
+         },
+         "emergency_contact_relation": {
+          "type": "string",
+          "description": "The relationship between the Person and their emergency contact.",
+          "example": "Spouse"
+         },
+         "dob": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of birth of the Person. Accepts ISO Date String, UTC Date String, or MS Numeric Epoch Time.",
+          "example": "1990-05-15"
+         },
+         "hired_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the Person was hired. Accepts ISO Date String, UTC Date String, or MS Numeric Epoch Time.",
+          "example": "2020-01-10"
+         },
+         "is_male": {
+          "type": "boolean",
+          "description": "Specifies if the Person identifies as male.",
+          "example": true
+         },
+         "language": {
+          "type": "string",
+          "enum": [
+           "english"
+          ],
+          "description": "Language preference. Currently only `english` is supported.",
+          "example": "english"
+         },
+         "tag_instances": {
+          "type": "array",
+          "description": "List of tags applied to the Person. Tags can require expiration dates.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "tag_id": {
+             "type": "string",
+             "format": "uuid",
+             "description": "UUID reference to the Tag.",
+             "example": "2d2ad78e-c6de-467e-8413-c616b55294a5"
+            },
+            "expr_date": {
+             "type": "string",
+             "format": "date-time",
+             "description": "Expiration date for the Tag, if applicable.",
+             "example": "2025-12-31T23:59:59Z"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Failed Response - Duplicate Phone or Email"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Person endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/people",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#create-a-person"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get a Single Person",
+    "description": "Returns single Person object.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Person.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Person.",
+           "example": "174b9d85-c5d0-407f-83c6-fb0fb1375bd7"
+          },
+          "name": {
+           "type": "object",
+           "description": "First and Last Name of the Person.",
+           "properties": {
+            "first": {
+             "type": "string",
+             "description": "First Name.",
+             "example": "Anna"
+            },
+            "last": {
+             "type": "string",
+             "description": "Last Name.",
+             "example": "Richardson"
+            }
+           }
+          },
+          "company_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Company.",
+           "example": "c2c32240-311b-4993-8263-243aa8ba000e"
+          },
+          "is_user": {
+           "type": "boolean",
+           "description": "Determines if the Person can log into the app.",
+           "example": false
+          },
+          "is_assignable": {
+           "type": "boolean",
+           "description": "Determines if the Person can be assigned to tasks.",
+           "example": true
+          },
+          "status": {
+           "type": "string",
+           "enum": [
+            "active",
+            "inactive"
+           ],
+           "description": "Status of the Person.",
+           "example": "active"
+          },
+          "email": {
+           "type": "string",
+           "format": "email",
+           "nullable": true,
+           "description": "The email associated with the Person.",
+           "example": "nolak@example.com"
+          },
+          "phone": {
+           "type": "string",
+           "nullable": true,
+           "description": "The Person's phone number, if available.",
+           "example": null
+          },
+          "can_recieve_email": {
+           "type": "boolean",
+           "description": "Determines if the Person can receive email notifications.",
+           "example": true
+          },
+          "can_recieve_sms": {
+           "type": "boolean",
+           "description": "Determines if the Person can receive SMS notifications.",
+           "example": false
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "List of Group IDs the Person belongs to.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "9662f64f-74f4-478b-87a1-67fcbf14e803",
+            "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+            "77a23dd5-7576-42cb-ab80-db706cff434a"
+           ]
+          },
+          "job_title_id": {
+           "type": "string",
+           "format": "uuid",
+           "nullable": true,
+           "description": "UUID reference to the Person\u2019s Job Title.",
+           "example": "8cf15293-6e3f-4382-931a-9dd5c14bd289"
+          },
+          "hourly_wage": {
+           "type": "number",
+           "nullable": true,
+           "description": "Hourly wage rate for the Person.",
+           "example": 35
+          },
+          "employee_number": {
+           "type": "string",
+           "nullable": true,
+           "description": "Internal employee identifier.",
+           "example": "123-a234s-456"
+          },
+          "hired_date": {
+           "type": "string",
+           "description": "Date the Person was hired.",
+           "example": "2017-04-26T13:45:15.919Z"
+          },
+          "dob": {
+           "type": "string",
+           "description": "Date of birth of the Person.",
+           "example": "2015-02-01T14:18:35.919Z"
+          },
+          "is_male": {
+           "type": "boolean",
+           "description": "Specifies if the Person identifies as male.",
+           "example": false
+          },
+          "address_1": {
+           "type": "string",
+           "description": "First part of the Person's address.",
+           "example": "1510 Walnut St"
+          },
+          "address_2": {
+           "type": "string",
+           "nullable": true,
+           "description": "Second part of the Person's address, if applicable.",
+           "example": null
+          },
+          "city_town": {
+           "type": "string",
+           "description": "The city or town where the Person is located.",
+           "example": "Kansas City"
+          },
+          "state_province": {
+           "type": "string",
+           "description": "The state or province where the Person is located.",
+           "example": "MO"
+          },
+          "zipcode": {
+           "type": "string",
+           "description": "The postal/zip code of the Person.",
+           "example": "66213"
+          },
+          "country": {
+           "type": "string",
+           "description": "The country where the Person is located.",
+           "example": "United States"
+          },
+          "emergency_contact_name": {
+           "type": "string",
+           "nullable": true,
+           "description": "Name of the Person\u2019s emergency contact.",
+           "example": null
+          },
+          "emergency_contact_number": {
+           "type": "string",
+           "nullable": true,
+           "description": "Phone number of the emergency contact.",
+           "example": null
+          },
+          "emergency_contact_email": {
+           "type": "string",
+           "format": "email",
+           "nullable": true,
+           "description": "Email address of the emergency contact.",
+           "example": null
+          },
+          "emergency_contact_relation": {
+           "type": "string",
+           "nullable": true,
+           "description": "The relationship between the Person and their emergency contact.",
+           "example": null
+          },
+          "tag_instances": {
+           "type": "array",
+           "description": "List of tags applied to the Person.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the Tag Instance.",
+              "example": "3b24a193-202c-40f2-9b10-9f798a0ac3f9"
+             },
+             "tag_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID reference to the Tag.",
+              "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+             },
+             "expr_date": {
+              "type": "string",
+              "nullable": true,
+              "description": "Expiration date for the Tag, if applicable.",
+              "example": "2017-11-17T15:21:52.906Z"
+             }
+            }
+           }
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp of when the Person was created.",
+           "example": "2017-11-17T13:45:15.680Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp of when the Person was last updated.",
+           "example": "2017-10-29T00:00:00.000Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request - Invalid request parameters or missing required values.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "string",
+           "example": "BadRequest"
+          },
+          "message": {
+           "type": "string",
+           "example": "Group IDs can not be empty for an assignable resource or a non-admin person"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized - Missing or invalid authentication credentials.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden - User does not have the required permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found - The requested resource could not be located.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Get Single Person endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/people/{person_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#get-a-single-person"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update a Person",
+    "description": "Updates a Person for a given company and person ID",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for updating a Person. Only send properties that need to be updated.",
+        "properties": {
+         "first_name": {
+          "type": "string",
+          "description": "First Name of the Person.",
+          "example": "John"
+         },
+         "last_name": {
+          "type": "string",
+          "description": "Last Name of the Person.",
+          "example": "Doe"
+         },
+         "is_assignable": {
+          "type": "boolean",
+          "description": "Determines if the Person can be assigned to tasks.",
+          "example": true
+         },
+         "status": {
+          "type": "string",
+          "enum": [
+           "active",
+           "inactive"
+          ],
+          "description": "The status of the Person. `active` means the person is visible in all pages, while `inactive` hides the person unless filtered. Inactive People do not count against billing plans.\n",
+          "example": "active"
+         },
+         "group_ids": {
+          "type": "array",
+          "description": "Array of UUIDs representing the Groups this Person belongs to. **Cannot be empty** for an assignable resource or a non-admin Person.\n",
+          "items": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "example": [
+           "550e8400-e29b-41d4-a716-446655440000",
+           "4f7e9e5b-d4f5-4a73-8a97-4e6b72fb5c19"
+          ]
+         },
+         "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email that the Person will log in with. **Required if updating `is_user` to `true`**. Must be unique across the company.\n",
+          "example": "johndoe@example.com"
+         },
+         "permission_level_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Permission Level assigned to the Person. **Required when setting `is_user: true`**.\n",
+          "example": "94186279-fa66-42c6-a2ca-f44dde84f584"
+         },
+         "notification_profile_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Notification Profile for the user.",
+          "example": "cc8e24bc-42b6-41f7-8a7b-0de98a09e97f"
+         },
+         "phone": {
+          "type": "string",
+          "description": "The Person's phone number, including country and area code. Must be **unique** among all registered People.\n",
+          "example": "+1-213-555-1234"
+         },
+         "can_receive_sms": {
+          "type": "boolean",
+          "description": "Determines if the Person can receive SMS notifications.",
+          "example": false
+         },
+         "can_receive_email": {
+          "type": "boolean",
+          "description": "Determines if the Person can receive email notifications.",
+          "example": false
+         },
+         "can_receive_mobile": {
+          "type": "boolean",
+          "description": "Determines if the Person can receive mobile push notifications if they have the app installed.",
+          "default": true,
+          "example": true
+         },
+         "address_1": {
+          "type": "string",
+          "description": "First part of the Person's address.",
+          "example": "1111 S Figueroa St"
+         },
+         "address_2": {
+          "type": "string",
+          "nullable": true,
+          "description": "Second part of the Person's address (e.g., Apartment, Suite, Unit).",
+          "example": "Building 3"
+         },
+         "city_town": {
+          "type": "string",
+          "description": "The city or town where the Person is located.",
+          "example": "Los Angeles"
+         },
+         "state_province": {
+          "type": "string",
+          "description": "The state or province where the Person is located.",
+          "example": "CA"
+         },
+         "zipcode": {
+          "type": "string",
+          "description": "The postal/zip code of the Person.",
+          "example": "90015"
+         },
+         "country": {
+          "type": "string",
+          "description": "The country where the Person is located.",
+          "example": "United States"
+         },
+         "job_title_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID reference to a Job Title in the LaborChart System.",
+          "example": "f7c3b0e2-67e3-4238-95fc-1e913156fbdf"
+         },
+         "hourly_wage": {
+          "type": "number",
+          "description": "Hourly wage rate for the Person. Used for automatic spend tracking.",
+          "example": 45.75
+         },
+         "employee_number": {
+          "type": "string",
+          "description": "Internal employee identifier.",
+          "example": "EMP123456"
+         },
+         "emergency_contact_name": {
+          "type": "string",
+          "description": "Name of the Person's emergency contact.",
+          "example": "Jane Doe"
+         },
+         "emergency_contact_number": {
+          "type": "string",
+          "description": "Phone number of the emergency contact.",
+          "example": "+1-213-555-5678"
+         },
+         "emergency_contact_email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the emergency contact.",
+          "example": "jane.doe@example.com"
+         },
+         "emergency_contact_relation": {
+          "type": "string",
+          "description": "The relationship between the Person and their emergency contact.",
+          "example": "Spouse"
+         },
+         "dob": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of birth of the Person. Accepts ISO Date String, UTC Date String, or MS Numeric Epoch Time.",
+          "example": "1990-05-15"
+         },
+         "hired_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the Person was hired. Accepts ISO Date String, UTC Date String, or MS Numeric Epoch Time.",
+          "example": "2020-01-10"
+         },
+         "is_male": {
+          "type": "boolean",
+          "description": "Specifies if the Person identifies as male.",
+          "example": true
+         },
+         "language": {
+          "type": "string",
+          "enum": [
+           "english"
+          ],
+          "description": "Language preference. Currently only `english` is supported.",
+          "example": "english"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema for a single Person.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Person.",
+           "example": "174b9d85-c5d0-407f-83c6-fb0fb1375bd7"
+          },
+          "name": {
+           "type": "object",
+           "description": "First and Last Name of the Person.",
+           "properties": {
+            "first": {
+             "type": "string",
+             "description": "First Name.",
+             "example": "Anna"
+            },
+            "last": {
+             "type": "string",
+             "description": "Last Name.",
+             "example": "Richardson"
+            }
+           }
+          },
+          "company_id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for the Company.",
+           "example": "c2c32240-311b-4993-8263-243aa8ba000e"
+          },
+          "is_user": {
+           "type": "boolean",
+           "description": "Determines if the Person can log into the app.",
+           "example": false
+          },
+          "is_assignable": {
+           "type": "boolean",
+           "description": "Determines if the Person can be assigned to tasks.",
+           "example": true
+          },
+          "status": {
+           "type": "string",
+           "enum": [
+            "active",
+            "inactive"
+           ],
+           "description": "Status of the Person.",
+           "example": "active"
+          },
+          "email": {
+           "type": "string",
+           "format": "email",
+           "nullable": true,
+           "description": "The email associated with the Person.",
+           "example": "nolak@example.com"
+          },
+          "phone": {
+           "type": "string",
+           "nullable": true,
+           "description": "The Person's phone number, if available.",
+           "example": null
+          },
+          "can_recieve_email": {
+           "type": "boolean",
+           "description": "Determines if the Person can receive email notifications.",
+           "example": true
+          },
+          "can_recieve_sms": {
+           "type": "boolean",
+           "description": "Determines if the Person can receive SMS notifications.",
+           "example": false
+          },
+          "group_ids": {
+           "type": "array",
+           "description": "List of Group IDs the Person belongs to.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "9662f64f-74f4-478b-87a1-67fcbf14e803",
+            "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+            "77a23dd5-7576-42cb-ab80-db706cff434a"
+           ]
+          },
+          "job_title_id": {
+           "type": "string",
+           "format": "uuid",
+           "nullable": true,
+           "description": "UUID reference to the Person\u2019s Job Title.",
+           "example": "8cf15293-6e3f-4382-931a-9dd5c14bd289"
+          },
+          "hourly_wage": {
+           "type": "number",
+           "nullable": true,
+           "description": "Hourly wage rate for the Person.",
+           "example": 35
+          },
+          "employee_number": {
+           "type": "string",
+           "nullable": true,
+           "description": "Internal employee identifier.",
+           "example": "123-a234s-456"
+          },
+          "hired_date": {
+           "type": "string",
+           "description": "Date the Person was hired.",
+           "example": "2017-04-26T13:45:15.919Z"
+          },
+          "dob": {
+           "type": "string",
+           "description": "Date of birth of the Person.",
+           "example": "2015-02-01T14:18:35.919Z"
+          },
+          "is_male": {
+           "type": "boolean",
+           "description": "Specifies if the Person identifies as male.",
+           "example": false
+          },
+          "address_1": {
+           "type": "string",
+           "description": "First part of the Person's address.",
+           "example": "1510 Walnut St"
+          },
+          "address_2": {
+           "type": "string",
+           "nullable": true,
+           "description": "Second part of the Person's address, if applicable.",
+           "example": null
+          },
+          "city_town": {
+           "type": "string",
+           "description": "The city or town where the Person is located.",
+           "example": "Kansas City"
+          },
+          "state_province": {
+           "type": "string",
+           "description": "The state or province where the Person is located.",
+           "example": "MO"
+          },
+          "zipcode": {
+           "type": "string",
+           "description": "The postal/zip code of the Person.",
+           "example": "66213"
+          },
+          "country": {
+           "type": "string",
+           "description": "The country where the Person is located.",
+           "example": "United States"
+          },
+          "emergency_contact_name": {
+           "type": "string",
+           "nullable": true,
+           "description": "Name of the Person\u2019s emergency contact.",
+           "example": null
+          },
+          "emergency_contact_number": {
+           "type": "string",
+           "nullable": true,
+           "description": "Phone number of the emergency contact.",
+           "example": null
+          },
+          "emergency_contact_email": {
+           "type": "string",
+           "format": "email",
+           "nullable": true,
+           "description": "Email address of the emergency contact.",
+           "example": null
+          },
+          "emergency_contact_relation": {
+           "type": "string",
+           "nullable": true,
+           "description": "The relationship between the Person and their emergency contact.",
+           "example": null
+          },
+          "tag_instances": {
+           "type": "array",
+           "description": "List of tags applied to the Person.",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Unique identifier for the Tag Instance.",
+              "example": "3b24a193-202c-40f2-9b10-9f798a0ac3f9"
+             },
+             "tag_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID reference to the Tag.",
+              "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+             },
+             "expr_date": {
+              "type": "string",
+              "nullable": true,
+              "description": "Expiration date for the Tag, if applicable.",
+              "example": "2017-11-17T15:21:52.906Z"
+             }
+            }
+           }
+          },
+          "created_at": {
+           "type": "string",
+           "description": "Timestamp of when the Person was created.",
+           "example": "2017-11-17T13:45:15.680Z"
+          },
+          "updated_at": {
+           "type": "string",
+           "description": "Timestamp of when the Person was last updated.",
+           "example": "2017-10-29T00:00:00.000Z"
+          }
+         }
+        }
+       }
+      }
+     },
+     "304": {
+      "description": "Not Modified - No Changes Were Made",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "nullable": true,
+         "description": "No response body when no changes were made."
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request - Invalid request parameters or missing required values.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "string",
+           "example": "BadRequest"
+          },
+          "message": {
+           "type": "string",
+           "example": "Group IDs can not be empty for an assignable resource or a non-admin person"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized - Missing or invalid authentication credentials.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden - User does not have the required permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found - The requested resource could not be located.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "Conflict - Duplicate phone or email detected.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "string",
+           "example": "Conflict"
+          },
+          "message": {
+           "type": "string",
+           "example": "{\"detailCode\":\"personEmailOrPhoneConflict\",\"details\":\"Email john.allpropsupdate+test@example.com in use by another person.\"}"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Update Person endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/people/{person_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#update-a-person"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete a Person",
+    "description": "Deletes a Person for a given company and person ID",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request - Invalid request parameters or missing required values.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "string",
+           "example": "BadRequest"
+          },
+          "message": {
+           "type": "string",
+           "example": "Group IDs can not be empty for an assignable resource or a non-admin person"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized - Missing or invalid authentication credentials.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden - User does not have the required permissions.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found - The requested resource could not be located.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Person endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/people/{person_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#delete-a-person"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/user": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Enable a Person to Log In",
+    "description": "Enable a Person to log in after they have already been created",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for enabling login for a Person.",
+        "required": [
+         "permission_level_id"
+        ],
+        "properties": {
+         "permission_level_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the Permission Level that defines the user's access.",
+          "example": "94186279-fa66-42c6-a2ca-f44dde84f584"
+         },
+         "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email the Person will use to log in. If the Person already has an email in LaborChart, this can be omitted. If no email is on record, this becomes required.\n",
+          "example": "johndoe@example.com"
+         },
+         "password": {
+          "type": "string",
+          "description": "The password the Person will use to log in. If omitted, the Person will receive an email from LaborChart instructing them to set up a password. If provided, no email will be sent.\nPasswords must meet complexity requirements: - At least 1 uppercase letter - At least 1 lowercase letter - At least 1 number - Minimum length of 8 characters\n",
+          "example": "SecurePass123!"
+         },
+         "no_invite": {
+          "type": "boolean",
+          "description": "If `true`, the Person will be created with all user properties but will not receive an invitation to the platform. Admins can manually trigger an invitation from the user's profile.\n",
+          "example": false
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Person User endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/people/{person_id}/user",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#enable-a-person-to-log-in"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Revoke a Person's Login",
+    "description": "Revoke a Person's login but leave them in as an assignable resource in the system",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Person User endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/people/{person_id}/user",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#revoke-a-persons-login"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/tags": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Tag Instance to Person",
+    "description": "Adds a Tag Instance to Person",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for adding a tag to a Person.",
+        "required": [
+         "tag_id"
+        ],
+        "properties": {
+         "tag_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID reference to the **Tag entity** in the LaborChart system. This identifies the Tag being assigned to the Person.\n**Tag ID vs Tag Instance ID** - `tag_id` references the **Tag entity** in your system. - `id` (Tag Instance ID) represents the specific **applied instance** of the tag. - This allows flexibility for multiple instances of the same tag to be applied to a single Person. - The Tag Instance ID (`id`) is used to remove applied tags when necessary.\n",
+          "example": "94186279-fa66-42c6-a2ca-f44dde84f584"
+         },
+         "expr_date": {
+          "type": "integer",
+          "format": "int64",
+          "nullable": true,
+          "description": "Expiration date for the tag in **milliseconds since epoch** (Unix timestamp). Required if the tag type mandates an expiration date.\n",
+          "example": 1511228654337
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Person Tags endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/people/{person_id}/tags",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#add-tag-instance-to-person"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/tags/{tag_instance_id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove Tag Instance from Person",
+    "description": "Removes a Tag Instance from a Person",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "tag_instance_id",
+      "in": "path",
+      "description": "Unique identifier for the tag instance",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a unique identifier for a tag instance.",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid",
+           "description": "Unique identifier for a tag instance.",
+           "example": "aeee8fc5-b8ee-4bf0-bca9-86f751f99795"
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Person Tag endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/people/{person_id}/tags/{tag_instance_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#remove-tag-instance-from-person"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/groups": {
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Add Person to a Group",
+    "description": "Grant a Person access to or to make them available to a new Group",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "description": "Request body schema for assigning a Person to a Group.",
+        "required": [
+         "group_id"
+        ],
+        "properties": {
+         "group_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID reference to the Group being assigned.",
+          "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a list of assigned Group IDs.",
+         "properties": {
+          "group_ids": {
+           "type": "array",
+           "description": "List of UUIDs representing the assigned Groups.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b",
+            "aeee8fc5-b8ee-4bf0-bca9-86f751f99795",
+            "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Create Person Groups endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "POST /workforce-planning/v2/companies/{company_id}/people/{person_id}/groups",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#add-person-to-a-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/people/{person_id}/groups/{group_id}": {
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Remove a Person from a Group",
+    "description": "Removes a person from a given group. Note that when removing the last group_id, the Group IDs can not be empty for an assignable resource or a non-admin person. Therefore, the removing the last group id from an assignable resource or a non-admin person is not allowed.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "person_id",
+      "in": "path",
+      "description": "Unique identifier for the person",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Response schema containing a list of assigned Group IDs.",
+         "properties": {
+          "group_ids": {
+           "type": "array",
+           "description": "List of UUIDs representing the assigned Groups.",
+           "items": {
+            "type": "string",
+            "format": "uuid"
+           },
+           "example": [
+            "ea8fac53-e05f-49bc-a630-dd0c7739570b",
+            "aeee8fc5-b8ee-4bf0-bca9-86f751f99795",
+            "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added Delete Person Group endpoint",
+      "description": "These endpoints have been made available through the\nProcore Rest API (https://api.procore.com) now. Their\nlegacy documentation is still available at\nhttps://wfp-quickconnect.readme.io/docs/getting-started and\nwill be accessible from https://api-app.laborchart.com\nthrough the end of 2025. This changelog marks the\nbeginning of their soft deprecation. They will be fully\ndeprecated in January of 2026 and no longer available\nexcept through the Procore Rest API. They are the same\nendpoints and offer full parity. Please begin migrating over at\nyour earliest convenience.",
+      "endpoint": "DELETE /workforce-planning/v2/companies/{company_id}/people/{person_id}/groups/{group_id}",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#remove-a-person-from-a-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/workforce-planning/v2/companies/{company_id}/groups/{group_id}/groups/people": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Get all People belonging to a Group",
+    "description": "Returns array of Person objects.",
+    "tags": [
+     "Resource Planning"
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "description": "Unique identifier for the company. This parameter accepts both formats:\n- **Recommended**: Procore company ID (integer) - Use this for new integrations\n- Legacy: LaborChart UUID format (uuid string) - Supported for backward compatibility\n\nA proxy layer automatically handles both formats, but using the Procore company ID is preferred for consistency with other Procore APIs.\n",
+      "required": true,
+      "schema": {
+       "oneOf": [
+        {
+         "type": "integer",
+         "description": "Procore company ID (recommended)"
+        },
+        {
+         "type": "string",
+         "format": "uuid",
+         "description": "LaborChart UUID (legacy support)"
+        }
+       ]
+      }
+     },
+     {
+      "name": "group_id",
+      "in": "path",
+      "description": "Unique identifier for the group",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "This is a **0-based index** representing the page slice of the data you want to retrieve. Each page contains up to **400 items**.\n### **\ud83d\udccc Pageable Endpoints** People endpoints that return multiple records **support pagination**. It is recommended to use this feature to prevent network timeouts from excessively large data requests.\n### **\ud83d\udccc Response Structure** A successful response will include the following properties:\n- **`possible_pages`** *(integer)* \u2192 Total number of pages available to retrieve all data. - **`current_page`** *(integer)* \u2192 The **0-based index** of the page retrieved. - **`data`** *(array)* \u2192 List of records returned for the requested page (up to 400 items per page).\nIf a **page value exceeds** `possible_pages`, the `data` property will return an **empty array**.\n",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     },
+     {
+      "name": "first_name",
+      "in": "query",
+      "description": "Filter results by the exact first name of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "John"
+     },
+     {
+      "name": "last_name",
+      "in": "query",
+      "description": "Filter results by the exact last name of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "Doe"
+     },
+     {
+      "name": "email",
+      "in": "query",
+      "description": "Filter results by the exact email address of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "email"
+      },
+      "example": "johndoe@example.com"
+     },
+     {
+      "name": "employee_number",
+      "in": "query",
+      "description": "Filter results by the exact employee number of the Person.",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "12345"
+     },
+     {
+      "name": "custom_fields_integration_name",
+      "in": "query",
+      "description": "Filter results by a **Custom Field's** `integration_name`. This allows searching based on custom-defined attributes in the system. Example usage: `/v2/companies/{company_id}/...?my_custom_field=northwest`\n",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "example": "northwest"
+     },
+     {
+      "name": "created_at",
+      "in": "query",
+      "description": "Filters items based on their creation timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_before",
+      "in": "query",
+      "description": "Filters items created on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "created_after",
+      "in": "query",
+      "description": "Filters items created on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_at",
+      "in": "query",
+      "description": "Filters items based on their last updated timestamp. Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_before",
+      "in": "query",
+      "description": "Filters items updated on or before the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "updated_after",
+      "in": "query",
+      "description": "Filters items updated on or after the specified date (inclusive). Accepts an ISO 8601 date string.\n",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "description": "Returns array of Person objects.",
+         "items": {
+          "type": "object",
+          "description": "Response schema for a single Person.",
+          "properties": {
+           "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Person.",
+            "example": "174b9d85-c5d0-407f-83c6-fb0fb1375bd7"
+           },
+           "name": {
+            "type": "object",
+            "description": "First and Last Name of the Person.",
+            "properties": {
+             "first": {
+              "type": "string",
+              "description": "First Name.",
+              "example": "Anna"
+             },
+             "last": {
+              "type": "string",
+              "description": "Last Name.",
+              "example": "Richardson"
+             }
+            }
+           },
+           "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the Company.",
+            "example": "c2c32240-311b-4993-8263-243aa8ba000e"
+           },
+           "is_user": {
+            "type": "boolean",
+            "description": "Determines if the Person can log into the app.",
+            "example": false
+           },
+           "is_assignable": {
+            "type": "boolean",
+            "description": "Determines if the Person can be assigned to tasks.",
+            "example": true
+           },
+           "status": {
+            "type": "string",
+            "enum": [
+             "active",
+             "inactive"
+            ],
+            "description": "Status of the Person.",
+            "example": "active"
+           },
+           "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "The email associated with the Person.",
+            "example": "nolak@example.com"
+           },
+           "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Person's phone number, if available.",
+            "example": null
+           },
+           "can_recieve_email": {
+            "type": "boolean",
+            "description": "Determines if the Person can receive email notifications.",
+            "example": true
+           },
+           "can_recieve_sms": {
+            "type": "boolean",
+            "description": "Determines if the Person can receive SMS notifications.",
+            "example": false
+           },
+           "group_ids": {
+            "type": "array",
+            "description": "List of Group IDs the Person belongs to.",
+            "items": {
+             "type": "string",
+             "format": "uuid"
+            },
+            "example": [
+             "9662f64f-74f4-478b-87a1-67fcbf14e803",
+             "9be574ab-fbe3-4839-a3b4-2e4bccb617ab",
+             "77a23dd5-7576-42cb-ab80-db706cff434a"
+            ]
+           },
+           "job_title_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "UUID reference to the Person\u2019s Job Title.",
+            "example": "8cf15293-6e3f-4382-931a-9dd5c14bd289"
+           },
+           "hourly_wage": {
+            "type": "number",
+            "nullable": true,
+            "description": "Hourly wage rate for the Person.",
+            "example": 35
+           },
+           "employee_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "Internal employee identifier.",
+            "example": "123-a234s-456"
+           },
+           "hired_date": {
+            "type": "string",
+            "description": "Date the Person was hired.",
+            "example": "2017-04-26T13:45:15.919Z"
+           },
+           "dob": {
+            "type": "string",
+            "description": "Date of birth of the Person.",
+            "example": "2015-02-01T14:18:35.919Z"
+           },
+           "is_male": {
+            "type": "boolean",
+            "description": "Specifies if the Person identifies as male.",
+            "example": false
+           },
+           "address_1": {
+            "type": "string",
+            "description": "First part of the Person's address.",
+            "example": "1510 Walnut St"
+           },
+           "address_2": {
+            "type": "string",
+            "nullable": true,
+            "description": "Second part of the Person's address, if applicable.",
+            "example": null
+           },
+           "city_town": {
+            "type": "string",
+            "description": "The city or town where the Person is located.",
+            "example": "Kansas City"
+           },
+           "state_province": {
+            "type": "string",
+            "description": "The state or province where the Person is located.",
+            "example": "MO"
+           },
+           "zipcode": {
+            "type": "string",
+            "description": "The postal/zip code of the Person.",
+            "example": "66213"
+           },
+           "country": {
+            "type": "string",
+            "description": "The country where the Person is located.",
+            "example": "United States"
+           },
+           "emergency_contact_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of the Person\u2019s emergency contact.",
+            "example": null
+           },
+           "emergency_contact_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number of the emergency contact.",
+            "example": null
+           },
+           "emergency_contact_email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Email address of the emergency contact.",
+            "example": null
+           },
+           "emergency_contact_relation": {
+            "type": "string",
+            "nullable": true,
+            "description": "The relationship between the Person and their emergency contact.",
+            "example": null
+           },
+           "tag_instances": {
+            "type": "array",
+            "description": "List of tags applied to the Person.",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "Unique identifier for the Tag Instance.",
+               "example": "3b24a193-202c-40f2-9b10-9f798a0ac3f9"
+              },
+              "tag_id": {
+               "type": "string",
+               "format": "uuid",
+               "description": "UUID reference to the Tag.",
+               "example": "3f447732-33ec-4b8e-a5d0-6462c12e18e6"
+              },
+              "expr_date": {
+               "type": "string",
+               "nullable": true,
+               "description": "Expiration date for the Tag, if applicable.",
+               "example": "2017-11-17T15:21:52.906Z"
+              }
+             }
+            }
+           },
+           "created_at": {
+            "type": "string",
+            "description": "Timestamp of when the Person was created.",
+            "example": "2017-11-17T13:45:15.680Z"
+           },
+           "updated_at": {
+            "type": "string",
+            "description": "Timestamp of when the Person was last updated.",
+            "example": "2017-10-29T00:00:00.000Z"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Invalid request parameters"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Unauthorized",
+           "description": "If you receive a 401 error, please ensure you are following the OAuth 2.0 guidelines outlined at https://developers.procore.com/documentation/introduction and verify you can successfully call the /me endpoint using your access token. Additionally, the user associated with that token must be added as a user in the Workforce Planning People List for the corresponding company."
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Access denied"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "string",
+           "example": "Resource not found"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added endpoint to get group people",
+      "endpoint": "GET /workforce-planning/v2/companies/{company_id}/groups/{group_id}/groups/people",
+      "description": "This endpoint has been made available through the Procore Rest API",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-03-03",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "people?version=1.0#get-all-people-belonging-to-a-group"
+     }
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "partial"
+  }
+ }
+}

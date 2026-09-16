@@ -1,0 +1,1622 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Commitment Compliance",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Commitments",
+  "x-resource-name": "Commitment Compliance",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/work_order_contracts/{contract_id}/compliance": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show compliance information for a Work Order Contract",
+    "description": "Return the compliance and insurance information for the specified contract. Includes any insurance documents for the vendor on this contract.",
+    "tags": [
+     "Commitments"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "contract_id",
+      "in": "path",
+      "required": true,
+      "description": "identifier for the work order contract",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Compliance Information",
+         "properties": {
+          "updated_at": {
+           "type": "string",
+           "description": "The last time the any of this compliance information was updated on this contract",
+           "nullable": true,
+           "format": "datetime",
+           "example": "2023-08-10T12:27:02Z"
+          },
+          "updated_by_id": {
+           "type": "integer",
+           "description": "The last user who updated this compliance information",
+           "nullable": true,
+           "example": 123
+          },
+          "compliance_status": {
+           "type": "string",
+           "description": "The compliance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "compliant"
+          },
+          "compliance_notes": {
+           "type": "string",
+           "description": "Any notes about the compliance status",
+           "nullable": true,
+           "example": "Seems good."
+          },
+          "insurance_status": {
+           "type": "string",
+           "description": "The insurance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "not_compliant"
+          },
+          "insurance_notes": {
+           "type": "string",
+           "description": "Any notes about the insurance status",
+           "nullable": true,
+           "example": "Could be better."
+          },
+          "derived_insurance_status": {
+           "type": "string",
+           "description": "A computed status based on the insurance documents for this contract's vendor. If all documents are compliant, this will be compliant. If any documents are not compliant, this will be not_compliant. If there are no documents, this will be the insurance status field on the contract.",
+           "nullable": true,
+           "example": "not_compliant"
+          },
+          "insurance_documents": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "The identifier of the insurance record"
+             },
+             "name": {
+              "type": "string",
+              "nullable": true,
+              "description": "The name of the insurance record"
+             },
+             "insurance_type": {
+              "type": "string",
+              "nullable": true,
+              "description": "The type of the insurance record"
+             },
+             "level": {
+              "type": "string",
+              "enum": [
+               "company",
+               "project"
+              ],
+              "description": "Whether this insurance record is attached in the company or project directory"
+             },
+             "status": {
+              "type": "string",
+              "nullable": true,
+              "description": "The compliance status of this insurance document"
+             },
+             "effective_at": {
+              "type": "string",
+              "nullable": true,
+              "format": "datetime",
+              "description": "The time which this insurance becomes effective. This time is the effective_date in the project or companies timezone converted to UTC."
+             },
+             "expires_at": {
+              "type": "string",
+              "nullable": true,
+              "format": "datetime",
+              "description": "The time which this insurance expires. This time is the expiration_date in the project or companies timezone converted to UTC."
+             },
+             "attachments": {
+              "type": "array",
+              "description": "the files attached to this insurance record",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "a file identifier"
+                },
+                "filename": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the name of the file"
+                },
+                "content_type": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the content type of the file"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "a signed URL to load the file"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "derived_compliance_status": {
+           "type": "string",
+           "description": "A computed status based on the compliance documents for this contract. If all documents are compliant, this will be compliant. If any documents are not compliant, this will be not_compliant. If there are no documents, this will be the compliance status field on the contract.",
+           "nullable": true,
+           "example": "not_compliant"
+          },
+          "compliance_documents": {
+           "type": "array",
+           "description": "Compliance Documents",
+           "items": {
+            "type": "object",
+            "description": "Compliance Document",
+            "properties": {
+             "id": {
+              "type": "integer"
+             },
+             "name": {
+              "type": "string"
+             },
+             "notes": {
+              "type": "string"
+             },
+             "type": {
+              "type": "string"
+             },
+             "status": {
+              "type": "string"
+             },
+             "effective_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "expires_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "attachments": {
+              "type": "array",
+              "description": "the files attached to this document",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "a file identifier"
+                },
+                "filename": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the name of the file"
+                },
+                "content_type": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the content type of the file"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "a signed URL to load the file"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "insurance_requirements_not_created": {
+           "type": "array",
+           "description": "Insurance requirements that have conditions but are not yet created",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "The identifier of the insurance requirement",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the insurance requirement",
+              "example": "Insurance Requirement with Conditions"
+             },
+             "level": {
+              "type": "string",
+              "description": "The level of the insurance requirement",
+              "example": "project"
+             },
+             "status": {
+              "type": "string",
+              "description": "The status of the insurance requirement",
+              "example": "condition_not_met"
+             }
+            }
+           }
+          },
+          "compliance_requirements_not_created": {
+           "type": "array",
+           "description": "Compliance requirements that have conditions but are not yet created",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "The identifier of the compliance requirement",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the compliance requirement",
+              "example": "Compliance Requirement with Conditions"
+             },
+             "type": {
+              "type": "string",
+              "description": "The type of the compliance requirement",
+              "example": "safety"
+             },
+             "status": {
+              "type": "string",
+              "description": "The status of the compliance requirement",
+              "example": "condition_not_met"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Promote commitment compliance endpoints to general availability (GA)",
+      "description": "The commitment compliance endpoints were previously in beta (`commitment-compliance-api-beta`) and have now been made publicly available (`visibility: public`).\nNo changes were made to the API contract, only visibility updates.",
+      "endpoint": "GET /projects/{project_id}/work_order_contracts/{contract_id}/compliance",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-04-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "commitment-compliance?version=1.0#show-compliance-information-for-a-work-order-contract"
+     },
+     {
+      "summary": "Add requirements not created fields to commitment compliance response",
+      "description": "Added two new fields to the commitment compliance response to show requirements that have conditions but are not yet created:\n- `insurance_requirements_not_created`: Array of insurance requirements with conditions that haven't been created yet\n- `compliance_requirements_not_created`: Array of compliance requirements with conditions that haven't been created yet\n\nEach requirement includes an `id`, `name`, `status` (always \"condition_not_met\"), and either `level` (for insurance) or `type` (for compliance).",
+      "endpoint": "GET /projects/{project_id}/work_order_contracts/{contract_id}/compliance",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "commitment-compliance?version=1.0#show-compliance-information-for-a-work-order-contract"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update the compliance information for a Work Order Contract",
+    "description": "Update the compliance information stored on the contract.",
+    "tags": [
+     "Commitments"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "contract_id",
+      "in": "path",
+      "required": true,
+      "description": "identifier for the work order contract",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "properties": {
+         "compliance_status": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "compliant",
+           "not_compliant",
+           "not_required"
+          ]
+         },
+         "compliance_notes": {
+          "type": "string",
+          "nullable": true
+         },
+         "insurance_status": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "compliant",
+           "not_compliant",
+           "not_required"
+          ]
+         },
+         "insurance_notes": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Compliance Information",
+         "properties": {
+          "updated_at": {
+           "type": "string",
+           "description": "The last time the any of this compliance information was updated on this contract",
+           "nullable": true,
+           "format": "datetime",
+           "example": "2023-08-10T12:27:02Z"
+          },
+          "updated_by_id": {
+           "type": "integer",
+           "description": "The last user who updated this compliance information",
+           "nullable": true,
+           "example": 123
+          },
+          "compliance_status": {
+           "type": "string",
+           "description": "The compliance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "compliant"
+          },
+          "compliance_notes": {
+           "type": "string",
+           "description": "Any notes about the compliance status",
+           "nullable": true,
+           "example": "Seems good."
+          },
+          "insurance_status": {
+           "type": "string",
+           "description": "The insurance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "not_compliant"
+          },
+          "insurance_notes": {
+           "type": "string",
+           "description": "Any notes about the insurance status",
+           "nullable": true,
+           "example": "Could be better."
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Content",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    compliance_status: 'compliant',\n    compliance_notes: 'string',\n    insurance_status: 'compliant',\n    insurance_notes: 'string'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"compliance_status\\\":\\\"compliant\\\",\\\"compliance_notes\\\":\\\"string\\\",\\\"insurance_status\\\":\\\"compliant\\\",\\\"insurance_notes\\\":\\\"string\\\"}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"compliance_status\":\"compliant\",\"compliance_notes\":\"string\",\"insurance_status\":\"compliant\",\"insurance_notes\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/work_order_contracts/%7Bcontract_id%7D/compliance\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"compliance_status\\\":\\\"compliant\\\",\\\"compliance_notes\\\":\\\"string\\\",\\\"insurance_status\\\":\\\"compliant\\\",\\\"insurance_notes\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/purchase_order_contracts/{contract_id}/compliance": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show compliance information for a Purchase Order Contract",
+    "description": "Return the compliance and insurance information for the specified contract. Includes any insurance documents for the vendor on this contract.",
+    "tags": [
+     "Commitments"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "contract_id",
+      "in": "path",
+      "required": true,
+      "description": "identifier for the work order contract",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Compliance Information",
+         "properties": {
+          "updated_at": {
+           "type": "string",
+           "description": "The last time the any of this compliance information was updated on this contract",
+           "nullable": true,
+           "format": "datetime",
+           "example": "2023-08-10T12:27:02Z"
+          },
+          "updated_by_id": {
+           "type": "integer",
+           "description": "The last user who updated this compliance information",
+           "nullable": true,
+           "example": 123
+          },
+          "compliance_status": {
+           "type": "string",
+           "description": "The compliance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "compliant"
+          },
+          "compliance_notes": {
+           "type": "string",
+           "description": "Any notes about the compliance status",
+           "nullable": true,
+           "example": "Seems good."
+          },
+          "insurance_status": {
+           "type": "string",
+           "description": "The insurance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "not_compliant"
+          },
+          "insurance_notes": {
+           "type": "string",
+           "description": "Any notes about the insurance status",
+           "nullable": true,
+           "example": "Could be better."
+          },
+          "derived_insurance_status": {
+           "type": "string",
+           "description": "A computed status based on the insurance documents for this contract's vendor. If all documents are compliant, this will be compliant. If any documents are not compliant, this will be not_compliant. If there are no documents, this will be the insurance status field on the contract.",
+           "nullable": true,
+           "example": "not_compliant"
+          },
+          "insurance_documents": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "The identifier of the insurance record"
+             },
+             "name": {
+              "type": "string",
+              "nullable": true,
+              "description": "The name of the insurance record"
+             },
+             "insurance_type": {
+              "type": "string",
+              "nullable": true,
+              "description": "The type of the insurance record"
+             },
+             "level": {
+              "type": "string",
+              "enum": [
+               "company",
+               "project"
+              ],
+              "description": "Whether this insurance record is attached in the company or project directory"
+             },
+             "status": {
+              "type": "string",
+              "nullable": true,
+              "description": "The compliance status of this insurance document"
+             },
+             "effective_at": {
+              "type": "string",
+              "nullable": true,
+              "format": "datetime",
+              "description": "The time which this insurance becomes effective. This time is the effective_date in the project or companies timezone converted to UTC."
+             },
+             "expires_at": {
+              "type": "string",
+              "nullable": true,
+              "format": "datetime",
+              "description": "The time which this insurance expires. This time is the expiration_date in the project or companies timezone converted to UTC."
+             },
+             "attachments": {
+              "type": "array",
+              "description": "the files attached to this insurance record",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "a file identifier"
+                },
+                "filename": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the name of the file"
+                },
+                "content_type": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the content type of the file"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "a signed URL to load the file"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "derived_compliance_status": {
+           "type": "string",
+           "description": "A computed status based on the compliance documents for this contract. If all documents are compliant, this will be compliant. If any documents are not compliant, this will be not_compliant. If there are no documents, this will be the compliance status field on the contract.",
+           "nullable": true,
+           "example": "not_compliant"
+          },
+          "compliance_documents": {
+           "type": "array",
+           "description": "Compliance Documents",
+           "items": {
+            "type": "object",
+            "description": "Compliance Document",
+            "properties": {
+             "id": {
+              "type": "integer"
+             },
+             "name": {
+              "type": "string"
+             },
+             "notes": {
+              "type": "string"
+             },
+             "type": {
+              "type": "string"
+             },
+             "status": {
+              "type": "string"
+             },
+             "effective_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "expires_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "created_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "updated_at": {
+              "type": "string",
+              "format": "datetime"
+             },
+             "attachments": {
+              "type": "array",
+              "description": "the files attached to this document",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "description": "a file identifier"
+                },
+                "filename": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the name of the file"
+                },
+                "content_type": {
+                 "type": "string",
+                 "nullable": true,
+                 "description": "the content type of the file"
+                },
+                "url": {
+                 "type": "string",
+                 "description": "a signed URL to load the file"
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "insurance_requirements_not_created": {
+           "type": "array",
+           "description": "Insurance requirements that have conditions but are not yet created",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "The identifier of the insurance requirement",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the insurance requirement",
+              "example": "Insurance Requirement with Conditions"
+             },
+             "level": {
+              "type": "string",
+              "description": "The level of the insurance requirement",
+              "example": "project"
+             },
+             "status": {
+              "type": "string",
+              "description": "The status of the insurance requirement",
+              "example": "condition_not_met"
+             }
+            }
+           }
+          },
+          "compliance_requirements_not_created": {
+           "type": "array",
+           "description": "Compliance requirements that have conditions but are not yet created",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "The identifier of the compliance requirement",
+              "example": 1
+             },
+             "name": {
+              "type": "string",
+              "description": "The name of the compliance requirement",
+              "example": "Compliance Requirement with Conditions"
+             },
+             "type": {
+              "type": "string",
+              "description": "The type of the compliance requirement",
+              "example": "safety"
+             },
+             "status": {
+              "type": "string",
+              "description": "The status of the compliance requirement",
+              "example": "condition_not_met"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance',\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Promote commitment compliance endpoints to general availability (GA)",
+      "description": "The commitment compliance endpoints were previously in beta (`commitment-compliance-api-beta`) and have now been made publicly available (`visibility: public`).\nNo changes were made to the API contract, only visibility updates.",
+      "endpoint": "GET /projects/{project_id}/purchase_order_contracts/{contract_id}/compliance",
+      "type": "refinement",
+      "breaking": false,
+      "datestamp": "2025-04-18",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "commitment-compliance?version=1.0#show-compliance-information-for-a-purchase-order-contract"
+     },
+     {
+      "summary": "Add requirements not created fields to commitment compliance response",
+      "description": "Added two new fields to the commitment compliance response to show requirements that have conditions but are not yet created:\n- `insurance_requirements_not_created`: Array of insurance requirements with conditions that haven't been created yet\n- `compliance_requirements_not_created`: Array of compliance requirements with conditions that haven't been created yet\n\nEach requirement includes an `id`, `name`, `status` (always \"condition_not_met\"), and either `level` (for insurance) or `type` (for compliance).",
+      "endpoint": "GET /projects/{project_id}/purchase_order_contracts/{contract_id}/compliance",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-15",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "commitment-compliance?version=1.0#show-compliance-information-for-a-purchase-order-contract"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update the compliance information for a Purchase Order Contract",
+    "description": "Update the compliance information stored on the contract.",
+    "tags": [
+     "Commitments"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "contract_id",
+      "in": "path",
+      "required": true,
+      "description": "identifier for the work order contract",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Body",
+        "type": "object",
+        "properties": {
+         "compliance_status": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "compliant",
+           "not_compliant",
+           "not_required"
+          ]
+         },
+         "compliance_notes": {
+          "type": "string",
+          "nullable": true
+         },
+         "insurance_status": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "compliant",
+           "not_compliant",
+           "not_required"
+          ]
+         },
+         "insurance_notes": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "description": "Compliance Information",
+         "properties": {
+          "updated_at": {
+           "type": "string",
+           "description": "The last time the any of this compliance information was updated on this contract",
+           "nullable": true,
+           "format": "datetime",
+           "example": "2023-08-10T12:27:02Z"
+          },
+          "updated_by_id": {
+           "type": "integer",
+           "description": "The last user who updated this compliance information",
+           "nullable": true,
+           "example": 123
+          },
+          "compliance_status": {
+           "type": "string",
+           "description": "The compliance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "compliant"
+          },
+          "compliance_notes": {
+           "type": "string",
+           "description": "Any notes about the compliance status",
+           "nullable": true,
+           "example": "Seems good."
+          },
+          "insurance_status": {
+           "type": "string",
+           "description": "The insurance status of this contract",
+           "nullable": true,
+           "enum": [
+            "compliant",
+            "not_compliant",
+            "not_required"
+           ],
+           "example": "not_compliant"
+          },
+          "insurance_notes": {
+           "type": "string",
+           "description": "Any notes about the insurance status",
+           "nullable": true,
+           "example": "Could be better."
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Content",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    compliance_status: 'compliant',\n    compliance_notes: 'string',\n    insurance_status: 'compliant',\n    insurance_notes: 'string'\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"compliance_status\\\":\\\"compliant\\\",\\\"compliance_notes\\\":\\\"string\\\",\\\"insurance_status\\\":\\\"compliant\\\",\\\"insurance_notes\\\":\\\"string\\\"}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"compliance_status\":\"compliant\",\"compliance_notes\":\"string\",\"insurance_status\":\"compliant\",\"insurance_notes\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/purchase_order_contracts/%7Bcontract_id%7D/compliance\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"compliance_status\\\":\\\"compliant\\\",\\\"compliance_notes\\\":\\\"string\\\",\\\"insurance_status\\\":\\\"compliant\\\",\\\"insurance_notes\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

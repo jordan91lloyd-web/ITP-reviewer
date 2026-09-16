@@ -1,0 +1,4152 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Near Misses",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Incidents",
+  "x-resource-name": "Near Misses",
+  "version": "1.0",
+  "x-product-lines": [
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/incidents/near_misses": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Near Misses",
+    "description": "Returns a paginated list of near miss records for the specified project, optionally scoped to a single incident via incident_id. Each near miss includes description, affected person, harm source, potential for injury details, and custom fields. By default sorted by descending full_number (incident.number). Supports filtering by affected party, harm source, managed equipment, and full-text search.",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "incident_id",
+      "in": "query",
+      "required": false,
+      "description": "Optional incident ID to scope results. When provided, returns only near miss records belonging to the specified incident. Omit to retrieve near misses across all incidents in the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[created_at]",
+      "in": "query",
+      "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "date"
+      }
+     },
+     {
+      "name": "filters[affected_company_id]",
+      "in": "query",
+      "description": "Array of Company IDs. Returns item(s) with the specified affected Company IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[affected_party_id]",
+      "in": "query",
+      "description": "Array of Affected Party IDs. Returns item(s) with the specified Affected Party IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[affected_person_id]",
+      "in": "query",
+      "description": "Array of Person IDs. Returns item(s) with the specified affected Person IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[harm_source_id]",
+      "in": "query",
+      "description": "Array of Harm Source IDs. Returns item(s) with the specified Harm Source IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[work_activity_id]",
+      "in": "query",
+      "description": "Array of Work Activity IDs. Returns item(s) with the specified Work Activity IDs.",
+      "required": false,
+      "style": "form",
+      "explode": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     },
+     {
+      "name": "filters[managed_equipment_id]",
+      "in": "query",
+      "description": "Return item(s) with the specified Managed Equipment ID.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "filters[query]",
+      "in": "query",
+      "description": "Full-text search across near miss description and related fields. Returns near misses where any searchable field contains the query string.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "affected_company",
+        "affected_person",
+        "created_at",
+        "managed_equipment",
+        "full_number",
+        "harm_source",
+        "number",
+        "work_activity"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "allOf": [
+           {
+            "title": "IncidentRecordBaseNormal",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Incident Record ID",
+              "example": 9
+             },
+             "number": {
+              "type": "integer",
+              "description": "The number of the Record",
+              "example": 4
+             },
+             "full_number": {
+              "type": "string",
+              "description": "The Incident Number combined with the Record Number",
+              "example": 16.4
+             },
+             "incident_id": {
+              "type": "integer",
+              "description": "The id of the Incident to which the record belongs",
+              "example": 16
+             },
+             "recordable": {
+              "type": "boolean",
+              "description": "Indicates whether the Incident Record is recordable",
+              "example": true
+             },
+             "type": {
+              "type": "string",
+              "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+              "example": "injury"
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "incident_title": {
+              "type": "string",
+              "description": "The title of the Incident to which the record belongs",
+              "example": "HAZMAT Spill"
+             },
+             "incident_private": {
+              "type": "boolean",
+              "description": "Indicates whether the Incident to which the record belongs is private",
+              "example": false
+             },
+             "summary": {
+              "type": "string",
+              "description": "Summary combining the affliction type, body part affected, and source of harm.",
+              "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+             },
+             "description_plain_text": {
+              "type": "string",
+              "description": "Description of event",
+              "example": "Sprain to Hand by Ground"
+             },
+             "description": {
+              "type": "string",
+              "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+              "description": "Description of event in Rich Text format"
+             },
+             "affected_company": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "example": "SID Architecture"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp of creation",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "deleted_at": {
+              "type": "string",
+              "description": "Timestamp of deletion",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z",
+              "nullable": true
+             },
+             "managed_equipment": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Equipment ID",
+                "example": 15504
+               },
+               "name": {
+                "type": "string",
+                "description": "Equipment name",
+                "example": "Jackhammer"
+               }
+              }
+             },
+             "incident_created_by": {
+              "allOf": [
+               {
+                "type": "object",
+                "properties": {
+                 "login": {
+                  "type": "string",
+                  "description": "Email",
+                  "example": "carl.contractor@example.com"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "example": 161072
+                 },
+                 "name": {
+                  "type": "string",
+                  "example": "Carl the Contractor"
+                 }
+                }
+               }
+              ]
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "Timestamp of last update",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "work_activity": {
+              "type": "object",
+              "title": "Work Activity",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Work Activity ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Work Activity Name",
+                "example": "Earthwork"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Represents whether a Work Activity is available for use.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Represents whether a Work Activity has been provided by Procore.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Date the work activity was updated",
+                "example": "2015-11-12T21:26:28Z"
+               }
+              }
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "affected_party": {
+              "type": "object",
+              "title": "Party",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Timecard entry id",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "Party Name",
+                "example": "Dolores Umbridge"
+               }
+              }
+             },
+             "affected_person": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "id": {
+                "type": "integer",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "example": "Carl the Contractor"
+               }
+              }
+             },
+             "harm_source": {
+              "type": "object",
+              "title": "Harm Source",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Harm Source ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Harm Source Name",
+                "example": "Material"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Represents whether a Harm Source is available for use.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Represents whether a Harm Source has been provided by Procore.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp of last update",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               }
+              }
+             },
+             "custom_fields": {
+              "type": "object",
+              "properties": {
+               "custom_field_%{custom_field_string_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "string"
+                 },
+                 "value": {
+                  "type": "string",
+                  "description": "The value of the custom field.",
+                  "example": "custom field value"
+                 }
+                }
+               },
+               "custom_field_%{custom_field_decimal_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "decimal"
+                 },
+                 "value": {
+                  "type": "number",
+                  "description": "The value of the custom field.",
+                  "example": 2.2
+                 }
+                }
+               },
+               "custom_field_%{custom_field_boolean_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "boolean"
+                 },
+                 "value": {
+                  "type": "boolean",
+                  "description": "The value of the custom field.",
+                  "example": true
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entry_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entry"
+                 },
+                 "value": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "Label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entries_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entries"
+                 },
+                 "value": {
+                  "type": "array",
+                  "items": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "The unique identifier of the list of values (LOV) entry.",
+                     "example": 2
+                    },
+                    "label": {
+                     "type": "string",
+                     "description": "The label of the list of values (LOV) entry.",
+                     "example": "Open"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[affected_company_id]': 'SOME_ARRAY_VALUE',\n    'filters[affected_party_id]': 'SOME_ARRAY_VALUE',\n    'filters[affected_person_id]': 'SOME_ARRAY_VALUE',\n    'filters[harm_source_id]': 'SOME_ARRAY_VALUE',\n    'filters[work_activity_id]': 'SOME_ARRAY_VALUE',\n    'filters[managed_equipment_id]': 'SOME_INTEGER_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Baffected_company_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_party_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_person_id%5D=SOME_ARRAY_VALUE&filters%5Bharm_source_id%5D=SOME_ARRAY_VALUE&filters%5Bwork_activity_id%5D=SOME_ARRAY_VALUE&filters%5Bmanaged_equipment_id%5D=SOME_INTEGER_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Baffected_company_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_party_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_person_id%5D=SOME_ARRAY_VALUE&filters%5Bharm_source_id%5D=SOME_ARRAY_VALUE&filters%5Bwork_activity_id%5D=SOME_ARRAY_VALUE&filters%5Bmanaged_equipment_id%5D=SOME_INTEGER_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses?incident_id=SOME_INTEGER_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Baffected_company_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_party_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_person_id%5D=SOME_ARRAY_VALUE&filters%5Bharm_source_id%5D=SOME_ARRAY_VALUE&filters%5Bwork_activity_id%5D=SOME_ARRAY_VALUE&filters%5Bmanaged_equipment_id%5D=SOME_INTEGER_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users unless granted a view near misses granular permission.",
+      "description": "Users with a readonly role will now be restricted from accessing near misses endpoints unless they have been granted a view near misses granular permission.",
+      "endpoint": "GET /projects/{project_id}/incidents/near_misses",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-11-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "near-misses?version=1.0#list-near-misses"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Near Miss",
+    "description": "Creates a new near miss record associated with the specified incident. Requires incident_id. Optionally specify description, affected person information, harm source, potential injury details, and custom fields. Pass run_configurable_validations=true to enforce custom validation rules. The operation is idempotent.",
+    "tags": [
+     "Incidents"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "near_miss"
+        ],
+        "properties": {
+         "near_miss": {
+          "title": "IncidentNearMissCreateParameters",
+          "type": "object",
+          "required": [
+           "incident_id"
+          ],
+          "properties": {
+           "incident_id": {
+            "type": "integer",
+            "description": "The ID of the Incident"
+           },
+           "description": {
+            "type": "string",
+            "description": "Description of event in Rich Text format",
+            "example": "<p>Sprain to <b>Hand</b> by Ground</p>"
+           },
+           "affected_person_id": {
+            "type": "integer",
+            "description": "The ID of the Affected Person. This only supports full Users from the Users endpoints."
+           },
+           "affected_party_id": {
+            "type": "integer",
+            "description": "The ID of the Affected Person. This supports full and reference Users from the People endpoints."
+           },
+           "harm_source_id": {
+            "type": "integer",
+            "description": "The ID of the Harm Source"
+           },
+           "affected_company_id": {
+            "type": "integer",
+            "description": "The ID of the Affected Company"
+           },
+           "managed_equipment_id": {
+            "type": "integer",
+            "description": "The ID of the Managed Equipment"
+           },
+           "work_activity_id": {
+            "type": "integer",
+            "description": "The ID of the Work Activity"
+           },
+           "custom_field_%{custom_field_definition_id}": {
+            "description": "Value of the custom field. The data type of the value passed in corresponds with the data_type of the Custom Field Definition.\nFor a lov_entry data_type the value passed in should be the ID of one of the Custom Field Definition's LOV Entries. For a lov_entries data_type the value passed in should be an array of IDs of the Custom Field Definition's LOV Entries.",
+            "example": "custom field value",
+            "oneOf": [
+             {
+              "type": "string",
+              "title": "string"
+             },
+             {
+              "type": "number",
+              "title": "number"
+             },
+             {
+              "type": "boolean",
+              "title": "boolean"
+             },
+             {
+              "type": "array",
+              "title": "array",
+              "items": {
+               "type": "integer"
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Incident Record ID",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "The number of the Record",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "The Incident Number combined with the Record Number",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "The id of the Incident to which the record belongs",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident Record is recordable",
+             "example": true
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+             "example": "injury"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Description of event",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of event in Rich Text format"
+            },
+            "affected_company": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp of deletion",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Equipment ID",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Equipment name",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp of last update",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Work Activity ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Work Activity Name",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Date the work activity was updated",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "affected_party": {
+             "type": "object",
+             "title": "Party",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Timecard entry id",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Party Name",
+               "example": "Dolores Umbridge"
+              }
+             }
+            },
+            "affected_person": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "exampleuser@example.com"
+              },
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "Carl the Contractor"
+              }
+             }
+            },
+            "harm_source": {
+             "type": "object",
+             "title": "Harm Source",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Harm Source ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Harm Source Name",
+               "example": "Material"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp of last update",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses',\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    near_miss: {\n      incident_id: 0,\n      description: '<p>Sprain to <b>Hand</b> by Ground</p>',\n      affected_person_id: 0,\n      affected_party_id: 0,\n      harm_source_id: 0,\n      affected_company_id: 0,\n      managed_equipment_id: 0,\n      work_activity_id: 0,\n      'custom_field_%{custom_field_definition_id}': 'custom field value'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"near_miss\\\":{\\\"incident_id\\\":0,\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"affected_person_id\\\":0,\\\"affected_party_id\\\":0,\\\"harm_source_id\\\":0,\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"near_miss\":{\"incident_id\":0,\"description\":\"<p>Sprain to <b>Hand</b> by Ground</p>\",\"affected_person_id\":0,\"affected_party_id\":0,\"harm_source_id\":0,\"affected_company_id\":0,\"managed_equipment_id\":0,\"work_activity_id\":0,\"custom_field_%{custom_field_definition_id}\":\"custom field value\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"near_miss\\\":{\\\"incident_id\\\":0,\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"affected_person_id\\\":0,\\\"affected_party_id\\\":0,\\\"harm_source_id\\\":0,\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/incidents/near_misses/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Near Miss ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Near Miss",
+    "description": "Returns specific Near Miss",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Incident Record ID",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "The number of the Record",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "The Incident Number combined with the Record Number",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "The id of the Incident to which the record belongs",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident Record is recordable",
+             "example": true
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+             "example": "injury"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Description of event",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of event in Rich Text format"
+            },
+            "affected_company": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp of deletion",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Equipment ID",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Equipment name",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp of last update",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Work Activity ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Work Activity Name",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Date the work activity was updated",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "affected_party": {
+             "type": "object",
+             "title": "Party",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Timecard entry id",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Party Name",
+               "example": "Dolores Umbridge"
+              }
+             }
+            },
+            "affected_person": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "exampleuser@example.com"
+              },
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "Carl the Contractor"
+              }
+             }
+            },
+            "harm_source": {
+             "type": "object",
+             "title": "Harm Source",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Harm Source ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Harm Source Name",
+               "example": "Material"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp of last update",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Restrict Access for readonly users unless granted a view near misses granular permission.",
+      "description": "Users with a readonly role will now be restricted from accessing near misses endpoints unless they have been granted a view near misses granular permission.",
+      "endpoint": "GET /projects/{project_id}/incidents/near_misses/{id}",
+      "type": "feature",
+      "breaking": true,
+      "datestamp": "2025-11-26",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "near-misses?version=1.0#show-near-miss"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Near Miss",
+    "description": "Update a Near Miss' attributes",
+    "tags": [
+     "Incidents"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "near_miss"
+        ],
+        "properties": {
+         "near_miss": {
+          "title": "IncidentNearMissUpdateParameters",
+          "type": "object",
+          "properties": {
+           "description": {
+            "type": "string",
+            "description": "Description of event in Rich Text format",
+            "example": "<p>Sprain to <b>Hand</b> by Ground</p>"
+           },
+           "affected_person_id": {
+            "type": "integer",
+            "description": "The ID of the Affected Person. This only supports full Users from the Users endpoints."
+           },
+           "affected_party_id": {
+            "type": "integer",
+            "description": "The ID of the Affected Person. This supports full and reference Users from the People endpoints."
+           },
+           "harm_source_id": {
+            "type": "integer",
+            "description": "The ID of the Harm Source"
+           },
+           "affected_company_id": {
+            "type": "integer",
+            "description": "The ID of the Affected Company"
+           },
+           "managed_equipment_id": {
+            "type": "integer",
+            "description": "The ID of the Managed Equipment"
+           },
+           "work_activity_id": {
+            "type": "integer",
+            "description": "The ID of the Work Activity"
+           },
+           "custom_field_%{custom_field_definition_id}": {
+            "description": "Value of the custom field. The data type of the value passed in corresponds with the data_type of the Custom Field Definition.\nFor a lov_entry data_type the value passed in should be the ID of one of the Custom Field Definition's LOV Entries. For a lov_entries data_type the value passed in should be an array of IDs of the Custom Field Definition's LOV Entries.",
+            "example": "custom field value",
+            "oneOf": [
+             {
+              "type": "string",
+              "title": "string"
+             },
+             {
+              "type": "number",
+              "title": "number"
+             },
+             {
+              "type": "boolean",
+              "title": "boolean"
+             },
+             {
+              "type": "array",
+              "title": "array",
+              "items": {
+               "type": "integer"
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Incident Record ID",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "The number of the Record",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "The Incident Number combined with the Record Number",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "The id of the Incident to which the record belongs",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident Record is recordable",
+             "example": true
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+             "example": "injury"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Description of event",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of event in Rich Text format"
+            },
+            "affected_company": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp of deletion",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Equipment ID",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Equipment name",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp of last update",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Work Activity ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Work Activity Name",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Date the work activity was updated",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "affected_party": {
+             "type": "object",
+             "title": "Party",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Timecard entry id",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Party Name",
+               "example": "Dolores Umbridge"
+              }
+             }
+            },
+            "affected_person": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "exampleuser@example.com"
+              },
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "Carl the Contractor"
+              }
+             }
+            },
+            "harm_source": {
+             "type": "object",
+             "title": "Harm Source",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Harm Source ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Harm Source Name",
+               "example": "Material"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp of last update",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {\n    Authorization: 'Bearer REPLACE_BEARER_TOKEN',\n    'content-type': 'application/json'\n  },\n  body: {\n    near_miss: {\n      description: '<p>Sprain to <b>Hand</b> by Ground</p>',\n      affected_person_id: 0,\n      affected_party_id: 0,\n      harm_source_id: 0,\n      affected_company_id: 0,\n      managed_equipment_id: 0,\n      work_activity_id: 0,\n      'custom_field_%{custom_field_definition_id}': 'custom field value'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"near_miss\\\":{\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"affected_person_id\\\":0,\\\"affected_party_id\\\":0,\\\"harm_source_id\\\":0,\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\"\n\nheaders = {\n    'Authorization': \"Bearer REPLACE_BEARER_TOKEN\",\n    'content-type': \"application/json\"\n    }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"near_miss\":{\"description\":\"<p>Sprain to <b>Hand</b> by Ground</p>\",\"affected_person_id\":0,\"affected_party_id\":0,\"harm_source_id\":0,\"affected_company_id\":0,\"managed_equipment_id\":0,\"work_activity_id\":0,\"custom_field_%{custom_field_definition_id}\":\"custom field value\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n    Content = new StringContent(\"{\\\"near_miss\\\":{\\\"description\\\":\\\"<p>Sprain to <b>Hand</b> by Ground</p>\\\",\\\"affected_person_id\\\":0,\\\"affected_party_id\\\":0,\\\"harm_source_id\\\":0,\\\"affected_company_id\\\":0,\\\"managed_equipment_id\\\":0,\\\"work_activity_id\\\":0,\\\"custom_field_%{custom_field_definition_id}\\\":\\\"custom field value\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Destroy Near Miss",
+    "description": "Soft-deletes the specified near miss record, moving it to the recycle bin where it remains recoverable. The near miss can be restored via the recycle bin restore endpoint.",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/near_misses": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Optional incident ID to scope results. When provided, returns only near miss records belonging to the specified incident. Omit to retrieve near misses across all incidents in the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "filters[created_at]",
+     "in": "query",
+     "description": "Return item(s) created within the specified ISO 8601 datetime range.\nFormats:\n`YYYY-MM-DD`...`YYYY-MM-DD` - Date\n`YYYY-MM-DDTHH:MM:SSZ`...`YYYY-MM-DDTHH:MM:SSZ` - DateTime with UTC Offset\n`YYYY-MM-DDTHH:MM:SS+XX:00...`YYYY-MM-DDTHH:MM:SS+XX:00` - Datetime with Custom Offset",
+     "required": false,
+     "schema": {
+      "type": "string",
+      "format": "date"
+     }
+    },
+    {
+     "name": "filters[affected_company_id]",
+     "in": "query",
+     "description": "Array of Company IDs. Returns item(s) with the specified affected Company IDs.",
+     "required": false,
+     "style": "form",
+     "explode": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[affected_party_id]",
+     "in": "query",
+     "description": "Array of Affected Party IDs. Returns item(s) with the specified Affected Party IDs.",
+     "required": false,
+     "style": "form",
+     "explode": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[affected_person_id]",
+     "in": "query",
+     "description": "Array of Person IDs. Returns item(s) with the specified affected Person IDs.",
+     "required": false,
+     "style": "form",
+     "explode": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[harm_source_id]",
+     "in": "query",
+     "description": "Array of Harm Source IDs. Returns item(s) with the specified Harm Source IDs.",
+     "required": false,
+     "style": "form",
+     "explode": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[work_activity_id]",
+     "in": "query",
+     "description": "Array of Work Activity IDs. Returns item(s) with the specified Work Activity IDs.",
+     "required": false,
+     "style": "form",
+     "explode": false,
+     "schema": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "name": "filters[managed_equipment_id]",
+     "in": "query",
+     "description": "Return item(s) with the specified Managed Equipment ID.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "filters[query]",
+     "in": "query",
+     "description": "Full-text search across near miss description and related fields. Returns near misses where any searchable field contains the query string.",
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "sort",
+     "in": "query",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "affected_company",
+       "affected_person",
+       "created_at",
+       "managed_equipment",
+       "full_number",
+       "harm_source",
+       "number",
+       "work_activity"
+      ]
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Recycled Near Misses",
+    "description": "Returns a paginated list of soft-deleted near miss records in the project's recycle bin, optionally scoped to a single incident via incident_id. Supports the same filtering and sorting options as the main near misses list. Recycled near misses can be restored via the restore endpoint.",
+    "tags": [
+     "Incidents"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "allOf": [
+           {
+            "title": "IncidentRecordBaseNormal",
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "integer",
+              "description": "Incident Record ID",
+              "example": 9
+             },
+             "number": {
+              "type": "integer",
+              "description": "The number of the Record",
+              "example": 4
+             },
+             "full_number": {
+              "type": "string",
+              "description": "The Incident Number combined with the Record Number",
+              "example": 16.4
+             },
+             "incident_id": {
+              "type": "integer",
+              "description": "The id of the Incident to which the record belongs",
+              "example": 16
+             },
+             "recordable": {
+              "type": "boolean",
+              "description": "Indicates whether the Incident Record is recordable",
+              "example": true
+             },
+             "type": {
+              "type": "string",
+              "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+              "example": "injury"
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "incident_title": {
+              "type": "string",
+              "description": "The title of the Incident to which the record belongs",
+              "example": "HAZMAT Spill"
+             },
+             "incident_private": {
+              "type": "boolean",
+              "description": "Indicates whether the Incident to which the record belongs is private",
+              "example": false
+             },
+             "summary": {
+              "type": "string",
+              "description": "Summary combining the affliction type, body part affected, and source of harm.",
+              "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+             },
+             "description_plain_text": {
+              "type": "string",
+              "description": "Description of event",
+              "example": "Sprain to Hand by Ground"
+             },
+             "description": {
+              "type": "string",
+              "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+              "description": "Description of event in Rich Text format"
+             },
+             "affected_company": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "example": "SID Architecture"
+               }
+              }
+             },
+             "created_at": {
+              "type": "string",
+              "description": "Timestamp of creation",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "deleted_at": {
+              "type": "string",
+              "description": "Timestamp of deletion",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z",
+              "nullable": true
+             },
+             "managed_equipment": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Equipment ID",
+                "example": 15504
+               },
+               "name": {
+                "type": "string",
+                "description": "Equipment name",
+                "example": "Jackhammer"
+               }
+              }
+             },
+             "incident_created_by": {
+              "allOf": [
+               {
+                "type": "object",
+                "properties": {
+                 "login": {
+                  "type": "string",
+                  "description": "Email",
+                  "example": "carl.contractor@example.com"
+                 }
+                }
+               },
+               {
+                "type": "object",
+                "properties": {
+                 "id": {
+                  "type": "integer",
+                  "example": 161072
+                 },
+                 "name": {
+                  "type": "string",
+                  "example": "Carl the Contractor"
+                 }
+                }
+               }
+              ]
+             },
+             "updated_at": {
+              "type": "string",
+              "description": "Timestamp of last update",
+              "format": "date-time",
+              "example": "2016-10-25T17:53:35Z"
+             },
+             "work_activity": {
+              "type": "object",
+              "title": "Work Activity",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Work Activity ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Work Activity Name",
+                "example": "Earthwork"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Represents whether a Work Activity is available for use.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Represents whether a Work Activity has been provided by Procore.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Date the work activity was updated",
+                "example": "2015-11-12T21:26:28Z"
+               }
+              }
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "affected_party": {
+              "type": "object",
+              "title": "Party",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Timecard entry id",
+                "example": 1
+               },
+               "name": {
+                "type": "string",
+                "description": "Party Name",
+                "example": "Dolores Umbridge"
+               }
+              }
+             },
+             "affected_person": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+               "login": {
+                "type": "string",
+                "description": "Email",
+                "example": "exampleuser@example.com"
+               },
+               "id": {
+                "type": "integer",
+                "example": 161072
+               },
+               "name": {
+                "type": "string",
+                "example": "Carl the Contractor"
+               }
+              }
+             },
+             "harm_source": {
+              "type": "object",
+              "title": "Harm Source",
+              "nullable": true,
+              "properties": {
+               "id": {
+                "type": "integer",
+                "description": "Harm Source ID",
+                "example": 999
+               },
+               "name": {
+                "type": "string",
+                "description": "Harm Source Name",
+                "example": "Material"
+               },
+               "active": {
+                "type": "boolean",
+                "description": "Represents whether a Harm Source is available for use.",
+                "example": true
+               },
+               "global": {
+                "type": "boolean",
+                "description": "Represents whether a Harm Source has been provided by Procore.",
+                "example": true
+               },
+               "created_at": {
+                "type": "string",
+                "description": "Timestamp of creation",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               },
+               "updated_at": {
+                "type": "string",
+                "description": "Timestamp of last update",
+                "format": "date-time",
+                "example": "2016-10-25T17:53:35Z"
+               }
+              }
+             },
+             "custom_fields": {
+              "type": "object",
+              "properties": {
+               "custom_field_%{custom_field_string_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "string"
+                 },
+                 "value": {
+                  "type": "string",
+                  "description": "The value of the custom field.",
+                  "example": "custom field value"
+                 }
+                }
+               },
+               "custom_field_%{custom_field_decimal_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "decimal"
+                 },
+                 "value": {
+                  "type": "number",
+                  "description": "The value of the custom field.",
+                  "example": 2.2
+                 }
+                }
+               },
+               "custom_field_%{custom_field_boolean_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "boolean"
+                 },
+                 "value": {
+                  "type": "boolean",
+                  "description": "The value of the custom field.",
+                  "example": true
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entry_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entry"
+                 },
+                 "value": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 1
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "Label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               },
+               "custom_field_%{custom_field_lov_entries_definition_id}": {
+                "type": "object",
+                "properties": {
+                 "data_type": {
+                  "type": "string",
+                  "description": "The data type of the Custom Field Definition.",
+                  "example": "lov_entries"
+                 },
+                 "value": {
+                  "type": "array",
+                  "items": {
+                   "type": "object",
+                   "properties": {
+                    "id": {
+                     "type": "integer",
+                     "description": "The unique identifier of the list of values (LOV) entry.",
+                     "example": 2
+                    },
+                    "label": {
+                     "type": "string",
+                     "description": "The label of the list of values (LOV) entry.",
+                     "example": "Open"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          ]
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses',\n  qs: {\n    incident_id: 'SOME_INTEGER_VALUE',\n    'filters[created_at]': 'SOME_STRING_VALUE',\n    'filters[affected_company_id]': 'SOME_ARRAY_VALUE',\n    'filters[affected_party_id]': 'SOME_ARRAY_VALUE',\n    'filters[affected_person_id]': 'SOME_ARRAY_VALUE',\n    'filters[harm_source_id]': 'SOME_ARRAY_VALUE',\n    'filters[work_activity_id]': 'SOME_ARRAY_VALUE',\n    'filters[managed_equipment_id]': 'SOME_INTEGER_VALUE',\n    'filters[query]': 'SOME_STRING_VALUE',\n    sort: 'SOME_STRING_VALUE',\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE'\n  },\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses?incident_id=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Baffected_company_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_party_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_person_id%5D=SOME_ARRAY_VALUE&filters%5Bharm_source_id%5D=SOME_ARRAY_VALUE&filters%5Bwork_activity_id%5D=SOME_ARRAY_VALUE&filters%5Bmanaged_equipment_id%5D=SOME_INTEGER_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses?incident_id=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Baffected_company_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_party_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_person_id%5D=SOME_ARRAY_VALUE&filters%5Bharm_source_id%5D=SOME_ARRAY_VALUE&filters%5Bwork_activity_id%5D=SOME_ARRAY_VALUE&filters%5Bmanaged_equipment_id%5D=SOME_INTEGER_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses?incident_id=SOME_INTEGER_VALUE&filters%5Bcreated_at%5D=SOME_STRING_VALUE&filters%5Baffected_company_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_party_id%5D=SOME_ARRAY_VALUE&filters%5Baffected_person_id%5D=SOME_ARRAY_VALUE&filters%5Bharm_source_id%5D=SOME_ARRAY_VALUE&filters%5Bwork_activity_id%5D=SOME_ARRAY_VALUE&filters%5Bmanaged_equipment_id%5D=SOME_INTEGER_VALUE&filters%5Bquery%5D=SOME_STRING_VALUE&sort=SOME_STRING_VALUE&page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/near_misses/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Near Miss ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Recycled Near Miss",
+    "description": "Returns the specified recycled near miss record with full details. The response structure is identical to the Show Near Miss endpoint but represents a soft-deleted near miss.",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "allOf": [
+          {
+           "title": "IncidentRecordBaseNormal",
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "integer",
+             "description": "Incident Record ID",
+             "example": 9
+            },
+            "number": {
+             "type": "integer",
+             "description": "The number of the Record",
+             "example": 4
+            },
+            "full_number": {
+             "type": "string",
+             "description": "The Incident Number combined with the Record Number",
+             "example": 16.4
+            },
+            "incident_id": {
+             "type": "integer",
+             "description": "The id of the Incident to which the record belongs",
+             "example": 16
+            },
+            "recordable": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident Record is recordable",
+             "example": true
+            },
+            "type": {
+             "type": "string",
+             "description": "The type of incident record (environmental, injury, near_miss, property_damage)",
+             "example": "injury"
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "incident_title": {
+             "type": "string",
+             "description": "The title of the Incident to which the record belongs",
+             "example": "HAZMAT Spill"
+            },
+            "incident_private": {
+             "type": "boolean",
+             "description": "Indicates whether the Incident to which the record belongs is private",
+             "example": false
+            },
+            "summary": {
+             "type": "string",
+             "description": "Summary combining the affliction type, body part affected, and source of harm.",
+             "example": "Sprain to Hand by Ground / Floor. Note: This key has been deprecated."
+            },
+            "description_plain_text": {
+             "type": "string",
+             "description": "Description of event",
+             "example": "Sprain to Hand by Ground"
+            },
+            "description": {
+             "type": "string",
+             "example": "<p>Sprain to <b>Hand</b> by Ground</p>",
+             "description": "Description of event in Rich Text format"
+            },
+            "affected_company": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "SID Architecture"
+              }
+             }
+            },
+            "created_at": {
+             "type": "string",
+             "description": "Timestamp of creation",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "deleted_at": {
+             "type": "string",
+             "description": "Timestamp of deletion",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z",
+             "nullable": true
+            },
+            "managed_equipment": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Equipment ID",
+               "example": 15504
+              },
+              "name": {
+               "type": "string",
+               "description": "Equipment name",
+               "example": "Jackhammer"
+              }
+             }
+            },
+            "incident_created_by": {
+             "allOf": [
+              {
+               "type": "object",
+               "properties": {
+                "login": {
+                 "type": "string",
+                 "description": "Email",
+                 "example": "carl.contractor@example.com"
+                }
+               }
+              },
+              {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "integer",
+                 "example": 161072
+                },
+                "name": {
+                 "type": "string",
+                 "example": "Carl the Contractor"
+                }
+               }
+              }
+             ]
+            },
+            "updated_at": {
+             "type": "string",
+             "description": "Timestamp of last update",
+             "format": "date-time",
+             "example": "2016-10-25T17:53:35Z"
+            },
+            "work_activity": {
+             "type": "object",
+             "title": "Work Activity",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Work Activity ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Work Activity Name",
+               "example": "Earthwork"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Work Activity has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "format": "date-time",
+               "description": "Date the work activity was updated",
+               "example": "2015-11-12T21:26:28Z"
+              }
+             }
+            }
+           }
+          },
+          {
+           "type": "object",
+           "properties": {
+            "affected_party": {
+             "type": "object",
+             "title": "Party",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Timecard entry id",
+               "example": 1
+              },
+              "name": {
+               "type": "string",
+               "description": "Party Name",
+               "example": "Dolores Umbridge"
+              }
+             }
+            },
+            "affected_person": {
+             "type": "object",
+             "nullable": true,
+             "properties": {
+              "login": {
+               "type": "string",
+               "description": "Email",
+               "example": "exampleuser@example.com"
+              },
+              "id": {
+               "type": "integer",
+               "example": 161072
+              },
+              "name": {
+               "type": "string",
+               "example": "Carl the Contractor"
+              }
+             }
+            },
+            "harm_source": {
+             "type": "object",
+             "title": "Harm Source",
+             "nullable": true,
+             "properties": {
+              "id": {
+               "type": "integer",
+               "description": "Harm Source ID",
+               "example": 999
+              },
+              "name": {
+               "type": "string",
+               "description": "Harm Source Name",
+               "example": "Material"
+              },
+              "active": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source is available for use.",
+               "example": true
+              },
+              "global": {
+               "type": "boolean",
+               "description": "Represents whether a Harm Source has been provided by Procore.",
+               "example": true
+              },
+              "created_at": {
+               "type": "string",
+               "description": "Timestamp of creation",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              },
+              "updated_at": {
+               "type": "string",
+               "description": "Timestamp of last update",
+               "format": "date-time",
+               "example": "2016-10-25T17:53:35Z"
+              }
+             }
+            },
+            "custom_fields": {
+             "type": "object",
+             "properties": {
+              "custom_field_%{custom_field_string_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "string"
+                },
+                "value": {
+                 "type": "string",
+                 "description": "The value of the custom field.",
+                 "example": "custom field value"
+                }
+               }
+              },
+              "custom_field_%{custom_field_decimal_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "decimal"
+                },
+                "value": {
+                 "type": "number",
+                 "description": "The value of the custom field.",
+                 "example": 2.2
+                }
+               }
+              },
+              "custom_field_%{custom_field_boolean_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "boolean"
+                },
+                "value": {
+                 "type": "boolean",
+                 "description": "The value of the custom field.",
+                 "example": true
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entry_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entry"
+                },
+                "value": {
+                 "type": "object",
+                 "properties": {
+                  "id": {
+                   "type": "integer",
+                   "description": "The unique identifier of the list of values (LOV) entry.",
+                   "example": 1
+                  },
+                  "label": {
+                   "type": "string",
+                   "description": "Label of the list of values (LOV) entry.",
+                   "example": "Open"
+                  }
+                 }
+                }
+               }
+              },
+              "custom_field_%{custom_field_lov_entries_definition_id}": {
+               "type": "object",
+               "properties": {
+                "data_type": {
+                 "type": "string",
+                 "description": "The data type of the Custom Field Definition.",
+                 "example": "lov_entries"
+                },
+                "value": {
+                 "type": "array",
+                 "items": {
+                  "type": "object",
+                  "properties": {
+                   "id": {
+                    "type": "integer",
+                    "description": "The unique identifier of the list of values (LOV) entry.",
+                    "example": 2
+                   },
+                   "label": {
+                    "type": "string",
+                    "description": "The label of the list of values (LOV) entry.",
+                    "example": "Open"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  },
+  "/rest/v1.0/projects/{project_id}/recycle_bin/incidents/near_misses/{id}/restore": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "description": "Near Miss ID",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "incident_id",
+     "in": "query",
+     "required": false,
+     "description": "Incident ID",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Retrieve Recycled Near Miss",
+    "description": "Retrieves a specific Recycled Near Miss from the recycle bin",
+    "tags": [
+     "Incidents"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D/restore',\n  qs: {incident_id: 'SOME_INTEGER_VALUE'},\n  headers: {Authorization: 'Bearer REPLACE_BEARER_TOKEN'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nheaders = { 'Authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE' \\\n  --header 'Authorization: Bearer REPLACE_BEARER_TOKEN'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/recycle_bin/incidents/near_misses/%7Bid%7D/restore?incident_id=SOME_INTEGER_VALUE\"),\n    Headers =\n    {\n        { \"Authorization\", \"Bearer REPLACE_BEARER_TOKEN\" },\n    },\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}

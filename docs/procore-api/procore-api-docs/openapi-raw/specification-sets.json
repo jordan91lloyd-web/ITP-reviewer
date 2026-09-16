@@ -1,0 +1,1399 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Specification Sets",
+  "x-product-category": "Project Management",
+  "x-tool-category": "Specifications",
+  "x-resource-name": "Specification Sets",
+  "version": "2.0",
+  "x-product-lines": [
+   "PM Essentials",
+   "Total Quality and Safety Management"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v2.0/companies/{company_id}/projects/{project_id}/specification_sets": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "company_id",
+     "in": "path",
+     "description": "Unique identifier for the company.",
+     "required": true,
+     "schema": {
+      "type": "string"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "string"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Specification Sets for a Project",
+    "description": "This endpoint returns a paginated list of Specification sets for a Project.",
+    "tags": [
+     "Specifications"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "required": false,
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 10,
+       "minimum": 1,
+       "maximum": 100
+      }
+     },
+     {
+      "name": "specification_area_id",
+      "in": "query",
+      "required": false,
+      "description": "Unique identifier for the specification area.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "with_none_set",
+      "in": "query",
+      "required": false,
+      "description": "When true on the first page, includes a synthetic `none` set when sections exist without a specification set.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "true",
+        "false"
+       ]
+      }
+     },
+     {
+      "name": "is_recycle_bin",
+      "in": "query",
+      "required": false,
+      "description": "When true, evaluates the `none` set option against deleted specification sections.",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "true",
+        "false"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "string"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "Specification Sets",
+         "description": "Specification Sets collection Response",
+         "properties": {
+          "data": {
+           "description": "List of specifications sets for current project",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Specification Set",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Specification Set ID",
+              "example": "123"
+             },
+             "name": {
+              "type": "string",
+              "example": "An example set",
+              "description": "Name of the set"
+             },
+             "date": {
+              "type": "string",
+              "description": "Specification Set Date",
+              "example": "2025-07-07"
+             },
+             "position": {
+              "type": "integer",
+              "description": "Position of Specification set",
+              "example": 1
+             },
+             "deletable": {
+              "type": "boolean",
+              "example": true,
+              "description": "True if set does not have any related revisions or uploads"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User does not have right permissions",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "default": {
+      "description": "Unexpected error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets',\n  qs: {\n    page: 'SOME_INTEGER_VALUE',\n    per_page: 'SOME_INTEGER_VALUE',\n    specification_area_id: 'SOME_STRING_VALUE',\n    with_none_set: 'SOME_STRING_VALUE',\n    is_recycle_bin: 'SOME_STRING_VALUE'\n  }\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE&with_none_set=SOME_STRING_VALUE&is_recycle_bin=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE&with_none_set=SOME_STRING_VALUE&is_recycle_bin=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE&specification_area_id=SOME_STRING_VALUE&with_none_set=SOME_STRING_VALUE&is_recycle_bin=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Added with_none_set parameter to list endpoint",
+      "description": "Added optional `with_none_set` query parameter to include a \"None\" option in the response\nwhen there are specification sections without a specification set. The \"None\" option is\nonly included on the first page when `with_none_set=true` and when sections without sets exist.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_sets",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-08-27",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-sets?version=2.0#list-specification-sets-for-a-project"
+     },
+     {
+      "summary": "Added specification_sets v2.0 endpoint",
+      "description": "List of Specification Sets for project",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_sets",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-07-07",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-sets?version=2.0#list-specification-sets-for-a-project"
+     },
+     {
+      "summary": "Added is_recycle_bin parameter to list endpoint",
+      "description": "Added optional `is_recycle_bin` query parameter to include specification sections in the recycle bin in the response.\nTo include specification sections in the recycle bin, add the `?is_recycle_bin=true` query parameter.",
+      "endpoint": "GET /companies/{company_id}/projects/{project_id}/specification_sets",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2025-11-10",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-sets?version=2.0#list-specification-sets-for-a-project"
+     }
+    ]
+   },
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Bulk update for Specification Sets for a Project",
+    "description": "Applies create, update, and delete operations for specification sets in a single request.\nInclude any of `creation_params`, `updation_params`, and `deletion_params` as needed.\n\nSuccessful operations run in one database transaction. Valid rows are persisted even when other\nrows in the same request fail validation.\n\nWhen one or more rows fail validation, the response is **400 Bad Request** with\n`error.details[0].reason_code` set to `VALIDATION_FAILED` and a `failures` object grouping errors\nunder `creation_failures`, `updation_failures`, and `deletion_failures` (see the `400` response schema).",
+    "tags": [
+     "Specifications"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "creation_params": {
+          "type": "array",
+          "description": "New sets to create. Use `key` to correlate validation errors in the response.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "key": {
+             "type": "string",
+             "description": "Client-supplied id for matching entries in `error.details[0].failures.creation_failures`."
+            },
+            "name": {
+             "type": "string",
+             "description": "Name of the specification set."
+            },
+            "date": {
+             "type": "string",
+             "description": "Set date (ISO date string)."
+            },
+            "position": {
+             "type": "integer",
+             "description": "Ordering position of the set within the project."
+            }
+           }
+          }
+         },
+         "updation_params": {
+          "type": "array",
+          "description": "Existing sets to update; failures are keyed by set `id` in the error payload.",
+          "items": {
+           "type": "object",
+           "required": [
+            "id"
+           ],
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Specification set id.",
+             "example": "2906"
+            },
+            "name": {
+             "type": "string",
+             "description": "Updated name of the specification set."
+            },
+            "date": {
+             "type": "string",
+             "description": "Updated set date (ISO date string)."
+            },
+            "position": {
+             "type": "integer",
+             "description": "Updated ordering position of the set within the project."
+            }
+           }
+          }
+         },
+         "deletion_params": {
+          "type": "array",
+          "description": "Sets to delete.",
+          "items": {
+           "type": "object",
+           "required": [
+            "id"
+           ],
+           "properties": {
+            "id": {
+             "type": "string",
+             "description": "Specification set id to delete.",
+             "example": "2906"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "Specification Sets",
+         "description": "Specification Sets collection Response",
+         "properties": {
+          "data": {
+           "description": "List of specifications sets for current project",
+           "type": "array",
+           "items": {
+            "type": "object",
+            "description": "Specification Set",
+            "properties": {
+             "id": {
+              "type": "string",
+              "description": "Specification Set ID",
+              "example": "123"
+             },
+             "name": {
+              "type": "string",
+              "example": "An example set",
+              "description": "Name of the set"
+             },
+             "date": {
+              "type": "string",
+              "description": "Specification Set Date",
+              "example": "2025-07-07"
+             },
+             "position": {
+              "type": "integer",
+              "description": "Position of Specification set",
+              "example": 1
+             },
+             "deletable": {
+              "type": "boolean",
+              "example": true,
+              "description": "True if set does not have any related revisions or uploads"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request \u2014 one or more create/update operations failed validation. Inspect `error.details[0].failures` for per-entity field messages (`*_error` keys).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "title": "Specification Sets Bulk Validation Error",
+         "description": "Returned when PATCH bulk update fails model validation. Structure matches other specifications bulk endpoints (for example specification section divisions): grouped failures by operation with `VALIDATION_FAILED` in `details[0].reason_code`.",
+         "properties": {
+          "error": {
+           "type": "object",
+           "required": [
+            "code",
+            "message",
+            "details"
+           ],
+           "properties": {
+            "code": {
+             "type": "string",
+             "example": "BAD_REQUEST",
+             "description": "HTTP status equivalent in screaming snake case."
+            },
+            "message": {
+             "type": "string",
+             "example": "One or more validation errors occurred",
+             "description": "Localized summary message."
+            },
+            "details": {
+             "type": "array",
+             "description": "Contains one object describing validation failures when `reason_code` is `VALIDATION_FAILED`.",
+             "minItems": 1,
+             "maxItems": 1,
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message",
+               "failures"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "enum": [
+                 "VALIDATION_FAILED"
+                ],
+                "example": "VALIDATION_FAILED"
+               },
+               "message": {
+                "type": "string",
+                "example": "One or more validation errors occurred",
+                "description": "Localized message for this detail entry."
+               },
+               "failures": {
+                "type": "object",
+                "required": [
+                 "creation_failures",
+                 "updation_failures",
+                 "deletion_failures"
+                ],
+                "properties": {
+                 "creation_failures": {
+                  "type": "object",
+                  "description": "Map of client `key` from `creation_params` (stringified) to field errors. If `key` is omitted, the server uses the zero-based index of the item in `creation_params` as a string key.",
+                  "additionalProperties": {
+                   "type": "object",
+                   "description": "Keys are attribute names with an `_error` suffix (for example `name_error`, `position_error`, `date_error`).",
+                   "additionalProperties": {
+                    "type": "string",
+                    "description": "Localized validation message for that field."
+                   }
+                  },
+                  "example": {
+                   "1": {
+                    "name_error": "Name can't be blank"
+                   }
+                  }
+                 },
+                 "updation_failures": {
+                  "type": "object",
+                  "description": "Map of specification set id (string) to field-level validation errors.",
+                  "additionalProperties": {
+                   "type": "object",
+                   "additionalProperties": {
+                    "type": "string"
+                   }
+                  },
+                  "example": {
+                   "2906": {
+                    "name_error": "Name has already been taken"
+                   }
+                  }
+                 },
+                 "deletion_failures": {
+                  "type": "object",
+                  "description": "Reserved for deletion validation; typically an empty object.",
+                  "additionalProperties": {
+                   "type": "object",
+                   "additionalProperties": {
+                    "type": "string"
+                   }
+                  },
+                  "example": {}
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "error": {
+           "type": "object",
+           "properties": {
+            "code": {
+             "type": "string",
+             "description": "HTTP status in screaming snake case (like BAD_REQUEST)"
+            },
+            "message": {
+             "type": "string",
+             "description": "Human readable message describing error."
+            },
+            "details": {
+             "type": "array",
+             "description": "Additional information about the error.",
+             "items": {
+              "type": "object",
+              "required": [
+               "reason_code",
+               "message"
+              ],
+              "properties": {
+               "reason_code": {
+                "type": "string",
+                "description": "A machine-readable code that identifies the error specifically enough for the client to interpret what happened and take action.",
+                "example": "BLANK"
+               },
+               "message": {
+                "type": "string",
+                "description": "Human readable message",
+                "example": "Name can't be blank"
+               },
+               "source": {
+                "type": "string",
+                "description": "Source of the error",
+                "example": "name"
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets',\n  headers: {'content-type': 'application/json'},\n  body: {\n    creation_params: [{key: 'string', name: 'string', date: 'string', position: 0}],\n    updation_params: [{id: '2906', name: 'string', date: 'string', position: 0}],\n    deletion_params: [{id: '2906'}]\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"creation_params\\\":[{\\\"key\\\":\\\"string\\\",\\\"name\\\":\\\"string\\\",\\\"date\\\":\\\"string\\\",\\\"position\\\":0}],\\\"updation_params\\\":[{\\\"id\\\":\\\"2906\\\",\\\"name\\\":\\\"string\\\",\\\"date\\\":\\\"string\\\",\\\"position\\\":0}],\\\"deletion_params\\\":[{\\\"id\\\":\\\"2906\\\"}]}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets \\\n  --header 'content-type: application/json' \\\n  --data '{\"creation_params\":[{\"key\":\"string\",\"name\":\"string\",\"date\":\"string\",\"position\":0}],\"updation_params\":[{\"id\":\"2906\",\"name\":\"string\",\"date\":\"string\",\"position\":0}],\"deletion_params\":[{\"id\":\"2906\"}]}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v2.0/companies/%7Bcompany_id%7D/projects/%7Bproject_id%7D/specification_sets\"),\n    Content = new StringContent(\"{\\\"creation_params\\\":[{\\\"key\\\":\\\"string\\\",\\\"name\\\":\\\"string\\\",\\\"date\\\":\\\"string\\\",\\\"position\\\":0}],\\\"updation_params\\\":[{\\\"id\\\":\\\"2906\\\",\\\"name\\\":\\\"string\\\",\\\"date\\\":\\\"string\\\",\\\"position\\\":0}],\\\"deletion_params\\\":[{\\\"id\\\":\\\"2906\\\"}]}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Align bulk update validation error payload with specification section divisions API",
+      "description": "**Breaking change for error parsing only.** Success responses are unchanged.\n\nPATCH `/rest/v2.0/companies/{company_id}/projects/{project_id}/specification_sets` previously returned a flat\n`error.details` array where each item looked like `{ \"reason_code\": \"taken\", \"message\": \"...\", \"source\": \"name\", \"object_id\": 2906 }`.\n\nThe endpoint now returns the same shape as specification section divisions bulk update:\n- `error.message` uses the localized validation summary (for example \"One or more validation errors occurred\").\n- `error.details` is a single-element array. The element has `reason_code: \"VALIDATION_FAILED\"`, a `message`, and `failures`:\n  - `creation_failures`: object keyed by stringified client `key` from `creation_params` (or index string if `key` is omitted).\n  - `updation_failures`: object keyed by specification set id string; values are objects with field keys like `name_error`, `position_error`, `date_error` mapping to localized messages.\n  - `deletion_failures`: object (reserved; typically empty).\n\nExample error body:\n\n```json\n{\n  \"error\": {\n    \"code\": \"BAD_REQUEST\",\n    \"message\": \"One or more validation errors occurred\",\n    \"details\": [\n      {\n        \"reason_code\": \"VALIDATION_FAILED\",\n        \"message\": \"One or more validation errors occurred\",\n        \"failures\": {\n          \"creation_failures\": {},\n          \"updation_failures\": {\n            \"2906\": { \"name_error\": \"Name has already been taken\" }\n          },\n          \"deletion_failures\": {}\n        }\n      }\n    ]\n  }\n}\n```\n\nOpenAPI (`specification_sets_v2_0.yml`) and schema `specification_sets_bulk_validation_error.yml` document the `400` response and request body.",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/specification_sets",
+      "type": "refinement",
+      "breaking": true,
+      "datestamp": "2026-04-07",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-sets?version=2.0#bulk-update-for-specification-sets-for-a-project"
+     },
+     {
+      "summary": "Added specification_sets bulk_update v2.0 endpoint",
+      "description": "Bulk update of Specification Sets for project",
+      "endpoint": "PATCH /companies/{company_id}/projects/{project_id}/specification_sets",
+      "type": "new",
+      "breaking": false,
+      "datestamp": "2025-07-17",
+      "versions": [
+       "2.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-sets?version=2.0#bulk-update-for-specification-sets-for-a-project"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/projects/{project_id}/specification_sets": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "description": "The ID of the project for the new set",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Specification Sets",
+    "description": "List the Specification Sets in a Project",
+    "tags": [
+     "Specifications"
+    ],
+    "parameters": [
+     {
+      "name": "page",
+      "in": "query",
+      "description": "Page",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "per_page",
+      "in": "query",
+      "description": "Elements per page",
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Success",
+      "headers": {
+       "Per-Page": {
+        "description": "Number of items retrieved per page",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Total": {
+        "description": "Total number of items to be retrieved",
+        "schema": {
+         "type": "integer"
+        }
+       },
+       "Link": {
+        "description": "Link headers for the first, prev, next, and last link",
+        "schema": {
+         "type": "string"
+        }
+       }
+      },
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer"
+           },
+           "project_id": {
+            "type": "integer"
+           },
+           "company_id": {
+            "type": "integer",
+            "nullable": true
+           },
+           "name": {
+            "type": "string"
+           },
+           "created_at": {
+            "type": "string",
+            "format": "date"
+           },
+           "deleted_at": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+           },
+           "updated_at": {
+            "type": "string",
+            "format": "date"
+           },
+           "date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+           },
+           "position": {
+            "type": "integer",
+            "nullable": true
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Company or project is not valid, user is not an active contact, company does not have an ERP connection",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User has insufficient access",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets',\n  qs: {page: 'SOME_INTEGER_VALUE', per_page: 'SOME_INTEGER_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/specification_sets?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets?page=SOME_INTEGER_VALUE&per_page=SOME_INTEGER_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Add pagination to list endpoint",
+      "description": "Add pagination to Specification Sets list response.\nTo adjust pagination, adjust the `?page` and `?per_page` query parameters.",
+      "endpoint": "GET /projects/{project_id}/specification_sets",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-05-30",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "specification-sets?version=1.0#list-specification-sets"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Specification Set",
+    "description": "Create a new Specification Set in the specified project",
+    "tags": [
+     "Specifications"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "name"
+        ],
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "Name of specification set"
+         },
+         "date": {
+          "type": "string",
+          "description": "Creation date of specification set"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Success",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer"
+          },
+          "project_id": {
+           "type": "integer"
+          },
+          "company_id": {
+           "type": "integer",
+           "nullable": true
+          },
+          "name": {
+           "type": "string"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date"
+          },
+          "deleted_at": {
+           "type": "string",
+           "format": "date",
+           "nullable": true
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date"
+          },
+          "date": {
+           "type": "string",
+           "format": "date",
+           "nullable": true
+          },
+          "position": {
+           "type": "integer",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Invalid set",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "object",
+           "properties": {
+            "field_name": {
+             "type": "array",
+             "items": {
+              "type": "string"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Company or project is not valid, user is not an active contact, company does not have an ERP connection",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User has insufficient access",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets',\n  headers: {'content-type': 'application/json'},\n  body: {name: 'string', date: 'string'},\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"name\\\":\\\"string\\\",\\\"date\\\":\\\"string\\\"}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/specification_sets\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"string\",\"date\":\"string\"}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets\"),\n    Content = new StringContent(\"{\\\"name\\\":\\\"string\\\",\\\"date\\\":\\\"string\\\"}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/projects/{project_id}/specification_sets/{id}": {
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Show Specification Set",
+    "description": "Show a specific Specification Set",
+    "tags": [
+     "Specifications"
+    ],
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "path",
+      "required": true,
+      "description": "Unique identifier for the project.",
+      "schema": {
+       "type": "integer"
+      }
+     },
+     {
+      "name": "id",
+      "description": "ID of the specification section to show",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Success",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer"
+          },
+          "project_id": {
+           "type": "integer"
+          },
+          "company_id": {
+           "type": "integer",
+           "nullable": true
+          },
+          "name": {
+           "type": "string"
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date"
+          },
+          "deleted_at": {
+           "type": "string",
+           "format": "date",
+           "nullable": true
+          },
+          "updated_at": {
+           "type": "string",
+           "format": "date"
+          },
+          "date": {
+           "type": "string",
+           "format": "date",
+           "nullable": true
+          },
+          "position": {
+           "type": "integer",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Company or project is not valid, user is not an active contact, company does not have an ERP connection",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "User has insufficient access",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "errors": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Invalid specification set ID",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "message": {
+           "type": "string"
+          },
+          "exception": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/specification_sets/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/specification_sets/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "x-compliance-level": "full"
+  }
+ }
+}

@@ -1,0 +1,1228 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Monitoring Resources",
+  "x-product-category": "Construction Financials",
+  "x-tool-category": "Budget",
+  "x-resource-name": "Monitoring Resources",
+  "version": "1.0",
+  "x-product-lines": [
+   "Construction Financials"
+  ]
+ },
+ "servers": [
+  {
+   "url": "https://api.procore.com"
+  }
+ ],
+ "paths": {
+  "/rest/v1.0/projects/{project_id}/monitoring_resources": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "get": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "List Monitoring Resources",
+    "description": "Returns a list of Monitoring Resources on a given project",
+    "tags": [
+     "Monitoring Resources"
+    ],
+    "parameters": [
+     {
+      "name": "forecast_start_date",
+      "in": "query",
+      "description": "Forecast start date, expressed in ISO 8601 date format (YYYY-MM-DD)",
+      "required": false,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "type": "integer",
+            "description": "Unique identifier for this monitoring resource. Use as the {id} path parameter to update or delete the record via /rest/v1.0/projects/{project_id}/monitoring_resources/{id}.",
+            "example": 999
+           },
+           "description": {
+            "type": "string",
+            "description": "Free-text label for the monitoring resource, typically the resource or role being tracked.",
+            "example": "Senior Project Manager"
+           },
+           "start_date": {
+            "type": "string",
+            "description": "Date the resource begins, in ISO 8601 date format (YYYY-MM-DD).",
+            "example": "2017-02-15"
+           },
+           "end_date": {
+            "type": "string",
+            "description": "Date the resource ends, in ISO 8601 date format (YYYY-MM-DD).",
+            "example": "2017-07-31"
+           },
+           "unit_of_measure": {
+            "type": "string",
+            "description": "Time unit over which the resource is spread between start_date and end_date.",
+            "example": "months",
+            "enum": [
+             "weeks",
+             "months"
+            ]
+           },
+           "unit_cost": {
+            "type": "number",
+            "format": "float",
+            "description": "Cost per unit of measure for this resource.",
+            "example": "2250.0"
+           },
+           "units_remaining": {
+            "type": "integer",
+            "description": "Units still remaining as of today, or as of the forecast_start_date query parameter when provided.",
+            "example": 5
+           },
+           "forecast_to_complete": {
+            "type": "number",
+            "format": "float",
+            "description": "Remaining cost forecast to complete this resource (units_remaining multiplied by unit_cost and utilization).",
+            "example": "11250.0"
+           },
+           "planned_total_cost": {
+            "type": "number",
+            "format": "float",
+            "description": "Total planned cost for this resource across its full duration.",
+            "example": "13500.0"
+           },
+           "total_units": {
+            "type": "integer",
+            "description": "Total number of units scheduled between start_date and end_date.",
+            "example": 6
+           },
+           "utilization": {
+            "type": "number",
+            "format": "float",
+            "description": "Fraction of the resource applied per unit, expressed as a decimal where 1.0 is 100%.",
+            "example": "1.0"
+           },
+           "budget_line_item_id": {
+            "type": "integer",
+            "description": "ID of the budget line item this monitoring resource is tracked against.",
+            "example": 42
+           },
+           "currency_configuration": {
+            "type": "object",
+            "properties": {
+             "currency_iso_code": {
+              "type": "string",
+              "description": "Currency ISO Code configured for the financial entity",
+              "example": "USD",
+              "nullable": true
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'GET',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources',\n  qs: {forecast_start_date: 'SOME_STRING_VALUE'}\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"GET\", \"/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources?forecast_start_date=SOME_STRING_VALUE\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request GET \\\n  --url 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources?forecast_start_date=SOME_STRING_VALUE'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Get,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources?forecast_start_date=SOME_STRING_VALUE\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Extend the Index endpoint",
+      "description": "Add currency_configuration property to each monitored resource object in the endpoint response",
+      "endpoint": "GET /projects/{project_id}/monitoring_resources",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-09-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "monitoring-resources?version=1.0#list-monitoring-resources"
+     }
+    ]
+   },
+   "post": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Create Monitoring Resource",
+    "description": "Creates a Monitoring Resource on a given Project's Budget Line Item",
+    "tags": [
+     "Monitoring Resources"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "monitoring_resource"
+        ],
+        "properties": {
+         "monitoring_resource": {
+          "type": "object",
+          "required": [
+           "description",
+           "start_date",
+           "end_date",
+           "unit_of_measure",
+           "unit_cost",
+           "utilization",
+           "budget_line_item_id"
+          ],
+          "properties": {
+           "description": {
+            "type": "string",
+            "description": "Free-text label for the monitoring resource, typically the resource or role being tracked.",
+            "example": "Senior Project Manager"
+           },
+           "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the resource begins, in ISO 8601 date format (YYYY-MM-DD).",
+            "example": "2017-02-15"
+           },
+           "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the resource ends, in ISO 8601 date format (YYYY-MM-DD).",
+            "example": "2017-07-31"
+           },
+           "unit_of_measure": {
+            "type": "string",
+            "description": "Time unit over which the resource is spread between start_date and end_date.",
+            "example": "months",
+            "enum": [
+             "weeks",
+             "months"
+            ]
+           },
+           "unit_cost": {
+            "type": "string",
+            "description": "Cost per unit of measure for this resource.",
+            "example": "2250.0"
+           },
+           "utilization": {
+            "type": "string",
+            "description": "Fraction of the resource applied per unit, expressed as a decimal where 1.0 is 100%.",
+            "example": "1.0"
+           },
+           "budget_line_item_id": {
+            "type": "integer",
+            "description": "ID of the budget line item this monitoring resource is tracked against.",
+            "example": 42
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this monitoring resource. Use as the {id} path parameter to update or delete the record via /rest/v1.0/projects/{project_id}/monitoring_resources/{id}.",
+           "example": 999
+          },
+          "description": {
+           "type": "string",
+           "description": "Free-text label for the monitoring resource, typically the resource or role being tracked.",
+           "example": "Senior Project Manager"
+          },
+          "start_date": {
+           "type": "string",
+           "description": "Date the resource begins, in ISO 8601 date format (YYYY-MM-DD).",
+           "example": "2017-02-15"
+          },
+          "end_date": {
+           "type": "string",
+           "description": "Date the resource ends, in ISO 8601 date format (YYYY-MM-DD).",
+           "example": "2017-07-31"
+          },
+          "unit_of_measure": {
+           "type": "string",
+           "description": "Time unit over which the resource is spread between start_date and end_date.",
+           "example": "months",
+           "enum": [
+            "weeks",
+            "months"
+           ]
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure for this resource.",
+           "example": "2250.0"
+          },
+          "units_remaining": {
+           "type": "integer",
+           "description": "Units still remaining as of today, or as of the forecast_start_date query parameter when provided.",
+           "example": 5
+          },
+          "forecast_to_complete": {
+           "type": "number",
+           "format": "float",
+           "description": "Remaining cost forecast to complete this resource (units_remaining multiplied by unit_cost and utilization).",
+           "example": "11250.0"
+          },
+          "planned_total_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Total planned cost for this resource across its full duration.",
+           "example": "13500.0"
+          },
+          "total_units": {
+           "type": "integer",
+           "description": "Total number of units scheduled between start_date and end_date.",
+           "example": 6
+          },
+          "utilization": {
+           "type": "number",
+           "format": "float",
+           "description": "Fraction of the resource applied per unit, expressed as a decimal where 1.0 is 100%.",
+           "example": "1.0"
+          },
+          "budget_line_item_id": {
+           "type": "integer",
+           "description": "ID of the budget line item this monitoring resource is tracked against.",
+           "example": 42
+          },
+          "currency_configuration": {
+           "type": "object",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "Currency ISO Code configured for the financial entity",
+             "example": "USD",
+             "nullable": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'POST',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources',\n  headers: {'content-type': 'application/json'},\n  body: {\n    monitoring_resource: {\n      description: 'Senior Project Manager',\n      start_date: '2017-02-15',\n      end_date: '2017-07-31',\n      unit_of_measure: 'months',\n      unit_cost: '2250.0',\n      utilization: '1.0',\n      budget_line_item_id: 42\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"monitoring_resource\\\":{\\\"description\\\":\\\"Senior Project Manager\\\",\\\"start_date\\\":\\\"2017-02-15\\\",\\\"end_date\\\":\\\"2017-07-31\\\",\\\"unit_of_measure\\\":\\\"months\\\",\\\"unit_cost\\\":\\\"2250.0\\\",\\\"utilization\\\":\\\"1.0\\\",\\\"budget_line_item_id\\\":42}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"POST\", \"/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request POST \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources \\\n  --header 'content-type: application/json' \\\n  --data '{\"monitoring_resource\":{\"description\":\"Senior Project Manager\",\"start_date\":\"2017-02-15\",\"end_date\":\"2017-07-31\",\"unit_of_measure\":\"months\",\"unit_cost\":\"2250.0\",\"utilization\":\"1.0\",\"budget_line_item_id\":42}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Post,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources\"),\n    Content = new StringContent(\"{\\\"monitoring_resource\\\":{\\\"description\\\":\\\"Senior Project Manager\\\",\\\"start_date\\\":\\\"2017-02-15\\\",\\\"end_date\\\":\\\"2017-07-31\\\",\\\"unit_of_measure\\\":\\\"months\\\",\\\"unit_cost\\\":\\\"2250.0\\\",\\\"utilization\\\":\\\"1.0\\\",\\\"budget_line_item_id\\\":42}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Extend the Create endpoint",
+      "description": "Add currency_configuration property to the monitored resource object in the endpoint response",
+      "endpoint": "POST /projects/{project_id}/monitoring_resources",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-09-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "monitoring-resources?version=1.0#create-monitoring-resource"
+     }
+    ]
+   },
+   "x-compliance-level": "partial"
+  },
+  "/rest/v1.0/projects/{project_id}/monitoring_resources/{id}": {
+   "parameters": [
+    {
+     "name": "Procore-Company-Id",
+     "in": "header",
+     "description": "Unique company identifier associated with the Procore User Account.",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "project_id",
+     "in": "path",
+     "required": true,
+     "description": "Unique identifier for the project.",
+     "schema": {
+      "type": "integer"
+     }
+    },
+    {
+     "name": "id",
+     "in": "path",
+     "description": "Monitoring Resource ID",
+     "required": true,
+     "schema": {
+      "type": "integer"
+     }
+    }
+   ],
+   "patch": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Update Monitoring Resource",
+    "description": "Updates a Monitoring Resource's attributes",
+    "tags": [
+     "Monitoring Resources"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "monitoring_resource"
+        ],
+        "properties": {
+         "monitoring_resource": {
+          "type": "object",
+          "properties": {
+           "description": {
+            "type": "string",
+            "description": "Free-text label for the monitoring resource, typically the resource or role being tracked.",
+            "example": "Senior Project Manager"
+           },
+           "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the resource begins, in ISO 8601 date format (YYYY-MM-DD).",
+            "example": "2017-02-15"
+           },
+           "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the resource ends, in ISO 8601 date format (YYYY-MM-DD).",
+            "example": "2017-07-31"
+           },
+           "unit_of_measure": {
+            "type": "string",
+            "description": "Time unit over which the resource is spread between start_date and end_date.",
+            "example": "months",
+            "enum": [
+             "weeks",
+             "months"
+            ]
+           },
+           "unit_cost": {
+            "type": "string",
+            "description": "Cost per unit of measure for this resource.",
+            "example": "2250.0"
+           },
+           "utilization": {
+            "type": "string",
+            "description": "Fraction of the resource applied per unit, expressed as a decimal where 1.0 is 100%.",
+            "example": "1.0"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "integer",
+           "description": "Unique identifier for this monitoring resource. Use as the {id} path parameter to update or delete the record via /rest/v1.0/projects/{project_id}/monitoring_resources/{id}.",
+           "example": 999
+          },
+          "description": {
+           "type": "string",
+           "description": "Free-text label for the monitoring resource, typically the resource or role being tracked.",
+           "example": "Senior Project Manager"
+          },
+          "start_date": {
+           "type": "string",
+           "description": "Date the resource begins, in ISO 8601 date format (YYYY-MM-DD).",
+           "example": "2017-02-15"
+          },
+          "end_date": {
+           "type": "string",
+           "description": "Date the resource ends, in ISO 8601 date format (YYYY-MM-DD).",
+           "example": "2017-07-31"
+          },
+          "unit_of_measure": {
+           "type": "string",
+           "description": "Time unit over which the resource is spread between start_date and end_date.",
+           "example": "months",
+           "enum": [
+            "weeks",
+            "months"
+           ]
+          },
+          "unit_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Cost per unit of measure for this resource.",
+           "example": "2250.0"
+          },
+          "units_remaining": {
+           "type": "integer",
+           "description": "Units still remaining as of today, or as of the forecast_start_date query parameter when provided.",
+           "example": 5
+          },
+          "forecast_to_complete": {
+           "type": "number",
+           "format": "float",
+           "description": "Remaining cost forecast to complete this resource (units_remaining multiplied by unit_cost and utilization).",
+           "example": "11250.0"
+          },
+          "planned_total_cost": {
+           "type": "number",
+           "format": "float",
+           "description": "Total planned cost for this resource across its full duration.",
+           "example": "13500.0"
+          },
+          "total_units": {
+           "type": "integer",
+           "description": "Total number of units scheduled between start_date and end_date.",
+           "example": 6
+          },
+          "utilization": {
+           "type": "number",
+           "format": "float",
+           "description": "Fraction of the resource applied per unit, expressed as a decimal where 1.0 is 100%.",
+           "example": "1.0"
+          },
+          "budget_line_item_id": {
+           "type": "integer",
+           "description": "ID of the budget line item this monitoring resource is tracked against.",
+           "example": 42
+          },
+          "currency_configuration": {
+           "type": "object",
+           "properties": {
+            "currency_iso_code": {
+             "type": "string",
+             "description": "Currency ISO Code configured for the financial entity",
+             "example": "USD",
+             "nullable": true
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Unprocessable Entity",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "mimeType": "application/json",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'PATCH',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D',\n  headers: {'content-type': 'application/json'},\n  body: {\n    monitoring_resource: {\n      description: 'Senior Project Manager',\n      start_date: '2017-02-15',\n      end_date: '2017-07-31',\n      unit_of_measure: 'months',\n      unit_cost: '2250.0',\n      utilization: '1.0'\n    }\n  },\n  json: true\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "mimeType": "application/json",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\npayload = \"{\\\"monitoring_resource\\\":{\\\"description\\\":\\\"Senior Project Manager\\\",\\\"start_date\\\":\\\"2017-02-15\\\",\\\"end_date\\\":\\\"2017-07-31\\\",\\\"unit_of_measure\\\":\\\"months\\\",\\\"unit_cost\\\":\\\"2250.0\\\",\\\"utilization\\\":\\\"1.0\\\"}}\"\n\nheaders = { 'content-type': \"application/json\" }\n\nconn.request(\"PATCH\", \"/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "mimeType": "application/json",
+      "title": "Curl",
+      "content": "curl --request PATCH \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D \\\n  --header 'content-type: application/json' \\\n  --data '{\"monitoring_resource\":{\"description\":\"Senior Project Manager\",\"start_date\":\"2017-02-15\",\"end_date\":\"2017-07-31\",\"unit_of_measure\":\"months\",\"unit_cost\":\"2250.0\",\"utilization\":\"1.0\"}}'"
+     },
+     {
+      "id": "csharp_httpclient",
+      "mimeType": "application/json",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Patch,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D\"),\n    Content = new StringContent(\"{\\\"monitoring_resource\\\":{\\\"description\\\":\\\"Senior Project Manager\\\",\\\"start_date\\\":\\\"2017-02-15\\\",\\\"end_date\\\":\\\"2017-07-31\\\",\\\"unit_of_measure\\\":\\\"months\\\",\\\"unit_cost\\\":\\\"2250.0\\\",\\\"utilization\\\":\\\"1.0\\\"}}\")\n    {\n        Headers =\n        {\n            ContentType = new MediaTypeHeaderValue(\"application/json\")\n        }\n    }\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ],
+    "x-changelog": [
+     {
+      "summary": "Extend the Update endpoint",
+      "description": "Add currency_configuration property to the monitored resource object in the endpoint response",
+      "endpoint": "PATCH /projects/{project_id}/monitoring_resources/{id}",
+      "type": "feature",
+      "breaking": false,
+      "datestamp": "2023-09-14",
+      "versions": [
+       "1.0"
+      ],
+      "x-doc": {
+       "visibility": "public",
+       "stage": "ga",
+       "exposure": "public"
+      },
+      "link": "monitoring-resources?version=1.0#update-monitoring-resource"
+     }
+    ]
+   },
+   "delete": {
+    "x-doc": {
+     "visibility": "public",
+     "stage": "ga",
+     "exposure": "public"
+    },
+    "summary": "Delete Monitoring Resource",
+    "description": "Deletes a Monitoring Resource",
+    "tags": [
+     "Monitoring Resources"
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "Forbidden",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "code": {
+           "type": "integer",
+           "format": "int32"
+          },
+          "message": {
+           "type": "string"
+          },
+          "fields": {
+           "type": "string"
+          },
+          "reason": {
+           "description": "A human-readable code providing additional detail on the cause of the error.",
+           "type": "string"
+          },
+          "error": {
+           "description": "Description of the error thrown.",
+           "type": "string",
+           "example": "Invalid Token",
+           "nullable": true
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "x-code-samples": [
+     {
+      "id": "node_request",
+      "title": "Node.js",
+      "content": "const request = require('request');\n\nconst options = {\n  method: 'DELETE',\n  url: 'https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D'\n};\n\nrequest(options, function (error, response, body) {\n  if (error) throw new Error(error);\n\n  console.log(body);\n});\n"
+     },
+     {
+      "id": "python_python3",
+      "title": "Python3",
+      "content": "import http.client\n\nconn = http.client.HTTPSConnection(\"api.procore.com\")\n\nconn.request(\"DELETE\", \"/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D\")\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+     },
+     {
+      "id": "shell_curl",
+      "title": "Curl",
+      "content": "curl --request DELETE \\\n  --url https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D"
+     },
+     {
+      "id": "csharp_httpclient",
+      "title": "C#",
+      "content": "var client = new HttpClient();\nvar request = new HttpRequestMessage\n{\n    Method = HttpMethod.Delete,\n    RequestUri = new Uri(\"https://api.procore.com/rest/v1.0/projects/%7Bproject_id%7D/monitoring_resources/%7Bid%7D\"),\n};\nusing (var response = await client.SendAsync(request))\n{\n    response.EnsureSuccessStatusCode();\n    var body = await response.Content.ReadAsStringAsync();\n    Console.WriteLine(body);\n}"
+     }
+    ],
+    "x-rate-limit-enabled": true,
+    "x-procore-kong-tags": [
+     "rate-limit:enabled"
+    ]
+   },
+   "x-compliance-level": "full"
+  }
+ }
+}
