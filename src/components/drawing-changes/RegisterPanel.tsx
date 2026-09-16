@@ -1,0 +1,553 @@
+"use client";
+
+import React, { useMemo, useRef, useCallback } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import {
+  ChevronDown,
+  ChevronRight,
+  AlertTriangle,
+} from "lucide-react";
+import VariationsSummary from "../VariationsSummary";
+import type {
+  ChangeRow,
+  DrawingPair,
+  RevisionInfo,
+  ScanInfo,
+  SortOption,
+  ReviewStatus,
+  DrawingGroupData,
+  RevisionGroupData,
+  RegisterFlatRow,
+} from "./types";
+import { SEV_ORDER, RISK_ORDER } from "./constants";
+import { RegisterToolbar } from "./RegisterToolbar";
+import { DrawingGroupHeader } from "./DrawingGroupHeader";
+import { AvailableRevisions } from "./AvailableRevisions";
+import { ChangeRowItem } from "./ChangeRowItem";
+import { RegisterSkeleton } from "./Skeletons";
+
+interface RegisterPanelProps {
+  companyId: string;
+  projectId: string;
+  projectName: string;
+  projects: Array<{ id: number; name: string; display_name: string }>;
+  changes: ChangeRow[];
+  scan: ScanInfo;
+  allScans: ScanInfo[];
+  drawingPairs: DrawingPair[];
+  expandedResults: Set<string>;
+  expandedDrawings: Set<string>;
+  highSeverityOnly: boolean;
+  variationsOnly: boolean;
+  sortBy: SortOption;
+  selectMode: boolean;
+  selectedChangeIds: Set<string>;
+  deleting: boolean;
+  deepScanning: Set<string>;
+  inlineScanning: string | null;
+  loading: boolean;
+  onToggleResultSection: (discipline: string) => void;
+  onToggleDrawingExpanded: (key: string) => void;
+  onExpandAllResults: () => void;
+  onCollapseAllResults: () => void;
+  onSetHighSeverityOnly: (v: boolean) => void;
+  onSetVariationsOnly: (v: boolean) => void;
+  onSetSortBy: (v: SortOption) => void;
+  onSetSelectMode: (v: boolean) => void;
+  onClearSelection: () => void;
+  onToggleChangeSelection: (id: string) => void;
+  onSelectDrawingChanges: (ids: string[], selected: boolean) => void;
+  onUpdateStatus: (changeIds: string[], status: ReviewStatus) => void;
+  onRaiseChangeEvent: (ids: string[], discipline: string, title: string) => void;
+  onDeepScan: (num: string, title: string, disc: string, oldRev: RevisionInfo, newRev: RevisionInfo) => void;
+  onInlineScan: (pair: DrawingPair, from: RevisionInfo, to: RevisionInfo, discipline: string) => void;
+  onGoToScan: () => void;
+  onLoadScan: (scanId: string) => void;
+  onLoadAllResults: () => void;
+  onRemoveDuplicates: () => void;
+  onClearResults: () => void;
+  onDeleteSelected: () => void;
+  onSetExpandedDrawings: React.Dispatch<React.SetStateAction<Set<string>>>;
+}
+
+export const RegisterPanel = React.memo(function RegisterPanel({
+  companyId,
+  projectId,
+  projectName,
+  projects,
+  changes,
+  scan,
+  allScans,
+  drawingPairs,
+  expandedResults,
+  expandedDrawings,
+  highSeverityOnly,
+  variationsOnly,
+  sortBy,
+  selectMode,
+  selectedChangeIds,
+  deleting,
+  deepScanning,
+  inlineScanning,
+  loading,
+  onToggleResultSection,
+  onToggleDrawingExpanded,
+  onExpandAllResults,
+  onCollapseAllResults,
+  onSetHighSeverityOnly,
+  onSetVariationsOnly,
+  onSetSortBy,
+  onSetSelectMode,
+  onClearSelection,
+  onToggleChangeSelection,
+  onSelectDrawingChanges,
+  onUpdateStatus,
+  onRaiseChangeEvent,
+  onDeepScan,
+  onInlineScan,
+  onGoToScan,
+  onLoadScan,
+  onLoadAllResults,
+  onRemoveDuplicates,
+  onClearResults,
+  onDeleteSelected,
+  onSetExpandedDrawings,
+}: RegisterPanelProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  // Filtered + sorted changes
+  const filteredChanges = useMemo(() => {
+    let filtered = changes;
+    if (highSeverityOnly) filtered = filtered.filter((c) => c.severity === "high");
+    if (variationsOnly) filtered = filtered.filter((c) => c.variation_risk === "likely_variation");
+
+    if (sortBy === "severity") {
+      filtered = [...filtered].sort((a, b) => (SEV_ORDER[a.severity] ?? 9) - (SEV_ORDER[b.severity] ?? 9));
+    } else if (sortBy === "variation_risk") {
+      filtered = [...filtered].sort(
+        (a, b) => (RISK_ORDER[a.variation_risk ?? ""] ?? 9) - (RISK_ORDER[b.variation_risk ?? ""] ?? 9)
+      );
+    } else if (sortBy === "change_type") {
+      filtered = [...filtered].sort((a, b) => a.change_type.localeCompare(b.change_type));
+    }
+    return filtered;
+  }, [changes, highSeverityOnly, variationsOnly, sortBy]);
+
+  // Group by discipline
+  const filteredByDiscipline = useMemo(() => {
+    const map: Record<string, ChangeRow[]> = {};
+    for (const c of filteredChanges) {
+      const disc = c.discipline || "Other";
+      if (!map[disc]) map[disc] = [];
+      map[disc].push(c);
+    }
+    return map;
+  }, [filteredChanges]);
+
+  // Build drawing groups per discipline
+  const drawingGroupsByDiscipline = useMemo(() => {
+    const result: Record<string, DrawingGroupData[]> = {};
+    for (const [disc, disciplineChanges] of Object.entries(filteredByDiscipline)) {
+      const drawingOrder: DrawingGroupData[] = [];
+      const drawingLookup = new Map<string, DrawingGroupData>();
+
+      for (const c of disciplineChanges) {
+        let dg = drawingLookup.get(c.drawing_number);
+        if (!dg) {
+          dg = {
+            number: c.drawing_number,
+            title: c.drawing_title,
+            totalChanges: 0,
+            totalHigh: 0,
+            totalVariations: 0,
+            totalNeedReview: 0,
+            hasEvent: false,
+            revisions: [],
+          };
+          drawingLookup.set(c.drawing_number, dg);
+          drawingOrder.push(dg);
+        }
+        dg.totalChanges++;
+        if (c.severity === "high") dg.totalHigh++;
+        if (c.variation_risk === "likely_variation") dg.totalVariations++;
+        if (!c.review_status || c.review_status === "needs_review") dg.totalNeedReview++;
+        if (c.change_event_id) dg.hasEvent = true;
+
+        const revKey = `${c.old_revision}|${c.new_revision}`;
+        let rg = dg.revisions.find((r) => r.revKey === revKey);
+        if (!rg) {
+          rg = { revKey, rev: `${c.old_revision} \u2192 ${c.new_revision}`, changes: [] };
+          dg.revisions.push(rg);
+        }
+        rg.changes.push(c);
+      }
+      result[disc] = drawingOrder;
+    }
+    return result;
+  }, [filteredByDiscipline]);
+
+  // Build flat row array
+  const flatRows = useMemo(() => {
+    const rows: RegisterFlatRow[] = [];
+    const disciplines = Object.keys(filteredByDiscipline).sort();
+
+    for (const discipline of disciplines) {
+      const disciplineChanges = filteredByDiscipline[discipline];
+      const discHigh = disciplineChanges.filter((c) => c.severity === "high").length;
+      const drawingGroups = drawingGroupsByDiscipline[discipline] ?? [];
+
+      rows.push({
+        type: "discipline",
+        key: `disc-${discipline}`,
+        discipline,
+        changeCount: disciplineChanges.length,
+        highCount: discHigh,
+        drawingCount: drawingGroups.length,
+      });
+
+      if (!expandedResults.has(discipline)) continue;
+
+      for (const dg of drawingGroups) {
+        const hasMultipleRevs = dg.revisions.length > 1;
+        rows.push({
+          type: "drawing",
+          key: `draw-${discipline}-${dg.number}`,
+          data: dg,
+          discipline,
+          hasMultipleRevs,
+        });
+
+        if (!expandedDrawings.has(dg.number)) continue;
+
+        // Revisions panel
+        const pair = drawingPairs.find((p) => p.drawing_number === dg.number);
+        if (pair && pair.revisions && pair.revisions.length >= 2) {
+          rows.push({
+            type: "revisions-panel",
+            key: `revpanel-${dg.number}`,
+            drawingNumber: dg.number,
+            discipline,
+          });
+        }
+
+        // Revision groups
+        for (const rg of dg.revisions) {
+          if (hasMultipleRevs) {
+            const rgHigh = rg.changes.filter((c) => c.severity === "high").length;
+            rows.push({
+              type: "revision-header",
+              key: `revhdr-${dg.number}-${rg.revKey}`,
+              rev: rg.rev,
+              changeCount: rg.changes.length,
+              highCount: rgHigh,
+            });
+          }
+          for (const change of rg.changes) {
+            rows.push({
+              type: "change",
+              key: `change-${change.id}`,
+              change,
+            });
+          }
+        }
+      }
+    }
+    return rows;
+  }, [filteredByDiscipline, drawingGroupsByDiscipline, expandedResults, expandedDrawings, drawingPairs]);
+
+  const virtualizer = useVirtualizer({
+    count: flatRows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => {
+      switch (flatRows[index].type) {
+        case "discipline":
+          return 48;
+        case "drawing":
+          return 44;
+        case "revisions-panel":
+          return 80;
+        case "revision-header":
+          return 36;
+        case "change":
+          return 64;
+        default:
+          return 48;
+      }
+    },
+    overscan: 10,
+  });
+
+  const hasBaseline = changes.some((c) => c.variation_risk !== null && c.variation_risk !== undefined);
+  const variationTotal = changes.filter((c) => c.variation_risk === "likely_variation").length;
+  const unscannedCount = drawingPairs.filter((d) => d.status !== "scanned").length;
+  const currentProjectName = projects.find((p) => String(p.id) === projectId)?.name ?? "Project";
+
+  const handleExpandAll = useCallback(() => {
+    onExpandAllResults();
+    onSetExpandedDrawings(new Set(filteredChanges.map((c) => c.drawing_number)));
+  }, [onExpandAllResults, onSetExpandedDrawings, filteredChanges]);
+
+  const handleCollapseAll = useCallback(() => {
+    onCollapseAllResults();
+    onSetExpandedDrawings(new Set());
+  }, [onCollapseAllResults, onSetExpandedDrawings]);
+
+  if (loading) {
+    return <RegisterSkeleton />;
+  }
+
+  const renderRow = (row: RegisterFlatRow) => {
+    switch (row.type) {
+      case "discipline": {
+        const isExpanded = expandedResults.has(row.discipline);
+        return (
+          <div
+            onClick={() => onToggleResultSection(row.discipline)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 16px",
+              backgroundColor: "var(--hp-warm-100)",
+              cursor: "pointer",
+              userSelect: "none",
+              borderBottom: "1px solid var(--hp-border)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {isExpanded ? (
+                <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} />
+              ) : (
+                <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} />
+              )}
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text-primary)" }}>{row.discipline}</span>
+              <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
+                ({row.changeCount} changes · {row.drawingCount} drawings)
+              </span>
+            </div>
+            {row.highCount > 0 && (
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  borderRadius: 999,
+                  padding: "2px 8px",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  backgroundColor: "var(--hp-critical-bg)",
+                  color: "var(--hp-critical)",
+                }}
+              >
+                <AlertTriangle size={10} /> {row.highCount}
+              </span>
+            )}
+          </div>
+        );
+      }
+      case "drawing": {
+        const pair = drawingPairs.find((p) => p.drawing_number === row.data.number);
+        return (
+          <DrawingGroupHeader
+            data={row.data}
+            discipline={row.discipline}
+            isExpanded={expandedDrawings.has(row.data.number)}
+            hasMultipleRevs={row.hasMultipleRevs}
+            companyId={companyId}
+            projectId={projectId}
+            selectMode={selectMode}
+            selectedChangeIds={selectedChangeIds}
+            deepScanning={deepScanning}
+            drawingPair={pair}
+            onToggle={() => onToggleDrawingExpanded(row.data.number)}
+            onSelectDrawingChanges={onSelectDrawingChanges}
+            onRaiseChangeEvent={onRaiseChangeEvent}
+            onDeepScan={onDeepScan}
+          />
+        );
+      }
+      case "revisions-panel": {
+        const pair = drawingPairs.find((p) => p.drawing_number === row.drawingNumber);
+        const drawingGroup = drawingGroupsByDiscipline[row.discipline]?.find((dg) => dg.number === row.drawingNumber);
+        const scannedRevKeys = new Set(drawingGroup?.revisions.map((r) => r.revKey) ?? []);
+        return (
+          <AvailableRevisions
+            drawingNumber={row.drawingNumber}
+            drawingPair={pair}
+            scannedRevKeys={scannedRevKeys}
+            discipline={row.discipline}
+            inlineScanning={inlineScanning}
+            onInlineScan={onInlineScan}
+          />
+        );
+      }
+      case "revision-header":
+        return (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "6px 16px 6px 64px",
+              borderTop: "1px solid var(--hp-border)",
+              backgroundColor: "var(--hp-warm-100)",
+            }}
+          >
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-text-secondary)" }}>Rev {row.rev}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{row.changeCount} changes</span>
+              {row.highCount > 0 && (
+                <span
+                  style={{
+                    borderRadius: 999,
+                    padding: "1px 6px",
+                    fontSize: 10,
+                    fontWeight: 500,
+                    backgroundColor: "var(--hp-critical-bg)",
+                    color: "var(--hp-critical)",
+                  }}
+                >
+                  {row.highCount} high
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      case "change":
+        return (
+          <ChangeRowItem
+            change={row.change}
+            selectMode={selectMode}
+            isSelected={selectedChangeIds.has(row.change.id)}
+            onToggleSelection={onToggleChangeSelection}
+            onUpdateStatus={onUpdateStatus}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <>
+      {/* Variations Summary */}
+      {hasBaseline && (variationTotal > 0 || changes.some((c) => c.variation_risk === "unclear")) && (
+        <VariationsSummary changes={changes} projectName={currentProjectName} />
+      )}
+
+      {/* Unscanned drawings banner */}
+      {unscannedCount > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderRadius: 8,
+            border: "1px solid var(--hp-significant-bg)",
+            backgroundColor: "var(--hp-significant-bg)",
+            padding: "10px 16px",
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <AlertTriangle size={14} style={{ color: "var(--hp-significant)" }} />
+            <span style={{ fontSize: 13, color: "var(--hp-significant)", fontWeight: 500 }}>
+              {unscannedCount} drawing{unscannedCount !== 1 ? "s have" : " has"} new revisions to scan
+            </span>
+          </div>
+          <button
+            onClick={onGoToScan}
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#fff",
+              backgroundColor: "var(--hp-significant)",
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 14px",
+              cursor: "pointer",
+            }}
+          >
+            Scan Now
+          </button>
+        </div>
+      )}
+
+      {/* Toolbar */}
+      <RegisterToolbar
+        companyId={companyId}
+        projectId={projectId}
+        changes={changes}
+        filteredChangesCount={filteredChanges.length}
+        scan={scan}
+        allScans={allScans}
+        highSeverityOnly={highSeverityOnly}
+        variationsOnly={variationsOnly}
+        sortBy={sortBy}
+        selectMode={selectMode}
+        selectedChangeIds={selectedChangeIds}
+        deleting={deleting}
+        drawingPairsUnscannedCount={unscannedCount}
+        hasBaseline={hasBaseline}
+        onSetHighSeverityOnly={onSetHighSeverityOnly}
+        onSetVariationsOnly={onSetVariationsOnly}
+        onSetSortBy={onSetSortBy}
+        onGoToScan={onGoToScan}
+        onLoadScan={onLoadScan}
+        onLoadAllResults={onLoadAllResults}
+        onRemoveDuplicates={onRemoveDuplicates}
+        onClearResults={onClearResults}
+        onDeleteSelected={onDeleteSelected}
+        onExpandAll={handleExpandAll}
+        onCollapseAll={handleCollapseAll}
+        onSetSelectMode={onSetSelectMode}
+        onClearSelection={onClearSelection}
+      />
+
+      {/* Change list */}
+      {filteredChanges.length === 0 ? (
+        <div
+          style={{
+            borderRadius: 8,
+            border: "1px solid var(--hp-border)",
+            padding: 32,
+            textAlign: "center",
+            fontSize: 13,
+            color: "var(--hp-text-secondary)",
+          }}
+        >
+          {highSeverityOnly ? "No high severity changes." : "No changes detected."}
+        </div>
+      ) : (
+        <div
+          ref={parentRef}
+          style={{
+            overflow: "auto",
+            height: "calc(100vh - 280px)",
+            borderRadius: 8,
+            border: "1px solid var(--hp-border)",
+          }}
+        >
+          <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
+            {virtualizer.getVirtualItems().map((vi) => (
+              <div
+                key={flatRows[vi.index].key}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  transform: `translateY(${vi.start}px)`,
+                }}
+                ref={virtualizer.measureElement}
+                data-index={vi.index}
+              >
+                {renderRow(flatRows[vi.index])}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+});
