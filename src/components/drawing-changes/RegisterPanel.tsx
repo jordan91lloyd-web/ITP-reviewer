@@ -8,7 +8,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { KpiStrip, type KpiFilter } from "./KpiStrip";
-import { friendlyDiscipline } from "./disciplineNames";
 import type {
   ChangeRow,
   DrawingPair,
@@ -327,7 +326,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
           <button
             onClick={() => onToggleResultSection(row.discipline)}
             aria-expanded={isExpanded}
-            aria-label={`${friendlyDiscipline(row.discipline)} - ${row.changeCount} changes, ${row.drawingCount} drawings`}
+            aria-label={`${row.discipline} - ${row.changeCount} changes, ${row.drawingCount} drawings`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -349,7 +348,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
               ) : (
                 <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} aria-hidden="true" />
               )}
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text-primary)" }}>{friendlyDiscipline(row.discipline)}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text-primary)" }}>{row.discipline}</span>
               <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
                 ({row.changeCount} changes · {row.drawingCount} drawings)
               </span>

@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import type { DrawingPair, RevisionInfo, ScanRecord, ChangeRow, PickerFlatRow } from "./types";
 import { fmtDate } from "./constants";
-import { friendlyDiscipline } from "./disciplineNames";
 import { DrawingListSkeleton } from "./Skeletons";
 
 interface ScanPanelProps {
@@ -59,7 +58,7 @@ const DisciplineHeader = React.memo(function DisciplineHeader({
   onToggle: () => void;
   onToggleSelection: () => void;
 }) {
-  const friendly = friendlyDiscipline(discipline);
+  const friendly = discipline;
   const checkboxId = `disc-chk-${discipline}`;
   return (
     <div
@@ -622,7 +621,7 @@ export const ScanPanel = React.memo(function ScanPanel({
               marginTop: 4,
             }}
           >
-            {friendlyDiscipline(discipline)}: Show more ({pairs.length - pageSize} remaining)
+            {discipline}: Show more ({pairs.length - pageSize} remaining)
           </button>
         );
       })}
