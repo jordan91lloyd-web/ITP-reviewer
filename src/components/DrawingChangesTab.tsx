@@ -207,11 +207,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [baselineExpanded, setBaselineExpanded] = useState(false);
   const [baselineUploading, setBaselineUploading] = useState(false);
   const [baselineProgressText, setBaselineProgressText] = useState("");
-  const [baselineBatches, setBaselineBatches] = useState<Array<{
-    label: string; timestamp: string; total: number;
-    processed: number; alreadyDone: number; skipped: number; failed: number;
-    errors: string[];
-  }>>([]);
   const [expandedBaselineDoc, setExpandedBaselineDoc] = useState<string | null>(null);
   const baselineFileRef = useRef<HTMLInputElement>(null);
   const [showProcoreBrowser, setShowProcoreBrowser] = useState(false);
@@ -1121,18 +1116,6 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     if (errors.length > 0) parts.push(errors.slice(0, 2).join(" | "));
                     setBaselineProgressText(parts.join(" · "));
 
-                    // Save batch to processing log
-                    setBaselineBatches((prev) => [...prev, {
-                      label,
-                      timestamp: new Date().toLocaleTimeString(),
-                      total: files.length,
-                      processed: newlyProcessed,
-                      alreadyDone,
-                      skipped,
-                      failed,
-                      errors: errors.slice(0, 5),
-                    }]);
-
                     setBaselineExpanded(true);
                     fetchBaseline(projectId);
                   }}
@@ -1190,23 +1173,36 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                           {totalSize > 0 && <span>{(totalSize / 1024 / 1024).toFixed(1)} MB total</span>}
                         </div>
 
-                        {/* Processing log */}
-                        {baselineBatches.length > 0 && (
-                          <div style={{ marginTop: 8, borderTop: "1px solid var(--hp-border)", paddingTop: 8 }}>
-                            <div style={{ fontSize: 10, fontWeight: 600, color: "var(--hp-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Processing log</div>
-                            {baselineBatches.map((batch, bi) => (
-                              <div key={bi} style={{ fontSize: 11, color: "var(--hp-text-secondary)", marginBottom: 2, display: "flex", gap: 8 }}>
-                                <span style={{ color: "var(--hp-text-muted)", flexShrink: 0 }}>{batch.timestamp}</span>
-                                <span style={{ fontWeight: 500 }}>{batch.label}</span>
-                                <span>{batch.total} files</span>
-                                {batch.processed > 0 && <span style={{ color: "var(--hp-compliant)" }}>{batch.processed} new</span>}
-                                {batch.alreadyDone > 0 && <span>{batch.alreadyDone} existing</span>}
-                                {batch.skipped > 0 && <span>{batch.skipped} skipped</span>}
-                                {batch.failed > 0 && <span style={{ color: "var(--hp-critical)" }}>{batch.failed} failed</span>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        {/* Processing timeline — derived from persisted document records */}
+                        {(() => {
+                          // Group docs by date (YYYY-MM-DD from created_at)
+                          const byDate = new Map<string, { processed: number; failed: number; skipped: number; items: number }>();
+                          for (const d of baselineDocs) {
+                            const day = d.created_at ? d.created_at.slice(0, 10) : "unknown";
+                            const entry = byDate.get(day) ?? { processed: 0, failed: 0, skipped: 0, items: 0 };
+                            if (d.status === "processed") { entry.processed++; entry.items += d.item_count ?? 0; }
+                            else if (d.status === "failed") entry.failed++;
+                            else if (d.status === "skipped") entry.skipped++;
+                            byDate.set(day, entry);
+                          }
+                          if (byDate.size === 0) return null;
+                          // Sort dates descending (most recent first)
+                          const sortedDates = [...byDate.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+                          return (
+                            <div style={{ marginTop: 8, borderTop: "1px solid var(--hp-border)", paddingTop: 8 }}>
+                              <div style={{ fontSize: 10, fontWeight: 600, color: "var(--hp-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Processing history</div>
+                              {sortedDates.map(([date, stats]) => (
+                                <div key={date} style={{ fontSize: 11, color: "var(--hp-text-secondary)", marginBottom: 2, display: "flex", gap: 8 }}>
+                                  <span style={{ color: "var(--hp-text-muted)", flexShrink: 0, width: 72 }}>{date}</span>
+                                  <span>{stats.processed + stats.failed + stats.skipped} file{stats.processed + stats.failed + stats.skipped !== 1 ? "s" : ""}</span>
+                                  {stats.processed > 0 && <span style={{ color: "var(--hp-compliant)" }}>{stats.processed} processed ({stats.items} items)</span>}
+                                  {stats.failed > 0 && <span style={{ color: "var(--hp-critical)" }}>{stats.failed} failed</span>}
+                                  {stats.skipped > 0 && <span>{stats.skipped} skipped</span>}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })()}
