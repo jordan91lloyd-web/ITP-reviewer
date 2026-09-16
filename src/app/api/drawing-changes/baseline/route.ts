@@ -503,8 +503,8 @@ export async function PATCH(request: NextRequest) {
   const procoreDocs = retryDocs.filter((d) => d.source === "procore" && d.procore_document_id);
   const uploadDocs = retryDocs.filter((d) => d.source !== "procore" || !d.procore_document_id);
 
-  // Process max 3 per request to stay within the 300s timeout
-  const BATCH_SIZE = 3;
+  // Process 1 per request so the frontend can show progress after each doc
+  const BATCH_SIZE = 1;
   const batch = procoreDocs.slice(0, BATCH_SIZE);
   const remaining = procoreDocs.length - batch.length;
 
