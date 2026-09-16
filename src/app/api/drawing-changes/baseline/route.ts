@@ -403,6 +403,75 @@ export async function GET(request: NextRequest) {
 }
 
 // ── PATCH: Retry failed/skipped baseline documents ────────────────────────
+// Procore download URLs are presigned S3 URLs that expire. To retry, we must:
+// 1. GET /rest/v1.0/documents/{id} to find the folder_id
+// 2. GET /rest/v1.0/folders/{folder_id} to get fresh file_versions with new URLs
+// 3. Match our file by ID in the folder's files array
+
+function resolveFileUrl(f: Record<string, unknown>): string {
+  const versions = f.file_versions as Record<string, unknown>[] | undefined;
+  if (Array.isArray(versions) && versions.length > 0) {
+    const latest = versions[versions.length - 1];
+    if (latest.url && typeof latest.url === "string") return latest.url;
+    if (latest.download_url && typeof latest.download_url === "string") return latest.download_url;
+    const ps = latest.prostore_file as Record<string, unknown> | undefined;
+    if (ps?.url && typeof ps.url === "string") return ps.url;
+    const first = versions[0];
+    if (first.url && typeof first.url === "string") return first.url;
+    if (first.download_url && typeof first.download_url === "string") return first.download_url;
+    const ps2 = first.prostore_file as Record<string, unknown> | undefined;
+    if (ps2?.url && typeof ps2.url === "string") return ps2.url;
+  }
+  if (f.url && typeof f.url === "string") return f.url;
+  if (f.download_url && typeof f.download_url === "string") return f.download_url;
+  return "";
+}
+
+async function getFreshDownloadUrl(
+  procoreDocId: number,
+  projectId: string,
+  companyId: string,
+  token: string,
+): Promise<{ url: string; error?: string }> {
+  const headers = { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId };
+
+  // Step 1: Get document metadata to find the folder
+  const docRes = await fetch(
+    `${PROCORE_BASE}/rest/v1.0/documents/${procoreDocId}?project_id=${projectId}`,
+    { headers }
+  );
+  if (!docRes.ok) {
+    return { url: "", error: `Document lookup failed (HTTP ${docRes.status})` };
+  }
+  const docData = await docRes.json();
+  const folder = docData.folder as Record<string, unknown> | undefined;
+  const folderId = folder?.id as number | undefined;
+  if (!folderId) {
+    return { url: "", error: "Document has no folder — cannot resolve download URL" };
+  }
+
+  // Step 2: Fetch the folder to get fresh file_versions with new presigned URLs
+  const folderRes = await fetch(
+    `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
+    { headers }
+  );
+  if (!folderRes.ok) {
+    return { url: "", error: `Folder lookup failed (HTTP ${folderRes.status})` };
+  }
+  const folderData = await folderRes.json();
+  const files = Array.isArray(folderData.files) ? folderData.files : [];
+
+  // Step 3: Find our file by ID and extract the fresh URL
+  const match = files.find((f: Record<string, unknown>) => (f.id as number) === procoreDocId);
+  if (!match) {
+    return { url: "", error: `File ${procoreDocId} not found in folder ${folderId}` };
+  }
+  const freshUrl = resolveFileUrl(match);
+  if (!freshUrl) {
+    return { url: "", error: "File found but no download URL in file_versions" };
+  }
+  return { url: freshUrl };
+}
 
 export async function PATCH(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
@@ -429,8 +498,13 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (!retryDocs || retryDocs.length === 0) {
-    return NextResponse.json({ retried: 0, message: "No retryable Procore documents found" });
+    return NextResponse.json({ retried: 0, remaining: 0, message: "No retryable Procore documents found" });
   }
+
+  // Process max 3 per request to stay within the 300s timeout
+  const BATCH_SIZE = 3;
+  const batch = retryDocs.slice(0, BATCH_SIZE);
+  const remaining = retryDocs.length - batch.length;
 
   // Get Procore access token
   const cookieStore = await cookies();
@@ -441,54 +515,26 @@ export async function PATCH(request: NextRequest) {
 
   const results: { document_name: string; status: string; item_count?: number; error?: string }[] = [];
 
-  for (const doc of retryDocs) {
+  for (const doc of batch) {
     try {
-      // Fetch fresh download URL from Procore
-      const docRes = await fetch(
-        `${PROCORE_BASE}/rest/v1.0/files/${doc.procore_document_id}?project_id=${projectId}`,
-        { headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId } }
+      // Get fresh download URL via folder lookup
+      const { url: downloadUrl, error: urlError } = await getFreshDownloadUrl(
+        doc.procore_document_id, projectId, companyId, token
       );
-
-      let docData: Record<string, unknown>;
-      if (!docRes.ok) {
-        // Try the documents endpoint instead
-        const docRes2 = await fetch(
-          `${PROCORE_BASE}/rest/v1.0/documents/${doc.procore_document_id}?project_id=${projectId}`,
-          { headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId } }
-        );
-        if (!docRes2.ok) {
-          await supabase.from("baseline_documents").update({ error_message: `Retry failed: could not fetch document info (HTTP ${docRes2.status})` }).eq("id", doc.id);
-          results.push({ document_name: doc.document_name, status: "failed", error: `Could not fetch document (HTTP ${docRes2.status})` });
-          continue;
-        }
-        docData = await docRes2.json();
-      } else {
-        docData = await docRes.json();
-      }
-
-      // Extract download URL
-      const vDoc = docData.viewable_document as Record<string, unknown> | undefined;
-      const pFile = docData.prostore_file as Record<string, unknown> | undefined;
-      const fFile = docData.file as Record<string, unknown> | undefined;
-      const downloadUrl = (docData.download_url as string | undefined)
-        ?? (vDoc?.url as string | undefined)
-        ?? (pFile?.url as string | undefined)
-        ?? (fFile?.url as string | undefined);
-
       if (!downloadUrl) {
-        await supabase.from("baseline_documents").update({ error_message: "Retry failed: no download URL available" }).eq("id", doc.id);
-        results.push({ document_name: doc.document_name, status: "failed", error: "No download URL" });
+        await supabase.from("baseline_documents").update({ error_message: `Retry: ${urlError}` }).eq("id", doc.id);
+        results.push({ document_name: doc.document_name, status: "failed", error: urlError });
         continue;
       }
 
-      // Download the file
+      // Download the file (S3 presigned URL — no auth header)
       const isS3 = !downloadUrl.includes("procore.com") || downloadUrl.includes("s3.");
       const dlHeaders: Record<string, string> = {};
       if (!isS3) dlHeaders.Authorization = `Bearer ${token}`;
 
       const dlRes = await fetch(downloadUrl, { headers: dlHeaders });
       if (!dlRes.ok) {
-        await supabase.from("baseline_documents").update({ error_message: `Retry failed: download failed (HTTP ${dlRes.status})` }).eq("id", doc.id);
+        await supabase.from("baseline_documents").update({ error_message: `Retry: download failed (HTTP ${dlRes.status})` }).eq("id", doc.id);
         results.push({ document_name: doc.document_name, status: "failed", error: `Download failed (HTTP ${dlRes.status})` });
         continue;
       }
@@ -498,6 +544,7 @@ export async function PATCH(request: NextRequest) {
 
       if (fileSize > MAX_FILE_SIZE) {
         await supabase.from("baseline_documents").update({
+          status: "skipped",
           error_message: `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB, max 32 MB)`,
           file_size: fileSize,
         }).eq("id", doc.id);
@@ -535,6 +582,7 @@ export async function PATCH(request: NextRequest) {
       // Check image size limit
       if ((mimeType === "image/jpeg" || mimeType === "image/png") && buffer.length > MAX_IMAGE_SIZE) {
         await supabase.from("baseline_documents").update({
+          status: "skipped",
           error_message: `Image too large (${(buffer.length / 1024 / 1024).toFixed(1)} MB, max 5 MB for images)`,
           file_size: buffer.length,
         }).eq("id", doc.id);
@@ -559,13 +607,13 @@ export async function PATCH(request: NextRequest) {
       results.push({ document_name: doc.document_name, status: "processed", item_count: items.length });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      await supabase.from("baseline_documents").update({ status: "failed", error_message: `Retry failed: ${msg}` }).eq("id", doc.id);
+      await supabase.from("baseline_documents").update({ status: "failed", error_message: `Retry: ${msg}` }).eq("id", doc.id);
       results.push({ document_name: doc.document_name, status: "failed", error: msg });
     }
   }
 
   const succeeded = results.filter((r) => r.status === "processed").length;
-  return NextResponse.json({ retried: results.length, succeeded, results });
+  return NextResponse.json({ retried: results.length, succeeded, remaining, results });
 }
 
 // ── DELETE: Remove a baseline document ────────────────────────────────────

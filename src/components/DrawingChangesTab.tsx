@@ -285,24 +285,38 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     const failedProcore = baselineDocs.filter((d) => (d.status === "failed" || d.status === "skipped") && d.source === "procore");
     if (failedProcore.length === 0) return;
     setBaselineUploading(true);
-    setBaselineProgressText(`Retrying ${failedProcore.length} document${failedProcore.length !== 1 ? "s" : ""}...`);
+    let totalSucceeded = 0;
+    let totalRetried = 0;
+    let totalFailed = 0;
+    let remaining = failedProcore.length;
+
     try {
-      const res = await fetch("/api/drawing-changes/baseline", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company_id: company_id, project_id: projectId }),
-      });
-      const data = await res.json();
-      if (data.succeeded > 0 && data.succeeded === data.retried) {
-        setBaselineProgressText(`All ${data.succeeded} document${data.succeeded !== 1 ? "s" : ""} processed successfully`);
-      } else if (data.succeeded > 0) {
-        setBaselineProgressText(`${data.succeeded} of ${data.retried} processed, ${data.retried - data.succeeded} still failed`);
-      } else if (data.retried > 0) {
-        setBaselineProgressText(`All ${data.retried} document${data.retried !== 1 ? "s" : ""} failed again`);
+      // Process in batches of 3 (server-side limit per request)
+      while (remaining > 0) {
+        setBaselineProgressText(`Retrying... ${totalSucceeded} done, ${remaining} remaining`);
+        const res = await fetch("/api/drawing-changes/baseline", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ company_id: company_id, project_id: projectId }),
+        });
+        const data = await res.json();
+        totalSucceeded += data.succeeded ?? 0;
+        totalRetried += data.retried ?? 0;
+        totalFailed += (data.retried ?? 0) - (data.succeeded ?? 0);
+        remaining = data.remaining ?? 0;
+        await fetchBaseline(projectId);
+        if ((data.retried ?? 0) === 0) break; // no more to retry
+      }
+
+      if (totalSucceeded > 0 && totalFailed === 0) {
+        setBaselineProgressText(`All ${totalSucceeded} document${totalSucceeded !== 1 ? "s" : ""} processed successfully`);
+      } else if (totalSucceeded > 0) {
+        setBaselineProgressText(`${totalSucceeded} processed, ${totalFailed} still failed`);
+      } else if (totalRetried > 0) {
+        setBaselineProgressText(`All ${totalRetried} document${totalRetried !== 1 ? "s" : ""} failed again`);
       } else {
         setBaselineProgressText("No retryable documents found");
       }
-      await fetchBaseline(projectId);
     } catch {
       setBaselineProgressText("Retry request failed");
     } finally {
