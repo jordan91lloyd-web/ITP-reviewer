@@ -13,7 +13,6 @@ import SiteComplianceTab from "@/components/SiteComplianceTab";
 import HoldPointTab from "@/components/HoldPointTab";
 import InsightsTab from "@/components/InsightsTab";
 import QueuePanel from "@/components/QueuePanel";
-import ResourcingTab from "@/components/ResourcingTab";
 import ReportTab from "@/components/ReportTab";
 import ActionPlansPage from "@/app/action-plans/page";
 import DrawingChangesTab from "@/components/DrawingChangesTab";
@@ -687,7 +686,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "resourcing" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [visitedTabs, setVisitedTabs] = useState<Set<DashboardView>>(new Set(["itp_reviews"]));
   const [insightsFetched, setInsightsFetched] = useState(false);
@@ -1601,7 +1600,6 @@ export default function DashboardPage() {
           ["itp_reviews",     "ITP Reviews",     null],
           ["site_compliance", "Site Compliance", null],
           ["hold_points",     "Hold Points",     null],
-          ["resourcing",      "Resourcing",      null],
           ["report",          "Report",          null],
           ["queue",           "Queue",           null],
           ["action_plans",   "Action Plans",    null],
@@ -1717,10 +1715,6 @@ export default function DashboardPage() {
 
       {visitedTabs.has("queue") && <div style={{ display: dashboardView === "queue" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <QueuePanel jobs={queueJobs} onDismiss={(job_id) => setQueueJobs(prev => prev.filter(j => j.job_id !== job_id))} />
-      </div>}
-
-      {visitedTabs.has("resourcing") && <div style={{ display: dashboardView === "resourcing" ? undefined : "none", flex: 1, overflow: "hidden" }}>
-        <ResourcingTab company_id={selectedCompany?.id ?? null} projects={projects} />
       </div>}
 
       {visitedTabs.has("action_plans") && <div style={{ display: dashboardView === "action_plans" ? undefined : "none", flex: 1, overflow: "auto" }}>
