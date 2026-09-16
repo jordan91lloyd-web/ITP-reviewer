@@ -40,6 +40,35 @@ interface ChangeRow {
   description: string;
   location_on_drawing: string | null;
   severity: string;
+  variation_risk: string | null;
+  variation_note: string | null;
+  review_status: string | null;
+}
+
+const SEV_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+const RISK_ORDER: Record<string, number> = { likely_variation: 0, unclear: 1, within_scope: 2 };
+
+function sortRows(rows: ChangeRow[], sort: string): ChangeRow[] {
+  const copy = [...rows];
+  switch (sort) {
+    case "severity":
+      return copy.sort((a, b) => (SEV_ORDER[a.severity] ?? 9) - (SEV_ORDER[b.severity] ?? 9));
+    case "variation_risk":
+      return copy.sort((a, b) => (RISK_ORDER[a.variation_risk ?? ""] ?? 9) - (RISK_ORDER[b.variation_risk ?? ""] ?? 9));
+    case "discipline":
+      return copy.sort((a, b) => a.discipline.localeCompare(b.discipline) || a.drawing_number.localeCompare(b.drawing_number));
+    case "change_type":
+      return copy.sort((a, b) => a.change_type.localeCompare(b.change_type));
+    default:
+      return copy;
+  }
+}
+
+function filterRows(rows: ChangeRow[], severity?: string, variationRisk?: string): ChangeRow[] {
+  let result = rows;
+  if (severity) result = result.filter((r) => r.severity === severity);
+  if (variationRisk) result = result.filter((r) => r.variation_risk === variationRisk);
+  return result;
 }
 
 interface ScanRow {
@@ -101,12 +130,17 @@ const s = StyleSheet.create({
   rowHighSeverity: {
     backgroundColor: "#FEF2F2",
   },
-  typeCell: { width: 70 },
-  descCell: { flex: 1, paddingRight: 8 },
+  typeCell: { width: 65 },
+  descCell: { flex: 1, paddingRight: 6 },
   locCell: { width: 120, fontSize: 8, color: "#78716C" },
-  sevCell: { width: 50, textAlign: "right" },
+  sevCell: { width: 45, textAlign: "center" },
+  riskCell: { width: 75, textAlign: "center" },
+  statusCell: { width: 65, textAlign: "center" },
   typePill: { fontSize: 7, fontWeight: "bold", textTransform: "uppercase" },
   sevPill: { fontSize: 7, fontWeight: "bold", textTransform: "uppercase" },
+  riskPill: { fontSize: 7, fontWeight: "bold" },
+  statusPill: { fontSize: 6, color: "#78716C" },
+  colHeader: { fontSize: 7, fontWeight: "bold", textTransform: "uppercase", color: "#78716C" } as const,
   footer: {
     position: "absolute",
     bottom: 24,
@@ -137,6 +171,24 @@ const TYPE_LABELS: Record<string, string> = {
   deletion: "Deletion",
   spec_change: "Spec Change",
   relocation: "Relocation",
+};
+
+const RISK_COLORS: Record<string, string> = {
+  likely_variation: "#991B1B",
+  unclear: "#92400E",
+  within_scope: "#166534",
+};
+
+const RISK_LABELS: Record<string, string> = {
+  likely_variation: "Likely Variation",
+  unclear: "Unclear",
+  within_scope: "Within Scope",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  needs_review: "Needs Review",
+  not_a_variation: "Not a Variation",
+  variation_raised: "Raised",
 };
 
 function fmtDate(iso: string) {
@@ -192,6 +244,9 @@ function DrawingChangesPdf({
   for (const c of rows) {
     if (c.change_type in counts) counts[c.change_type as keyof typeof counts]++;
   }
+  const variationCount = rows.filter((r) => r.variation_risk === "likely_variation").length;
+  const unclearCount = rows.filter((r) => r.variation_risk === "unclear").length;
+  const hasVariationData = rows.some((r) => r.variation_risk !== null && r.variation_risk !== undefined);
 
   return React.createElement(
     Document,
@@ -250,7 +305,29 @@ function DrawingChangesPdf({
           null,
           React.createElement(Text, { style: s.summaryLabel }, "Relocations"),
           React.createElement(Text, { style: s.summaryValue }, String(counts.relocation))
-        )
+        ),
+        ...(hasVariationData ? [
+          React.createElement(
+            View,
+            { key: "var-count" },
+            React.createElement(Text, { style: s.summaryLabel }, "Likely Variations"),
+            React.createElement(
+              Text,
+              { style: { ...s.summaryValue, color: variationCount > 0 ? "#991B1B" : "#166534" } },
+              String(variationCount)
+            )
+          ),
+          React.createElement(
+            View,
+            { key: "unclear-count" },
+            React.createElement(Text, { style: s.summaryLabel }, "Unclear"),
+            React.createElement(
+              Text,
+              { style: { ...s.summaryValue, color: unclearCount > 0 ? "#92400E" : "#166534" } },
+              String(unclearCount)
+            )
+          ),
+        ] : [])
       ),
 
       // Disciplines
@@ -278,6 +355,18 @@ function DrawingChangesPdf({
                 { style: s.drawingMeta },
                 `Rev ${group.rev} · ${group.changes.length} change${group.changes.length !== 1 ? "s" : ""}`
               )
+            ),
+            // Column headers
+            React.createElement(
+              View,
+              { key: `ch-${group.number}-${group.rev}`, style: { ...s.row, borderBottomWidth: 1, borderBottomColor: "#D6D3D1", paddingVertical: 3 }, wrap: false },
+              React.createElement(View, { style: s.typeCell }, React.createElement(Text, { style: s.colHeader }, "TYPE")),
+              React.createElement(View, { style: s.descCell }, React.createElement(Text, { style: s.colHeader }, "DESCRIPTION")),
+              React.createElement(View, { style: s.sevCell }, React.createElement(Text, { style: s.colHeader }, "SEV.")),
+              ...(hasVariationData ? [
+                React.createElement(View, { key: "rh", style: s.riskCell }, React.createElement(Text, { style: s.colHeader }, "VARIATION")),
+                React.createElement(View, { key: "sh", style: s.statusCell }, React.createElement(Text, { style: s.colHeader }, "STATUS")),
+              ] : [])
             ),
             ...group.changes.map((c, ci) =>
               React.createElement(
@@ -329,7 +418,31 @@ function DrawingChangesPdf({
                     },
                     c.severity.toUpperCase()
                   )
-                )
+                ),
+                ...(hasVariationData ? [
+                  React.createElement(
+                    View,
+                    { key: "risk", style: s.riskCell },
+                    c.variation_risk
+                      ? React.createElement(
+                          Text,
+                          { style: { ...s.riskPill, color: RISK_COLORS[c.variation_risk] ?? "#44403C" } },
+                          RISK_LABELS[c.variation_risk] ?? ""
+                        )
+                      : null
+                  ),
+                  React.createElement(
+                    View,
+                    { key: "status", style: s.statusCell },
+                    c.review_status
+                      ? React.createElement(
+                          Text,
+                          { style: s.statusPill },
+                          STATUS_LABELS[c.review_status] ?? ""
+                        )
+                      : null
+                  ),
+                ] : [])
               )
             ),
           ]),
@@ -358,6 +471,9 @@ export async function GET(request: NextRequest) {
   const projectId = request.nextUrl.searchParams.get("project_id");
   const all = request.nextUrl.searchParams.get("all") === "true";
   const format = request.nextUrl.searchParams.get("format") ?? "csv";
+  const sort = request.nextUrl.searchParams.get("sort") ?? "discipline";
+  const severityFilter = request.nextUrl.searchParams.get("severity") ?? undefined;
+  const variationFilter = request.nextUrl.searchParams.get("variation_risk") ?? undefined;
 
   const supabase = getSupabase();
 
@@ -431,6 +547,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "scan_id or (company_id + project_id + all=true) required" }, { status: 400 });
   }
 
+  // Apply filter and sort
+  rows = filterRows(rows, severityFilter, variationFilter);
+  rows = sortRows(rows, sort);
+
   // ── PDF ─────────────────────────────────────────────────────────────────
   if (format === "pdf") {
     const doc = React.createElement(DrawingChangesPdf, { scan, rows });
@@ -456,9 +576,17 @@ export async function GET(request: NextRequest) {
     "Severity",
     "Description",
     "Location on Drawing",
+    "Variation Risk",
+    "Variation Note",
+    "Review Status",
   ];
 
   const csvLines = [headers.join(",")];
+
+  const riskLabel = (r: string | null) =>
+    r === "likely_variation" ? "Likely Variation" : r === "unclear" ? "Unclear" : r === "within_scope" ? "Within Scope" : "";
+  const statusLabel = (s: string | null) =>
+    s === "variation_raised" ? "Variation Raised" : s === "not_a_variation" ? "Not a Variation" : s === "needs_review" ? "Needs Review" : "";
 
   for (const c of rows) {
     csvLines.push(
@@ -472,6 +600,9 @@ export async function GET(request: NextRequest) {
         escapeCsv(c.severity),
         escapeCsv(c.description),
         escapeCsv(c.location_on_drawing ?? ""),
+        escapeCsv(riskLabel(c.variation_risk)),
+        escapeCsv(c.variation_note ?? ""),
+        escapeCsv(statusLabel(c.review_status)),
       ].join(",")
     );
   }

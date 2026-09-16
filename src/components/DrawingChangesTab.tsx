@@ -196,6 +196,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [highSeverityOnly, setHighSeverityOnly] = useState(false);
   const [variationsOnly, setVariationsOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"discipline" | "severity" | "variation_risk" | "change_type">("discipline");
   const [deepScanning, setDeepScanning] = useState<Set<string>>(new Set());
   const [expandedDrawings, setExpandedDrawings] = useState<Set<string>>(new Set());
   const [allScans, setAllScans] = useState<{ id: string; created_at: string; status: string; total_drawings: number; completed_drawings: number }[]>([]);
@@ -1538,6 +1539,18 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       {step === 2 && scan && (() => {
         let filteredChanges = highSeverityOnly ? changes.filter((c) => c.severity === "high") : changes;
         if (variationsOnly) filteredChanges = filteredChanges.filter((c) => c.variation_risk === "likely_variation");
+
+        // Apply sort
+        const SEV_ORD: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        const RISK_ORD: Record<string, number> = { likely_variation: 0, unclear: 1, within_scope: 2 };
+        if (sortBy === "severity") {
+          filteredChanges = [...filteredChanges].sort((a, b) => (SEV_ORD[a.severity] ?? 9) - (SEV_ORD[b.severity] ?? 9));
+        } else if (sortBy === "variation_risk") {
+          filteredChanges = [...filteredChanges].sort((a, b) => (RISK_ORD[a.variation_risk ?? ""] ?? 9) - (RISK_ORD[b.variation_risk ?? ""] ?? 9));
+        } else if (sortBy === "change_type") {
+          filteredChanges = [...filteredChanges].sort((a, b) => a.change_type.localeCompare(b.change_type));
+        }
+
         const filteredByDiscipline: Record<string, ChangeRow[]> = {};
         for (const c of filteredChanges) {
           const disc = c.discipline || "Other";
@@ -1624,12 +1637,27 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                <a href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=csv`} download style={BTN}>
-                  <Download size={12} /> Export CSV
-                </a>
-                <a href={`/api/drawing-changes/export?company_id=${company_id}&project_id=${projectId}&all=true&format=pdf`} download style={BTN}>
-                  <Download size={12} /> Export PDF
-                </a>
+                {(() => {
+                  const exportParams = new URLSearchParams({
+                    company_id: company_id,
+                    project_id: projectId,
+                    all: "true",
+                    sort: sortBy,
+                  });
+                  if (highSeverityOnly) exportParams.set("severity", "high");
+                  if (variationsOnly) exportParams.set("variation_risk", "likely_variation");
+                  const qs = exportParams.toString();
+                  return (
+                    <>
+                      <a href={`/api/drawing-changes/export?${qs}&format=csv`} download style={BTN}>
+                        <Download size={12} /> Export CSV
+                      </a>
+                      <a href={`/api/drawing-changes/export?${qs}&format=pdf`} download style={BTN}>
+                        <Download size={12} /> Export PDF
+                      </a>
+                    </>
+                  );
+                })()}
                 <button onClick={() => { setStep(0); fetchDrawings(projectId); }} style={{ ...BTN, border: "1px solid var(--hp-warm-800)", backgroundColor: "var(--hp-warm-800)", color: "#fff", fontWeight: 600 }}>
                   <RefreshCw size={12} /> Scan New Drawings
                 </button>
@@ -1719,6 +1747,17 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 {(highSeverityOnly || variationsOnly) && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Showing {filteredChanges.length} of {changes.length}</span>}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text-secondary)", cursor: "pointer" }}
+                >
+                  <option value="discipline">Discipline</option>
+                  <option value="severity">Severity (High → Low)</option>
+                  <option value="variation_risk">Variation Risk (High → Low)</option>
+                  <option value="change_type">Change Type</option>
+                </select>
                 {selectMode ? (
                   <>
                     <button onClick={deleteSelected} disabled={selectedChangeIds.size === 0 || deleting} style={{ ...BTN, padding: "4px 10px", fontSize: 11, color: selectedChangeIds.size > 0 ? "var(--hp-critical)" : "var(--hp-text-muted)", borderColor: selectedChangeIds.size > 0 ? "var(--hp-critical-bg)" : "var(--hp-border)" }}>
