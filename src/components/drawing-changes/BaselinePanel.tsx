@@ -339,9 +339,10 @@ export const BaselinePanel = React.memo(function BaselinePanel({
               </span>
               <button
                 onClick={() => setManageDocsOpen(false)}
+                aria-label="Close manage documents"
                 style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}
               >
-                <X size={18} style={{ color: "var(--hp-text-muted)" }} />
+                <X size={18} style={{ color: "var(--hp-text-muted)" }} aria-hidden="true" />
               </button>
             </div>
 
@@ -456,9 +457,10 @@ export const BaselinePanel = React.memo(function BaselinePanel({
                             onDeleteDoc(doc.id);
                           }}
                           title="Remove from baseline"
+                          aria-label={`Remove ${doc.document_name} from baseline`}
                           style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
                         >
-                          <X size={14} style={{ color: "var(--hp-text-muted)" }} />
+                          <X size={14} style={{ color: "var(--hp-text-muted)" }} aria-hidden="true" />
                         </button>
                       </div>
                     </div>

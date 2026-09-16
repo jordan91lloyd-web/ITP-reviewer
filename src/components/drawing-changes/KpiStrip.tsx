@@ -85,9 +85,11 @@ export const KpiStrip = React.memo(function KpiStrip({
             <button
               key={card.id}
               onClick={() => onFilterChange(isActive ? "all" : card.id)}
+              aria-pressed={isActive}
+              aria-label={`${card.label}: ${card.count}`}
               style={{
                 flex: "1 1 0",
-                minWidth: 100,
+                minWidth: 80,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",

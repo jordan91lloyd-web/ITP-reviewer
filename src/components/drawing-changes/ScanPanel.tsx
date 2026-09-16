@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { DrawingPair, RevisionInfo, ScanRecord, ChangeRow, PickerFlatRow } from "./types";
 import { fmtDate } from "./constants";
+import { friendlyDiscipline } from "./disciplineNames";
 import { DrawingListSkeleton } from "./Skeletons";
 
 interface ScanPanelProps {
@@ -58,8 +59,20 @@ const DisciplineHeader = React.memo(function DisciplineHeader({
   onToggle: () => void;
   onToggleSelection: () => void;
 }) {
+  const friendly = friendlyDiscipline(discipline);
+  const checkboxId = `disc-chk-${discipline}`;
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-expanded={!isCollapsed}
+      aria-label={`${friendly} - ${count} drawing${count !== 1 ? "s" : ""}`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -74,20 +87,21 @@ const DisciplineHeader = React.memo(function DisciplineHeader({
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {isCollapsed ? (
-          <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} />
+          <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} aria-hidden="true" />
         ) : (
-          <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} />
+          <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} aria-hidden="true" />
         )}
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{discipline}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{friendly}</span>
         <span style={{ fontSize: 12, color: "var(--hp-text-muted)", fontWeight: 400 }}>
           ({count} drawing{count !== 1 ? "s" : ""})
         </span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+        <label htmlFor={checkboxId} style={{ fontSize: 11, color: "var(--hp-text-muted)", cursor: "pointer" }}>
           {selectedCount}/{count} selected
-        </span>
+        </label>
         <input
+          id={checkboxId}
           type="checkbox"
           checked={allSelected}
           onChange={(e) => {
@@ -149,6 +163,7 @@ const DrawingRow = React.memo(function DrawingRow({
         type="checkbox"
         checked={isSelected}
         onChange={onToggle}
+        aria-label={`Select ${pair.drawing_number}`}
         style={{ accentColor: "var(--hp-warm-800)", cursor: "pointer", flexShrink: 0 }}
       />
       <span style={{ fontWeight: 500, color: "var(--hp-text-primary)", whiteSpace: "nowrap" }}>
@@ -373,17 +388,22 @@ export const ScanPanel = React.memo(function ScanPanel({
     return (
       <div
         style={{
-          borderRadius: 8,
+          borderRadius: 12,
           border: "1px solid var(--hp-border)",
-          padding: 32,
+          padding: "48px 32px",
           textAlign: "center",
-          fontSize: 13,
-          color: "var(--hp-text-secondary)",
+          backgroundColor: "var(--hp-surface)",
         }}
       >
-        No drawings with multiple revisions found.
-        {totalDrawings > 0 &&
-          ` (${totalDrawings} drawing${totalDrawings !== 1 ? "s" : ""} total, all on their first revision)`}
+        <Search size={32} style={{ color: "var(--hp-text-muted)", marginBottom: 12 }} aria-hidden="true" />
+        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--hp-text-primary)", marginBottom: 6 }}>
+          No drawings with multiple revisions found
+        </div>
+        <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", maxWidth: 400, margin: "0 auto" }}>
+          {totalDrawings > 0
+            ? `${totalDrawings} drawing${totalDrawings !== 1 ? "s are" : " is"} all on ${totalDrawings !== 1 ? "their" : "its"} first revision. Changes will appear here when new revisions are issued.`
+            : "No drawings found in this project. Upload drawings to Procore to get started."}
+        </div>
       </div>
     );
   }
@@ -393,7 +413,7 @@ export const ScanPanel = React.memo(function ScanPanel({
       {/* Search box at top */}
       <div style={{ marginBottom: 8 }}>
         <div style={{ position: "relative" }}>
-          <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }} />
+          <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }} aria-hidden="true" />
           <input
             type="text"
             placeholder="Search drawings by number, title, or discipline..."
@@ -602,7 +622,7 @@ export const ScanPanel = React.memo(function ScanPanel({
               marginTop: 4,
             }}
           >
-            {discipline}: Show more ({pairs.length - pageSize} remaining)
+            {friendlyDiscipline(discipline)}: Show more ({pairs.length - pageSize} remaining)
           </button>
         );
       })}

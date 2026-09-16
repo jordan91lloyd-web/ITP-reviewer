@@ -8,6 +8,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { KpiStrip, type KpiFilter } from "./KpiStrip";
+import { friendlyDiscipline } from "./disciplineNames";
 import type {
   ChangeRow,
   DrawingPair,
@@ -323,8 +324,10 @@ export const RegisterPanel = React.memo(function RegisterPanel({
       case "discipline": {
         const isExpanded = expandedResults.has(row.discipline);
         return (
-          <div
+          <button
             onClick={() => onToggleResultSection(row.discipline)}
+            aria-expanded={isExpanded}
+            aria-label={`${friendlyDiscipline(row.discipline)} - ${row.changeCount} changes, ${row.drawingCount} drawings`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -334,15 +337,19 @@ export const RegisterPanel = React.memo(function RegisterPanel({
               cursor: "pointer",
               userSelect: "none",
               borderBottom: "1px solid var(--hp-border)",
+              border: "none",
+              borderBlockEnd: "1px solid var(--hp-border)",
+              width: "100%",
+              textAlign: "left",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {isExpanded ? (
-                <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} />
+                <ChevronDown size={16} style={{ color: "var(--hp-text-muted)" }} aria-hidden="true" />
               ) : (
-                <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} />
+                <ChevronRight size={16} style={{ color: "var(--hp-text-muted)" }} aria-hidden="true" />
               )}
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text-primary)" }}>{row.discipline}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text-primary)" }}>{friendlyDiscipline(row.discipline)}</span>
               <span style={{ fontSize: 12, color: "var(--hp-text-muted)" }}>
                 ({row.changeCount} changes · {row.drawingCount} drawings)
               </span>
@@ -361,10 +368,10 @@ export const RegisterPanel = React.memo(function RegisterPanel({
                   color: "var(--hp-critical)",
                 }}
               >
-                <AlertTriangle size={10} /> {row.highCount}
+                <AlertTriangle size={10} aria-hidden="true" /> {row.highCount}
               </span>
             )}
-          </div>
+          </button>
         );
       }
       case "drawing": {
@@ -468,13 +475,14 @@ export const RegisterPanel = React.memo(function RegisterPanel({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <AlertTriangle size={14} style={{ color: "var(--hp-significant)" }} />
+            <AlertTriangle size={14} style={{ color: "var(--hp-significant)" }} aria-hidden="true" />
             <span style={{ fontSize: 13, color: "var(--hp-significant)", fontWeight: 500 }}>
               {unscannedCount} drawing{unscannedCount !== 1 ? "s have" : " has"} new revisions to scan
             </span>
           </div>
           <button
             onClick={onGoToScanWithUnscanned ?? onGoToScan}
+            aria-label={`Scan ${unscannedCount} new drawing revision${unscannedCount !== 1 ? "s" : ""}`}
             style={{
               fontSize: 12,
               fontWeight: 600,

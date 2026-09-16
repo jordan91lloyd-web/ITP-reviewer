@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Database, Search, ClipboardList } from "lucide-react";
 
 export type Stage = "baseline" | "scan" | "register" | "scanning";
@@ -14,10 +14,10 @@ interface StageRailProps {
   onStageChange: (stage: Stage) => void;
 }
 
-const STAGES: { id: Stage; label: string; Icon: typeof Database }[] = [
-  { id: "baseline", label: "Baseline", Icon: Database },
-  { id: "scan", label: "Scan", Icon: Search },
-  { id: "register", label: "Register", Icon: ClipboardList },
+const STAGES: { id: Stage; label: string; shortLabel: string; Icon: typeof Database }[] = [
+  { id: "baseline", label: "Baseline", shortLabel: "B", Icon: Database },
+  { id: "scan", label: "Scan", shortLabel: "S", Icon: Search },
+  { id: "register", label: "Register", shortLabel: "R", Icon: ClipboardList },
 ];
 
 export const StageRail = React.memo(function StageRail({
@@ -36,8 +36,69 @@ export const StageRail = React.memo(function StageRail({
     register: registerStatus,
   };
 
+  const [isHorizontal, setIsHorizontal] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 600px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsHorizontal(e.matches);
+    handler(mql);
+    mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
+    return () => mql.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
+  }, []);
+
+  // Horizontal segmented control for narrow viewports
+  if (isHorizontal) {
+    return (
+      <div
+        role="tablist"
+        aria-label="Drawing changes stages"
+        style={{
+          display: "flex",
+          gap: 0,
+          borderBottom: "1px solid var(--hp-border)",
+          backgroundColor: "var(--hp-surface)",
+          padding: "4px 8px",
+        }}
+      >
+        {STAGES.map(({ id, shortLabel, label }) => {
+          const isActive = activeStage === id;
+          return (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={isActive}
+              aria-label={`${label}: ${statusMap[id]}`}
+              onClick={() => onStageChange(id)}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                padding: "8px 4px",
+                fontSize: 13,
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? "#fff" : "var(--hp-text-secondary)",
+                backgroundColor: isActive ? "var(--hp-warm-800)" : "transparent",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+            >
+              {shortLabel}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Vertical sidebar rail (default)
   return (
     <div
+      role="tablist"
+      aria-label="Drawing changes stages"
+      aria-orientation="vertical"
       style={{
         width: collapsed ? 56 : 200,
         minWidth: collapsed ? 56 : 200,
@@ -56,6 +117,9 @@ export const StageRail = React.memo(function StageRail({
         return (
           <button
             key={id}
+            role="tab"
+            aria-selected={isActive}
+            aria-label={collapsed ? `${label}: ${statusMap[id]}` : undefined}
             onClick={() => onStageChange(id)}
             title={collapsed ? `${label}\n${statusMap[id]}` : undefined}
             style={{
@@ -74,6 +138,7 @@ export const StageRail = React.memo(function StageRail({
           >
             <Icon
               size={18}
+              aria-hidden="true"
               style={{
                 color: isActive ? "var(--hp-warm-800)" : "var(--hp-text-muted)",
                 flexShrink: 0,

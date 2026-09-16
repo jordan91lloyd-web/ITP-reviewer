@@ -175,11 +175,21 @@ export const ChangeRowItem = React.memo(function ChangeRowItem({
 
         {/* Description: clamped or expanded */}
         <div
+          role={hasExpandableContent ? "button" : undefined}
+          tabIndex={hasExpandableContent ? 0 : undefined}
+          aria-expanded={hasExpandableContent ? expanded : undefined}
+          aria-label={hasExpandableContent ? (expanded ? "Collapse details" : "Expand details") : undefined}
           style={{ display: "flex", alignItems: "flex-start", gap: 4, cursor: hasExpandableContent ? "pointer" : undefined }}
           onClick={hasExpandableContent ? () => setExpanded((v) => !v) : undefined}
+          onKeyDown={hasExpandableContent ? (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setExpanded((v) => !v);
+            }
+          } : undefined}
         >
           {hasExpandableContent && (
-            <span style={{ flexShrink: 0, color: "var(--hp-text-muted)", marginTop: 1 }}>
+            <span style={{ flexShrink: 0, color: "var(--hp-text-muted)", marginTop: 1 }} aria-hidden="true">
               {expanded
                 ? <ChevronDown size={12} />
                 : <ChevronRight size={12} />
@@ -232,6 +242,7 @@ export const ChangeRowItem = React.memo(function ChangeRowItem({
           <button
             onClick={() => onUpdateStatus([change.id], "not_a_variation")}
             title="Not a variation"
+            aria-label="Mark as not a variation"
             style={{
               display: "flex",
               alignItems: "center",
@@ -252,6 +263,7 @@ export const ChangeRowItem = React.memo(function ChangeRowItem({
           <button
             onClick={() => onUpdateStatus([change.id], "variation_raised")}
             title="Variation raised"
+            aria-label="Mark as variation raised"
             style={{
               display: "flex",
               alignItems: "center",
@@ -279,6 +291,7 @@ export const ChangeRowItem = React.memo(function ChangeRowItem({
                 )
               }
               title="Raise Change Event in Procore"
+              aria-label="Raise change event in Procore"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -305,6 +318,7 @@ export const ChangeRowItem = React.memo(function ChangeRowItem({
             <button
               onClick={() => onDownloadEvidence(change)}
               title="Download evidence sheet PDF"
+              aria-label="Download evidence sheet PDF"
               style={{
                 display: "flex",
                 alignItems: "center",

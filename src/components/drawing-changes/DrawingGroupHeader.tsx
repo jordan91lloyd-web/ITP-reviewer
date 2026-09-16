@@ -45,7 +45,17 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
+      aria-label={`${dg.number} ${dg.title} - ${dg.totalChanges} change${dg.totalChanges !== 1 ? "s" : ""}`}
       onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -64,6 +74,7 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
             <input
               type="checkbox"
               checked={allSelected}
+              aria-label={`Select all changes for ${dg.number}`}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onSelectDrawingChanges(allChangeIds, !allSelected)}
               style={{ accentColor: "var(--hp-warm-800)", cursor: "pointer" }}
@@ -71,9 +82,9 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
           );
         })()}
         {isExpanded ? (
-          <ChevronDown size={14} style={{ color: "var(--hp-text-muted)", flexShrink: 0 }} />
+          <ChevronDown size={14} style={{ color: "var(--hp-text-muted)", flexShrink: 0 }} aria-hidden="true" />
         ) : (
-          <ChevronRight size={14} style={{ color: "var(--hp-text-muted)", flexShrink: 0 }} />
+          <ChevronRight size={14} style={{ color: "var(--hp-text-muted)", flexShrink: 0 }} aria-hidden="true" />
         )}
         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)", flexShrink: 0 }}>{dg.number}</span>
         <span style={{ fontSize: 12, color: "var(--hp-text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -187,6 +198,7 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
               }}
               disabled={isDS}
               title="Re-scan with Opus for higher accuracy (slower, higher cost)"
+              aria-label={`Deep scan ${dg.number}`}
               style={{
                 fontSize: 10,
                 fontWeight: 500,

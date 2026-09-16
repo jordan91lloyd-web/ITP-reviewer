@@ -312,18 +312,20 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
               href={`/api/drawing-changes/export?${qs}&format=csv`}
               download
               title="Export CSV"
+              aria-label="Export change register as CSV"
               style={{ ...BTN_STYLE, padding: "5px 8px" }}
             >
-              <Download size={14} />
+              <Download size={14} aria-hidden="true" />
             </a>
             {/* Export PDF icon button */}
             <a
               href={`/api/drawing-changes/export?${qs}&format=pdf`}
               download
               title="Export PDF"
+              aria-label="Export change register as PDF"
               style={{ ...BTN_STYLE, padding: "5px 8px" }}
             >
-              <Download size={14} style={{ color: "var(--hp-critical)" }} />
+              <Download size={14} style={{ color: "var(--hp-critical)" }} aria-hidden="true" />
             </a>
 
             {/* More dropdown */}
@@ -332,8 +334,11 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
                 onClick={() => setMoreOpen((v) => !v)}
                 style={{ ...BTN_STYLE, padding: "5px 8px" }}
                 title="More actions"
+                aria-label="More actions"
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
               >
-                <MoreHorizontal size={14} />
+                <MoreHorizontal size={14} aria-hidden="true" />
               </button>
               {moreOpen && (
                 <div

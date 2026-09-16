@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type {
   DashboardProject,
   DrawingPair,
@@ -28,6 +28,188 @@ interface Props {
 
 const STAGE_KEY_PREFIX = "hp-drawing-changes-stage-";
 
+// ── Project Combobox ─────────────────────────────────────────────────────────
+
+function ProjectCombobox({
+  projects,
+  selectedId,
+  onSelect,
+}: {
+  projects: DashboardProject[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  const selectedProject = projects.find((p) => String(p.id) === selectedId);
+
+  const filtered = useMemo(() => {
+    if (!query) return projects;
+    const lower = query.toLowerCase();
+    return projects.filter(
+      (p) =>
+        (p.display_name || p.name).toLowerCase().includes(lower) ||
+        p.name.toLowerCase().includes(lower)
+    );
+  }, [projects, query]);
+
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [filtered]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        if (!selectedId) setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [selectedId]);
+
+  const handleSelect = (id: string) => {
+    onSelect(id);
+    setOpen(false);
+    setQuery("");
+    inputRef.current?.blur();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setOpen(false);
+      setQuery("");
+      inputRef.current?.blur();
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+      setActiveIndex((prev) => Math.min(prev + 1, filtered.length - 1));
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) => Math.max(prev - 1, 0));
+      return;
+    }
+    if (e.key === "Enter" && activeIndex >= 0 && activeIndex < filtered.length) {
+      e.preventDefault();
+      handleSelect(String(filtered[activeIndex].id));
+      return;
+    }
+  };
+
+  // Scroll active item into view
+  useEffect(() => {
+    if (activeIndex >= 0 && listRef.current) {
+      const item = listRef.current.children[activeIndex] as HTMLElement | undefined;
+      item?.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeIndex]);
+
+  const activeDescendant = activeIndex >= 0 && filtered[activeIndex]
+    ? `project-option-${filtered[activeIndex].id}`
+    : undefined;
+
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      <input
+        ref={inputRef}
+        type="text"
+        role="combobox"
+        aria-expanded={open}
+        aria-controls="project-listbox"
+        aria-activedescendant={activeDescendant}
+        aria-label="Search and select a project"
+        autoComplete="off"
+        placeholder="Search projects..."
+        value={open || query ? query : (selectedProject ? (selectedProject.display_name || selectedProject.name) : "")}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          if (!open) setOpen(true);
+        }}
+        onFocus={() => {
+          setOpen(true);
+          if (selectedProject && !query) setQuery("");
+        }}
+        onKeyDown={handleKeyDown}
+        style={{
+          borderRadius: 8,
+          border: "1px solid var(--hp-border)",
+          padding: "8px 12px",
+          fontSize: 13,
+          backgroundColor: "var(--hp-surface)",
+          color: "var(--hp-text-primary)",
+          width: "100%",
+          maxWidth: 400,
+        }}
+      />
+      {open && (
+        <ul
+          id="project-listbox"
+          ref={listRef}
+          role="listbox"
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            maxWidth: 400,
+            marginTop: 4,
+            maxHeight: 260,
+            overflowY: "auto",
+            backgroundColor: "var(--hp-surface)",
+            border: "1px solid var(--hp-border)",
+            borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            zIndex: 30,
+            padding: "4px 0",
+            listStyle: "none",
+            margin: 0,
+          }}
+        >
+          {filtered.length === 0 ? (
+            <li style={{ padding: "10px 14px", fontSize: 13, color: "var(--hp-text-muted)" }}>
+              No projects found
+            </li>
+          ) : (
+            filtered.map((p, i) => (
+              <li
+                key={p.id}
+                id={`project-option-${p.id}`}
+                role="option"
+                aria-selected={String(p.id) === selectedId}
+                onClick={() => handleSelect(String(p.id))}
+                style={{
+                  padding: "8px 14px",
+                  fontSize: 13,
+                  color: "var(--hp-text-primary)",
+                  cursor: "pointer",
+                  backgroundColor: i === activeIndex
+                    ? "var(--hp-warm-100)"
+                    : String(p.id) === selectedId
+                      ? "var(--hp-warm-100)"
+                      : "transparent",
+                  fontWeight: String(p.id) === selectedId ? 600 : 400,
+                }}
+              >
+                {p.display_name || p.name}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function DrawingChangesTab({ company_id, projects }: Props) {
@@ -35,6 +217,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [projectId, setProjectId] = useState("");
   const [projectName, setProjectName] = useState("");
   const [railCollapsed, setRailCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Drawing discovery
   const [drawingPairs, setDrawingPairs] = useState<DrawingPair[]>([]);
@@ -83,6 +266,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 900px)");
     const handler = (e: MediaQueryListEvent | MediaQueryList) => setRailCollapsed(e.matches);
+    handler(mql);
+    mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
+    return () => mql.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
+  }, []);
+
+  // ── Mobile layout detection ─────────────────────────────────────────────
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 600px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
     handler(mql);
     mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
     return () => mql.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
@@ -869,6 +1061,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     return parts.join(" · ");
   }, [changes]);
 
+  // ── Determine if we should show empty state hints ──────────────────────
+  const hasBaseline = baselineDocs.some((d) => d.status === "processed");
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -890,26 +1085,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
           {/* Project selector */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <select
-              value={projectId}
-              onChange={(e) => handleProjectChange(e.target.value)}
-              style={{
-                borderRadius: 8,
-                border: "1px solid var(--hp-border)",
-                padding: "8px 12px",
-                fontSize: 13,
-                backgroundColor: "var(--hp-surface)",
-                color: "var(--hp-text-primary)",
-                minWidth: 280,
-              }}
-            >
-              <option value="">Select a project</option>
-              {projects.map((p) => (
-                <option key={p.id} value={String(p.id)}>
-                  {p.display_name || p.name}
-                </option>
-              ))}
-            </select>
+            <ProjectCombobox
+              projects={projects}
+              selectedId={projectId}
+              onSelect={handleProjectChange}
+            />
           </div>
 
           {error && (
@@ -930,9 +1110,38 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         </div>
       </div>
 
+      {/* Empty state: no project selected */}
+      {!projectId && (
+        <div style={{ padding: "0 24px" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div
+              style={{
+                borderRadius: 12,
+                border: "1px solid var(--hp-border)",
+                padding: "64px 32px",
+                textAlign: "center",
+                backgroundColor: "var(--hp-surface)",
+                marginTop: 16,
+              }}
+            >
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--hp-text-primary)", marginBottom: 6 }}>
+                Select a project to get started
+              </div>
+              <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", maxWidth: 380, margin: "0 auto" }}>
+                Choose a project from the search box above to view drawing revisions and scan for changes.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stage layout: rail + content */}
       {projectId && (
-        <div style={{ display: "flex", minHeight: "calc(100vh - 180px)" }}>
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          minHeight: isMobile ? undefined : "calc(100vh - 180px)",
+        }}>
           <StageRail
             stage={stage}
             collapsed={railCollapsed}
@@ -943,7 +1152,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           />
 
           {/* Content area */}
-          <div style={{ flex: 1, minWidth: 0, overflow: "auto", padding: "16px 24px" }}>
+          <div style={{ flex: 1, minWidth: 0, overflow: "auto", padding: isMobile ? "12px 12px" : "16px 24px" }}>
             <div style={{ maxWidth: 1000, margin: "0 auto" }}>
               {/* Baseline stage */}
               {stage === "baseline" && (
@@ -1076,32 +1285,86 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               {stage === "register" && !scan && (
                 <div
                   style={{
-                    borderRadius: 8,
+                    borderRadius: 12,
                     border: "1px solid var(--hp-border)",
-                    padding: 48,
+                    padding: "48px 32px",
                     textAlign: "center",
-                    fontSize: 13,
-                    color: "var(--hp-text-secondary)",
+                    backgroundColor: "var(--hp-surface)",
                   }}
                 >
-                  No scan results yet. Go to the Scan stage to scan drawings for changes.
-                  <div style={{ marginTop: 12 }}>
-                    <button
-                      onClick={() => setStageAndPersist("scan")}
-                      style={{
-                        borderRadius: 8,
-                        padding: "8px 18px",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#fff",
-                        backgroundColor: "var(--hp-warm-800)",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Go to Scan
-                    </button>
-                  </div>
+                  {drawingPairs.length > 0 && changes.length === 0 ? (
+                    <>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: "var(--hp-text-primary)", marginBottom: 6 }}>
+                        Pick the drawings to compare, then Scan
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginBottom: 16, maxWidth: 400, margin: "0 auto 16px" }}>
+                        {drawingPairs.length} drawing{drawingPairs.length !== 1 ? "s have" : " has"} multiple revisions ready to scan for changes.
+                      </div>
+                      <button
+                        onClick={() => setStageAndPersist("scan")}
+                        style={{
+                          borderRadius: 8,
+                          padding: "8px 18px",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#fff",
+                          backgroundColor: "var(--hp-warm-800)",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Go to Scan
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: "var(--hp-text-primary)", marginBottom: 6 }}>
+                        No scan results yet
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginBottom: 16, maxWidth: 400, margin: "0 auto 16px" }}>
+                        Go to the Scan stage to select drawings and scan for changes between revisions.
+                      </div>
+                      <button
+                        onClick={() => setStageAndPersist("scan")}
+                        style={{
+                          borderRadius: 8,
+                          padding: "8px 18px",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#fff",
+                          backgroundColor: "var(--hp-warm-800)",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Go to Scan
+                      </button>
+                    </>
+                  )}
+
+                  {/* Hint about baseline if scans exist but no baseline */}
+                  {changes.length > 0 && !hasBaseline && (
+                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--hp-border)" }}>
+                      <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginBottom: 8 }}>
+                        Add baseline docs to get variation risk on each change
+                      </div>
+                      <button
+                        onClick={() => setStageAndPersist("baseline")}
+                        style={{
+                          borderRadius: 8,
+                          padding: "6px 14px",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          color: "var(--hp-warm-800)",
+                          backgroundColor: "transparent",
+                          border: "1px solid var(--hp-warm-800)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Set up Baseline
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
