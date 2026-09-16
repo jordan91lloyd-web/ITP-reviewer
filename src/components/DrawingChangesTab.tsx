@@ -207,6 +207,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [baselineExpanded, setBaselineExpanded] = useState(false);
   const [baselineUploading, setBaselineUploading] = useState(false);
   const [baselineProgressText, setBaselineProgressText] = useState("");
+  const [baselineBatches, setBaselineBatches] = useState<Array<{
+    label: string; timestamp: string; total: number;
+    processed: number; alreadyDone: number; skipped: number; failed: number;
+    errors: string[];
+  }>>([]);
   const [expandedBaselineDoc, setExpandedBaselineDoc] = useState<string | null>(null);
   const baselineFileRef = useRef<HTMLInputElement>(null);
   const [showProcoreBrowser, setShowProcoreBrowser] = useState(false);
@@ -1069,10 +1074,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   progressText={baselineProgressText}
                   onProcessFolder={async (files, label) => {
                     setBaselineUploading(true);
-                    let succeeded = 0;
+                    let newlyProcessed = 0;
+                    let alreadyDone = 0;
+                    let skipped = 0;
                     let failed = 0;
                     const errors: string[] = [];
-                    setBaselineProgressText(`Processing 0/${files.length} files...`);
+                    setBaselineProgressText(`Processing 0/${files.length} files from ${label}...`);
                     for (let i = 0; i < files.length; i++) {
                       setBaselineProgressText(`Processing ${i + 1}/${files.length} — ${files[i].name}`);
                       try {
@@ -1083,12 +1090,18 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                         fd.append("procore_doc_name", files[i].name);
                         fd.append("procore_doc_id", String(files[i].id));
                         const res = await fetch("/api/drawing-changes/baseline", { method: "POST", body: fd });
-                        if (res.ok) {
-                          succeeded++;
+                        const data = await res.json().catch(() => ({}));
+                        if (res.ok && data.success) {
+                          if (data.skipped && data.reason === "Already processed") {
+                            alreadyDone++;
+                          } else if (data.skipped) {
+                            skipped++;
+                          } else {
+                            newlyProcessed++;
+                          }
                         } else {
                           failed++;
-                          const errData = await res.json().catch(() => ({}));
-                          const reason = errData.error ?? errData.reason ?? `HTTP ${res.status}`;
+                          const reason = data.error ?? data.reason ?? `HTTP ${res.status}`;
                           errors.push(`${files[i].name}: ${reason}`);
                         }
                       } catch (err) {
@@ -1097,15 +1110,29 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                       }
                     }
                     setBaselineUploading(false);
-                    if (failed > 0 && succeeded === 0) {
-                      setBaselineProgressText(`All ${failed} file${failed !== 1 ? "s" : ""} failed. ${errors.slice(0, 3).join(" | ")}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ""}`);
-                    } else if (failed > 0) {
-                      setBaselineProgressText(`${succeeded} processed, ${failed} failed. ${errors.slice(0, 2).join(" | ")}`);
-                    } else if (succeeded > 0) {
-                      setBaselineProgressText(`${succeeded} file${succeeded !== 1 ? "s" : ""} processed successfully.`);
-                    } else {
-                      setBaselineProgressText("");
-                    }
+
+                    // Build ledger summary
+                    const parts: string[] = [];
+                    parts.push(`${label}: ${files.length} files`);
+                    if (newlyProcessed > 0) parts.push(`${newlyProcessed} processed`);
+                    if (alreadyDone > 0) parts.push(`${alreadyDone} already done`);
+                    if (skipped > 0) parts.push(`${skipped} skipped`);
+                    if (failed > 0) parts.push(`${failed} failed`);
+                    if (errors.length > 0) parts.push(errors.slice(0, 2).join(" | "));
+                    setBaselineProgressText(parts.join(" · "));
+
+                    // Save batch to processing log
+                    setBaselineBatches((prev) => [...prev, {
+                      label,
+                      timestamp: new Date().toLocaleTimeString(),
+                      total: files.length,
+                      processed: newlyProcessed,
+                      alreadyDone,
+                      skipped,
+                      failed,
+                      errors: errors.slice(0, 5),
+                    }]);
+
                     setBaselineExpanded(true);
                     fetchBaseline(projectId);
                   }}
@@ -1134,23 +1161,55 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                 </div>
               ) : (
                 <>
-                  {/* Summary */}
-                  <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span>
-                      {baselineDocs.filter((d) => d.status === "processed").length} processed
-                      {baselineDocs.some((d) => d.status === "failed") && ` · ${baselineDocs.filter((d) => d.status === "failed").length} failed`}
-                      {baselineDocs.some((d) => d.status === "skipped") && ` · ${baselineDocs.filter((d) => d.status === "skipped").length} skipped`}
-                      {baselineDocs.some((d) => d.status === "processing") && ` · ${baselineDocs.filter((d) => d.status === "processing").length} processing`}
-                    </span>
-                    {baselineDocs.some((d) => (d.status === "failed" || d.status === "skipped")) && !baselineUploading && (
-                      <button
-                        onClick={clearFailedBaseline}
-                        style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
-                      >
-                        Clear failed & re-scan
-                      </button>
-                    )}
-                  </div>
+                  {/* Summary stats */}
+                  {(() => {
+                    const processed = baselineDocs.filter((d) => d.status === "processed");
+                    const failedDocs = baselineDocs.filter((d) => d.status === "failed");
+                    const skippedDocs = baselineDocs.filter((d) => d.status === "skipped");
+                    const processingDocs = baselineDocs.filter((d) => d.status === "processing");
+                    const totalItems = processed.reduce((sum, d) => sum + (d.item_count ?? 0), 0);
+                    const totalSize = baselineDocs.reduce((sum, d) => sum + (d.file_size ?? 0), 0);
+                    return (
+                      <div style={{ marginBottom: 12, borderRadius: 8, padding: "10px 14px", backgroundColor: "var(--hp-warm-100)", border: "1px solid var(--hp-border)" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>
+                            {baselineDocs.length} document{baselineDocs.length !== 1 ? "s" : ""} &middot; {totalItems} scope items
+                          </span>
+                          {(failedDocs.length > 0 || skippedDocs.length > 0) && !baselineUploading && (
+                            <button onClick={clearFailedBaseline}
+                              style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                              Clear failed & re-scan
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", gap: 16, fontSize: 11, color: "var(--hp-text-muted)" }}>
+                          <span style={{ color: "var(--hp-compliant)" }}>{processed.length} processed</span>
+                          {failedDocs.length > 0 && <span style={{ color: "var(--hp-critical)" }}>{failedDocs.length} failed</span>}
+                          {skippedDocs.length > 0 && <span>{skippedDocs.length} skipped</span>}
+                          {processingDocs.length > 0 && <span style={{ color: "var(--hp-significant)" }}>{processingDocs.length} processing</span>}
+                          {totalSize > 0 && <span>{(totalSize / 1024 / 1024).toFixed(1)} MB total</span>}
+                        </div>
+
+                        {/* Processing log */}
+                        {baselineBatches.length > 0 && (
+                          <div style={{ marginTop: 8, borderTop: "1px solid var(--hp-border)", paddingTop: 8 }}>
+                            <div style={{ fontSize: 10, fontWeight: 600, color: "var(--hp-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Processing log</div>
+                            {baselineBatches.map((batch, bi) => (
+                              <div key={bi} style={{ fontSize: 11, color: "var(--hp-text-secondary)", marginBottom: 2, display: "flex", gap: 8 }}>
+                                <span style={{ color: "var(--hp-text-muted)", flexShrink: 0 }}>{batch.timestamp}</span>
+                                <span style={{ fontWeight: 500 }}>{batch.label}</span>
+                                <span>{batch.total} files</span>
+                                {batch.processed > 0 && <span style={{ color: "var(--hp-compliant)" }}>{batch.processed} new</span>}
+                                {batch.alreadyDone > 0 && <span>{batch.alreadyDone} existing</span>}
+                                {batch.skipped > 0 && <span>{batch.skipped} skipped</span>}
+                                {batch.failed > 0 && <span style={{ color: "var(--hp-critical)" }}>{batch.failed} failed</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {baselineDocs.map((doc) => {
                     const statusColor = doc.status === "processed" ? "var(--hp-compliant)" : doc.status === "failed" ? "var(--hp-critical)" : doc.status === "skipped" ? "var(--hp-text-muted)" : "var(--hp-significant)";
