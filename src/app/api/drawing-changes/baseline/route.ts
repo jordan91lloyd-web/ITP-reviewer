@@ -121,7 +121,7 @@ async function extractWithClaude(
 
 // ── POST: Upload and process a baseline document ──────────────────────────
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const MAX_FILE_SIZE = 32 * 1024 * 1024; // 32 MB — Claude document blocks accept up to ~32 MB
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB — Claude rejects large base64 image blocks
 const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png"];
 const UNSUPPORTED_EXTENSIONS = [".doc", ".xls", ".dwg", ".rvt", ".ifc", ".zip", ".rar", ".mp4", ".mov"];
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
       await supabase.from("baseline_documents").insert({
         company_id: companyId, project_id: projectId, document_name: filename,
         document_type: file.type, source: "upload", status: "skipped",
-        scope_items: [], item_count: 0, error_message: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB, max 20 MB)`,
+        scope_items: [], item_count: 0, error_message: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB, max 32 MB)`,
       });
       return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: "File too large" });
     }
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
         company_id: companyId, project_id: projectId, document_name: filename,
         document_type: "", source: "procore", procore_document_id: procoreDocId ? parseInt(procoreDocId) : null,
         status: "skipped", scope_items: [], item_count: 0,
-        error_message: `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB, max 20 MB)`,
+        error_message: `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB, max 32 MB)`,
       });
       return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: "File too large" });
     }
@@ -400,6 +400,172 @@ export async function GET(request: NextRequest) {
     total_items: allItems.length,
     by_category: byCat,
   });
+}
+
+// ── PATCH: Retry failed/skipped baseline documents ────────────────────────
+
+export async function PATCH(request: NextRequest) {
+  const body = await request.json().catch(() => ({}));
+  const { company_id: companyId, project_id: projectId } = body as { company_id?: string; project_id?: string };
+
+  if (!companyId || !projectId) {
+    return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
+  }
+
+  const supabase = getSupabase();
+
+  // Find all failed/skipped Procore-sourced docs that can be retried
+  const { data: retryDocs, error: fetchErr } = await supabase
+    .from("baseline_documents")
+    .select("*")
+    .eq("company_id", companyId)
+    .eq("project_id", projectId)
+    .in("status", ["failed", "skipped"])
+    .eq("source", "procore")
+    .not("procore_document_id", "is", null);
+
+  if (fetchErr) {
+    return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+  }
+
+  if (!retryDocs || retryDocs.length === 0) {
+    return NextResponse.json({ retried: 0, message: "No retryable Procore documents found" });
+  }
+
+  // Get Procore access token
+  const cookieStore = await cookies();
+  const token = cookieStore.get("procore_access_token")?.value;
+  if (!token) {
+    return NextResponse.json({ error: "Not logged in to Procore" }, { status: 401 });
+  }
+
+  const results: { document_name: string; status: string; item_count?: number; error?: string }[] = [];
+
+  for (const doc of retryDocs) {
+    try {
+      // Fetch fresh download URL from Procore
+      const docRes = await fetch(
+        `${PROCORE_BASE}/rest/v1.0/files/${doc.procore_document_id}?project_id=${projectId}`,
+        { headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId } }
+      );
+
+      let docData: Record<string, unknown>;
+      if (!docRes.ok) {
+        // Try the documents endpoint instead
+        const docRes2 = await fetch(
+          `${PROCORE_BASE}/rest/v1.0/documents/${doc.procore_document_id}?project_id=${projectId}`,
+          { headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId } }
+        );
+        if (!docRes2.ok) {
+          await supabase.from("baseline_documents").update({ error_message: `Retry failed: could not fetch document info (HTTP ${docRes2.status})` }).eq("id", doc.id);
+          results.push({ document_name: doc.document_name, status: "failed", error: `Could not fetch document (HTTP ${docRes2.status})` });
+          continue;
+        }
+        docData = await docRes2.json();
+      } else {
+        docData = await docRes.json();
+      }
+
+      // Extract download URL
+      const vDoc = docData.viewable_document as Record<string, unknown> | undefined;
+      const pFile = docData.prostore_file as Record<string, unknown> | undefined;
+      const fFile = docData.file as Record<string, unknown> | undefined;
+      const downloadUrl = (docData.download_url as string | undefined)
+        ?? (vDoc?.url as string | undefined)
+        ?? (pFile?.url as string | undefined)
+        ?? (fFile?.url as string | undefined);
+
+      if (!downloadUrl) {
+        await supabase.from("baseline_documents").update({ error_message: "Retry failed: no download URL available" }).eq("id", doc.id);
+        results.push({ document_name: doc.document_name, status: "failed", error: "No download URL" });
+        continue;
+      }
+
+      // Download the file
+      const isS3 = !downloadUrl.includes("procore.com") || downloadUrl.includes("s3.");
+      const dlHeaders: Record<string, string> = {};
+      if (!isS3) dlHeaders.Authorization = `Bearer ${token}`;
+
+      const dlRes = await fetch(downloadUrl, { headers: dlHeaders });
+      if (!dlRes.ok) {
+        await supabase.from("baseline_documents").update({ error_message: `Retry failed: download failed (HTTP ${dlRes.status})` }).eq("id", doc.id);
+        results.push({ document_name: doc.document_name, status: "failed", error: `Download failed (HTTP ${dlRes.status})` });
+        continue;
+      }
+
+      const rawBuffer = Buffer.from(await dlRes.arrayBuffer());
+      const fileSize = rawBuffer.length;
+
+      if (fileSize > MAX_FILE_SIZE) {
+        await supabase.from("baseline_documents").update({
+          error_message: `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB, max 32 MB)`,
+          file_size: fileSize,
+        }).eq("id", doc.id);
+        results.push({ document_name: doc.document_name, status: "skipped", error: "Still too large" });
+        continue;
+      }
+
+      // Determine mime type and convert if needed
+      const filename = doc.document_name;
+      let buffer: Buffer;
+      let mimeType: string;
+
+      if (filename.toLowerCase().endsWith(".docx")) {
+        const { value: text } = await mammoth.extractRawText({ buffer: rawBuffer });
+        buffer = Buffer.from(text.trim() ? text : " ", "utf-8");
+        mimeType = "text/plain";
+      } else if (filename.toLowerCase().endsWith(".xlsx")) {
+        const text = xlsxToText(rawBuffer);
+        buffer = Buffer.from(text.trim() ? text : " ", "utf-8");
+        mimeType = "text/plain";
+      } else if (filename.toLowerCase().endsWith(".pdf")) {
+        buffer = rawBuffer;
+        mimeType = "application/pdf";
+      } else if (filename.toLowerCase().match(/\.(jpg|jpeg)$/)) {
+        buffer = rawBuffer;
+        mimeType = "image/jpeg";
+      } else if (filename.toLowerCase().endsWith(".png")) {
+        buffer = rawBuffer;
+        mimeType = "image/png";
+      } else {
+        buffer = rawBuffer;
+        mimeType = "application/pdf";
+      }
+
+      // Check image size limit
+      if ((mimeType === "image/jpeg" || mimeType === "image/png") && buffer.length > MAX_IMAGE_SIZE) {
+        await supabase.from("baseline_documents").update({
+          error_message: `Image too large (${(buffer.length / 1024 / 1024).toFixed(1)} MB, max 5 MB for images)`,
+          file_size: buffer.length,
+        }).eq("id", doc.id);
+        results.push({ document_name: doc.document_name, status: "skipped", error: "Image too large" });
+        continue;
+      }
+
+      // Mark as processing
+      await supabase.from("baseline_documents").update({ status: "processing", error_message: null, file_size: fileSize }).eq("id", doc.id);
+
+      // Extract scope items
+      const items = await extractWithClaude(buffer, filename, mimeType);
+      await supabase.from("baseline_documents").update({
+        status: "processed",
+        scope_items: items,
+        item_count: items.length,
+        error_message: null,
+        file_size: fileSize,
+        document_type: mimeType,
+      }).eq("id", doc.id);
+
+      results.push({ document_name: doc.document_name, status: "processed", item_count: items.length });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await supabase.from("baseline_documents").update({ status: "failed", error_message: `Retry failed: ${msg}` }).eq("id", doc.id);
+      results.push({ document_name: doc.document_name, status: "failed", error: msg });
+    }
+  }
+
+  const succeeded = results.filter((r) => r.status === "processed").length;
+  return NextResponse.json({ retried: results.length, succeeded, results });
 }
 
 // ── DELETE: Remove a baseline document ────────────────────────────────────

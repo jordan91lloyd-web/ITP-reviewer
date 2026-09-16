@@ -280,6 +280,36 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     } catch { /* ignore */ }
   }, []);
 
+  const retryFailedBaseline = useCallback(async () => {
+    if (!projectId) return;
+    const failedProcore = baselineDocs.filter((d) => (d.status === "failed" || d.status === "skipped") && d.source === "procore");
+    if (failedProcore.length === 0) return;
+    setBaselineUploading(true);
+    setBaselineProgressText(`Retrying ${failedProcore.length} document${failedProcore.length !== 1 ? "s" : ""}...`);
+    try {
+      const res = await fetch("/api/drawing-changes/baseline", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ company_id: company_id, project_id: projectId }),
+      });
+      const data = await res.json();
+      if (data.succeeded > 0 && data.succeeded === data.retried) {
+        setBaselineProgressText(`All ${data.succeeded} document${data.succeeded !== 1 ? "s" : ""} processed successfully`);
+      } else if (data.succeeded > 0) {
+        setBaselineProgressText(`${data.succeeded} of ${data.retried} processed, ${data.retried - data.succeeded} still failed`);
+      } else if (data.retried > 0) {
+        setBaselineProgressText(`All ${data.retried} document${data.retried !== 1 ? "s" : ""} failed again`);
+      } else {
+        setBaselineProgressText("No retryable documents found");
+      }
+      await fetchBaseline(projectId);
+    } catch {
+      setBaselineProgressText("Retry request failed");
+    } finally {
+      setBaselineUploading(false);
+    }
+  }, [projectId, company_id, baselineDocs, fetchBaseline]);
+
   // ── Fetch drawings with revisions ────────────────────────────────────────
 
   const fetchDrawings = useCallback(
@@ -1112,11 +1142,21 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               ) : (
                 <>
                   {/* Summary */}
-                  <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginBottom: 8 }}>
-                    {baselineDocs.filter((d) => d.status === "processed").length} processed
-                    {baselineDocs.some((d) => d.status === "failed") && ` · ${baselineDocs.filter((d) => d.status === "failed").length} failed`}
-                    {baselineDocs.some((d) => d.status === "skipped") && ` · ${baselineDocs.filter((d) => d.status === "skipped").length} skipped`}
-                    {baselineDocs.some((d) => d.status === "processing") && ` · ${baselineDocs.filter((d) => d.status === "processing").length} processing`}
+                  <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span>
+                      {baselineDocs.filter((d) => d.status === "processed").length} processed
+                      {baselineDocs.some((d) => d.status === "failed") && ` · ${baselineDocs.filter((d) => d.status === "failed").length} failed`}
+                      {baselineDocs.some((d) => d.status === "skipped") && ` · ${baselineDocs.filter((d) => d.status === "skipped").length} skipped`}
+                      {baselineDocs.some((d) => d.status === "processing") && ` · ${baselineDocs.filter((d) => d.status === "processing").length} processing`}
+                    </span>
+                    {baselineDocs.some((d) => (d.status === "failed" || d.status === "skipped") && d.source === "procore") && !baselineUploading && (
+                      <button
+                        onClick={retryFailedBaseline}
+                        style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        Retry failed
+                      </button>
+                    )}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {baselineDocs.map((doc) => {
