@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import type {
   DashboardProject,
   DrawingPair,
@@ -17,6 +17,7 @@ import DocCompareSection from "./drawing-changes/DocCompareSection";
 import { ScanPanel } from "./drawing-changes/ScanPanel";
 import { ScanProgress } from "./drawing-changes/ScanProgress";
 import { RegisterPanel } from "./drawing-changes/RegisterPanel";
+import { StageRail, type Stage } from "./drawing-changes/StageRail";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -25,12 +26,15 @@ interface Props {
   projects: DashboardProject[];
 }
 
+const STAGE_KEY_PREFIX = "hp-drawing-changes-stage-";
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function DrawingChangesTab({ company_id, projects }: Props) {
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [stage, setStage] = useState<Stage>("scan");
   const [projectId, setProjectId] = useState("");
   const [projectName, setProjectName] = useState("");
+  const [railCollapsed, setRailCollapsed] = useState(false);
 
   // Drawing discovery
   const [drawingPairs, setDrawingPairs] = useState<DrawingPair[]>([]);
@@ -63,7 +67,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
   // Baseline
   const [baselineDocs, setBaselineDocs] = useState<BaselineDoc[]>([]);
-  const [baselineExpanded, setBaselineExpanded] = useState(false);
+  const [baselineExpanded, setBaselineExpanded] = useState(true);
   const [baselineUploading, setBaselineUploading] = useState(false);
   const [baselineProgressText, setBaselineProgressText] = useState("");
   const [expandedBaselineDoc, setExpandedBaselineDoc] = useState<string | null>(null);
@@ -73,6 +77,24 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
 
   // Inline scan + evidence
   const [inlineScanning, setInlineScanning] = useState<string | null>(null);
+
+  // ── Responsive rail collapse ────────────────────────────────────────────
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 900px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setRailCollapsed(e.matches);
+    handler(mql);
+    mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
+    return () => mql.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
+  }, []);
+
+  // ── Stage persistence ───────────────────────────────────────────────────
+  const setStageAndPersist = useCallback((s: Stage, pid?: string) => {
+    setStage(s);
+    const id = pid || projectId;
+    if (id && s !== "scanning") {
+      try { localStorage.setItem(`${STAGE_KEY_PREFIX}${id}`, s); } catch { /* ignore */ }
+    }
+  }, [projectId]);
 
   // ── Baseline functions ───────────────────────────────────────────────────
 
@@ -245,10 +267,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   // ── Load previous scan results ───────────────────────────────────────────
 
   const loadPreviousResults = useCallback(
-    async (pid: string) => {
+    async (pid: string): Promise<boolean> => {
       try {
         const res = await fetch(`/api/drawing-changes/results?company_id=${company_id}&project_id=${pid}&all=true`);
-        if (!res.ok) return;
+        if (!res.ok) return false;
         const data = await res.json();
         if (data.changes && data.changes.length > 0) {
           setScan(data.scan ?? {
@@ -264,10 +286,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setChanges(data.changes);
           setByDiscipline(data.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(data.by_discipline ?? {})));
-          setStep(2);
+          if (data.all_scans) setAllScans(data.all_scans);
+          return true;
         }
         if (data.all_scans) setAllScans(data.all_scans);
-      } catch { /* No previous results */ }
+        return false;
+      } catch { return false; }
     },
     [company_id]
   );
@@ -275,21 +299,31 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   // ── Project selection ────────────────────────────────────────────────────
 
   const handleProjectChange = useCallback(
-    (pid: string) => {
+    async (pid: string) => {
       setProjectId(pid);
       const proj = projects.find((p) => String(p.id) === pid);
       setProjectName(proj?.display_name ?? proj?.name ?? "");
-      setStep(0);
+      setStage("scan");
       setScan(null);
       setChanges([]);
       setByDiscipline({});
       if (pid) {
         fetchDrawings(pid);
-        loadPreviousResults(pid);
         fetchBaseline(pid);
+        const hasResults = await loadPreviousResults(pid);
+
+        // Determine default stage: localStorage > results-based default
+        let defaultStage: Stage = hasResults ? "register" : "scan";
+        try {
+          const stored = localStorage.getItem(`${STAGE_KEY_PREFIX}${pid}`);
+          if (stored === "baseline" || stored === "scan" || stored === "register") {
+            defaultStage = stored;
+          }
+        } catch { /* ignore */ }
+        setStageAndPersist(defaultStage, pid);
       }
     },
-    [projects, fetchDrawings, loadPreviousResults, fetchBaseline]
+    [projects, fetchDrawings, loadPreviousResults, fetchBaseline, setStageAndPersist]
   );
 
   // ── Drawing selection helpers ────────────────────────────────────────────
@@ -361,7 +395,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       });
     if (selected.length === 0) return;
 
-    setStep(1);
+    setStageAndPersist("scanning");
     setError(null);
     const totalBatches = Math.ceil(selected.length / BATCH_SIZE);
     setScanProgress({ current: 0, total: selected.length, batchNum: 0, totalBatches });
@@ -414,7 +448,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           if (resultsData.all_scans) setAllScans(resultsData.all_scans);
         }
       }
-      setStep(2);
+      // Auto-switch to register on scan complete
+      setStageAndPersist("register");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Scan failed");
       if (scanId) {
@@ -426,13 +461,13 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setByDiscipline(resultsData.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
           if (resultsData.all_scans) setAllScans(resultsData.all_scans);
-          setStep(2);
+          setStageAndPersist("register");
           return;
         }
       }
-      setStep(0);
+      setStageAndPersist("scan");
     }
-  }, [drawingPairs, selectedIds, company_id, projectId, projectName, revisionOverrides]);
+  }, [drawingPairs, selectedIds, company_id, projectId, projectName, revisionOverrides, setStageAndPersist]);
 
   // ── Deep scan a single drawing ───────────────────────────────────────────
 
@@ -625,12 +660,12 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       setAllScans([]);
       setExpandedResults(new Set());
       setExpandedDrawings(new Set());
-      setStep(0);
+      setStageAndPersist("scan");
       fetchDrawings(projectId);
     } catch {
       setError("Failed to clear results");
     }
-  }, [projectId, company_id, fetchDrawings]);
+  }, [projectId, company_id, fetchDrawings, setStageAndPersist]);
 
   // ── Delete selected changes ──────────────────────────────────────────────
 
@@ -701,10 +736,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         setByDiscipline(data.by_discipline ?? {});
         setExpandedResults(new Set(Object.keys(data.by_discipline ?? {})));
         if (data.all_scans) setAllScans(data.all_scans);
-        setStep(2);
+        setStageAndPersist("register");
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [setStageAndPersist]);
 
   // ── Results accordion ────────────────────────────────────────────────────
 
@@ -735,191 +770,294 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   }, []);
 
   const handleGoToScan = useCallback(() => {
-    setStep(0);
+    setStageAndPersist("scan");
     fetchDrawings(projectId);
-  }, [fetchDrawings, projectId]);
+  }, [fetchDrawings, projectId, setStageAndPersist]);
+
+  const handleGoToScanWithUnscanned = useCallback(() => {
+    setStageAndPersist("scan");
+    fetchDrawings(projectId).then(() => {
+      // selectUnscanned will run after drawings load via the next effect
+    });
+    // Pre-select unscanned after drawings load
+    setSelectedIds(new Set(drawingPairs.filter((d) => d.status !== "scanned").map((d) => d.drawing_id)));
+  }, [fetchDrawings, projectId, setStageAndPersist, drawingPairs]);
 
   const handleLoadAllResults = useCallback(() => {
     loadPreviousResults(projectId);
   }, [loadPreviousResults, projectId]);
 
+  // ── Stage status lines ──────────────────────────────────────────────────
+  const baselineStatus = useMemo(() => {
+    if (baselineDocs.length === 0) return "Not set up (optional)";
+    const processed = baselineDocs.filter((d) => d.status === "processed");
+    const totalItems = processed.reduce((sum, d) => sum + d.item_count, 0);
+    const lastDate = baselineDocs.reduce((latest, d) => {
+      if (!d.created_at) return latest;
+      return d.created_at > latest ? d.created_at : latest;
+    }, "");
+    const datePart = lastDate ? ` · ${fmtDate(lastDate)}` : "";
+    return `${baselineDocs.length} docs · ${totalItems} items${datePart}`;
+  }, [baselineDocs]);
+
+  const unscannedCount = useMemo(
+    () => drawingPairs.filter((d) => d.status !== "scanned").length,
+    [drawingPairs]
+  );
+
+  const scanStatus = useMemo(() => {
+    if (stage === "scanning") return "Scanning in progress...";
+    if (drawingPairs.length === 0) return "No drawings loaded";
+    if (unscannedCount > 0) return `${unscannedCount} new revision${unscannedCount !== 1 ? "s" : ""} to scan`;
+    return "All scanned";
+  }, [drawingPairs, unscannedCount, stage]);
+
+  const registerStatus = useMemo(() => {
+    if (changes.length === 0) return "No scan results";
+    const needsReview = changes.filter((c) => !c.review_status || c.review_status === "needs_review").length;
+    const likelyVar = changes.filter((c) => c.variation_risk === "likely_variation").length;
+    const parts = [`${changes.length} changes`];
+    if (likelyVar > 0) parts.push(`${likelyVar} likely variation${likelyVar !== 1 ? "s" : ""}`);
+    if (needsReview > 0) parts.push(`${needsReview} need review`);
+    return parts.join(" · ");
+  }, [changes]);
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--hp-bg)" }}>
-      <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
-        {/* Header */}
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--hp-text-primary)", margin: 0 }}>
-            Drawing Revision Changes
-          </h2>
-          <p style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginTop: 4 }}>
-            Compare drawing revisions to detect scope and specification changes that may require
-            variation pricing.
-          </p>
-        </div>
-
-        {/* Project selector */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <select
-            value={projectId}
-            onChange={(e) => handleProjectChange(e.target.value)}
-            style={{
-              borderRadius: 8,
-              border: "1px solid var(--hp-border)",
-              padding: "8px 12px",
-              fontSize: 13,
-              backgroundColor: "var(--hp-surface)",
-              color: "var(--hp-text-primary)",
-              minWidth: 280,
-            }}
-          >
-            <option value="">Select a project</option>
-            {projects.map((p) => (
-              <option key={p.id} value={String(p.id)}>
-                {p.display_name || p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {error && (
-          <div
-            style={{
-              borderRadius: 8,
-              border: "1px solid var(--hp-critical-bg)",
-              backgroundColor: "var(--hp-critical-bg)",
-              color: "var(--hp-critical)",
-              padding: 12,
-              fontSize: 13,
-              marginBottom: 16,
-            }}
-          >
-            {error}
+      {/* Header + project selector at the top */}
+      <div style={{ padding: "16px 24px 0 24px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--hp-text-primary)", margin: 0 }}>
+                Drawing Revision Changes
+              </h2>
+              <p style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginTop: 4, marginBottom: 0 }}>
+                Compare drawing revisions to detect scope and specification changes that may require
+                variation pricing.
+              </p>
+            </div>
           </div>
-        )}
 
-        {/* Baseline Scope */}
-        {projectId && (
-          <BaselinePanel
-            companyId={company_id}
-            projectId={projectId}
-            baselineDocs={baselineDocs}
-            baselineExpanded={baselineExpanded}
-            baselineUploading={baselineUploading}
-            baselineProgressText={baselineProgressText}
-            expandedBaselineDoc={expandedBaselineDoc}
-            showProcoreBrowser={showProcoreBrowser}
-            onToggleExpanded={() => setBaselineExpanded((v) => !v)}
-            onUploadFile={uploadBaselineFile}
-            onAddProcoreDoc={addProcoreDoc}
-            onDeleteDoc={deleteBaselineDoc}
-            onClearFailed={clearFailedBaseline}
-            onToggleProcoreBrowser={() => setShowProcoreBrowser((v) => !v)}
-            onSetExpandedBaselineDoc={setExpandedBaselineDoc}
-            onProcessFolder={handleProcessFolder}
-            fetchBaseline={fetchBaseline}
-          />
-        )}
-
-        {/* Compare Document against Baseline */}
-        {projectId && baselineDocs.some((d) => d.status === "processed") && (
-          <div style={{ marginBottom: 24 }}>
-            <DocCompareSection
-              company_id={company_id}
-              project_id={projectId}
-              project_name={projects.find((p) => String(p.id) === projectId)?.name ?? ""}
-            />
+          {/* Project selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <select
+              value={projectId}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              style={{
+                borderRadius: 8,
+                border: "1px solid var(--hp-border)",
+                padding: "8px 12px",
+                fontSize: 13,
+                backgroundColor: "var(--hp-surface)",
+                color: "var(--hp-text-primary)",
+                minWidth: 280,
+              }}
+            >
+              <option value="">Select a project</option>
+              {projects.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.display_name || p.name}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
 
-        {/* Step 0: Drawing selection */}
-        {step === 0 && projectId && (
-          <ScanPanel
-            drawingPairs={drawingPairs}
-            selectedIds={selectedIds}
-            filterText={filterText}
-            collapsedDiscovery={collapsedDiscovery}
-            revisionOverrides={revisionOverrides}
-            disciplinePageSize={disciplinePageSize}
-            showScanConfirm={showScanConfirm}
-            loading={loading}
-            totalDrawings={totalDrawings}
-            scan={scan}
-            changes={changes}
-            onToggleDrawing={toggleDrawing}
-            onToggleDisciplineSelection={toggleDisciplineSelection}
-            onSelectAll={selectAll}
-            onSelectUnscanned={selectUnscanned}
-            onSelectNone={selectNone}
-            onToggleDiscoverySection={toggleDiscoverySection}
-            onExpandAllDiscovery={expandAllDiscovery}
-            onCollapseAllDiscovery={collapseAllDiscovery}
-            onSetFilterText={setFilterText}
-            onSetRevisionOverrides={setRevisionOverrides}
-            onSetDisciplinePageSize={setDisciplinePageSize}
-            onSetShowScanConfirm={setShowScanConfirm}
-            onRunScan={runScan}
-            onGoToRegister={() => setStep(2)}
-          />
-        )}
-
-        {/* Step 1: Scanning progress */}
-        {step === 1 && (
-          <ScanProgress
-            scanProgress={scanProgress}
-            changesLength={changes.length}
-            onBack={() => setStep(changes.length > 0 ? 2 : 0)}
-          />
-        )}
-
-        {/* Step 2: Change Register */}
-        {step === 2 && scan && (
-          <RegisterPanel
-            companyId={company_id}
-            projectId={projectId}
-            projectName={projectName}
-            projects={projects}
-            changes={changes}
-            scan={scan}
-            allScans={allScans}
-            drawingPairs={drawingPairs}
-            expandedResults={expandedResults}
-            expandedDrawings={expandedDrawings}
-            highSeverityOnly={highSeverityOnly}
-            variationsOnly={variationsOnly}
-            sortBy={sortBy}
-            selectMode={selectMode}
-            selectedChangeIds={selectedChangeIds}
-            deleting={deleting}
-            deepScanning={deepScanning}
-            inlineScanning={inlineScanning}
-            loading={false}
-            onToggleResultSection={toggleResultSection}
-            onToggleDrawingExpanded={toggleDrawingExpanded}
-            onExpandAllResults={expandAllResults}
-            onCollapseAllResults={collapseAllResults}
-            onSetHighSeverityOnly={setHighSeverityOnly}
-            onSetVariationsOnly={setVariationsOnly}
-            onSetSortBy={setSortBy}
-            onSetSelectMode={setSelectMode}
-            onClearSelection={() => setSelectedChangeIds(new Set())}
-            onToggleChangeSelection={toggleChangeSelection}
-            onSelectDrawingChanges={selectDrawingChanges}
-            onUpdateStatus={updateStatus}
-            onRaiseChangeEvent={raiseChangeEvent}
-            onDeepScan={deepScanDrawing}
-            onInlineScan={inlineScanPair}
-            onGoToScan={handleGoToScan}
-            onLoadScan={loadScan}
-            onLoadAllResults={handleLoadAllResults}
-            onRemoveDuplicates={removeDuplicates}
-            onClearResults={clearResults}
-            onDeleteSelected={deleteSelected}
-            onSetExpandedDrawings={setExpandedDrawings}
-          />
-        )}
+          {error && (
+            <div
+              style={{
+                borderRadius: 8,
+                border: "1px solid var(--hp-critical-bg)",
+                backgroundColor: "var(--hp-critical-bg)",
+                color: "var(--hp-critical)",
+                padding: 12,
+                fontSize: 13,
+                marginBottom: 12,
+              }}
+            >
+              {error}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Stage layout: rail + content */}
+      {projectId && (
+        <div style={{ display: "flex", minHeight: "calc(100vh - 180px)" }}>
+          <StageRail
+            stage={stage}
+            collapsed={railCollapsed}
+            baselineStatus={baselineStatus}
+            scanStatus={scanStatus}
+            registerStatus={registerStatus}
+            onStageChange={(s) => setStageAndPersist(s)}
+          />
+
+          {/* Content area */}
+          <div style={{ flex: 1, minWidth: 0, overflow: "auto", padding: "16px 24px" }}>
+            <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+              {/* Baseline stage */}
+              {stage === "baseline" && (
+                <>
+                  <BaselinePanel
+                    companyId={company_id}
+                    projectId={projectId}
+                    baselineDocs={baselineDocs}
+                    baselineExpanded={baselineExpanded}
+                    baselineUploading={baselineUploading}
+                    baselineProgressText={baselineProgressText}
+                    expandedBaselineDoc={expandedBaselineDoc}
+                    showProcoreBrowser={showProcoreBrowser}
+                    onToggleExpanded={() => setBaselineExpanded((v) => !v)}
+                    onUploadFile={uploadBaselineFile}
+                    onAddProcoreDoc={addProcoreDoc}
+                    onDeleteDoc={deleteBaselineDoc}
+                    onClearFailed={clearFailedBaseline}
+                    onToggleProcoreBrowser={() => setShowProcoreBrowser((v) => !v)}
+                    onSetExpandedBaselineDoc={setExpandedBaselineDoc}
+                    onProcessFolder={handleProcessFolder}
+                    fetchBaseline={fetchBaseline}
+                  />
+
+                  {/* Compare Document against Baseline */}
+                  {baselineDocs.some((d) => d.status === "processed") && (
+                    <div style={{ marginTop: 16 }}>
+                      <DocCompareSection
+                        company_id={company_id}
+                        project_id={projectId}
+                        project_name={projects.find((p) => String(p.id) === projectId)?.name ?? ""}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Scan stage */}
+              {stage === "scan" && (
+                <ScanPanel
+                  drawingPairs={drawingPairs}
+                  selectedIds={selectedIds}
+                  filterText={filterText}
+                  collapsedDiscovery={collapsedDiscovery}
+                  revisionOverrides={revisionOverrides}
+                  disciplinePageSize={disciplinePageSize}
+                  showScanConfirm={showScanConfirm}
+                  loading={loading}
+                  totalDrawings={totalDrawings}
+                  scan={scan}
+                  changes={changes}
+                  onToggleDrawing={toggleDrawing}
+                  onToggleDisciplineSelection={toggleDisciplineSelection}
+                  onSelectAll={selectAll}
+                  onSelectUnscanned={selectUnscanned}
+                  onSelectNone={selectNone}
+                  onToggleDiscoverySection={toggleDiscoverySection}
+                  onExpandAllDiscovery={expandAllDiscovery}
+                  onCollapseAllDiscovery={collapseAllDiscovery}
+                  onSetFilterText={setFilterText}
+                  onSetRevisionOverrides={setRevisionOverrides}
+                  onSetDisciplinePageSize={setDisciplinePageSize}
+                  onSetShowScanConfirm={setShowScanConfirm}
+                  onRunScan={runScan}
+                  onGoToRegister={() => setStageAndPersist("register")}
+                />
+              )}
+
+              {/* Scanning progress */}
+              {stage === "scanning" && (
+                <ScanProgress
+                  scanProgress={scanProgress}
+                  changesLength={changes.length}
+                  onBack={() => setStageAndPersist(changes.length > 0 ? "register" : "scan")}
+                />
+              )}
+
+              {/* Register stage */}
+              {stage === "register" && scan && (
+                <RegisterPanel
+                  companyId={company_id}
+                  projectId={projectId}
+                  projectName={projectName}
+                  projects={projects}
+                  changes={changes}
+                  scan={scan}
+                  allScans={allScans}
+                  drawingPairs={drawingPairs}
+                  expandedResults={expandedResults}
+                  expandedDrawings={expandedDrawings}
+                  highSeverityOnly={highSeverityOnly}
+                  variationsOnly={variationsOnly}
+                  sortBy={sortBy}
+                  selectMode={selectMode}
+                  selectedChangeIds={selectedChangeIds}
+                  deleting={deleting}
+                  deepScanning={deepScanning}
+                  inlineScanning={inlineScanning}
+                  loading={false}
+                  onToggleResultSection={toggleResultSection}
+                  onToggleDrawingExpanded={toggleDrawingExpanded}
+                  onExpandAllResults={expandAllResults}
+                  onCollapseAllResults={collapseAllResults}
+                  onSetHighSeverityOnly={setHighSeverityOnly}
+                  onSetVariationsOnly={setVariationsOnly}
+                  onSetSortBy={setSortBy}
+                  onSetSelectMode={setSelectMode}
+                  onClearSelection={() => setSelectedChangeIds(new Set())}
+                  onToggleChangeSelection={toggleChangeSelection}
+                  onSelectDrawingChanges={selectDrawingChanges}
+                  onUpdateStatus={updateStatus}
+                  onRaiseChangeEvent={raiseChangeEvent}
+                  onDeepScan={deepScanDrawing}
+                  onInlineScan={inlineScanPair}
+                  onGoToScan={handleGoToScan}
+                  onGoToScanWithUnscanned={handleGoToScanWithUnscanned}
+                  onLoadScan={loadScan}
+                  onLoadAllResults={handleLoadAllResults}
+                  onRemoveDuplicates={removeDuplicates}
+                  onClearResults={clearResults}
+                  onDeleteSelected={deleteSelected}
+                  onSetExpandedDrawings={setExpandedDrawings}
+                />
+              )}
+
+              {/* Register stage with no scan data yet */}
+              {stage === "register" && !scan && (
+                <div
+                  style={{
+                    borderRadius: 8,
+                    border: "1px solid var(--hp-border)",
+                    padding: 48,
+                    textAlign: "center",
+                    fontSize: 13,
+                    color: "var(--hp-text-secondary)",
+                  }}
+                >
+                  No scan results yet. Go to the Scan stage to scan drawings for changes.
+                  <div style={{ marginTop: 12 }}>
+                    <button
+                      onClick={() => setStageAndPersist("scan")}
+                      style={{
+                        borderRadius: 8,
+                        padding: "8px 18px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#fff",
+                        backgroundColor: "var(--hp-warm-800)",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Go to Scan
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

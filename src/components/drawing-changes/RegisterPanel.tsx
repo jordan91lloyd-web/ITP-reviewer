@@ -7,7 +7,7 @@ import {
   ChevronRight,
   AlertTriangle,
 } from "lucide-react";
-import VariationsSummary from "../VariationsSummary";
+import { KpiStrip, type KpiFilter } from "./KpiStrip";
 import type {
   ChangeRow,
   DrawingPair,
@@ -62,6 +62,7 @@ interface RegisterPanelProps {
   onDeepScan: (num: string, title: string, disc: string, oldRev: RevisionInfo, newRev: RevisionInfo) => void;
   onInlineScan: (pair: DrawingPair, from: RevisionInfo, to: RevisionInfo, discipline: string) => void;
   onGoToScan: () => void;
+  onGoToScanWithUnscanned?: () => void;
   onLoadScan: (scanId: string) => void;
   onLoadAllResults: () => void;
   onRemoveDuplicates: () => void;
@@ -106,6 +107,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
   onDeepScan,
   onInlineScan,
   onGoToScan,
+  onGoToScanWithUnscanned,
   onLoadScan,
   onLoadAllResults,
   onRemoveDuplicates,
@@ -115,9 +117,25 @@ export const RegisterPanel = React.memo(function RegisterPanel({
 }: RegisterPanelProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // KPI filter state
+  const [kpiFilter, setKpiFilter] = React.useState<KpiFilter>("all");
+
   // Filtered + sorted changes
   const filteredChanges = useMemo(() => {
     let filtered = changes;
+
+    // Apply KPI filter
+    if (kpiFilter === "needs_review") {
+      filtered = filtered.filter((c) => !c.review_status || c.review_status === "needs_review");
+    } else if (kpiFilter === "likely_variation") {
+      filtered = filtered.filter((c) => c.variation_risk === "likely_variation");
+    } else if (kpiFilter === "unclear") {
+      filtered = filtered.filter((c) => c.variation_risk === "unclear");
+    } else if (kpiFilter === "high") {
+      filtered = filtered.filter((c) => c.severity === "high");
+    }
+
+    // Also apply legacy filters if set
     if (highSeverityOnly) filtered = filtered.filter((c) => c.severity === "high");
     if (variationsOnly) filtered = filtered.filter((c) => c.variation_risk === "likely_variation");
 
@@ -131,7 +149,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
       filtered = [...filtered].sort((a, b) => a.change_type.localeCompare(b.change_type));
     }
     return filtered;
-  }, [changes, highSeverityOnly, variationsOnly, sortBy]);
+  }, [changes, highSeverityOnly, variationsOnly, sortBy, kpiFilter]);
 
   // Group by discipline
   const filteredByDiscipline = useMemo(() => {
@@ -277,10 +295,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
     overscan: 10,
   });
 
-  const hasBaseline = changes.some((c) => c.variation_risk !== null && c.variation_risk !== undefined);
-  const variationTotal = changes.filter((c) => c.variation_risk === "likely_variation").length;
   const unscannedCount = drawingPairs.filter((d) => d.status !== "scanned").length;
-  const currentProjectName = projects.find((p) => String(p.id) === projectId)?.name ?? "Project";
 
   const handleExpandAll = useCallback(() => {
     onExpandAllResults();
@@ -430,11 +445,6 @@ export const RegisterPanel = React.memo(function RegisterPanel({
 
   return (
     <>
-      {/* Variations Summary */}
-      {hasBaseline && (variationTotal > 0 || changes.some((c) => c.variation_risk === "unclear")) && (
-        <VariationsSummary changes={changes} projectName={currentProjectName} />
-      )}
-
       {/* Unscanned drawings banner */}
       {unscannedCount > 0 && (
         <div
@@ -456,7 +466,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
             </span>
           </div>
           <button
-            onClick={onGoToScan}
+            onClick={onGoToScanWithUnscanned ?? onGoToScan}
             style={{
               fontSize: 12,
               fontWeight: 600,
@@ -473,6 +483,13 @@ export const RegisterPanel = React.memo(function RegisterPanel({
         </div>
       )}
 
+      {/* KPI Strip */}
+      <KpiStrip
+        changes={changes}
+        activeFilter={kpiFilter}
+        onFilterChange={setKpiFilter}
+      />
+
       {/* Toolbar */}
       <RegisterToolbar
         companyId={companyId}
@@ -488,7 +505,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
         selectedChangeIds={selectedChangeIds}
         deleting={deleting}
         drawingPairsUnscannedCount={unscannedCount}
-        hasBaseline={hasBaseline}
+        hasBaseline={changes.some((c) => c.variation_risk !== null && c.variation_risk !== undefined)}
         onSetHighSeverityOnly={onSetHighSeverityOnly}
         onSetVariationsOnly={onSetVariationsOnly}
         onSetSortBy={onSetSortBy}
@@ -516,14 +533,18 @@ export const RegisterPanel = React.memo(function RegisterPanel({
             color: "var(--hp-text-secondary)",
           }}
         >
-          {highSeverityOnly ? "No high severity changes." : "No changes detected."}
+          {kpiFilter !== "all"
+            ? `No changes matching "${kpiFilter.replace(/_/g, " ")}" filter.`
+            : highSeverityOnly
+              ? "No high severity changes."
+              : "No changes detected."}
         </div>
       ) : (
         <div
           ref={parentRef}
           style={{
             overflow: "auto",
-            height: "calc(100vh - 280px)",
+            height: "calc(100vh - 380px)",
             borderRadius: 8,
             border: "1px solid var(--hp-border)",
           }}

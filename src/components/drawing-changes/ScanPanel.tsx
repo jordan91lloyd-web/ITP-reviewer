@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ChevronDown,
   ChevronRight,
-  RefreshCw,
   Search,
 } from "lucide-react";
 import type { DrawingPair, RevisionInfo, ScanRecord, ChangeRow, PickerFlatRow } from "./types";
@@ -118,6 +117,8 @@ const DrawingRow = React.memo(function DrawingRow({
   onToggle: () => void;
   onSetRevisionOverrides: ScanPanelProps["onSetRevisionOverrides"];
 }) {
+  const [showRevOverride, setShowRevOverride] = useState(false);
+
   const statusColor =
     pair.status === "scanned"
       ? "var(--hp-compliant)"
@@ -179,7 +180,9 @@ const DrawingRow = React.memo(function DrawingRow({
       >
         {statusLabel}
       </span>
-      {pair.revisions.length > 2 ? (
+
+      {/* Rev display: plain text by default, dropdowns if overriding */}
+      {pair.revisions.length > 2 && showRevOverride ? (
         <>
           <select
             value={activeOld.revision_number}
@@ -208,7 +211,7 @@ const DrawingRow = React.memo(function DrawingRow({
               </option>
             ))}
           </select>
-          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>\u2192</span>
+          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{"\u2192"}</span>
           <select
             value={activeNew.revision_number}
             onChange={(e) => {
@@ -238,8 +241,28 @@ const DrawingRow = React.memo(function DrawingRow({
           </select>
         </>
       ) : (
-        <span style={{ fontSize: 11, color: "var(--hp-text-muted)", flexShrink: 0 }}>
-          Rev {activeOld.revision_number} \u2192 {activeNew.revision_number}
+        <span style={{ fontSize: 11, color: "var(--hp-text-muted)", flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
+          Rev {activeOld.revision_number} {"\u2192"} {activeNew.revision_number}
+          {pair.revisions.length > 2 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowRevOverride(true);
+              }}
+              style={{
+                fontSize: 10,
+                color: "var(--hp-warm-800)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textDecoration: "underline",
+                padding: 0,
+                marginLeft: 2,
+              }}
+            >
+              adjust revs
+            </button>
+          )}
         </span>
       )}
     </div>
@@ -275,6 +298,11 @@ export const ScanPanel = React.memo(function ScanPanel({
 }: ScanPanelProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const isSearching = filterText.length > 0;
+
+  const unscannedCount = useMemo(
+    () => drawingPairs.filter((d) => d.status !== "scanned").length,
+    [drawingPairs]
+  );
 
   const filteredPairs = useMemo(() => {
     if (!isSearching) return drawingPairs;
@@ -361,226 +389,122 @@ export const ScanPanel = React.memo(function ScanPanel({
   }
 
   return (
-    <>
-      {/* Back to register link */}
-      {changes.length > 0 && (
-        <button
-          onClick={onGoToRegister}
-          style={{
-            fontSize: 13,
-            fontWeight: 500,
-            color: "var(--hp-warm-800)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            marginBottom: 12,
-          }}
-        >
-          \u2190 Back to Change Register
-        </button>
-      )}
-
-      {/* Sticky toolbar */}
-      <div style={{ position: "sticky", top: 0, zIndex: 5, backgroundColor: "var(--hp-bg)", paddingBottom: 8 }}>
-        {/* Scan action bar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            padding: "10px 16px",
-            borderRadius: 8,
-            border: "1px solid var(--hp-border)",
-            backgroundColor: "var(--hp-warm-100)",
-            marginBottom: 8,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {!showScanConfirm ? (
-              <button
-                onClick={() => {
-                  if (selectedIds.size > 50) onSetShowScanConfirm(true);
-                  else onRunScan();
-                }}
-                disabled={selectedIds.size === 0}
-                style={{
-                  borderRadius: 8,
-                  padding: "8px 18px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#fff",
-                  backgroundColor: "var(--hp-warm-800)",
-                  opacity: selectedIds.size === 0 ? 0.4 : 1,
-                  border: "none",
-                  cursor: selectedIds.size === 0 ? "default" : "pointer",
-                }}
-              >
-                Scan {selectedIds.size} Drawing{selectedIds.size !== 1 ? "s" : ""}
-              </button>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "var(--hp-significant)" }}>
-                  Scan {selectedIds.size} drawings? This will take several minutes.
-                </span>
-                <button
-                  onClick={() => {
-                    onSetShowScanConfirm(false);
-                    onRunScan();
-                  }}
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "#fff",
-                    backgroundColor: "var(--hp-warm-800)",
-                    border: "none",
-                    borderRadius: 6,
-                    padding: "4px 12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => onSetShowScanConfirm(false)}
-                  style={{
-                    fontSize: 12,
-                    color: "var(--hp-text-muted)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-            <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-              {selectedIds.size} drawings · ~{selectedIds.size * 2} PDFs to download
-            </span>
-          </div>
-          {scan && changes.length > 0 && (
-            <button
-              onClick={onGoToRegister}
-              style={{
-                fontSize: 12,
-                color: "var(--hp-warm-800)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-            >
-              Back to Register
-            </button>
-          )}
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 240px)" }}>
+      {/* Search box at top */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ position: "relative" }}>
+          <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }} />
+          <input
+            type="text"
+            placeholder="Search drawings by number, title, or discipline..."
+            value={filterText}
+            onChange={(e) => onSetFilterText(e.target.value)}
+            style={{
+              borderRadius: 8,
+              border: "1px solid var(--hp-border)",
+              padding: "7px 12px 7px 30px",
+              fontSize: 13,
+              backgroundColor: "var(--hp-surface)",
+              color: "var(--hp-text-primary)",
+              width: "100%",
+            }}
+          />
         </div>
+      </div>
 
-        {/* Filter + controls */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 8,
-          }}
-        >
-          <div style={{ fontSize: 13, color: "var(--hp-text-secondary)" }}>
-            <strong style={{ color: "var(--hp-text-primary)" }}>{drawingPairs.length}</strong> drawings with revisions (
-            {totalDrawings} total)
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ position: "relative" }}>
-              <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "var(--hp-text-muted)" }} />
-              <input
-                type="text"
-                placeholder="Filter drawings..."
-                value={filterText}
-                onChange={(e) => onSetFilterText(e.target.value)}
-                style={{
-                  borderRadius: 8,
-                  border: "1px solid var(--hp-border)",
-                  padding: "7px 12px 7px 30px",
-                  fontSize: 13,
-                  backgroundColor: "var(--hp-surface)",
-                  color: "var(--hp-text-primary)",
-                  width: 200,
-                }}
-              />
-            </div>
-            <button
-              onClick={onExpandAllDiscovery}
-              style={{
-                fontSize: 11,
-                background: "none",
-                border: "1px solid var(--hp-border)",
-                borderRadius: 6,
-                padding: "4px 8px",
-                cursor: "pointer",
-                color: "var(--hp-text-secondary)",
-              }}
-            >
-              Expand All
-            </button>
-            <button
-              onClick={onCollapseAllDiscovery}
-              style={{
-                fontSize: 11,
-                background: "none",
-                border: "1px solid var(--hp-border)",
-                borderRadius: 6,
-                padding: "4px 8px",
-                cursor: "pointer",
-                color: "var(--hp-text-secondary)",
-              }}
-            >
-              Collapse All
-            </button>
-            <button
-              onClick={onSelectAll}
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--hp-warm-800)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-            >
-              Select all
-            </button>
+      {/* Selection buttons */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: 8,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {unscannedCount > 0 && (
             <button
               onClick={onSelectUnscanned}
               style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--hp-warm-800)",
-                background: "none",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#fff",
+                backgroundColor: "var(--hp-warm-800)",
                 border: "none",
+                borderRadius: 6,
+                padding: "6px 14px",
                 cursor: "pointer",
-                textDecoration: "underline",
               }}
             >
-              Select unscanned
+              Select all unscanned ({unscannedCount})
             </button>
-            <button
-              onClick={onSelectNone}
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--hp-text-muted)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-            >
-              Clear
-            </button>
-          </div>
+          )}
+          <button
+            onClick={onSelectAll}
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              color: "var(--hp-text-secondary)",
+              background: "none",
+              border: "1px solid var(--hp-border)",
+              borderRadius: 6,
+              padding: "6px 12px",
+              cursor: "pointer",
+            }}
+          >
+            Select all
+          </button>
+          <button
+            onClick={onSelectNone}
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              color: "var(--hp-text-muted)",
+              background: "none",
+              border: "1px solid var(--hp-border)",
+              borderRadius: 6,
+              padding: "6px 12px",
+              cursor: "pointer",
+            }}
+          >
+            Clear
+          </button>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>
+            <strong style={{ color: "var(--hp-text-primary)" }}>{drawingPairs.length}</strong> drawings with revisions
+            ({totalDrawings} total)
+          </span>
+          <button
+            onClick={onExpandAllDiscovery}
+            style={{
+              fontSize: 11,
+              background: "none",
+              border: "1px solid var(--hp-border)",
+              borderRadius: 6,
+              padding: "4px 8px",
+              cursor: "pointer",
+              color: "var(--hp-text-secondary)",
+            }}
+          >
+            Expand All
+          </button>
+          <button
+            onClick={onCollapseAllDiscovery}
+            style={{
+              fontSize: 11,
+              background: "none",
+              border: "1px solid var(--hp-border)",
+              borderRadius: 6,
+              padding: "4px 8px",
+              cursor: "pointer",
+              color: "var(--hp-text-secondary)",
+            }}
+          >
+            Collapse All
+          </button>
         </div>
       </div>
 
@@ -591,8 +515,8 @@ export const ScanPanel = React.memo(function ScanPanel({
           borderRadius: 8,
           border: "1px solid var(--hp-border)",
           overflow: "auto",
-          height: "calc(100vh - 360px)",
-          marginBottom: 16,
+          flex: 1,
+          minHeight: 0,
         }}
       >
         <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
@@ -675,7 +599,7 @@ export const ScanPanel = React.memo(function ScanPanel({
               borderRadius: 6,
               cursor: "pointer",
               textAlign: "center",
-              marginBottom: 8,
+              marginTop: 4,
             }}
           >
             {discipline}: Show more ({pairs.length - pageSize} remaining)
@@ -683,13 +607,89 @@ export const ScanPanel = React.memo(function ScanPanel({
         );
       })}
 
-      {/* Previous results link */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        {scan && (
+      {/* Sticky bottom scan bar */}
+      <div
+        style={{
+          position: "sticky",
+          bottom: 0,
+          backgroundColor: "var(--hp-surface)",
+          borderTop: "1px solid var(--hp-border)",
+          padding: "10px 16px",
+          marginTop: 8,
+          borderRadius: "0 0 8px 8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {!showScanConfirm ? (
+            <button
+              onClick={() => {
+                if (selectedIds.size > 50) onSetShowScanConfirm(true);
+                else onRunScan();
+              }}
+              disabled={selectedIds.size === 0}
+              style={{
+                borderRadius: 8,
+                padding: "8px 18px",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#fff",
+                backgroundColor: "var(--hp-warm-800)",
+                opacity: selectedIds.size === 0 ? 0.4 : 1,
+                border: "none",
+                cursor: selectedIds.size === 0 ? "default" : "pointer",
+              }}
+            >
+              Scan {selectedIds.size} Drawing{selectedIds.size !== 1 ? "s" : ""}
+            </button>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "var(--hp-significant)" }}>
+                Scan {selectedIds.size} drawings? This will take several minutes.
+              </span>
+              <button
+                onClick={() => {
+                  onSetShowScanConfirm(false);
+                  onRunScan();
+                }}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#fff",
+                  backgroundColor: "var(--hp-warm-800)",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "4px 12px",
+                  cursor: "pointer",
+                }}
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => onSetShowScanConfirm(false)}
+                style={{
+                  fontSize: 12,
+                  color: "var(--hp-text-muted)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
+            ~{selectedIds.size * 2} PDFs to download
+          </span>
+        </div>
+        {scan && changes.length > 0 && (
           <button
             onClick={onGoToRegister}
             style={{
-              fontSize: 13,
+              fontSize: 12,
               color: "var(--hp-warm-800)",
               background: "none",
               border: "none",
@@ -697,11 +697,10 @@ export const ScanPanel = React.memo(function ScanPanel({
               textDecoration: "underline",
             }}
           >
-            View previous scan from {fmtDate(scan.created_at)} ({changes.length} change
-            {changes.length !== 1 ? "s" : ""})
+            View Register ({changes.length} changes)
           </button>
         )}
       </div>
-    </>
+    </div>
   );
 });

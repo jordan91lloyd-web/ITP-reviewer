@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Download,
   RefreshCw,
   Trash2,
   AlertTriangle,
+  MoreHorizontal,
 } from "lucide-react";
 import type { ChangeRow, ScanInfo, SortOption } from "./types";
 import {
@@ -73,6 +74,8 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
   onSetSelectMode,
   onClearSelection,
 }: RegisterToolbarProps) {
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const uniqueDrawings = new Set(changes.map((c) => c.drawing_number));
   const highTotal = changes.filter((c) => c.severity === "high").length;
   const variationTotal = changes.filter((c) => c.variation_risk === "likely_variation").length;
@@ -90,132 +93,7 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
 
   return (
     <>
-      {/* Header bar */}
-      <div
-        style={{
-          borderRadius: 8,
-          border: "1px solid var(--hp-border)",
-          backgroundColor: "var(--hp-warm-100)",
-          padding: "16px 20px",
-          marginBottom: 16,
-        }}
-      >
-        {/* Row 1: Title + actions */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-text-primary)" }}>Change Register</div>
-            <div style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
-              {uniqueDrawings.size} drawings · {changes.length} changes · {highTotal} high severity
-              {hasBaseline && ` · ${variationTotal} likely variation${variationTotal !== 1 ? "s" : ""}`}
-              {(() => {
-                const variationCount = changes.filter((c) => c.review_status === "variation_raised").length;
-                const reviewedCount = changes.filter((c) => c.review_status && c.review_status !== "needs_review").length;
-                if (reviewedCount === 0) return null;
-                return ` · ${reviewedCount} reviewed` + (variationCount > 0 ? ` · ${variationCount} variations` : "");
-              })()}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <a href={`/api/drawing-changes/export?${qs}&format=csv`} download style={BTN_STYLE}>
-              <Download size={12} /> Export CSV
-            </a>
-            <a href={`/api/drawing-changes/export?${qs}&format=pdf`} download style={BTN_STYLE}>
-              <Download size={12} /> Export PDF
-            </a>
-            <button
-              onClick={onGoToScan}
-              style={{
-                ...BTN_STYLE,
-                border: "1px solid var(--hp-warm-800)",
-                backgroundColor: "var(--hp-warm-800)",
-                color: "#fff",
-                fontWeight: 600,
-              }}
-            >
-              <RefreshCw size={12} /> Scan New Drawings
-            </button>
-            <button
-              onClick={onRemoveDuplicates}
-              title="Keep only the latest scan results for each drawing revision pair"
-              style={BTN_STYLE}
-            >
-              Remove Duplicates
-            </button>
-            <button
-              onClick={onClearResults}
-              title="Delete all scan results for this project"
-              style={{ ...BTN_STYLE, color: "var(--hp-critical)", borderColor: "var(--hp-critical-bg)" }}
-            >
-              <Trash2 size={12} /> Clear All
-            </button>
-          </div>
-        </div>
-
-        {/* Row 2: Scan history */}
-        {allScans.length > 0 && (() => {
-          const byDate = new Map<string, typeof allScans>();
-          for (const s of allScans) {
-            const date = fmtDate(s.created_at);
-            if (!byDate.has(date)) byDate.set(date, []);
-            byDate.get(date)!.push(s);
-          }
-          const dateEntries = [...byDate.entries()];
-
-          return (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginTop: 10,
-                borderTop: "1px solid var(--hp-border)",
-                paddingTop: 10,
-              }}
-            >
-              <span style={{ fontSize: 12, color: "var(--hp-text-muted)", marginRight: 4 }}>View:</span>
-              <button
-                onClick={onLoadAllResults}
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                  padding: "5px 12px",
-                  cursor: "pointer",
-                  border: "none",
-                  backgroundColor: !scan?.id || scan?.id === "all" ? "var(--hp-warm-800)" : "var(--hp-surface)",
-                  color: !scan?.id || scan?.id === "all" ? "#fff" : "var(--hp-text-secondary)",
-                }}
-              >
-                All Changes
-              </button>
-              {dateEntries.map(([date, scans]) => {
-                const isActive = scans.some((s) => s.id === scan?.id);
-                const totalDrawings = scans.reduce((sum, s) => sum + s.completed_drawings, 0);
-                return (
-                  <button
-                    key={date}
-                    onClick={() => onLoadScan(scans[0].id)}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: isActive ? 600 : 400,
-                      borderRadius: 6,
-                      padding: "5px 12px",
-                      cursor: "pointer",
-                      border: "none",
-                      backgroundColor: isActive ? "var(--hp-warm-800)" : "var(--hp-surface)",
-                      color: isActive ? "#fff" : "var(--hp-text-secondary)",
-                    }}
-                  >
-                    {date} ({totalDrawings})
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* Filter bar */}
+      {/* Filter pills and sort row */}
       {changes.length > 0 && (
         <div
           style={{
@@ -224,10 +102,10 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
             justifyContent: "space-between",
             flexWrap: "wrap",
             gap: 8,
-            marginBottom: 12,
+            marginBottom: 8,
           }}
         >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
             {(["addition", "deletion", "spec_change", "relocation"] as const).map((type) => {
               const count = changes.filter((c) => c.change_type === type).length;
               if (count === 0) return null;
@@ -324,10 +202,204 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
               }}
             >
               <option value="discipline">Discipline</option>
-              <option value="severity">Severity (High → Low)</option>
-              <option value="variation_risk">Variation Risk (High → Low)</option>
+              <option value="severity">Severity (High to Low)</option>
+              <option value="variation_risk">Variation Risk (High to Low)</option>
               <option value="change_type">Change Type</option>
             </select>
+          </div>
+        </div>
+      )}
+
+      {/* Scan-date view toggles */}
+      {allScans.length > 0 && (() => {
+        const byDate = new Map<string, typeof allScans>();
+        for (const s of allScans) {
+          const date = fmtDate(s.created_at);
+          if (!byDate.has(date)) byDate.set(date, []);
+          byDate.get(date)!.push(s);
+        }
+        const dateEntries = [...byDate.entries()];
+
+        return (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 8,
+            }}
+          >
+            <span style={{ fontSize: 12, color: "var(--hp-text-muted)", marginRight: 4 }}>View:</span>
+            <button
+              onClick={onLoadAllResults}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 6,
+                padding: "5px 12px",
+                cursor: "pointer",
+                border: "none",
+                backgroundColor: !scan?.id || scan?.id === "all" ? "var(--hp-warm-800)" : "var(--hp-surface)",
+                color: !scan?.id || scan?.id === "all" ? "#fff" : "var(--hp-text-secondary)",
+              }}
+            >
+              All Changes
+            </button>
+            {dateEntries.map(([date, scans]) => {
+              const isActive = scans.some((s) => s.id === scan?.id);
+              const totalDrawings = scans.reduce((sum, s) => sum + s.completed_drawings, 0);
+              return (
+                <button
+                  key={date}
+                  onClick={() => onLoadScan(scans[0].id)}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: isActive ? 600 : 400,
+                    borderRadius: 6,
+                    padding: "5px 12px",
+                    cursor: "pointer",
+                    border: "none",
+                    backgroundColor: isActive ? "var(--hp-warm-800)" : "var(--hp-surface)",
+                    color: isActive ? "#fff" : "var(--hp-text-secondary)",
+                  }}
+                >
+                  {date} ({totalDrawings})
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {/* Action bar: export icons, expand/collapse, select, More menu */}
+      {changes.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* Export CSV icon button */}
+            <a
+              href={`/api/drawing-changes/export?${qs}&format=csv`}
+              download
+              title="Export CSV"
+              style={{ ...BTN_STYLE, padding: "5px 8px" }}
+            >
+              <Download size={14} />
+            </a>
+            {/* Export PDF icon button */}
+            <a
+              href={`/api/drawing-changes/export?${qs}&format=pdf`}
+              download
+              title="Export PDF"
+              style={{ ...BTN_STYLE, padding: "5px 8px" }}
+            >
+              <Download size={14} style={{ color: "var(--hp-critical)" }} />
+            </a>
+
+            {/* More dropdown */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setMoreOpen((v) => !v)}
+                style={{ ...BTN_STYLE, padding: "5px 8px" }}
+                title="More actions"
+              >
+                <MoreHorizontal size={14} />
+              </button>
+              {moreOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    marginTop: 4,
+                    backgroundColor: "var(--hp-surface)",
+                    border: "1px solid var(--hp-border)",
+                    borderRadius: 8,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    zIndex: 20,
+                    minWidth: 180,
+                    padding: "4px 0",
+                  }}
+                >
+                  <a
+                    href={`/api/drawing-changes/export?${qs}&format=csv`}
+                    download
+                    onClick={() => setMoreOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "8px 14px",
+                      fontSize: 12,
+                      color: "var(--hp-text-primary)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Export CSV
+                  </a>
+                  <a
+                    href={`/api/drawing-changes/export?${qs}&format=pdf`}
+                    download
+                    onClick={() => setMoreOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "8px 14px",
+                      fontSize: 12,
+                      color: "var(--hp-text-primary)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Export PDF
+                  </a>
+                  <div style={{ borderTop: "1px solid var(--hp-border)", margin: "4px 0" }} />
+                  <button
+                    onClick={() => {
+                      setMoreOpen(false);
+                      onRemoveDuplicates();
+                    }}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                      padding: "8px 14px",
+                      fontSize: 12,
+                      color: "var(--hp-text-primary)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove Duplicates
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMoreOpen(false);
+                      onClearResults();
+                    }}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                      padding: "8px 14px",
+                      fontSize: 12,
+                      color: "var(--hp-critical)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Clear All Results
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {selectMode ? (
               <>
                 <button
@@ -363,6 +435,20 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
                 </button>
                 <button onClick={() => onSetSelectMode(true)} style={{ ...BTN_STYLE, padding: "4px 10px", fontSize: 11 }}>
                   Select
+                </button>
+                <button
+                  onClick={onGoToScan}
+                  style={{
+                    ...BTN_STYLE,
+                    padding: "4px 10px",
+                    fontSize: 11,
+                    border: "1px solid var(--hp-warm-800)",
+                    backgroundColor: "var(--hp-warm-800)",
+                    color: "#fff",
+                    fontWeight: 600,
+                  }}
+                >
+                  <RefreshCw size={11} /> Scan New
                 </button>
               </>
             )}
