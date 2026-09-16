@@ -160,3 +160,65 @@ export function buildSystemPrompt(baselineItems?: BaselineScopeItemRef[]): strin
 
 // Legacy export — unchanged prompt for backward compatibility
 export const SYSTEM_PROMPT = BASE_PROMPT + OUTPUT_FORMAT_NO_BASELINE;
+
+// ── Document comparison prompt ──────────────────────────────────────────────
+// For comparing a single new/revised document against baseline scope items.
+// Similar to drawing comparison but doesn't compare two revisions side-by-side.
+
+const DOC_COMPARE_BASE = `You are a construction document analyst reviewing a new or revised document for a builder. Your job is to identify SCOPE and SPECIFICATION changes relative to the project's baseline contract scope.
+
+Read this document and identify every item that:
+- ADDS scope, materials, requirements, or specifications not in the baseline
+- CHANGES specifications, ratings, dimensions, or requirements from the baseline
+- REMOVES or contradicts items in the baseline
+- Introduces requirements that conflict with the baseline scope
+
+INCLUDE these types of changes:
+- addition: New elements, requirements, or specifications not in the baseline scope
+- deletion: Items present in baseline but explicitly removed or contradicted by this document
+- spec_change: Material, dimension, finish, rating, or performance specification that differs from baseline
+- relocation: Requirements moved to a different trade, area, or scope boundary
+
+DO NOT flag:
+- Items that are clearly within the baseline scope
+- Standard compliance references that don't change scope
+- Administrative or formatting differences
+
+For each change, provide:
+- "change_type": one of "addition", "deletion", "spec_change", "relocation"
+- "description": Clear one-sentence description of the change and its construction impact
+- "location_on_drawing": Section, clause, or page reference in this document. Null if not determinable.
+- "severity": "high" if it affects structure, fire rating, waterproofing, or significantly changes scope; "medium" for moderate scope or spec changes; "low" for minor spec adjustments`;
+
+/**
+ * Build the system prompt for comparing a document against baseline scope.
+ */
+export function buildDocComparePrompt(baselineItems: BaselineScopeItemRef[]): string {
+  if (baselineItems.length === 0) {
+    return DOC_COMPARE_BASE + `
+
+Return ONLY a JSON array. No markdown, no explanation, no code fences.
+[{"change_type":"...","description":"...","location_on_drawing":"...","severity":"..."}]
+Return [] if no meaningful scope/specification changes are found.`;
+  }
+
+  const byCategory: Record<string, BaselineScopeItemRef[]> = {};
+  for (const item of baselineItems) {
+    if (!byCategory[item.category]) byCategory[item.category] = [];
+    byCategory[item.category].push(item);
+  }
+
+  const lines: string[] = [];
+  for (const [category, items] of Object.entries(byCategory)) {
+    lines.push(`\n[${category.toUpperCase()}]`);
+    for (const item of items) {
+      let line = `• ${item.item}`;
+      if (item.detail) line += ` — ${item.detail}`;
+      if (item.source_reference) line += ` (${item.source_reference})`;
+      lines.push(line);
+    }
+  }
+
+  return DOC_COMPARE_BASE + BASELINE_SECTION + lines.join("\n") + OUTPUT_FORMAT_WITH_BASELINE;
+}
+
