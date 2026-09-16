@@ -232,7 +232,7 @@ export default function ActionPlansPage() {
   const canUpload = !!selectedProjectId && !!selectedPlanTypeId;
 
   return (
-    <main className="flex-1 overflow-y-auto mx-auto max-w-3xl px-4 py-10 w-full">
+    <main className="mx-auto max-w-3xl px-4 py-10 w-full">
       <header className="mb-8 ap-no-print">
         <h1
           className="text-2xl font-bold"
@@ -250,64 +250,62 @@ export default function ActionPlansPage() {
       </header>
 
       {/* ── Procore selectors ────────────────────────────────────────────── */}
-      {!plan && (
-        <div className="mb-6 ap-no-print space-y-4">
-          {/* Project */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              Target project
-            </label>
-            <select
-              value={selectedProjectId ?? ""}
-              onChange={(e) =>
-                setSelectedProjectId(e.target.value ? Number(e.target.value) : null)
-              }
-              disabled={projectsLoading || projects.length === 0}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
-            >
-              <option value="">
-                {projectsLoading
-                  ? "Loading projects\u2026"
-                  : projects.length === 0
-                    ? "No projects available"
-                    : "\u2014 Choose a project \u2014"}
+      <div className="mb-6 ap-no-print space-y-4">
+        {/* Project */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            Target project
+          </label>
+          <select
+            value={selectedProjectId ?? ""}
+            onChange={(e) =>
+              setSelectedProjectId(e.target.value ? Number(e.target.value) : null)
+            }
+            disabled={projectsLoading || projects.length === 0}
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
+          >
+            <option value="">
+              {projectsLoading
+                ? "Loading projects\u2026"
+                : projects.length === 0
+                  ? "No projects available"
+                  : "\u2014 Choose a project \u2014"}
+            </option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.project_number ? `${p.project_number} \u2014 ` : ""}
+                {p.display_name || p.name}
               </option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.project_number ? `${p.project_number} \u2014 ` : ""}
-                  {p.display_name || p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Plan type */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              Plan type
-            </label>
-            <select
-              value={selectedPlanTypeId ?? ""}
-              onChange={(e) =>
-                setSelectedPlanTypeId(e.target.value ? Number(e.target.value) : null)
-              }
-              disabled={planTypes.length === 0}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
-            >
-              <option value="">
-                {planTypes.length === 0
-                  ? "No plan types available"
-                  : "\u2014 Choose a plan type \u2014"}
-              </option>
-              {planTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            ))}
+          </select>
         </div>
-      )}
+
+        {/* Plan type */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            Plan type
+          </label>
+          <select
+            value={selectedPlanTypeId ?? ""}
+            onChange={(e) =>
+              setSelectedPlanTypeId(e.target.value ? Number(e.target.value) : null)
+            }
+            disabled={planTypes.length === 0}
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
+          >
+            <option value="">
+              {planTypes.length === 0
+                ? "No plan types available"
+                : "\u2014 Choose a plan type \u2014"}
+            </option>
+            {planTypes.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* ── Upload zone ─────────────────────────────────────────────────── */}
       {!plan && (
@@ -378,7 +376,99 @@ export default function ActionPlansPage() {
       {/* ── Preview ─────────────────────────────────────────────────────── */}
       {plan && (
         <div>
-          {/* Notice banner + Export PDF */}
+          {/* ── Upload to Procore (at top) ────────────────────────────── */}
+          <div className="mb-6 ap-no-print">
+            {/* Upload error */}
+            {uploadError && (
+              <div
+                className="mb-4 rounded-lg px-4 py-3 text-sm font-medium"
+                style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b" }}
+              >
+                <p>{uploadError}</p>
+                {uploadResult?.created_plan_id && (
+                  <p className="mt-1 text-xs">
+                    A partial plan was created in Procore &mdash; delete plan{" "}
+                    <strong>{uploadResult.created_plan_id}</strong> before retrying.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Success panel */}
+            {uploadResult?.success && (
+              <div
+                className="mb-4 rounded-lg px-4 py-4 text-sm"
+                style={{
+                  backgroundColor: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  color: "#166534",
+                }}
+              >
+                <p className="font-semibold mb-1">
+                  Action Plan created in Procore
+                </p>
+                <p>
+                  {uploadResult.sections_created} section{uploadResult.sections_created === 1 ? "" : "s"},{" "}
+                  {uploadResult.items_created} item{uploadResult.items_created === 1 ? "" : "s"} created.
+                </p>
+                <p className="mt-1 text-xs" style={{ color: "#15803d" }}>
+                  The plan is in <strong>Draft</strong> status. Open it in Procore to review and publish.
+                </p>
+                {uploadResult.attachment && (
+                  <p
+                    className="mt-1 text-xs font-medium"
+                    style={{
+                      color: uploadResult.attachment.succeeded ? "#15803d" : "#b45309",
+                    }}
+                  >
+                    {uploadResult.attachment.succeeded
+                      ? "Original report attached to the plan."
+                      : "Original report was NOT attached \u2014 attach it manually in Procore."}
+                  </p>
+                )}
+                {uploadResult.plan_url && (
+                  <a
+                    href={uploadResult.plan_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block text-sm font-medium underline"
+                    style={{ color: "#166534" }}
+                  >
+                    Open in Procore &rarr;
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Upload button (hidden after success) */}
+            {!uploadResult?.success && (
+              <>
+                {!canUpload && (
+                  <p
+                    className="mb-2 text-xs"
+                    style={{ color: "var(--hp-text-muted)" }}
+                  >
+                    {!selectedProjectId && !selectedPlanTypeId
+                      ? "Select a project and plan type above before uploading."
+                      : !selectedProjectId
+                        ? "Select a project above before uploading."
+                        : "Select a plan type above before uploading."}
+                  </p>
+                )}
+                <button
+                  onClick={handleUpload}
+                  disabled={!canUpload || isUploading}
+                  className="w-full rounded-lg bg-amber-600 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isUploading
+                    ? "Uploading to Procore\u2026 this can take a minute on a long report"
+                    : "Upload to Procore"}
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Notice banner + Export PDF + Reset */}
           <div
             className="mb-6 rounded-lg px-4 py-3 text-sm flex items-center justify-between ap-no-print"
             style={{
@@ -387,13 +477,25 @@ export default function ActionPlansPage() {
               color: "var(--hp-warm-800)",
             }}
           >
-            <span>Preview only &mdash; nothing has been sent to Procore.</span>
-            <button
-              onClick={() => window.print()}
-              className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 transition-colors shrink-0 ml-4"
-            >
-              Export PDF
-            </button>
+            <span>
+              Preview only &mdash; {plan.activities.length} activit{plan.activities.length === 1 ? "y" : "ies"} across{" "}
+              {Object.keys(sections).length} section{Object.keys(sections).length === 1 ? "" : "s"}
+            </span>
+            <div className="flex items-center gap-3 shrink-0 ml-4">
+              <button
+                onClick={handleReset}
+                className="text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ color: "var(--hp-accent)" }}
+              >
+                Convert another
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 transition-colors"
+              >
+                Export PDF
+              </button>
+            </div>
           </div>
 
           {/* Plan metadata */}
@@ -493,116 +595,6 @@ export default function ActionPlansPage() {
               </div>
             </div>
           ))}
-
-          {/* ── Upload to Procore ───────────────────────────────────────── */}
-          <div className="mt-8 ap-no-print">
-            {/* Upload error */}
-            {uploadError && (
-              <div
-                className="mb-4 rounded-lg px-4 py-3 text-sm font-medium"
-                style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b" }}
-              >
-                <p>{uploadError}</p>
-                {uploadResult?.created_plan_id && (
-                  <p className="mt-1 text-xs">
-                    A partial plan was created in Procore &mdash; delete plan{" "}
-                    <strong>{uploadResult.created_plan_id}</strong> before retrying.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Success panel */}
-            {uploadResult?.success && (
-              <div
-                className="mb-4 rounded-lg px-4 py-4 text-sm"
-                style={{
-                  backgroundColor: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  color: "#166534",
-                }}
-              >
-                <p className="font-semibold mb-1">
-                  Action Plan created in Procore
-                </p>
-                <p>
-                  {uploadResult.sections_created} section{uploadResult.sections_created === 1 ? "" : "s"},{" "}
-                  {uploadResult.items_created} item{uploadResult.items_created === 1 ? "" : "s"} created.
-                </p>
-                <p className="mt-1 text-xs" style={{ color: "#15803d" }}>
-                  The plan is in <strong>Draft</strong> status. Open it in Procore to review and publish.
-                </p>
-                {uploadResult.attachment && (
-                  <p
-                    className="mt-1 text-xs font-medium"
-                    style={{
-                      color: uploadResult.attachment.succeeded ? "#15803d" : "#b45309",
-                    }}
-                  >
-                    {uploadResult.attachment.succeeded
-                      ? "Original report attached to the plan."
-                      : "Original report was NOT attached \u2014 attach it manually in Procore."}
-                  </p>
-                )}
-                {uploadResult.plan_url && (
-                  <a
-                    href={uploadResult.plan_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block text-sm font-medium underline"
-                    style={{ color: "#166534" }}
-                  >
-                    Open in Procore &rarr;
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Upload button (hidden after success) */}
-            {!uploadResult?.success && (
-              <>
-                {!canUpload && (
-                  <p
-                    className="mb-2 text-xs"
-                    style={{ color: "var(--hp-text-muted)" }}
-                  >
-                    {!selectedProjectId && !selectedPlanTypeId
-                      ? "Select a project and plan type above before uploading."
-                      : !selectedProjectId
-                        ? "Select a project above before uploading."
-                        : "Select a plan type above before uploading."}
-                  </p>
-                )}
-                <button
-                  onClick={handleUpload}
-                  disabled={!canUpload || isUploading}
-                  className="w-full rounded-lg bg-amber-600 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isUploading
-                    ? "Uploading to Procore\u2026 this can take a minute on a long report"
-                    : "Upload to Procore"}
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Summary + reset */}
-          <div className="flex items-center justify-between mt-6 ap-no-print">
-            <p
-              className="text-xs"
-              style={{ color: "var(--hp-text-muted)" }}
-            >
-              {plan.activities.length} activit{plan.activities.length === 1 ? "y" : "ies"} across{" "}
-              {Object.keys(sections).length} section{Object.keys(sections).length === 1 ? "" : "s"}
-            </p>
-            <button
-              onClick={handleReset}
-              className="text-sm font-medium transition-opacity hover:opacity-80"
-              style={{ color: "var(--hp-accent)" }}
-            >
-              Convert another
-            </button>
-          </div>
         </div>
       )}
     </main>
