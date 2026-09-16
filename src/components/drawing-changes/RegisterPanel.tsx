@@ -39,6 +39,7 @@ interface RegisterPanelProps {
   expandedDrawings: Set<string>;
   highSeverityOnly: boolean;
   variationsOnly: boolean;
+  needsReviewOnly: boolean;
   sortBy: SortOption;
   selectMode: boolean;
   selectedChangeIds: Set<string>;
@@ -52,6 +53,7 @@ interface RegisterPanelProps {
   onCollapseAllResults: () => void;
   onSetHighSeverityOnly: (v: boolean) => void;
   onSetVariationsOnly: (v: boolean) => void;
+  onSetNeedsReviewOnly: (v: boolean) => void;
   onSetSortBy: (v: SortOption) => void;
   onSetSelectMode: (v: boolean) => void;
   onClearSelection: () => void;
@@ -59,6 +61,7 @@ interface RegisterPanelProps {
   onSelectDrawingChanges: (ids: string[], selected: boolean) => void;
   onUpdateStatus: (changeIds: string[], status: ReviewStatus) => void;
   onRaiseChangeEvent: (ids: string[], discipline: string, title: string) => void;
+  onDownloadEvidence: (change: ChangeRow) => void;
   onDeepScan: (num: string, title: string, disc: string, oldRev: RevisionInfo, newRev: RevisionInfo) => void;
   onInlineScan: (pair: DrawingPair, from: RevisionInfo, to: RevisionInfo, discipline: string) => void;
   onGoToScan: () => void;
@@ -84,6 +87,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
   expandedDrawings,
   highSeverityOnly,
   variationsOnly,
+  needsReviewOnly,
   sortBy,
   selectMode,
   selectedChangeIds,
@@ -97,6 +101,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
   onCollapseAllResults,
   onSetHighSeverityOnly,
   onSetVariationsOnly,
+  onSetNeedsReviewOnly,
   onSetSortBy,
   onSetSelectMode,
   onClearSelection,
@@ -104,6 +109,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
   onSelectDrawingChanges,
   onUpdateStatus,
   onRaiseChangeEvent,
+  onDownloadEvidence,
   onDeepScan,
   onInlineScan,
   onGoToScan,
@@ -138,6 +144,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
     // Also apply legacy filters if set
     if (highSeverityOnly) filtered = filtered.filter((c) => c.severity === "high");
     if (variationsOnly) filtered = filtered.filter((c) => c.variation_risk === "likely_variation");
+    if (needsReviewOnly) filtered = filtered.filter((c) => !c.review_status || c.review_status === "needs_review");
 
     if (sortBy === "severity") {
       filtered = [...filtered].sort((a, b) => (SEV_ORDER[a.severity] ?? 9) - (SEV_ORDER[b.severity] ?? 9));
@@ -149,7 +156,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
       filtered = [...filtered].sort((a, b) => a.change_type.localeCompare(b.change_type));
     }
     return filtered;
-  }, [changes, highSeverityOnly, variationsOnly, sortBy, kpiFilter]);
+  }, [changes, highSeverityOnly, variationsOnly, needsReviewOnly, sortBy, kpiFilter]);
 
   // Group by discipline
   const filteredByDiscipline = useMemo(() => {
@@ -376,7 +383,6 @@ export const RegisterPanel = React.memo(function RegisterPanel({
             drawingPair={pair}
             onToggle={() => onToggleDrawingExpanded(row.data.number)}
             onSelectDrawingChanges={onSelectDrawingChanges}
-            onRaiseChangeEvent={onRaiseChangeEvent}
             onDeepScan={onDeepScan}
           />
         );
@@ -436,6 +442,8 @@ export const RegisterPanel = React.memo(function RegisterPanel({
             isSelected={selectedChangeIds.has(row.change.id)}
             onToggleSelection={onToggleChangeSelection}
             onUpdateStatus={onUpdateStatus}
+            onRaiseChangeEvent={onRaiseChangeEvent}
+            onDownloadEvidence={onDownloadEvidence}
           />
         );
       default:
@@ -500,6 +508,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
         allScans={allScans}
         highSeverityOnly={highSeverityOnly}
         variationsOnly={variationsOnly}
+        needsReviewOnly={needsReviewOnly}
         sortBy={sortBy}
         selectMode={selectMode}
         selectedChangeIds={selectedChangeIds}
@@ -508,6 +517,7 @@ export const RegisterPanel = React.memo(function RegisterPanel({
         hasBaseline={changes.some((c) => c.variation_risk !== null && c.variation_risk !== undefined)}
         onSetHighSeverityOnly={onSetHighSeverityOnly}
         onSetVariationsOnly={onSetVariationsOnly}
+        onSetNeedsReviewOnly={onSetNeedsReviewOnly}
         onSetSortBy={onSetSortBy}
         onGoToScan={onGoToScan}
         onLoadScan={onLoadScan}
@@ -535,9 +545,11 @@ export const RegisterPanel = React.memo(function RegisterPanel({
         >
           {kpiFilter !== "all"
             ? `No changes matching "${kpiFilter.replace(/_/g, " ")}" filter.`
-            : highSeverityOnly
-              ? "No high severity changes."
-              : "No changes detected."}
+            : needsReviewOnly
+              ? "No changes needing review."
+              : highSeverityOnly
+                ? "No high severity changes."
+                : "No changes detected."}
         </div>
       ) : (
         <div

@@ -17,7 +17,6 @@ interface DrawingGroupHeaderProps {
   drawingPair: DrawingPair | undefined;
   onToggle: () => void;
   onSelectDrawingChanges: (ids: string[], selected: boolean) => void;
-  onRaiseChangeEvent: (ids: string[], discipline: string, title: string) => void;
   onDeepScan: (num: string, title: string, disc: string, oldRev: RevisionInfo, newRev: RevisionInfo) => void;
 }
 
@@ -34,14 +33,10 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
   drawingPair,
   onToggle,
   onSelectDrawingChanges,
-  onRaiseChangeEvent,
   onDeepScan,
 }: DrawingGroupHeaderProps) {
   const allChangeIds = dg.revisions.flatMap((r) => r.changes.map((c) => c.id));
   const hasEvent = dg.revisions.some((r) => r.changes.some((c) => c.change_event_id));
-  const unreviewedCount = dg.revisions
-    .flatMap((r) => r.changes)
-    .filter((c) => !c.review_status || c.review_status === "needs_review").length;
 
   const pair = drawingPair;
   const latestRev = dg.revisions[dg.revisions.length - 1];
@@ -62,7 +57,7 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
         userSelect: "none",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
         {selectMode && (() => {
           const allSelected = allChangeIds.length > 0 && allChangeIds.every((id) => selectedChangeIds.has(id));
           return (
@@ -76,23 +71,37 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
           );
         })()}
         {isExpanded ? (
-          <ChevronDown size={14} style={{ color: "var(--hp-text-muted)" }} />
+          <ChevronDown size={14} style={{ color: "var(--hp-text-muted)", flexShrink: 0 }} />
         ) : (
-          <ChevronRight size={14} style={{ color: "var(--hp-text-muted)" }} />
+          <ChevronRight size={14} style={{ color: "var(--hp-text-muted)", flexShrink: 0 }} />
         )}
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>{dg.number}</span>
-        <span style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>{dg.title}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)", flexShrink: 0 }}>{dg.number}</span>
+        <span style={{ fontSize: 12, color: "var(--hp-text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {dg.title}
+        </span>
         {!hasMultipleRevs && (
-          <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Rev {dg.revisions[0]?.rev}</span>
+          <span style={{ fontSize: 11, color: "var(--hp-text-muted)", flexShrink: 0 }}>Rev {dg.revisions[0]?.rev}</span>
         )}
         {hasMultipleRevs && (
-          <span style={{ fontSize: 11, color: "var(--hp-warm-800)", fontWeight: 500 }}>
+          <span style={{ fontSize: 11, color: "var(--hp-warm-800)", fontWeight: 500, flexShrink: 0 }}>
             {dg.revisions.length} revisions
           </span>
         )}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{dg.totalChanges}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+        {/* Count chips */}
+        <span
+          style={{
+            borderRadius: 999,
+            padding: "1px 8px",
+            fontSize: 10,
+            fontWeight: 500,
+            backgroundColor: "var(--hp-warm-100)",
+            color: "var(--hp-text-secondary)",
+          }}
+        >
+          {dg.totalChanges} change{dg.totalChanges !== 1 ? "s" : ""}
+        </span>
         {dg.totalHigh > 0 && (
           <span
             style={{
@@ -107,27 +116,33 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
             {dg.totalHigh} high
           </span>
         )}
-        {!hasEvent && unreviewedCount < dg.totalChanges && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRaiseChangeEvent(allChangeIds, discipline, `${dg.number} ${dg.title} — Drawing revision changes`);
-            }}
-            title="Create a draft Change Event for all changes on this drawing"
+        {dg.totalVariations > 0 && (
+          <span
             style={{
+              borderRadius: 999,
+              padding: "1px 6px",
               fontSize: 10,
               fontWeight: 500,
+              backgroundColor: "var(--hp-critical-bg)",
               color: "var(--hp-critical)",
-              background: "none",
-              border: "1px solid var(--hp-critical-bg)",
-              borderRadius: 6,
-              padding: "2px 8px",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
             }}
           >
-            Raise Event
-          </button>
+            {dg.totalVariations} variation{dg.totalVariations !== 1 ? "s" : ""}
+          </span>
+        )}
+        {dg.totalNeedReview > 0 && (
+          <span
+            style={{
+              borderRadius: 999,
+              padding: "1px 6px",
+              fontSize: 10,
+              fontWeight: 500,
+              backgroundColor: "var(--hp-significant-bg)",
+              color: "var(--hp-significant)",
+            }}
+          >
+            {dg.totalNeedReview} review
+          </span>
         )}
         {hasEvent && (
           <span
@@ -171,7 +186,7 @@ export const DrawingGroupHeader = React.memo(function DrawingGroupHeader({
                 onDeepScan(pair.drawing_number, pair.drawing_title, pair.discipline, pair.old_revision, pair.new_revision);
               }}
               disabled={isDS}
-              title="Re-scan with Opus (slower, more thorough, higher cost)"
+              title="Re-scan with Opus for higher accuracy (slower, higher cost)"
               style={{
                 fontSize: 10,
                 fontWeight: 500,

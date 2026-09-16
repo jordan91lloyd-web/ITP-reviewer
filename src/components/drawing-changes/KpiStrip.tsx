@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle } from "lucide-react";
 import type { ChangeRow } from "./types";
 
 type KpiFilter = "all" | "needs_review" | "likely_variation" | "unclear" | "high" ;
@@ -30,6 +29,8 @@ export const KpiStrip = React.memo(function KpiStrip({
     (c) => c.severity === "high"
   ).length;
   const total = changes.length;
+  const reviewed = total - needsReview;
+  const progressPct = total > 0 ? Math.round((reviewed / total) * 100) : 0;
 
   const cards: { id: KpiFilter; label: string; count: number; color: string; bg: string }[] = [
     {
@@ -70,59 +71,88 @@ export const KpiStrip = React.memo(function KpiStrip({
   ];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 8,
-        marginBottom: 12,
-        flexWrap: "wrap",
-      }}
-    >
-      {cards.map((card) => {
-        const isActive = activeFilter === card.id;
-        return (
-          <button
-            key={card.id}
-            onClick={() => onFilterChange(isActive ? "all" : card.id)}
+    <div style={{ marginBottom: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
+        {cards.map((card) => {
+          const isActive = activeFilter === card.id;
+          return (
+            <button
+              key={card.id}
+              onClick={() => onFilterChange(isActive ? "all" : card.id)}
+              style={{
+                flex: "1 1 0",
+                minWidth: 100,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+                padding: "10px 8px",
+                borderRadius: 8,
+                border: isActive
+                  ? `2px solid ${card.color}`
+                  : "1px solid var(--hp-border)",
+                backgroundColor: isActive ? card.bg : "var(--hp-surface)",
+                cursor: "pointer",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: card.count > 0 ? card.color : "var(--hp-text-muted)",
+                  lineHeight: 1.1,
+                }}
+              >
+                {card.count}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? card.color : "var(--hp-text-secondary)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {card.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Review progress bar */}
+      {total > 0 && (
+        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+          <div
             style={{
-              flex: "1 1 0",
-              minWidth: 100,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 2,
-              padding: "10px 8px",
-              borderRadius: 8,
-              border: isActive
-                ? `2px solid ${card.color}`
-                : "1px solid var(--hp-border)",
-              backgroundColor: isActive ? card.bg : "var(--hp-surface)",
-              cursor: "pointer",
+              flex: 1,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: "var(--hp-warm-100)",
+              overflow: "hidden",
             }}
           >
-            <span
+            <div
               style={{
-                fontSize: 22,
-                fontWeight: 700,
-                color: card.count > 0 ? card.color : "var(--hp-text-muted)",
-                lineHeight: 1.1,
+                height: "100%",
+                width: `${progressPct}%`,
+                borderRadius: 3,
+                backgroundColor: progressPct === 100 ? "var(--hp-compliant)" : "var(--hp-warm-800)",
+                transition: "width 0.3s ease",
               }}
-            >
-              {card.count}
-            </span>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? card.color : "var(--hp-text-secondary)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {card.label}
-            </span>
-          </button>
-        );
-      })}
+            />
+          </div>
+          <span style={{ fontSize: 11, color: "var(--hp-text-muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
+            {reviewed}/{total} reviewed
+          </span>
+        </div>
+      )}
     </div>
   );
 });

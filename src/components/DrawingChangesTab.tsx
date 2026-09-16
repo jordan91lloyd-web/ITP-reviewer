@@ -64,6 +64,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedChangeIds, setSelectedChangeIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
 
   // Baseline
   const [baselineDocs, setBaselineDocs] = useState<BaselineDoc[]>([]);
@@ -624,6 +625,52 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     }
   }, [projectId, company_id, projectName, changes]);
 
+  // ── Download evidence sheet ──────────────────────────────────────────────
+
+  const downloadEvidence = useCallback(async (change: ChangeRow) => {
+    try {
+      const drawingChanges = changes.filter(
+        (c) => c.drawing_number === change.drawing_number &&
+               c.old_revision === change.old_revision &&
+               c.new_revision === change.new_revision
+      );
+      const res = await fetch("/api/drawing-changes/evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_name: projectName,
+          drawing_number: change.drawing_number,
+          drawing_title: change.drawing_title,
+          old_revision: change.old_revision,
+          new_revision: change.new_revision,
+          old_pdf_storage_path: change.old_pdf_storage_path,
+          new_pdf_storage_path: change.new_pdf_storage_path,
+          changes: drawingChanges.map((c) => ({
+            change_type: c.change_type,
+            description: c.description,
+            location_on_drawing: c.location_on_drawing,
+            severity: c.severity,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        setError("Failed to generate evidence sheet");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `evidence-${change.drawing_number}-rev${change.old_revision}-to-${change.new_revision}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Failed to generate evidence sheet");
+    }
+  }, [changes, projectName]);
+
   // ── Remove duplicates ────────────────────────────────────────────────────
 
   const removeDuplicates = useCallback(async () => {
@@ -989,6 +1036,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   expandedDrawings={expandedDrawings}
                   highSeverityOnly={highSeverityOnly}
                   variationsOnly={variationsOnly}
+                  needsReviewOnly={needsReviewOnly}
                   sortBy={sortBy}
                   selectMode={selectMode}
                   selectedChangeIds={selectedChangeIds}
@@ -1002,6 +1050,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   onCollapseAllResults={collapseAllResults}
                   onSetHighSeverityOnly={setHighSeverityOnly}
                   onSetVariationsOnly={setVariationsOnly}
+                  onSetNeedsReviewOnly={setNeedsReviewOnly}
                   onSetSortBy={setSortBy}
                   onSetSelectMode={setSelectMode}
                   onClearSelection={() => setSelectedChangeIds(new Set())}
@@ -1009,6 +1058,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   onSelectDrawingChanges={selectDrawingChanges}
                   onUpdateStatus={updateStatus}
                   onRaiseChangeEvent={raiseChangeEvent}
+                  onDownloadEvidence={downloadEvidence}
                   onDeepScan={deepScanDrawing}
                   onInlineScan={inlineScanPair}
                   onGoToScan={handleGoToScan}

@@ -25,6 +25,7 @@ interface RegisterToolbarProps {
   allScans: ScanInfo[];
   highSeverityOnly: boolean;
   variationsOnly: boolean;
+  needsReviewOnly: boolean;
   sortBy: SortOption;
   selectMode: boolean;
   selectedChangeIds: Set<string>;
@@ -33,6 +34,7 @@ interface RegisterToolbarProps {
   hasBaseline: boolean;
   onSetHighSeverityOnly: (v: boolean) => void;
   onSetVariationsOnly: (v: boolean) => void;
+  onSetNeedsReviewOnly: (v: boolean) => void;
   onSetSortBy: (v: SortOption) => void;
   onGoToScan: () => void;
   onLoadScan: (scanId: string) => void;
@@ -55,6 +57,7 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
   allScans,
   highSeverityOnly,
   variationsOnly,
+  needsReviewOnly,
   sortBy,
   selectMode,
   selectedChangeIds,
@@ -62,6 +65,7 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
   hasBaseline,
   onSetHighSeverityOnly,
   onSetVariationsOnly,
+  onSetNeedsReviewOnly,
   onSetSortBy,
   onGoToScan,
   onLoadScan,
@@ -76,10 +80,10 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
 }: RegisterToolbarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const uniqueDrawings = new Set(changes.map((c) => c.drawing_number));
   const highTotal = changes.filter((c) => c.severity === "high").length;
   const variationTotal = changes.filter((c) => c.variation_risk === "likely_variation").length;
   const withinScopeTotal = changes.filter((c) => c.variation_risk === "within_scope").length;
+  const needsReviewTotal = changes.filter((c) => !c.review_status || c.review_status === "needs_review").length;
 
   const exportParams = new URLSearchParams({
     company_id: companyId,
@@ -180,7 +184,27 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
                 {withinScopeTotal} Within Scope
               </span>
             )}
-            {(highSeverityOnly || variationsOnly) && (
+            {needsReviewTotal > 0 && (
+              <button
+                onClick={() => onSetNeedsReviewOnly(!needsReviewOnly)}
+                style={{
+                  borderRadius: 999,
+                  padding: "3px 10px",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  backgroundColor: needsReviewOnly ? "var(--hp-significant)" : "var(--hp-significant-bg)",
+                  color: needsReviewOnly ? "#fff" : "var(--hp-significant)",
+                }}
+              >
+                {needsReviewTotal} Needs Review {needsReviewOnly ? " \u2715" : ""}
+              </button>
+            )}
+            {(highSeverityOnly || variationsOnly || needsReviewOnly) && (
               <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
                 Showing {filteredChangesCount} of {changes.length}
               </span>
