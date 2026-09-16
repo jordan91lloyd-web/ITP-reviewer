@@ -427,6 +427,9 @@ function resolveFileUrl(f: Record<string, unknown>): string {
   return "";
 }
 
+const FETCH_TIMEOUT = 30_000; // 30s timeout for Procore API calls
+const DOWNLOAD_TIMEOUT = 120_000; // 120s timeout for file downloads (large PDFs)
+
 async function getFreshDownloadUrl(
   procoreDocId: number,
   projectId: string,
@@ -438,7 +441,7 @@ async function getFreshDownloadUrl(
   // Step 1: Get document metadata to find the folder
   const docRes = await fetch(
     `${PROCORE_BASE}/rest/v1.0/documents/${procoreDocId}?project_id=${projectId}`,
-    { headers }
+    { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT) }
   );
   if (!docRes.ok) {
     return { url: "", error: `Document lookup failed (HTTP ${docRes.status})` };
@@ -447,16 +450,18 @@ async function getFreshDownloadUrl(
   const folder = docData.folder as Record<string, unknown> | undefined;
   const folderId = folder?.id as number | undefined;
   if (!folderId) {
-    return { url: "", error: "Document has no folder — cannot resolve download URL" };
+    // Log what we got so we can debug
+    const keys = Object.keys(docData);
+    return { url: "", error: `Document has no folder (keys: ${keys.join(", ")})` };
   }
 
   // Step 2: Fetch the folder to get fresh file_versions with new presigned URLs
   const folderRes = await fetch(
     `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
-    { headers }
+    { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT) }
   );
   if (!folderRes.ok) {
-    return { url: "", error: `Folder lookup failed (HTTP ${folderRes.status})` };
+    return { url: "", error: `Folder ${folderId} lookup failed (HTTP ${folderRes.status})` };
   }
   const folderData = await folderRes.json();
   const files = Array.isArray(folderData.files) ? folderData.files : [];
@@ -464,11 +469,13 @@ async function getFreshDownloadUrl(
   // Step 3: Find our file by ID and extract the fresh URL
   const match = files.find((f: Record<string, unknown>) => (f.id as number) === procoreDocId);
   if (!match) {
-    return { url: "", error: `File ${procoreDocId} not found in folder ${folderId}` };
+    const fileIds = files.slice(0, 5).map((f: Record<string, unknown>) => f.id);
+    return { url: "", error: `File ${procoreDocId} not in folder ${folderId} (has ${files.length} files: ${fileIds.join(", ")}...)` };
   }
   const freshUrl = resolveFileUrl(match);
   if (!freshUrl) {
-    return { url: "", error: "File found but no download URL in file_versions" };
+    const matchKeys = Object.keys(match);
+    return { url: "", error: `File found but no URL (keys: ${matchKeys.join(", ")})` };
   }
   return { url: freshUrl };
 }
@@ -534,7 +541,7 @@ export async function PATCH(request: NextRequest) {
       const dlHeaders: Record<string, string> = {};
       if (!isS3) dlHeaders.Authorization = `Bearer ${token}`;
 
-      const dlRes = await fetch(downloadUrl, { headers: dlHeaders });
+      const dlRes = await fetch(downloadUrl, { headers: dlHeaders, signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT) });
       if (!dlRes.ok) {
         await supabase.from("baseline_documents").update({ error_message: `Retry: download failed (HTTP ${dlRes.status})` }).eq("id", doc.id);
         results.push({ document_name: doc.document_name, status: "failed", error: `Download failed (HTTP ${dlRes.status})` });
@@ -608,7 +615,8 @@ export async function PATCH(request: NextRequest) {
 
       results.push({ document_name: doc.document_name, status: "processed", item_count: items.length });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const isTimeout = err instanceof DOMException && err.name === "TimeoutError";
+      const msg = isTimeout ? "Request timed out" : (err instanceof Error ? err.message : String(err));
       await supabase.from("baseline_documents").update({ status: "failed", error_message: `Retry: ${msg}` }).eq("id", doc.id);
       results.push({ document_name: doc.document_name, status: "failed", error: msg });
     }
