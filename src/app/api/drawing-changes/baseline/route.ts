@@ -404,11 +404,11 @@ export async function GET(request: NextRequest) {
 
 // ── PATCH: Retry failed/skipped baseline documents ────────────────────────
 // Procore download URLs are presigned S3 URLs that expire.
-// To get fresh URLs, we crawl the project's document folders using /rest/v1.0/folders
-// (same proven path the folder browser uses), build a file ID → URL map, then match.
+// To get fresh URLs we crawl the project's folders (same as the folder browser),
+// collect ALL files with URLs, then match failed docs by FILENAME.
 
-const FETCH_TIMEOUT = 30_000; // 30s per Procore API call
-const DOWNLOAD_TIMEOUT = 120_000; // 120s for file downloads
+const FETCH_TIMEOUT = 30_000;
+const DOWNLOAD_TIMEOUT = 120_000;
 
 function resolveFileUrl(f: Record<string, unknown>): string {
   const versions = f.file_versions as Record<string, unknown>[] | undefined;
@@ -425,54 +425,45 @@ function resolveFileUrl(f: Record<string, unknown>): string {
   return "";
 }
 
-// Crawl project folders to build file ID → fresh URL map
-async function buildFileUrlMap(
+interface CrawledFile { name: string; url: string; id: number }
+
+// Crawl all project folders, collect every file with a download URL
+async function crawlProjectFiles(
   companyId: string,
   projectId: string,
-  targetFileIds: Set<number>,
   token: string,
-): Promise<{ urlMap: Map<number, string>; error?: string }> {
+): Promise<{ files: CrawledFile[]; foldersVisited: number; error?: string }> {
   const headers = { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId };
-  const urlMap = new Map<number, string>();
+  const allFiles: CrawledFile[] = [];
 
-  // Step 1: Get root folder
   const rootRes = await fetch(
     `${PROCORE_BASE}/rest/v1.0/folders?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
     { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT) }
   );
   if (!rootRes.ok) {
-    return { urlMap, error: `Root folder lookup failed (HTTP ${rootRes.status})` };
+    return { files: [], foldersVisited: 0, error: `Root folder failed (HTTP ${rootRes.status})` };
   }
   const rootData = await rootRes.json();
-  const rootFolders: number[] = [];
+  const queue: number[] = [];
 
-  // Root can be object with folders array, or direct array
   if (rootData && typeof rootData === "object" && !Array.isArray(rootData)) {
     const folders = Array.isArray(rootData.folders) ? rootData.folders : [];
     for (const f of folders) {
-      if (f.id && f.id !== rootData.id) rootFolders.push(f.id);
+      if (f.id && f.id !== rootData.id) queue.push(f.id);
     }
-    // Also check files at root level
-    const rootFiles = Array.isArray(rootData.files) ? rootData.files : [];
-    for (const f of rootFiles) {
-      if (targetFileIds.has(f.id)) {
-        const url = resolveFileUrl(f);
-        if (url) urlMap.set(f.id, url);
-      }
+    for (const f of (Array.isArray(rootData.files) ? rootData.files : [])) {
+      const url = resolveFileUrl(f);
+      if (url) allFiles.push({ name: f.name as string, url, id: f.id as number });
     }
   } else if (Array.isArray(rootData)) {
-    for (const f of rootData) rootFolders.push(f.id);
+    for (const f of rootData) queue.push(f.id);
   }
 
-  // Step 2: Crawl folders breadth-first, stop early when all targets found
   const visited = new Set<number>();
-  const queue = [...rootFolders];
-
-  while (queue.length > 0 && urlMap.size < targetFileIds.size) {
+  while (queue.length > 0) {
     const folderId = queue.shift()!;
     if (visited.has(folderId)) continue;
     visited.add(folderId);
-
     try {
       const res = await fetch(
         `${PROCORE_BASE}/rest/v1.0/folders/${folderId}?company_id=${encodeURIComponent(companyId)}&project_id=${encodeURIComponent(projectId)}`,
@@ -480,28 +471,17 @@ async function buildFileUrlMap(
       );
       if (!res.ok) continue;
       const data = await res.json();
-
-      // Check files in this folder
-      const files = Array.isArray(data.files) ? data.files : [];
-      for (const f of files) {
-        if (targetFileIds.has(f.id as number)) {
-          const url = resolveFileUrl(f);
-          if (url) urlMap.set(f.id as number, url);
-        }
+      for (const f of (Array.isArray(data.files) ? data.files : [])) {
+        const url = resolveFileUrl(f);
+        if (url) allFiles.push({ name: f.name as string, url, id: f.id as number });
       }
-
-      // Queue subfolders
-      const subs = Array.isArray(data.folders) ? data.folders : [];
-      for (const s of subs) {
+      for (const s of (Array.isArray(data.folders) ? data.folders : [])) {
         if (s.id !== folderId && !visited.has(s.id)) queue.push(s.id);
       }
-    } catch {
-      // Skip folders that fail (timeout, etc.) and continue
-      continue;
-    }
+    } catch { continue; }
   }
 
-  return { urlMap };
+  return { files: allFiles, foldersVisited: visited.size };
 }
 
 export async function PATCH(request: NextRequest) {
@@ -514,37 +494,39 @@ export async function PATCH(request: NextRequest) {
 
   const supabase = getSupabase();
 
-  // Find all failed/skipped Procore docs
+  // Find all failed/skipped docs (any source)
   const { data: retryDocs, error: fetchErr } = await supabase
     .from("baseline_documents")
     .select("*")
     .eq("company_id", companyId)
     .eq("project_id", projectId)
-    .in("status", ["failed", "skipped"])
-    .eq("source", "procore")
-    .not("procore_document_id", "is", null);
+    .in("status", ["failed", "skipped"]);
 
   if (fetchErr) {
     return NextResponse.json({ error: fetchErr.message }, { status: 500 });
   }
-
   if (!retryDocs || retryDocs.length === 0) {
     return NextResponse.json({ retried: 0, remaining: 0, message: "No retryable documents found" });
   }
 
-  // Get Procore access token
   const cookieStore = await cookies();
   const token = cookieStore.get("procore_access_token")?.value;
   if (!token) {
     return NextResponse.json({ error: "Not logged in to Procore" }, { status: 401 });
   }
 
-  // Crawl project folders once to get fresh URLs for all target files
-  const targetIds = new Set(retryDocs.map((d) => d.procore_document_id as number));
-  const { urlMap, error: crawlError } = await buildFileUrlMap(companyId, projectId, targetIds, token);
-
+  // Crawl the project's folders once — collect every file with a URL
+  const { files: projectFiles, foldersVisited, error: crawlError } = await crawlProjectFiles(companyId, projectId, token);
   if (crawlError) {
     return NextResponse.json({ error: crawlError }, { status: 502 });
+  }
+
+  // Build lookup: filename (lowercased) → fresh URL
+  // If multiple files share a name, keep all (use first match per doc)
+  const nameToUrl = new Map<string, string>();
+  for (const f of projectFiles) {
+    const key = f.name.toLowerCase();
+    if (!nameToUrl.has(key)) nameToUrl.set(key, f.url);
   }
 
   // Process 1 doc per request for visible progress
@@ -553,14 +535,14 @@ export async function PATCH(request: NextRequest) {
   const results: { document_name: string; status: string; item_count?: number; error?: string }[] = [];
 
   try {
-    const downloadUrl = urlMap.get(doc.procore_document_id);
+    const downloadUrl = nameToUrl.get(doc.document_name.toLowerCase());
     if (!downloadUrl) {
       await supabase.from("baseline_documents").update({
-        error_message: `File not found in project folders (searched ${targetIds.size} IDs, found ${urlMap.size})`,
+        error_message: `"${doc.document_name}" not found in project (${foldersVisited} folders, ${projectFiles.length} files crawled)`,
       }).eq("id", doc.id);
-      results.push({ document_name: doc.document_name, status: "failed", error: "File not found in project folders" });
+      results.push({ document_name: doc.document_name, status: "failed", error: `Not found in ${projectFiles.length} project files` });
     } else {
-      // Download the file — S3 presigned URLs must not get an Authorization header
+      // Download — no auth header for S3 presigned URLs
       const isS3 = !downloadUrl.includes("procore.com") || downloadUrl.includes("s3.");
       const dlHeaders: Record<string, string> = {};
       if (!isS3) dlHeaders.Authorization = `Bearer ${token}`;
@@ -568,7 +550,7 @@ export async function PATCH(request: NextRequest) {
       const dlRes = await fetch(downloadUrl, { headers: dlHeaders, signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT) });
       if (!dlRes.ok) {
         await supabase.from("baseline_documents").update({ error_message: `Download failed (HTTP ${dlRes.status})` }).eq("id", doc.id);
-        results.push({ document_name: doc.document_name, status: "failed", error: `Download failed (HTTP ${dlRes.status})` });
+        results.push({ document_name: doc.document_name, status: "failed", error: `Download HTTP ${dlRes.status}` });
       } else {
         const rawBuffer = Buffer.from(await dlRes.arrayBuffer());
         const fileSize = rawBuffer.length;
@@ -580,7 +562,6 @@ export async function PATCH(request: NextRequest) {
           }).eq("id", doc.id);
           results.push({ document_name: doc.document_name, status: "skipped", error: "Too large" });
         } else {
-          // Convert to processable format
           const filename = doc.document_name;
           let buffer: Buffer;
           let mimeType: string;
@@ -594,14 +575,11 @@ export async function PATCH(request: NextRequest) {
             buffer = Buffer.from(text.trim() ? text : " ", "utf-8");
             mimeType = "text/plain";
           } else if (filename.toLowerCase().match(/\.(jpg|jpeg)$/)) {
-            buffer = rawBuffer;
-            mimeType = "image/jpeg";
+            buffer = rawBuffer; mimeType = "image/jpeg";
           } else if (filename.toLowerCase().endsWith(".png")) {
-            buffer = rawBuffer;
-            mimeType = "image/png";
+            buffer = rawBuffer; mimeType = "image/png";
           } else {
-            buffer = rawBuffer;
-            mimeType = "application/pdf";
+            buffer = rawBuffer; mimeType = "application/pdf";
           }
 
           if ((mimeType === "image/jpeg" || mimeType === "image/png") && buffer.length > MAX_IMAGE_SIZE) {
@@ -611,7 +589,6 @@ export async function PATCH(request: NextRequest) {
             }).eq("id", doc.id);
             results.push({ document_name: doc.document_name, status: "skipped", error: "Image too large" });
           } else {
-            // Mark processing and run Claude
             await supabase.from("baseline_documents").update({ status: "processing", error_message: null, file_size: fileSize }).eq("id", doc.id);
             const items = await extractWithClaude(buffer, filename, mimeType);
             await supabase.from("baseline_documents").update({
