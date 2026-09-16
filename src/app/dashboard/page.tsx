@@ -1723,7 +1723,7 @@ export default function DashboardPage() {
         <ResourcingTab company_id={selectedCompany?.id ?? null} projects={projects} />
       </div>}
 
-      {visitedTabs.has("action_plans") && <div style={{ display: dashboardView === "action_plans" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {visitedTabs.has("action_plans") && <div style={{ display: dashboardView === "action_plans" ? undefined : "none", flex: 1, overflow: "auto" }}>
         <ActionPlansPage />
       </div>}
 
