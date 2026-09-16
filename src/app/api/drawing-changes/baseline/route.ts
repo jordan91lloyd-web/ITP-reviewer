@@ -516,7 +516,19 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: fetchErr.message }, { status: 500 });
   }
   if (!retryDocs || retryDocs.length === 0) {
-    return NextResponse.json({ retried: 0, remaining: 0, message: "No retryable documents found" });
+    // Diagnostic: what IS in the table for this project?
+    const { data: allDocs } = await supabase
+      .from("baseline_documents")
+      .select("id, document_name, status, source, error_message")
+      .eq("company_id", companyId)
+      .eq("project_id", projectId);
+    const statusCounts: Record<string, number> = {};
+    for (const d of allDocs ?? []) statusCounts[d.status] = (statusCounts[d.status] ?? 0) + 1;
+    return NextResponse.json({
+      retried: 0, remaining: 0,
+      message: "No retryable documents found",
+      debug: { companyId, projectId, totalInDb: allDocs?.length ?? 0, statusCounts, sampleDocs: (allDocs ?? []).slice(0, 5) },
+    });
   }
 
   const cookieStore = await cookies();
