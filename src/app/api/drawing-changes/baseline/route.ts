@@ -483,28 +483,30 @@ export async function PATCH(request: NextRequest) {
 
   const supabase = getSupabase();
 
-  // Find all failed/skipped Procore-sourced docs that can be retried
+  // Find all failed/skipped docs that can be retried
   const { data: retryDocs, error: fetchErr } = await supabase
     .from("baseline_documents")
     .select("*")
     .eq("company_id", companyId)
     .eq("project_id", projectId)
-    .in("status", ["failed", "skipped"])
-    .eq("source", "procore")
-    .not("procore_document_id", "is", null);
+    .in("status", ["failed", "skipped"]);
 
   if (fetchErr) {
     return NextResponse.json({ error: fetchErr.message }, { status: 500 });
   }
 
   if (!retryDocs || retryDocs.length === 0) {
-    return NextResponse.json({ retried: 0, remaining: 0, message: "No retryable Procore documents found" });
+    return NextResponse.json({ retried: 0, remaining: 0, message: "No retryable documents found" });
   }
+
+  // Split into Procore-sourced (can re-fetch URL) and upload-sourced (need re-upload)
+  const procoreDocs = retryDocs.filter((d) => d.source === "procore" && d.procore_document_id);
+  const uploadDocs = retryDocs.filter((d) => d.source !== "procore" || !d.procore_document_id);
 
   // Process max 3 per request to stay within the 300s timeout
   const BATCH_SIZE = 3;
-  const batch = retryDocs.slice(0, BATCH_SIZE);
-  const remaining = retryDocs.length - batch.length;
+  const batch = procoreDocs.slice(0, BATCH_SIZE);
+  const remaining = procoreDocs.length - batch.length;
 
   // Get Procore access token
   const cookieStore = await cookies();
@@ -613,7 +615,15 @@ export async function PATCH(request: NextRequest) {
   }
 
   const succeeded = results.filter((r) => r.status === "processed").length;
-  return NextResponse.json({ retried: results.length, succeeded, remaining, results });
+  return NextResponse.json({
+    retried: results.length,
+    succeeded,
+    remaining,
+    total_failed_skipped: retryDocs.length,
+    procore_retryable: procoreDocs.length,
+    upload_need_reupload: uploadDocs.length,
+    results,
+  });
 }
 
 // ── DELETE: Remove a baseline document ────────────────────────────────────

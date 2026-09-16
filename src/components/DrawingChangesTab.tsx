@@ -313,9 +313,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
       } else if (totalSucceeded > 0) {
         setBaselineProgressText(`${totalSucceeded} processed, ${totalFailed} still failed`);
       } else if (totalRetried > 0) {
-        setBaselineProgressText(`All ${totalRetried} document${totalRetried !== 1 ? "s" : ""} failed again`);
+        setBaselineProgressText(`All ${totalRetried} document${totalRetried !== 1 ? "s" : ""} failed — check error messages for details`);
       } else {
-        setBaselineProgressText("No retryable documents found");
+        setBaselineProgressText("No retryable Procore documents found — uploaded files must be deleted and re-uploaded");
       }
     } catch {
       setBaselineProgressText("Retry request failed");
@@ -1163,7 +1163,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                       {baselineDocs.some((d) => d.status === "skipped") && ` · ${baselineDocs.filter((d) => d.status === "skipped").length} skipped`}
                       {baselineDocs.some((d) => d.status === "processing") && ` · ${baselineDocs.filter((d) => d.status === "processing").length} processing`}
                     </span>
-                    {baselineDocs.some((d) => (d.status === "failed" || d.status === "skipped") && d.source === "procore") && !baselineUploading && (
+                    {baselineDocs.some((d) => (d.status === "failed" || d.status === "skipped")) && !baselineUploading && (
                       <button
                         onClick={retryFailedBaseline}
                         style={{ fontSize: 11, fontWeight: 500, color: "var(--hp-accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
