@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import BaselineFolderBrowser from "./BaselineFolderBrowser";
+import VariationsSummary from "./VariationsSummary";
 import {
   Download,
   RefreshCw,
@@ -1559,8 +1560,15 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         // Count unscanned drawings
         const unscannedCount = drawingPairs.filter((d) => d.status !== "scanned").length;
 
+        const currentProjectName = projects.find((p) => String(p.id) === projectId)?.name ?? "Project";
+
         return (
         <>
+          {/* ── Variations Summary ── */}
+          {hasBaseline && (variationTotal > 0 || changes.some((c) => c.variation_risk === "unclear")) && (
+            <VariationsSummary changes={changes} projectName={currentProjectName} />
+          )}
+
           {/* ── Unscanned drawings banner ── */}
           {unscannedCount > 0 && (
             <div
