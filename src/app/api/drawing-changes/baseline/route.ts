@@ -494,7 +494,17 @@ export async function PATCH(request: NextRequest) {
 
   const supabase = getSupabase();
 
-  // Find all failed/skipped docs (any source)
+  // Clean up stuck "processing" records first (same as GET does)
+  const staleThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  await supabase
+    .from("baseline_documents")
+    .update({ status: "failed", error_message: "Processing timed out" })
+    .eq("company_id", companyId)
+    .eq("project_id", projectId)
+    .eq("status", "processing")
+    .lt("created_at", staleThreshold);
+
+  // Find all failed/skipped docs
   const { data: retryDocs, error: fetchErr } = await supabase
     .from("baseline_documents")
     .select("*")
