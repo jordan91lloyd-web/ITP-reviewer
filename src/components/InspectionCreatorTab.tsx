@@ -384,10 +384,20 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
           {/* Upload controls */}
           <div style={{ marginBottom: 24 }}>
             {uploadError && (
-              <div style={{ marginBottom: 16, borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 500, backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b" }}>
-                <p>{uploadError}</p>
+              <div style={{
+                marginBottom: 16, borderRadius: 8, padding: "16px 20px", fontSize: 13,
+                backgroundColor: uploadError.includes("permission") ? "var(--hp-significant-bg)" : "#fef2f2",
+                border: `1px solid ${uploadError.includes("permission") ? "var(--hp-significant)" : "#fecaca"}`,
+                color: uploadError.includes("permission") ? "var(--hp-significant)" : "#991b1b",
+              }}>
+                <p style={{ fontWeight: 600, marginBottom: 4 }}>
+                  {uploadError.includes("permission") ? "Procore permissions required" : "Upload failed"}
+                </p>
+                <p style={{ lineHeight: 1.6 }}>{uploadError}</p>
                 {uploadResult?.company_template_id && (
-                  <p style={{ marginTop: 4, fontSize: 12 }}>A partial template was created — you may need to delete company template {uploadResult.company_template_id} in Procore.</p>
+                  <p style={{ marginTop: 8, fontSize: 12, opacity: 0.8 }}>
+                    A partial company template ({uploadResult.company_template_id}) may have been created. It will be cleaned up automatically on the next attempt, or you can delete it manually in Procore under Company Settings → Inspections → Templates.
+                  </p>
                 )}
               </div>
             )}

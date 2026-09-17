@@ -142,7 +142,12 @@ export async function POST(request: NextRequest) {
       list_template: { name: templateName },
     });
     if (!step1.ok) {
-      return NextResponse.json({ error: `Failed to create template: ${step1.error}` }, { status: 502 });
+      const is403 = step1.status === 403;
+      return NextResponse.json({
+        error: is403
+          ? "You don't have permission to create inspection templates. Ask your Procore admin to set your Inspections permission to 'Admin' at the company level (Company Settings → Permission Templates). This is required because the Procore API only allows template sections and items to be created at the company level before copying to the project."
+          : `Failed to create template: ${step1.error}`,
+      }, { status: is403 ? 403 : 502 });
     }
     companyTemplateId = (step1.json as { id: number }).id;
     console.log(`[inspection-creator] Company template created: ${companyTemplateId}`);
