@@ -22,11 +22,12 @@ import type {
   RegisterFlatRow,
 } from "./types";
 import { SEV_ORDER, RISK_ORDER } from "./constants";
-import { RegisterToolbar } from "./RegisterToolbar";
+import { RegisterToolbar, type ViewMode } from "./RegisterToolbar";
 import { DrawingGroupHeader } from "./DrawingGroupHeader";
 import { AvailableRevisions } from "./AvailableRevisions";
 import { ChangeRowItem } from "./ChangeRowItem";
 import { RegisterSkeleton } from "./Skeletons";
+import { DrawingSummaryCard, buildDrawingSummaries } from "./DrawingSummaryCard";
 
 interface RegisterPanelProps {
   companyId: string;
@@ -142,6 +143,9 @@ export const RegisterPanel = React.memo(function RegisterPanel({
     );
     return hasUnreviewed ? "needs_review" : "all";
   });
+
+  // View mode: "changes" (per-change list) or "by_drawing" (aggregated per drawing)
+  const [viewMode, setViewMode] = React.useState<ViewMode>("changes");
 
   // Filtered + sorted changes
   const filteredChanges = useMemo(() => {
@@ -296,6 +300,12 @@ export const RegisterPanel = React.memo(function RegisterPanel({
     }
     return rows;
   }, [filteredByDiscipline, drawingGroupsByDiscipline, expandedResults, expandedDrawings, drawingPairs]);
+
+  // Drawing summaries for "by_drawing" view
+  const drawingSummaries = useMemo(() => {
+    if (viewMode !== "by_drawing") return [];
+    return buildDrawingSummaries(filteredChanges);
+  }, [filteredChanges, viewMode]);
 
   const virtualizer = useVirtualizer({
     count: flatRows.length,
@@ -601,6 +611,8 @@ export const RegisterPanel = React.memo(function RegisterPanel({
         deleting={deleting}
         drawingPairsUnscannedCount={unscannedCount}
         hasBaseline={changes.some((c) => c.variation_risk !== null && c.variation_risk !== undefined)}
+        viewMode={viewMode}
+        onSetViewMode={setViewMode}
         onSetHighSeverityOnly={onSetHighSeverityOnly}
         onSetVariationsOnly={onSetVariationsOnly}
         onSetNeedsReviewOnly={onSetNeedsReviewOnly}
@@ -676,7 +688,27 @@ export const RegisterPanel = React.memo(function RegisterPanel({
                   : "No changes detected."}
           </div>
         )
+      ) : viewMode === "by_drawing" ? (
+        /* By Drawing aggregated view */
+        <div
+          style={{
+            overflow: "auto",
+            height: "calc(100vh - 380px)",
+            paddingRight: 4,
+          }}
+        >
+          {drawingSummaries.map((summary) => (
+            <DrawingSummaryCard
+              key={summary.drawingNumber}
+              summary={summary}
+              onUpdateStatus={onUpdateStatus}
+              onRaiseChangeEvent={onRaiseChangeEvent}
+              onDownloadEvidence={onDownloadEvidence}
+            />
+          ))}
+        </div>
       ) : (
+        /* All Changes virtualised list */
         <div
           ref={parentRef}
           style={{

@@ -16,6 +16,8 @@ import {
   fmtDate,
 } from "./constants";
 
+export type ViewMode = "changes" | "by_drawing";
+
 interface RegisterToolbarProps {
   companyId: string;
   projectId: string;
@@ -32,6 +34,8 @@ interface RegisterToolbarProps {
   deleting: boolean;
   drawingPairsUnscannedCount: number;
   hasBaseline: boolean;
+  viewMode: ViewMode;
+  onSetViewMode: (v: ViewMode) => void;
   onSetHighSeverityOnly: (v: boolean) => void;
   onSetVariationsOnly: (v: boolean) => void;
   onSetNeedsReviewOnly: (v: boolean) => void;
@@ -65,6 +69,8 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
   selectedChangeIds,
   deleting,
   hasBaseline,
+  viewMode,
+  onSetViewMode,
   onSetHighSeverityOnly,
   onSetVariationsOnly,
   onSetNeedsReviewOnly,
@@ -136,6 +142,47 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
 
   return (
     <>
+      {/* View mode toggle */}
+      {changes.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            marginBottom: 10,
+            padding: 2,
+            borderRadius: 8,
+            backgroundColor: "var(--hp-warm-100)",
+            width: "fit-content",
+          }}
+        >
+          {(["changes", "by_drawing"] as const).map((mode) => {
+            const isActive = viewMode === mode;
+            const label = mode === "changes" ? "All Changes" : "By Drawing";
+            return (
+              <button
+                key={mode}
+                onClick={() => onSetViewMode(mode)}
+                aria-pressed={isActive}
+                style={{
+                  borderRadius: 6,
+                  padding: "5px 14px",
+                  fontSize: 12,
+                  fontWeight: isActive ? 600 : 400,
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: isActive ? "var(--hp-warm-800)" : "transparent",
+                  color: isActive ? "#fff" : "var(--hp-text-secondary)",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Batch actions row */}
       {needsReviewTotal > 0 && (unreviewedWithinScope > 0 || unreviewedVariations > 0) && (
         <div
