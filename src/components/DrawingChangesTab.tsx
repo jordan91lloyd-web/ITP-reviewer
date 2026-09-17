@@ -257,10 +257,44 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   const [expandedBaselineDoc, setExpandedBaselineDoc] = useState<string | null>(null);
   const [showProcoreBrowser, setShowProcoreBrowser] = useState(false);
 
+  // AI summary
+  const [scanSummary, setScanSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
 
   // Inline scan + evidence
   const [inlineScanning, setInlineScanning] = useState<string | null>(null);
+
+  // ── Fetch AI summary ─────────────────────────────────────────────────────
+  const fetchSummary = useCallback(async (pName: string, changesList: ChangeRow[]) => {
+    if (changesList.length === 0) return;
+    setSummaryLoading(true);
+    try {
+      const res = await fetch("/api/drawing-changes/summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_name: pName,
+          changes: changesList.map((c) => ({
+            discipline: c.discipline,
+            drawing_number: c.drawing_number,
+            change_type: c.change_type,
+            severity: c.severity,
+            description: c.description,
+            variation_risk: c.variation_risk,
+            variation_note: c.variation_note,
+            review_status: c.review_status,
+          })),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setScanSummary(data.summary);
+      }
+    } catch { /* ignore */ }
+    finally { setSummaryLoading(false); }
+  }, []);
 
   // ── Responsive rail collapse ────────────────────────────────────────────
   useEffect(() => {
@@ -460,10 +494,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
   // ── Load previous scan results ───────────────────────────────────────────
 
   const loadPreviousResults = useCallback(
-    async (pid: string): Promise<boolean> => {
+    async (pid: string): Promise<{ hasResults: boolean; changes: ChangeRow[] }> => {
       try {
         const res = await fetch(`/api/drawing-changes/results?company_id=${company_id}&project_id=${pid}&all=true`);
-        if (!res.ok) return false;
+        if (!res.ok) return { hasResults: false, changes: [] };
         const data = await res.json();
         if (data.changes && data.changes.length > 0) {
           setScan(data.scan ?? {
@@ -480,11 +514,11 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setByDiscipline(data.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(data.by_discipline ?? {})));
           if (data.all_scans) setAllScans(data.all_scans);
-          return true;
+          return { hasResults: true, changes: data.changes };
         }
         if (data.all_scans) setAllScans(data.all_scans);
-        return false;
-      } catch { return false; }
+        return { hasResults: false, changes: [] };
+      } catch { return { hasResults: false, changes: [] }; }
     },
     [company_id]
   );
@@ -495,15 +529,22 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     async (pid: string) => {
       setProjectId(pid);
       const proj = projects.find((p) => String(p.id) === pid);
-      setProjectName(proj?.display_name ?? proj?.name ?? "");
+      const pName = proj?.display_name ?? proj?.name ?? "";
+      setProjectName(pName);
       setStage("scan");
       setScan(null);
       setChanges([]);
       setByDiscipline({});
+      setScanSummary(null);
       if (pid) {
         fetchDrawings(pid);
         fetchBaseline(pid);
-        const hasResults = await loadPreviousResults(pid);
+        const { hasResults, changes: loadedChanges } = await loadPreviousResults(pid);
+
+        // Fetch AI summary for loaded results
+        if (loadedChanges.length > 0) {
+          fetchSummary(pName, loadedChanges);
+        }
 
         // Determine default stage: localStorage > results-based default
         let defaultStage: Stage = hasResults ? "register" : "scan";
@@ -516,7 +557,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         setStageAndPersist(defaultStage, pid);
       }
     },
-    [projects, fetchDrawings, loadPreviousResults, fetchBaseline, setStageAndPersist]
+    [projects, fetchDrawings, loadPreviousResults, fetchBaseline, setStageAndPersist, fetchSummary]
   );
 
   // ── Drawing selection helpers ────────────────────────────────────────────
@@ -639,6 +680,10 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
           setByDiscipline(resultsData.by_discipline ?? {});
           setExpandedResults(new Set(Object.keys(resultsData.by_discipline ?? {})));
           if (resultsData.all_scans) setAllScans(resultsData.all_scans);
+          // Fetch AI summary for the new results
+          if (resultsData.changes && resultsData.changes.length > 0) {
+            fetchSummary(projectName, resultsData.changes);
+          }
         }
       }
       // Auto-switch to register on scan complete
@@ -1316,6 +1361,9 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   onSetExpandedDrawings={setExpandedDrawings}
                   onBatchAcceptWithinScope={batchAcceptWithinScope}
                   onBatchRaiseVariations={batchRaiseVariations}
+                  scanSummary={scanSummary}
+                  summaryLoading={summaryLoading}
+                  onRegenerateSummary={() => fetchSummary(projectName, changes)}
                 />
               )}
 

@@ -6,6 +6,8 @@ import {
   ChevronDown,
   ChevronRight,
   AlertTriangle,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { KpiStrip, type KpiFilter } from "./KpiStrip";
 import type {
@@ -74,6 +76,9 @@ interface RegisterPanelProps {
   onSetExpandedDrawings: React.Dispatch<React.SetStateAction<Set<string>>>;
   onBatchAcceptWithinScope?: () => Promise<void>;
   onBatchRaiseVariations?: () => Promise<void>;
+  scanSummary?: string | null;
+  summaryLoading?: boolean;
+  onRegenerateSummary?: () => void;
 }
 
 export const RegisterPanel = React.memo(function RegisterPanel({
@@ -124,6 +129,9 @@ export const RegisterPanel = React.memo(function RegisterPanel({
   onSetExpandedDrawings,
   onBatchAcceptWithinScope,
   onBatchRaiseVariations,
+  scanSummary,
+  summaryLoading,
+  onRegenerateSummary,
 }: RegisterPanelProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -468,6 +476,68 @@ export const RegisterPanel = React.memo(function RegisterPanel({
 
   return (
     <>
+      {summaryLoading && (
+        <style>{`@keyframes hp-summary-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }`}</style>
+      )}
+
+      {/* AI Summary */}
+      {(scanSummary || summaryLoading) && (
+        <div
+          style={{
+            borderRadius: 8,
+            border: "1px solid var(--hp-border)",
+            backgroundColor: "var(--hp-warm-100)",
+            padding: "16px 20px",
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Sparkles size={16} style={{ color: "var(--hp-warm-800)" }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)" }}>AI Summary</span>
+            </div>
+            {onRegenerateSummary && !summaryLoading && (
+              <button
+                onClick={onRegenerateSummary}
+                title="Regenerate summary"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: 12,
+                  color: "var(--hp-text-muted)",
+                  backgroundColor: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                }}
+              >
+                <RefreshCw size={12} />
+                <span>Regenerate</span>
+              </button>
+            )}
+          </div>
+          {summaryLoading ? (
+            <p
+              style={{
+                fontSize: 13,
+                color: "var(--hp-text-secondary)",
+                lineHeight: 1.6,
+                margin: 0,
+                animation: "hp-summary-pulse 1.5s ease-in-out infinite",
+              }}
+            >
+              Generating summary...
+            </p>
+          ) : (
+            <p style={{ fontSize: 13, color: "var(--hp-text-primary)", lineHeight: 1.6, margin: 0 }}>
+              {scanSummary}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Unscanned drawings banner */}
       {unscannedCount > 0 && (
         <div
