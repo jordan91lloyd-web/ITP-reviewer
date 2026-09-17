@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, ExternalLink, Clock, AlertTriangle } from "lucide-react";
-import type { ConvertedInspection, InspectionItem } from "@/lib/inspectionCreatorTypes";
+import type { ConvertedInspection, InspectionItem, DisciplineCategory } from "@/lib/inspectionCreatorTypes";
+import { DISCIPLINE_CATEGORIES } from "@/lib/inspectionCreatorTypes";
 
 const ALLOWED_TYPES = new Set([
   "application/pdf", "image/jpeg", "image/png",
@@ -20,19 +21,21 @@ interface UploadResult {
   project_template_id?: number;
   template_url?: string;
   template_name?: string;
+  category?: string;
+  report_description?: string;
   sections_created?: number;
   items_created?: number;
   items_total?: number;
   items_failed?: number;
   failed_items?: string[];
   error?: string;
-  company_template_id?: number;
 }
 
 interface SavedTemplate {
   projectId: string;
   projectTemplateId: number;
   templateName: string;
+  category: string;
   sourceCompany: string | null;
   sourceAuthor: string | null;
   itemCount: number;
@@ -50,11 +53,8 @@ function fuzzyCompanyMatch(a: string | null, b: string | null): boolean {
   const na = normalize(a);
   const nb = normalize(b);
   if (!na || !nb) return false;
-  // Exact normalized match
   if (na === nb) return true;
-  // Substring containment
   if (na.includes(nb) || nb.includes(na)) return true;
-  // Character overlap > 80%
   const longer = na.length > nb.length ? na : nb;
   const shorter = na.length > nb.length ? nb : na;
   if (shorter.length < 3) return false;
@@ -77,7 +77,6 @@ function getSavedTemplates(projectId: string): SavedTemplate[] {
 function saveTemplate(template: SavedTemplate): void {
   try {
     const existing = getSavedTemplates(template.projectId);
-    // Avoid exact duplicates by projectTemplateId
     const filtered = existing.filter((t) => t.projectTemplateId !== template.projectTemplateId);
     filtered.unshift(template);
     localStorage.setItem(`hp-inspection-templates-${template.projectId}`, JSON.stringify(filtered));
@@ -88,6 +87,14 @@ function clearSavedTemplates(projectId: string): void {
   try { localStorage.removeItem(`hp-inspection-templates-${projectId}`); } catch { /* ignore */ }
 }
 
+function buildReportDescription(inspection: ConvertedInspection): string {
+  const parts: string[] = [];
+  if (inspection.report_company) parts.push(inspection.report_company);
+  if (inspection.report_title) parts.push(inspection.report_title);
+  if (inspection.report_date) parts.push(`(${inspection.report_date})`);
+  return parts.join(" — ") || inspection.description || "";
+}
+
 export default function InspectionCreatorTab({ company_id }: { company_id: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -95,9 +102,12 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
   const [error, setError] = useState<string | null>(null);
   const [inspection, setInspection] = useState<ConvertedInspection | null>(null);
   const [editableItems, setEditableItems] = useState<InspectionItem[]>([]);
-  const [templateName, setTemplateName] = useState("");
   const [description, setDescription] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Category and report description
+  const [category, setCategory] = useState<DisciplineCategory | "">("");
+  const [reportDescription, setReportDescription] = useState("");
 
   // Procore selectors
   const [projects, setProjects] = useState<SimpleProject[]>([]);
@@ -112,7 +122,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
   // Collapsed sections
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
-  // Template reuse matching
+  // Template reuse matching (matches against category now)
   const [matchedTemplate, setMatchedTemplate] = useState<SavedTemplate | null>(null);
   const [matchDismissed, setMatchDismissed] = useState(false);
 
@@ -139,12 +149,14 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
 
   // Check for fuzzy match when inspection is converted and project is selected
   useEffect(() => {
-    if (!inspection || !selectedProjectId) { setMatchedTemplate(null); return; }
+    if (!inspection || !selectedProjectId || !category) { setMatchedTemplate(null); return; }
     setMatchDismissed(false);
     const templates = getSavedTemplates(String(selectedProjectId));
-    const match = templates.find((t) => fuzzyCompanyMatch(inspection.report_company, t.sourceCompany));
+    // Match by category first, then fall back to company name
+    const match = templates.find((t) => t.category === category)
+      ?? templates.find((t) => fuzzyCompanyMatch(inspection.report_company, t.sourceCompany));
     setMatchedTemplate(match ?? null);
-  }, [inspection, selectedProjectId]);
+  }, [inspection, selectedProjectId, category]);
 
   const handleFile = useCallback((f: File) => {
     setError(null); setInspection(null); setUploadResult(null); setUploadError(null);
@@ -172,22 +184,29 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
       const data = await res.json();
       if (!data.success) { setError(data.error ?? "Conversion failed."); }
       else {
-        setInspection(data.inspection);
-        setEditableItems(data.inspection.items);
-        setTemplateName(data.inspection.template_name);
-        setDescription(data.inspection.description);
+        const converted = data.inspection as ConvertedInspection;
+        setInspection(converted);
+        setEditableItems(converted.items);
+        setDescription(converted.description);
+        // Pre-select category from Claude's suggestion
+        if (converted.suggested_category && (DISCIPLINE_CATEGORIES as readonly string[]).includes(converted.suggested_category)) {
+          setCategory(converted.suggested_category);
+        } else {
+          setCategory("");
+        }
+        // Auto-fill report description
+        setReportDescription(buildReportDescription(converted));
       }
     } catch { setError("Conversion timed out or failed. Try again."); }
     finally { setIsLoading(false); }
   };
 
   const handleUpload = async () => {
-    if (!inspection || !selectedProjectId) return;
+    if (!inspection || !selectedProjectId || !category) return;
     setIsUploading(true); setUploadError(null); setUploadResult(null);
     try {
       const updatedInspection: ConvertedInspection = {
         ...inspection,
-        template_name: templateName,
         description,
         items: editableItems,
       };
@@ -196,6 +215,8 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
         inspection: updatedInspection,
         project_id: selectedProjectId,
         company_id: parseInt(company_id),
+        category,
+        report_description: reportDescription,
       }));
       const res = await fetch("/api/inspection-creator/upload", { method: "POST", body: fd });
       const data: UploadResult = await res.json();
@@ -205,7 +226,8 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
         const saved: SavedTemplate = {
           projectId: String(selectedProjectId),
           projectTemplateId: data.project_template_id!,
-          templateName: data.template_name ?? templateName,
+          templateName: data.template_name ?? `[HP] ${category}`,
+          category,
           sourceCompany: inspection.report_company,
           sourceAuthor: inspection.report_author,
           itemCount: editableItems.length,
@@ -215,14 +237,15 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
         saveTemplate(saved);
         setSavedTemplates(getSavedTemplates(String(selectedProjectId)));
       }
-      else { setUploadError(data.error ?? "Upload failed."); if (data.company_template_id) setUploadResult(data); }
+      else { setUploadError(data.error ?? "Upload failed."); }
     } catch { setUploadError("Could not reach the upload service."); }
     finally { setIsUploading(false); }
   };
 
   const handleReset = () => {
     setFile(null); setInspection(null); setEditableItems([]); setError(null);
-    setUploadResult(null); setUploadError(null); setTemplateName(""); setDescription("");
+    setUploadResult(null); setUploadError(null); setDescription("");
+    setCategory(""); setReportDescription("");
     setMatchedTemplate(null); setMatchDismissed(false);
   };
 
@@ -287,7 +310,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
     (sections[it.section] ??= []).push(it);
   }
 
-  const canUpload = !!selectedProjectId && editableItems.length > 0;
+  const canUpload = !!selectedProjectId && editableItems.length > 0 && !!category;
 
   return (
     <div style={{ maxWidth: 768, margin: "0 auto", padding: "40px 16px" }}>
@@ -364,7 +387,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
                 <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: 1 }} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-                    A template from {matchedTemplate.sourceCompany ?? "this company"} already exists for this project
+                    A template for {matchedTemplate.category || matchedTemplate.sourceCompany || "this discipline"} already exists for this project
                   </p>
                   <p style={{ fontSize: 13, marginBottom: 2 }}>
                     <strong>{matchedTemplate.templateName}</strong> &middot; {matchedTemplate.itemCount} items &middot; created {new Date(matchedTemplate.createdAt).toLocaleDateString()}
@@ -376,7 +399,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
                     </a>
                     <button onClick={() => setMatchDismissed(true)}
                       style={{ fontSize: 13, fontWeight: 500, color: "#92400e", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                      Create new anyway
+                      Update anyway
                     </button>
                   </div>
                 </div>
@@ -397,20 +420,20 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
                   {uploadError.includes("permission") ? "Procore permissions required" : "Upload failed"}
                 </p>
                 <p style={{ lineHeight: 1.6 }}>{uploadError}</p>
-                {uploadResult?.company_template_id && (
-                  <p style={{ marginTop: 8, fontSize: 12, opacity: 0.8 }}>
-                    A partial company template ({uploadResult.company_template_id}) may have been created. It will be cleaned up automatically on the next attempt, or you can delete it manually in Procore under Company Settings → Inspections → Templates.
-                  </p>
-                )}
               </div>
             )}
 
             {uploadResult?.success && (
               <div style={{ marginBottom: 16, borderRadius: 12, padding: "20px 24px", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-                <p style={{ fontWeight: 700, fontSize: 16, color: "#166534", marginBottom: 8 }}>Template created in Procore</p>
+                <p style={{ fontWeight: 700, fontSize: 16, color: "#166534", marginBottom: 8 }}>Template uploaded to Procore</p>
                 <p style={{ fontSize: 14, color: "#15803d", marginBottom: 4 }}>
                   <strong>{uploadResult.template_name}</strong>
                 </p>
+                {uploadResult.report_description && (
+                  <p style={{ fontSize: 13, color: "#166534", marginBottom: 4 }}>
+                    {uploadResult.report_description}
+                  </p>
+                )}
                 <p style={{ fontSize: 13, color: "#166534", marginBottom: uploadResult.items_failed ? 4 : 12 }}>
                   {uploadResult.sections_created} section{uploadResult.sections_created === 1 ? "" : "s"}, {uploadResult.items_created} of {uploadResult.items_total ?? uploadResult.items_created} item{(uploadResult.items_total ?? uploadResult.items_created) === 1 ? "" : "s"} created
                 </p>
@@ -436,40 +459,56 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
                   </a>
                 )}
                 <p style={{ marginTop: 12, fontSize: 12, color: "#15803d" }}>
-                  Create inspections from this template in Procore — choose locations and dates when raising each inspection.
+                  Open the template in Procore to verify the items synced, then create your inspection.
                 </p>
               </div>
             )}
 
             {!uploadResult?.success && (
               <>
-                {!canUpload && <p style={{ marginBottom: 8, fontSize: 12, color: "var(--hp-text-muted)" }}>Select a project above before uploading.</p>}
+                {!canUpload && !category && inspection && <p style={{ marginBottom: 8, fontSize: 12, color: "var(--hp-text-muted)" }}>Select a category and project before uploading.</p>}
+                {!canUpload && category && !selectedProjectId && <p style={{ marginBottom: 8, fontSize: 12, color: "var(--hp-text-muted)" }}>Select a project above before uploading.</p>}
                 <button onClick={handleUpload} disabled={!canUpload || isUploading}
                   style={{ width: "100%", borderRadius: 8, backgroundColor: "#d97706", padding: "12px 16px", fontSize: 14, fontWeight: 600, color: "white", border: "none", cursor: canUpload && !isUploading ? "pointer" : "not-allowed", opacity: !canUpload || isUploading ? 0.4 : 1 }}>
-                  {isUploading ? "Creating template in Procore\u2026" : "Create Template in Procore"}
+                  {isUploading ? "Uploading to Procore\u2026" : "Upload to Procore"}
                 </button>
               </>
             )}
           </div>
 
-          {/* Template name — prominent, above sections */}
+          {/* Category selector and template name */}
           <div style={{ marginBottom: 20, borderRadius: 8, padding: 20, backgroundColor: "var(--hp-surface)", border: "1px solid var(--hp-border)" }}>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--hp-warm-800)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Template name</label>
-              <input type="text" value={templateName} onChange={(e) => setTemplateName(e.target.value)}
-                style={{ width: "100%", borderRadius: 8, border: "2px solid var(--hp-border)", padding: "10px 14px", fontSize: 16, fontWeight: 600, color: "var(--hp-warm-900)" }} />
-              <p style={{ marginTop: 4, fontSize: 11, color: "var(--hp-text-muted)" }}>
-                This name appears as the inspection heading in Procore and cannot be changed after creation.
-              </p>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--hp-warm-800)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Discipline category</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as DisciplineCategory | "")}
+                style={{ width: "100%", borderRadius: 8, border: "2px solid var(--hp-border)", padding: "10px 14px", fontSize: 14, fontWeight: 500, color: "var(--hp-warm-900)" }}
+              >
+                <option value="">{"\u2014"} Select a discipline {"\u2014"}</option>
+                {DISCIPLINE_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              {category && (
+                <p style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: "var(--hp-warm-700)" }}>
+                  Template name: [HP] {category}
+                </p>
+              )}
             </div>
-            <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Description</label>
-              <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Report description</label>
+              <input type="text" value={reportDescription} onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="e.g. Certatude — CC3 Slab on Ground (Aug 2026)"
                 style={{ width: "100%", borderRadius: 6, border: "1px solid var(--hp-border)", padding: "8px 12px", fontSize: 14, color: "var(--hp-warm-900)" }} />
+              <p style={{ marginTop: 4, fontSize: 11, color: "var(--hp-text-muted)" }}>
+                Appears as the project template description in Procore. Identifies which report this version is based on.
+              </p>
             </div>
 
             {/* Metadata row */}
-            <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 24px", fontSize: 13 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 24px", fontSize: 13 }}>
               {inspection.report_title && <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-text-muted)" }}>Report</span><span style={{ color: "var(--hp-warm-800)" }}>{inspection.report_title}</span></>}
               {inspection.report_author && <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-text-muted)" }}>Author</span><span style={{ color: "var(--hp-warm-800)" }}>{inspection.report_author}</span></>}
               {inspection.report_date && <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--hp-text-muted)" }}>Date</span><span style={{ color: "var(--hp-warm-800)" }}>{inspection.report_date}</span></>}
@@ -575,7 +614,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-warm-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.templateName}</p>
                     <p style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
-                      {t.sourceCompany && <>{t.sourceCompany} &middot; </>}{t.itemCount} items &middot; {new Date(t.createdAt).toLocaleDateString()}
+                      {t.category && <>{t.category} &middot; </>}{t.sourceCompany && <>{t.sourceCompany} &middot; </>}{t.itemCount} items &middot; {new Date(t.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <a href={t.templateUrl} target="_blank" rel="noopener noreferrer"

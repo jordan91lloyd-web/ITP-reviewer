@@ -17,7 +17,8 @@ CRITICAL RULES:
 9. original_report_content must contain the actual text from the report that this item is derived from — the consultant's own words, not your paraphrase.
 10. For metadata fields (report_title, report_date, report_author, report_company): extract from the document if present, otherwise null. Never invent metadata.
 11. template_name should be a clean, descriptive name for this inspection template (e.g. "SSDS Waterproofing Inspection", "Structural Steel Report - Level 3"). Include the source company or author name if identifiable from the document. Do NOT add dates, timestamps, prefixes like "[HP]", or any other decorators — the system adds those automatically.
-12. description should be a one-line summary of what this inspection covers.`;
+12. description should be a one-line summary of what this inspection covers.
+13. suggested_category: pick the BEST matching discipline from this list based on the report content, author, and company: "Certifier", "Structural Engineer", "Architect", "Hydraulic Engineer", "Fire Engineer", "Mechanical Engineer", "Electrical Engineer", "Acoustic Consultant", "Geotechnical Engineer", "Waterproofing Consultant", "Access Consultant", "BCA Consultant", "Landscape Architect", "Surveyor", "Client". If none fit well, use null.`;
 
 export function buildInspectionCreatorInstructions(filename: string): string {
   return `Convert this document into an inspection checklist. Return ONLY raw JSON — no markdown fences, no commentary, no explanation.
@@ -33,6 +34,7 @@ Return this exact JSON structure:
   "report_author": "string or null",
   "report_company": "string or null",
   "description": "string — one-line summary",
+  "suggested_category": "string or null — one of: Certifier, Structural Engineer, Architect, Hydraulic Engineer, Fire Engineer, Mechanical Engineer, Electrical Engineer, Acoustic Consultant, Geotechnical Engineer, Waterproofing Consultant, Access Consultant, BCA Consultant, Landscape Architect, Surveyor, Client",
   "items": [
     {
       "sequence": 1,

@@ -4,7 +4,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { INSPECTION_CREATOR_SYSTEM_PROMPT, buildInspectionCreatorInstructions } from "./inspectionCreatorPrompt";
-import type { ConvertedInspection, InspectionItem } from "./inspectionCreatorTypes";
+import type { ConvertedInspection, InspectionItem, DisciplineCategory } from "./inspectionCreatorTypes";
+import { DISCIPLINE_CATEGORIES } from "./inspectionCreatorTypes";
 
 const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 32000;
@@ -191,6 +192,15 @@ function validateInspection(raw: unknown, filename: string): ConvertedInspection
   const report_company = strOrNull("report_company");
   const description = needStr("description");
 
+  // Validate suggested_category
+  let suggested_category: DisciplineCategory | null = null;
+  if (r.suggested_category != null && typeof r.suggested_category === "string") {
+    const match = (DISCIPLINE_CATEGORIES as readonly string[]).find(
+      (c) => c.toLowerCase() === (r.suggested_category as string).toLowerCase()
+    );
+    suggested_category = (match as DisciplineCategory) ?? null;
+  }
+
   if (!Array.isArray(r.items)) {
     throw new Error('Missing or invalid field "items" (expected array).');
   }
@@ -227,6 +237,7 @@ function validateInspection(raw: unknown, filename: string): ConvertedInspection
     report_author,
     report_company,
     description,
+    suggested_category,
     items,
   };
 }

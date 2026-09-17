@@ -1,11 +1,12 @@
 // ─── POST /api/inspection-creator/upload ──────────────────────────────────
-// Creates a Procore project-level inspection template from a ConvertedInspection:
-// 1. Create company template
-// 2. Add sections
-// 3. Add items
-// 4. Copy to project level
-// 5. Delete company template (best effort cleanup)
+// Persistent company template flow:
+// 1. Find or create [HP] {category} company template
+// 2. Clear existing items/sections on it
+// 3. Add new sections and items from the converted inspection
+// 4. Find or create project template (copy from company)
+// 5. PATCH project template description
 // Sequential with 600ms pacing. Returns project template ID and URL.
+// NEVER deletes company templates.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -68,26 +69,71 @@ async function procoreGet(
   path: string,
   companyId: string,
 ): Promise<unknown> {
-  const url = `${PROCORE_BASE}${path}${path.includes("?") ? "&" : "?"}company_id=${companyId}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId },
-  });
-  if (!res.ok) return null;
-  return res.json();
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const url = `${PROCORE_BASE}${path}${path.includes("?") ? "&" : "?"}company_id=${companyId}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId },
+    });
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      const backoff = PACE_MS * Math.pow(2, attempt + 1);
+      console.warn(`[inspection-creator/upload] 429 on GET ${path}, retry in ${backoff}ms`);
+      await sleep(backoff);
+      continue;
+    }
+    if (!res.ok) return null;
+    return res.json();
+  }
+  return null;
 }
 
 async function procoreDelete(
   token: string,
   path: string,
   companyId: string,
-): Promise<void> {
-  const url = `${PROCORE_BASE}${path}${path.includes("?") ? "&" : "?"}company_id=${companyId}`;
-  try {
-    await fetch(url, {
+): Promise<{ ok: boolean; status: number }> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const url = `${PROCORE_BASE}${path}${path.includes("?") ? "&" : "?"}company_id=${companyId}`;
+    const res = await fetch(url, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId },
     });
-  } catch { /* best effort */ }
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      const backoff = PACE_MS * Math.pow(2, attempt + 1);
+      await sleep(backoff);
+      continue;
+    }
+    return { ok: res.ok, status: res.status };
+  }
+  return { ok: false, status: 429 };
+}
+
+async function procorePatch(
+  token: string,
+  path: string,
+  companyId: string,
+  body: unknown,
+): Promise<{ ok: boolean; status: number; json: unknown; error: string | null }> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const url = `${PROCORE_BASE}${path}${path.includes("?") ? "&" : "?"}company_id=${companyId}`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: jsonHeaders(token, companyId),
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    let json: unknown = null;
+    try { json = JSON.parse(text); } catch { /* not JSON */ }
+
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      const backoff = PACE_MS * Math.pow(2, attempt + 1);
+      console.warn(`[inspection-creator/upload] 429 on PATCH ${path}, retry in ${backoff}ms`);
+      await sleep(backoff);
+      continue;
+    }
+    if (!res.ok) return { ok: false, status: res.status, json, error: text.slice(0, 1000) };
+    return { ok: true, status: res.status, json, error: null };
+  }
+  return { ok: false, status: 429, json: null, error: "Rate limited after retries" };
 }
 
 export async function POST(request: NextRequest) {
@@ -99,6 +145,8 @@ export async function POST(request: NextRequest) {
     inspection: ConvertedInspection;
     project_id: number;
     company_id: number;
+    category: string;
+    report_description: string;
   };
 
   try {
@@ -109,18 +157,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { inspection, project_id, company_id } = payload;
+  const { inspection, project_id, company_id, category, report_description } = payload;
   const cid = String(company_id);
   const pid = String(project_id);
+  const templateName = `[HP] ${category}`;
 
   // Collect distinct sections in order
   const sectionNames: string[] = [];
   for (const item of inspection.items) {
     if (!sectionNames.includes(item.section)) sectionNames.push(item.section);
   }
-
-  let companyTemplateId: number | null = null;
-  let projectTemplateId: number | null = null;
 
   try {
     // ── Step 0: Get default response set ──────────────────────────────
@@ -135,62 +181,108 @@ export async function POST(request: NextRequest) {
     }
     console.log(`[inspection-creator] Using response_set_id=${responseSetId}`);
 
-    // ── Step 1: Create company template ──────────────────────────────
-    const templateName = `[HP] ${inspection.template_name}`;
+    // ── Step 1: Find or create company template ──────────────────────
+    let companyTemplateId: number | null = null;
 
-    const step1 = await procorePost(token, `/rest/v1.0/companies/${cid}/checklist/list_templates`, cid, {
-      list_template: { name: templateName },
-    });
-    if (!step1.ok) {
-      const is403 = step1.status === 403;
-      return NextResponse.json({
-        error: is403
-          ? "You don't have permission to create inspection templates. Ask your Procore admin to set your Inspections permission to 'Admin' at the company level (Company Settings → Permission Templates). This is required because the Procore API only allows template sections and items to be created at the company level before copying to the project."
-          : `Failed to create template: ${step1.error}`,
-      }, { status: is403 ? 403 : 502 });
+    const searchData = await procoreGet(
+      token,
+      `/rest/v1.0/companies/${cid}/checklist/list_templates?filters[query]=${encodeURIComponent(templateName)}`,
+      cid,
+    ) as Array<{ id: number; name: string }> | null;
+
+    if (Array.isArray(searchData)) {
+      // Exact name match only
+      const exact = searchData.find((t) => t.name === templateName);
+      if (exact) {
+        companyTemplateId = exact.id;
+        console.log(`[inspection-creator] Found existing company template: ${companyTemplateId} ("${templateName}")`);
+      }
     }
-    companyTemplateId = (step1.json as { id: number }).id;
-    console.log(`[inspection-creator] Company template created: ${companyTemplateId}`);
-    await sleep(PACE_MS);
 
-    // ── Step 2: Create sections ──────────────────────────────────────
+    if (!companyTemplateId) {
+      const createRes = await procorePost(token, `/rest/v1.0/companies/${cid}/checklist/list_templates`, cid, {
+        list_template: { name: templateName },
+      });
+      if (!createRes.ok) {
+        const is403 = createRes.status === 403;
+        return NextResponse.json({
+          error: is403
+            ? "You don't have permission to create inspection templates. Ask your Procore admin to set your Inspections permission to 'Admin' at the company level."
+            : `Failed to create company template: ${createRes.error}`,
+        }, { status: is403 ? 403 : 502 });
+      }
+      companyTemplateId = (createRes.json as { id: number }).id;
+      console.log(`[inspection-creator] Created company template: ${companyTemplateId} ("${templateName}")`);
+      await sleep(PACE_MS);
+    }
+
+    // ── Step 2: Clear existing items, then sections ──────────────────
+    // Get existing items
+    const existingItems = await procoreGet(
+      token,
+      `/rest/v1.0/companies/${cid}/inspection_templates/${companyTemplateId}/items`,
+      cid,
+    ) as Array<{ id: number }> | null;
+
+    if (Array.isArray(existingItems) && existingItems.length > 0) {
+      console.log(`[inspection-creator] Deleting ${existingItems.length} existing items`);
+      for (const item of existingItems) {
+        await procoreDelete(token, `/rest/v1.0/companies/${cid}/inspection_templates/${companyTemplateId}/items/${item.id}`, cid);
+        await sleep(PACE_MS);
+      }
+    }
+
+    // Get existing sections
+    const existingSections = await procoreGet(
+      token,
+      `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}/sections`,
+      cid,
+    ) as Array<{ id: number }> | null;
+
+    if (Array.isArray(existingSections) && existingSections.length > 0) {
+      console.log(`[inspection-creator] Deleting ${existingSections.length} existing sections`);
+      for (const section of existingSections) {
+        await procoreDelete(token, `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}/sections/${section.id}`, cid);
+        await sleep(PACE_MS);
+      }
+    }
+
+    // ── Step 3: Create new sections ──────────────────────────────────
     const sectionIdMap = new Map<string, number>();
 
     for (let si = 0; si < sectionNames.length; si++) {
-      const step2 = await procorePost(
+      const step = await procorePost(
         token,
         `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}/sections`,
         cid,
         { section: { name: sectionNames[si], position: si + 1 } },
       );
-      if (!step2.ok) {
+      if (!step.ok) {
         return NextResponse.json({
-          error: `Failed to create section "${sectionNames[si]}": ${step2.error}`,
-          company_template_id: companyTemplateId,
+          error: `Failed to create section "${sectionNames[si]}": ${step.error}`,
         }, { status: 502 });
       }
-      sectionIdMap.set(sectionNames[si], (step2.json as { id: number }).id);
-      console.log(`[inspection-creator] Section "${sectionNames[si]}" → ${sectionIdMap.get(sectionNames[si])}`);
+      sectionIdMap.set(sectionNames[si], (step.json as { id: number }).id);
+      console.log(`[inspection-creator] Section "${sectionNames[si]}" -> ${sectionIdMap.get(sectionNames[si])}`);
       await sleep(PACE_MS);
     }
 
-    // ── Step 3: Create items ─────────────────────────────────────────
+    // ── Step 4: Create items ─────────────────────────────────────────
     let itemsCreated = 0;
     const itemsFailed: string[] = [];
-    // Track position per section
     const sectionPositions = new Map<string, number>();
 
     for (const item of inspection.items) {
       const sectionId = sectionIdMap.get(item.section);
       if (!sectionId) {
-        itemsFailed.push(`"${item.item_name}" — section "${item.section}" not found`);
+        itemsFailed.push(`"${item.item_name}" -- section "${item.section}" not found`);
         continue;
       }
 
       const pos = (sectionPositions.get(item.section) ?? 0) + 1;
       sectionPositions.set(item.section, pos);
 
-      const step3 = await procorePost(
+      const step = await procorePost(
         token,
         `/rest/v1.0/companies/${cid}/inspection_templates/${companyTemplateId}/items`,
         cid,
@@ -204,10 +296,9 @@ export async function POST(request: NextRequest) {
           },
         },
       );
-      if (!step3.ok) {
-        console.warn(`[inspection-creator] Failed to create item "${item.item_name}": ${step3.error}`);
-        itemsFailed.push(`"${item.item_name}" — ${step3.status}: ${(step3.error ?? "").slice(0, 200)}`);
-        // Continue creating remaining items rather than aborting
+      if (!step.ok) {
+        console.warn(`[inspection-creator] Failed to create item "${item.item_name}": ${step.error}`);
+        itemsFailed.push(`"${item.item_name}" -- ${step.status}: ${(step.error ?? "").slice(0, 200)}`);
         await sleep(PACE_MS);
         continue;
       }
@@ -219,41 +310,84 @@ export async function POST(request: NextRequest) {
     if (itemsCreated === 0) {
       return NextResponse.json({
         error: `All ${inspection.items.length} items failed to create. First failure: ${itemsFailed[0]}`,
-        company_template_id: companyTemplateId,
         sections_created: sectionIdMap.size,
       }, { status: 502 });
     }
 
-    // ── Step 4: Copy to project level ────────────────────────────────
-    const step4 = await procorePost(
+    // ── Step 5: Find or create project template ──────────────────────
+    let projectTemplateId: number | null = null;
+
+    // Check for existing project template synced from this company template
+    const projectTemplates = await procoreGet(
       token,
-      `/rest/v1.0/projects/${pid}/checklist/list_templates/create_from_company_template`,
+      `/rest/v1.1/projects/${pid}/checklist/list_templates`,
       cid,
-      { source_template_id: companyTemplateId },
-    );
-    if (!step4.ok) {
-      return NextResponse.json({
-        error: `Failed to copy template to project: ${step4.error}`,
-        company_template_id: companyTemplateId,
-        sections_created: sectionIdMap.size,
-        items_created: itemsCreated,
-      }, { status: 502 });
+    ) as Array<{ id: number; name: string; synced_to?: { list_template_id?: number } }> | null;
+
+    if (Array.isArray(projectTemplates)) {
+      // Match by synced_to.list_template_id first, then by name
+      const syncedMatch = projectTemplates.find(
+        (t) => t.synced_to?.list_template_id === companyTemplateId,
+      );
+      if (syncedMatch) {
+        projectTemplateId = syncedMatch.id;
+        console.log(`[inspection-creator] Found synced project template: ${projectTemplateId}`);
+      } else {
+        const nameMatch = projectTemplates.find((t) => t.name === templateName);
+        if (nameMatch) {
+          projectTemplateId = nameMatch.id;
+          console.log(`[inspection-creator] Found project template by name: ${projectTemplateId}`);
+        }
+      }
     }
-    projectTemplateId = (step4.json as { id: number }).id;
-    console.log(`[inspection-creator] Project template created: ${projectTemplateId}`);
-    await sleep(PACE_MS);
 
-    // ── Step 5: Delete company template (best effort cleanup) ────────
-    console.log(`[inspection-creator] Cleaning up company template ${companyTemplateId}`);
-    await procoreDelete(token, `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}`, cid);
+    if (!projectTemplateId) {
+      // Copy company template to project
+      const copyRes = await procorePost(
+        token,
+        `/rest/v1.0/projects/${pid}/checklist/list_templates/create_from_company_template`,
+        cid,
+        { source_template_id: companyTemplateId },
+      );
+      if (!copyRes.ok) {
+        return NextResponse.json({
+          error: `Failed to copy template to project: ${copyRes.error}`,
+          sections_created: sectionIdMap.size,
+          items_created: itemsCreated,
+        }, { status: 502 });
+      }
+      projectTemplateId = (copyRes.json as { id: number }).id;
+      console.log(`[inspection-creator] Project template created: ${projectTemplateId}`);
+      await sleep(PACE_MS);
+    }
 
-    const templateUrl = `${PROCORE_WEB_HOST}/${pid}/project/checklists/list_templates/${projectTemplateId}`;
+    // ── Step 6: PATCH project template description ───────────────────
+    if (report_description) {
+      const patchRes = await procorePatch(
+        token,
+        `/rest/v1.0/projects/${pid}/checklist/list_templates/${projectTemplateId}`,
+        cid,
+        { list_template: { description: report_description } },
+      );
+      if (patchRes.ok) {
+        console.log(`[inspection-creator] Project template description set: "${report_description}"`);
+      } else {
+        console.warn(`[inspection-creator] Failed to set description: ${patchRes.error}`);
+        // Non-fatal — continue
+      }
+      await sleep(PACE_MS);
+    }
+
+    // ── Build template URL ───────────────────────────────────────────
+    const templateUrl = `${PROCORE_WEB_HOST}/webclients/host/companies/${cid}/projects/${pid}/tools/inspections/list_templates/${projectTemplateId}`;
 
     return NextResponse.json({
       success: true,
       project_template_id: projectTemplateId,
       template_url: templateUrl,
       template_name: templateName,
+      category,
+      report_description,
       sections_created: sectionIdMap.size,
       items_created: itemsCreated,
       items_total: inspection.items.length,
@@ -264,16 +398,8 @@ export async function POST(request: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[inspection-creator/upload] Error: ${msg}`);
 
-    // Best-effort cleanup of company template on failure
-    if (companyTemplateId) {
-      console.log(`[inspection-creator] Cleaning up company template ${companyTemplateId}`);
-      await procoreDelete(token, `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}`, cid);
-    }
-
     return NextResponse.json({
       error: msg,
-      company_template_id: companyTemplateId,
-      project_template_id: projectTemplateId,
     }, { status: 500 });
   }
 }

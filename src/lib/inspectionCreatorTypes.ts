@@ -15,6 +15,27 @@ export interface InspectionItem {
   original_report_content: string;
 }
 
+/** Discipline categories — persistent company templates use these names */
+export const DISCIPLINE_CATEGORIES = [
+  "Certifier",
+  "Structural Engineer",
+  "Architect",
+  "Hydraulic Engineer",
+  "Fire Engineer",
+  "Mechanical Engineer",
+  "Electrical Engineer",
+  "Acoustic Consultant",
+  "Geotechnical Engineer",
+  "Waterproofing Consultant",
+  "Access Consultant",
+  "BCA Consultant",
+  "Landscape Architect",
+  "Surveyor",
+  "Client",
+] as const;
+
+export type DisciplineCategory = (typeof DISCIPLINE_CATEGORIES)[number];
+
 export interface ConvertedInspection {
   /** Becomes the Procore template name (prefixed with [HP] on upload) */
   template_name: string;
@@ -26,5 +47,7 @@ export interface ConvertedInspection {
   report_company: string | null;
   /** Becomes the inspection description */
   description: string;
+  /** Claude's best-guess discipline category based on report content */
+  suggested_category: DisciplineCategory | null;
   items: InspectionItem[];
 }
