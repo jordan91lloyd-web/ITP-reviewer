@@ -181,6 +181,59 @@ export async function POST(request: NextRequest) {
     }
     console.log(`[inspection-creator] Using response_set_id=${responseSetId}`);
 
+    // ── Step 0b: Lookup inspection type "Quality" ─────────────────────
+    let inspectionTypeId: number | null = null;
+    try {
+      const typesData = await procoreGet(
+        token,
+        `/rest/v1.0/companies/${cid}/checklist/list_templates/inspection_types`,
+        cid,
+      ) as Array<{ id: number; name: string }> | null;
+      if (Array.isArray(typesData)) {
+        const qualityType = typesData.find((t) => t.name.toLowerCase() === "quality");
+        if (qualityType) {
+          inspectionTypeId = qualityType.id;
+          console.log(`[inspection-creator] Found Quality inspection_type_id=${inspectionTypeId}`);
+        } else {
+          console.log(`[inspection-creator] No "Quality" inspection type found among ${typesData.length} types`);
+        }
+      }
+    } catch (e) {
+      console.warn(`[inspection-creator] Failed to fetch inspection types: ${e}`);
+    }
+    await sleep(PACE_MS);
+
+    // ── Step 0c: Lookup trade for company template ──────────────────
+    let tradeId: number | null = null;
+    const suggestedTrade = inspection.suggested_trade;
+    if (suggestedTrade) {
+      try {
+        const tradesData = await procoreGet(
+          token,
+          `/rest/v1.0/companies/${cid}/trades`,
+          cid,
+        ) as Array<{ id: number; name: string }> | null;
+        if (Array.isArray(tradesData)) {
+          const normalised = suggestedTrade.toLowerCase();
+          // Exact match first, then partial (contains)
+          const exactMatch = tradesData.find((t) => t.name.toLowerCase() === normalised);
+          const partialMatch = !exactMatch
+            ? tradesData.find((t) => t.name.toLowerCase().includes(normalised) || normalised.includes(t.name.toLowerCase()))
+            : null;
+          const match = exactMatch ?? partialMatch;
+          if (match) {
+            tradeId = match.id;
+            console.log(`[inspection-creator] Matched trade "${suggestedTrade}" -> "${match.name}" (id=${tradeId})`);
+          } else {
+            console.log(`[inspection-creator] No trade match for "${suggestedTrade}" among ${tradesData.length} trades`);
+          }
+        }
+      } catch (e) {
+        console.warn(`[inspection-creator] Failed to fetch trades: ${e}`);
+      }
+      await sleep(PACE_MS);
+    }
+
     // ── Step 1: Find or create company template ──────────────────────
     let companyTemplateId: number | null = null;
 
@@ -199,9 +252,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Build the template fields (name + optional type + optional trade)
+    const templateFields: Record<string, unknown> = { name: templateName };
+    if (inspectionTypeId) templateFields.inspection_type_id = inspectionTypeId;
+    if (tradeId) templateFields.trade_id = tradeId;
+
     if (!companyTemplateId) {
       const createRes = await procorePost(token, `/rest/v1.0/companies/${cid}/checklist/list_templates`, cid, {
-        list_template: { name: templateName },
+        list_template: templateFields,
       });
       if (!createRes.ok) {
         const is403 = createRes.status === 403;
@@ -214,6 +272,25 @@ export async function POST(request: NextRequest) {
       companyTemplateId = (createRes.json as { id: number }).id;
       console.log(`[inspection-creator] Created company template: ${companyTemplateId} ("${templateName}")`);
       await sleep(PACE_MS);
+    } else {
+      // PATCH existing company template with inspection type and trade if available
+      const patchFields: Record<string, unknown> = {};
+      if (inspectionTypeId) patchFields.inspection_type_id = inspectionTypeId;
+      if (tradeId) patchFields.trade_id = tradeId;
+      if (Object.keys(patchFields).length > 0) {
+        const patchRes = await procorePatch(
+          token,
+          `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}`,
+          cid,
+          { list_template: patchFields },
+        );
+        if (patchRes.ok) {
+          console.log(`[inspection-creator] Updated company template with inspection_type_id=${inspectionTypeId}, trade_id=${tradeId}`);
+        } else {
+          console.warn(`[inspection-creator] Failed to PATCH company template: ${patchRes.error}`);
+        }
+        await sleep(PACE_MS);
+      }
     }
 
     // ── Step 2: Clear existing items, then sections ──────────────────

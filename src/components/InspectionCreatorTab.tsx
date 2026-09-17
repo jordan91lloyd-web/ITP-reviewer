@@ -100,6 +100,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorSuggestion, setErrorSuggestion] = useState<string | null>(null);
   const [inspection, setInspection] = useState<ConvertedInspection | null>(null);
   const [editableItems, setEditableItems] = useState<InspectionItem[]>([]);
   const [description, setDescription] = useState("");
@@ -159,7 +160,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
   }, [inspection, selectedProjectId, category]);
 
   const handleFile = useCallback((f: File) => {
-    setError(null); setInspection(null); setUploadResult(null); setUploadError(null);
+    setError(null); setErrorSuggestion(null); setInspection(null); setUploadResult(null); setUploadError(null);
     setMatchedTemplate(null); setMatchDismissed(false);
     const ext = f.name.toLowerCase().slice(f.name.lastIndexOf("."));
     if (LEGACY_EXTENSIONS.has(ext)) { setError(`Legacy ${ext} not supported — re-save as ${ext === ".doc" ? ".docx" : ".xlsx"}.`); return; }
@@ -176,13 +177,18 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
 
   const handleConvert = async () => {
     if (!file) return;
-    setIsLoading(true); setError(null); setInspection(null); setUploadResult(null); setUploadError(null);
+    setIsLoading(true); setError(null); setErrorSuggestion(null); setInspection(null); setUploadResult(null); setUploadError(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/inspection-creator/convert", { method: "POST", body: fd });
       const data = await res.json();
-      if (!data.success) { setError(data.error ?? "Conversion failed."); }
+      if (!data.success) {
+        const errParts: string[] = [data.error ?? "Conversion failed."];
+        if (data.format_received) errParts.push(`Format: ${data.format_received}`);
+        setError(errParts.join(" "));
+        setErrorSuggestion(data.suggestion ?? null);
+      }
       else {
         const converted = data.inspection as ConvertedInspection;
         setInspection(converted);
@@ -243,7 +249,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
   };
 
   const handleReset = () => {
-    setFile(null); setInspection(null); setEditableItems([]); setError(null);
+    setFile(null); setInspection(null); setEditableItems([]); setError(null); setErrorSuggestion(null);
     setUploadResult(null); setUploadError(null); setDescription("");
     setCategory(""); setReportDescription("");
     setMatchedTemplate(null); setMatchDismissed(false);
@@ -360,6 +366,7 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
               <div>
                 <p style={{ fontSize: 14, fontWeight: 500, color: "var(--hp-warm-700)" }}>Drop a report here, or click to select</p>
                 <p style={{ fontSize: 12, marginTop: 4, color: "var(--hp-text-muted)" }}>PDF, JPG, PNG, DOCX, or XLSX &middot; Max 32 MB</p>
+                <p style={{ fontSize: 11, marginTop: 8, color: "var(--hp-text-muted)" }}>Supports PDF, JPG, PNG, Word (.docx), Excel (.xlsx) &mdash; including photos of handwritten inspections</p>
               </div>
             )}
           </div>
@@ -367,6 +374,9 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
           {error && (
             <div style={{ marginTop: 16, borderRadius: 8, padding: "12px 16px", fontSize: 14, fontWeight: 500, backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b" }}>
               {error}
+              {errorSuggestion && (
+                <p style={{ marginTop: 6, fontSize: 13, fontWeight: 400, color: "#b91c1c" }}>{errorSuggestion}</p>
+              )}
             </div>
           )}
 

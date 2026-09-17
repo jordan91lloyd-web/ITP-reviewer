@@ -49,5 +49,7 @@ export interface ConvertedInspection {
   description: string;
   /** Claude's best-guess discipline category based on report content */
   suggested_category: DisciplineCategory | null;
+  /** Claude's best-guess trade name for the template (e.g. "Concrete", "Waterproofing") */
+  suggested_trade: string | null;
   items: InspectionItem[];
 }

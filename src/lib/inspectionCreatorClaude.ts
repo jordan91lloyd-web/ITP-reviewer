@@ -201,6 +201,11 @@ function validateInspection(raw: unknown, filename: string): ConvertedInspection
     suggested_category = (match as DisciplineCategory) ?? null;
   }
 
+  // Validate suggested_trade
+  const suggested_trade = (r.suggested_trade != null && typeof r.suggested_trade === "string" && r.suggested_trade.trim())
+    ? r.suggested_trade.trim()
+    : null;
+
   if (!Array.isArray(r.items)) {
     throw new Error('Missing or invalid field "items" (expected array).');
   }
@@ -238,6 +243,7 @@ function validateInspection(raw: unknown, filename: string): ConvertedInspection
     report_company,
     description,
     suggested_category,
+    suggested_trade,
     items,
   };
 }

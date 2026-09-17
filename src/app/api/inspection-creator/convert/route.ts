@@ -51,6 +51,9 @@ function xlsxToText(buffer: Buffer): string {
 }
 
 export async function POST(request: NextRequest) {
+  let fileRef: File | null = null;
+  let fileTypeRef: "pdf" | "image" | "docx" | "xlsx" | "legacy_doc" | "legacy_xls" | null = null;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -58,34 +61,45 @@ export async function POST(request: NextRequest) {
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ success: false, error: "No file provided. Upload a PDF, JPG, PNG, DOCX, or XLSX." }, { status: 400 });
     }
+    fileRef = file;
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ success: false, error: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 32 MB.` }, { status: 400 });
     }
 
     const fileType = resolveType(file.type, file.name);
+    fileTypeRef = fileType;
     if (fileType === "legacy_doc") return NextResponse.json({ success: false, error: "Legacy .doc not supported — re-save as .docx." }, { status: 400 });
     if (fileType === "legacy_xls") return NextResponse.json({ success: false, error: "Legacy .xls not supported — re-save as .xlsx." }, { status: 400 });
     if (!fileType) return NextResponse.json({ success: false, error: `Unsupported file type "${file.type}". Use PDF, JPG, PNG, DOCX, or XLSX.` }, { status: 400 });
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+
+    // Build format_received string for error reporting
+    let formatReceived = "";
 
     if (fileType === "pdf") {
+      formatReceived = `PDF (${fileSizeMB} MB)`;
       const inspection = await runInspectionConversion(buffer, file.name, "application/pdf");
       return NextResponse.json({ success: true, inspection });
     }
     if (fileType === "image") {
+      const imgType = file.type === "image/png" ? "PNG" : "JPEG";
+      formatReceived = `${imgType} image (${fileSizeMB} MB)`;
       const inspection = await runInspectionConversion(buffer, file.name, file.type as "image/jpeg" | "image/png");
       return NextResponse.json({ success: true, inspection });
     }
     if (fileType === "docx") {
       const { value: text } = await mammoth.extractRawText({ buffer });
-      if (!text.trim()) return NextResponse.json({ success: false, error: "Word document appears to be empty." }, { status: 400 });
+      formatReceived = `Word document extracted to text (${text.length.toLocaleString()} characters)`;
+      if (!text.trim()) return NextResponse.json({ success: false, error: "Word document appears to be empty.", file_type: "docx", file_size: fileSizeMB, format_received: formatReceived }, { status: 400 });
       const inspection = await runInspectionConversion(Buffer.from(text, "utf-8"), file.name, "text/plain");
       return NextResponse.json({ success: true, inspection });
     }
     if (fileType === "xlsx") {
       const text = xlsxToText(buffer);
-      if (!text.trim()) return NextResponse.json({ success: false, error: "Excel file appears to be empty." }, { status: 400 });
+      formatReceived = `Excel spreadsheet extracted to text (${text.length.toLocaleString()} characters)`;
+      if (!text.trim()) return NextResponse.json({ success: false, error: "Excel file appears to be empty.", file_type: "xlsx", file_size: fileSizeMB, format_received: formatReceived }, { status: 400 });
       const inspection = await runInspectionConversion(Buffer.from(text, "utf-8"), file.name, "text/plain");
       return NextResponse.json({ success: true, inspection });
     }
@@ -94,6 +108,38 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[inspection-creator/convert] Error: ${message}`);
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+
+    // Build contextual suggestion and format info
+    const fileSizeMB = fileRef ? (fileRef.size / 1024 / 1024).toFixed(1) : "unknown";
+    const detectedType = fileTypeRef;
+
+    let suggestion = "Try uploading the document again. If the problem persists, try a different file format.";
+    let formatReceived = `Unknown (${fileSizeMB} MB)`;
+
+    if (message.includes("truncat") || message.includes("token limit") || message.includes("too large")) {
+      suggestion = "The document is very large. Try splitting it into sections and converting each separately.";
+    } else if (detectedType === "image") {
+      const imgType = fileRef && fileRef.type === "image/png" ? "PNG" : "JPEG";
+      formatReceived = `${imgType} image (${fileSizeMB} MB)`;
+      suggestion = "Try taking a clearer photo with better lighting. Handwritten text should be legible.";
+    } else if (detectedType === "pdf") {
+      formatReceived = `PDF (${fileSizeMB} MB)`;
+      suggestion = "The PDF may be scanned at low resolution. Try a higher-quality scan.";
+    } else if (detectedType === "docx") {
+      formatReceived = `Word document (${fileSizeMB} MB)`;
+      suggestion = "The document may have unusual formatting. Try copying the content to a new document.";
+    } else if (detectedType === "xlsx") {
+      formatReceived = `Excel spreadsheet (${fileSizeMB} MB)`;
+      suggestion = "The document may have unusual formatting. Try copying the content to a new document.";
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: message,
+      file_type: detectedType,
+      file_size: fileSizeMB,
+      format_received: formatReceived,
+      suggestion,
+    }, { status: 500 });
   }
 }
