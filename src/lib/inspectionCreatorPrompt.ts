@@ -16,7 +16,7 @@ CRITICAL RULES:
 8. source_reference should identify where in the report the item came from (e.g. "Section 3.2", "Page 4, Item 7").
 9. original_report_content must contain the actual text from the report that this item is derived from — the consultant's own words, not your paraphrase.
 10. For metadata fields (report_title, report_date, report_author, report_company): extract from the document if present, otherwise null. Never invent metadata.
-11. template_name should be a concise name for this inspection (e.g. "Structural Steel Inspection - Level 3", "Waterproofing Inspection - Basement").
+11. template_name should be a clean, descriptive name for this inspection template (e.g. "SSDS Waterproofing Inspection", "Structural Steel Report - Level 3"). Include the source company or author name if identifiable from the document. Do NOT add dates, timestamps, prefixes like "[HP]", or any other decorators — the system adds those automatically.
 12. description should be a one-line summary of what this inspection covers.`;
 
 export function buildInspectionCreatorInstructions(filename: string): string {

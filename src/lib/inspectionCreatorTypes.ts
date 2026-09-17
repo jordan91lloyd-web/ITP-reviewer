@@ -16,7 +16,7 @@ export interface InspectionItem {
 }
 
 export interface ConvertedInspection {
-  /** Becomes the Procore template name (prefixed with [HP] + timestamp on upload) */
+  /** Becomes the Procore template name (prefixed with [HP] on upload) */
   template_name: string;
   /** Original filename */
   source_document: string;

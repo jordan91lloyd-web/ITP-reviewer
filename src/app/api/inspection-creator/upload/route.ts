@@ -1,11 +1,11 @@
 // ─── POST /api/inspection-creator/upload ──────────────────────────────────
-// Creates a Procore inspection from a ConvertedInspection via the 5-step chain:
+// Creates a Procore project-level inspection template from a ConvertedInspection:
 // 1. Create company template
 // 2. Add sections
 // 3. Add items
 // 4. Copy to project level
-// 5. Create inspection from project template
-// Sequential with 600ms pacing. Read-back verification.
+// 5. Delete company template (best effort cleanup)
+// Sequential with 600ms pacing. Returns project template ID and URL.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -99,8 +99,6 @@ export async function POST(request: NextRequest) {
     inspection: ConvertedInspection;
     project_id: number;
     company_id: number;
-    location_id?: number;
-    inspection_date?: string;
   };
 
   try {
@@ -111,7 +109,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { inspection, project_id, company_id, location_id, inspection_date } = payload;
+  const { inspection, project_id, company_id } = payload;
   const cid = String(company_id);
   const pid = String(project_id);
 
@@ -123,7 +121,6 @@ export async function POST(request: NextRequest) {
 
   let companyTemplateId: number | null = null;
   let projectTemplateId: number | null = null;
-  let inspectionId: number | null = null;
 
   try {
     // ── Step 0: Get default response set ──────────────────────────────
@@ -139,8 +136,7 @@ export async function POST(request: NextRequest) {
     console.log(`[inspection-creator] Using response_set_id=${responseSetId}`);
 
     // ── Step 1: Create company template ──────────────────────────────
-    const timestamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15);
-    const templateName = `[HP] ${inspection.template_name} - ${timestamp}`;
+    const templateName = `[HP] ${inspection.template_name}`;
 
     const step1 = await procorePost(token, `/rest/v1.0/companies/${cid}/checklist/list_templates`, cid, {
       list_template: { name: templateName },
@@ -236,60 +232,26 @@ export async function POST(request: NextRequest) {
     console.log(`[inspection-creator] Project template created: ${projectTemplateId}`);
     await sleep(PACE_MS);
 
-    // ── Step 5: Create inspection ────────────────────────────────────
-    const inspBody: Record<string, unknown> = {};
-    if (location_id) inspBody.location_id = location_id;
-    if (inspection_date) inspBody.inspection_date = inspection_date;
-    if (inspection.description) inspBody.description = inspection.description;
+    // ── Step 5: Delete company template (best effort cleanup) ────────
+    console.log(`[inspection-creator] Cleaning up company template ${companyTemplateId}`);
+    await procoreDelete(token, `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}`, cid);
 
-    const step5 = await procorePost(
-      token,
-      `/rest/v1.1/projects/${pid}/checklist/lists`,
-      cid,
-      { list_template_id: projectTemplateId, list: inspBody },
-    );
-    if (!step5.ok) {
-      return NextResponse.json({
-        error: `Failed to create inspection: ${step5.error}`,
-        company_template_id: companyTemplateId,
-        project_template_id: projectTemplateId,
-        sections_created: sectionIdMap.size,
-        items_created: itemsCreated,
-      }, { status: 502 });
-    }
-    inspectionId = (step5.json as { id: number }).id;
-    console.log(`[inspection-creator] Inspection created: ${inspectionId}`);
-    await sleep(PACE_MS);
-
-    // ── Step 6: Read-back verification ───────────────────────────────
-    const verify = await procoreGet(
-      token,
-      `/rest/v1.0/checklist/lists/${inspectionId}?view=extended&project_id=${pid}`,
-      cid,
-    ) as { id: number; name: string; items?: unknown[] } | null;
-
-    const verified = verify?.id === inspectionId;
-    const verifiedItemCount = Array.isArray(verify?.items) ? verify.items.length : null;
-
-    const inspectionUrl = `${PROCORE_WEB_HOST}/${pid}/project/checklists/lists/${inspectionId}`;
+    const templateUrl = `${PROCORE_WEB_HOST}/${pid}/project/checklists/list_templates/${projectTemplateId}`;
 
     return NextResponse.json({
       success: true,
-      inspection_id: inspectionId,
-      inspection_url: inspectionUrl,
-      company_template_id: companyTemplateId,
       project_template_id: projectTemplateId,
+      template_url: templateUrl,
+      template_name: templateName,
       sections_created: sectionIdMap.size,
       items_created: itemsCreated,
-      verified,
-      verified_item_count: verifiedItemCount,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[inspection-creator/upload] Error: ${msg}`);
 
     // Best-effort cleanup of company template on failure
-    if (companyTemplateId && !inspectionId) {
+    if (companyTemplateId) {
       console.log(`[inspection-creator] Cleaning up company template ${companyTemplateId}`);
       await procoreDelete(token, `/rest/v1.0/companies/${cid}/checklist/list_templates/${companyTemplateId}`, cid);
     }
@@ -298,7 +260,6 @@ export async function POST(request: NextRequest) {
       error: msg,
       company_template_id: companyTemplateId,
       project_template_id: projectTemplateId,
-      inspection_id: inspectionId,
     }, { status: 500 });
   }
 }
