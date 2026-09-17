@@ -7,7 +7,7 @@ import { INSPECTION_CREATOR_SYSTEM_PROMPT, buildInspectionCreatorInstructions } 
 import type { ConvertedInspection, InspectionItem } from "./inspectionCreatorTypes";
 
 const MODEL = "claude-sonnet-4-6";
-const MAX_TOKENS = 24000;
+const MAX_TOKENS = 32000;
 
 /**
  * Converts a single document into a structured inspection checklist.
@@ -83,6 +83,29 @@ function extractJson(raw: string): unknown {
   const end = raw.lastIndexOf("}");
   if (start !== -1 && end > start) {
     try { return JSON.parse(raw.slice(start, end + 1)); } catch { /* fall through */ }
+  }
+
+  // Attempt to repair truncated JSON — the response may have been cut off mid-item.
+  // Find the last complete item in the items array and close the JSON.
+  if (start !== -1) {
+    let json = raw.slice(start);
+    // Find the last complete object in the items array (ends with })
+    const lastCompleteItem = json.lastIndexOf("}");
+    if (lastCompleteItem > 0) {
+      json = json.slice(0, lastCompleteItem + 1);
+      // Close any open arrays and objects
+      const opens = (json.match(/\[/g) || []).length;
+      const closes = (json.match(/\]/g) || []).length;
+      const openBraces = (json.match(/\{/g) || []).length;
+      const closeBraces = (json.match(/\}/g) || []).length;
+      json += "]".repeat(Math.max(0, opens - closes));
+      json += "}".repeat(Math.max(0, openBraces - closeBraces));
+      try {
+        const parsed = JSON.parse(json);
+        console.warn(`[inspection-creator] Repaired truncated JSON — some items may have been lost`);
+        return parsed;
+      } catch { /* fall through */ }
+    }
   }
 
   throw new Error(`No valid JSON found in Claude response. First 500 chars: ${raw.slice(0, 500)}`);
