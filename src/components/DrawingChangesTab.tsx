@@ -13,7 +13,7 @@ import type {
 } from "./drawing-changes/types";
 import { fmtDate } from "./drawing-changes/constants";
 import { BaselinePanel } from "./drawing-changes/BaselinePanel";
-import DocCompareSection from "./drawing-changes/DocCompareSection";
+import { ComparePanel } from "./drawing-changes/ComparePanel";
 import { ScanPanel } from "./drawing-changes/ScanPanel";
 import { ScanProgress } from "./drawing-changes/ScanProgress";
 import { RegisterPanel } from "./drawing-changes/RegisterPanel";
@@ -509,7 +509,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
         let defaultStage: Stage = hasResults ? "register" : "scan";
         try {
           const stored = localStorage.getItem(`${STAGE_KEY_PREFIX}${pid}`);
-          if (stored === "baseline" || stored === "scan" || stored === "register") {
+          if (stored === "baseline" || stored === "scan" || stored === "register" || stored === "compare") {
             defaultStage = stored;
           }
         } catch { /* ignore */ }
@@ -1061,6 +1061,19 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     return parts.join(" · ");
   }, [changes]);
 
+  // ── Compare stats ──────────────────────────────────────────────────────
+  const compareStats = useMemo(() => {
+    const docChanges = changes.filter((c) => c.discipline === "Document");
+    const scanIds = new Set(docChanges.map((c) => {
+      // group by scan_id — the scan_id is not on ChangeRow directly,
+      // so count unique drawing_number values as proxy for comparisons
+      return c.drawing_number;
+    }));
+    const comparisonCount = scanIds.size;
+    const variationCount = docChanges.filter((c) => c.variation_risk === "likely_variation").length;
+    return { comparisonCount, variationCount };
+  }, [changes]);
+
   // ── Determine if we should show empty state hints ──────────────────────
   const hasBaseline = baselineDocs.some((d) => d.status === "processed");
 
@@ -1148,6 +1161,7 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             baselineStatus={baselineStatus}
             scanStatus={scanStatus}
             registerStatus={registerStatus}
+            compareStats={compareStats}
             onStageChange={(s) => setStageAndPersist(s)}
           />
 
@@ -1156,38 +1170,25 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
             <div style={{ maxWidth: 1000, margin: "0 auto" }}>
               {/* Baseline stage */}
               {stage === "baseline" && (
-                <>
-                  <BaselinePanel
-                    companyId={company_id}
-                    projectId={projectId}
-                    baselineDocs={baselineDocs}
-                    baselineExpanded={baselineExpanded}
-                    baselineUploading={baselineUploading}
-                    baselineProgressText={baselineProgressText}
-                    expandedBaselineDoc={expandedBaselineDoc}
-                    showProcoreBrowser={showProcoreBrowser}
-                    onToggleExpanded={() => setBaselineExpanded((v) => !v)}
-                    onUploadFile={uploadBaselineFile}
-                    onAddProcoreDoc={addProcoreDoc}
-                    onDeleteDoc={deleteBaselineDoc}
-                    onClearFailed={clearFailedBaseline}
-                    onToggleProcoreBrowser={() => setShowProcoreBrowser((v) => !v)}
-                    onSetExpandedBaselineDoc={setExpandedBaselineDoc}
-                    onProcessFolder={handleProcessFolder}
-                    fetchBaseline={fetchBaseline}
-                  />
-
-                  {/* Compare Document against Baseline */}
-                  {baselineDocs.some((d) => d.status === "processed") && (
-                    <div style={{ marginTop: 16 }}>
-                      <DocCompareSection
-                        company_id={company_id}
-                        project_id={projectId}
-                        project_name={projects.find((p) => String(p.id) === projectId)?.name ?? ""}
-                      />
-                    </div>
-                  )}
-                </>
+                <BaselinePanel
+                  companyId={company_id}
+                  projectId={projectId}
+                  baselineDocs={baselineDocs}
+                  baselineExpanded={baselineExpanded}
+                  baselineUploading={baselineUploading}
+                  baselineProgressText={baselineProgressText}
+                  expandedBaselineDoc={expandedBaselineDoc}
+                  showProcoreBrowser={showProcoreBrowser}
+                  onToggleExpanded={() => setBaselineExpanded((v) => !v)}
+                  onUploadFile={uploadBaselineFile}
+                  onAddProcoreDoc={addProcoreDoc}
+                  onDeleteDoc={deleteBaselineDoc}
+                  onClearFailed={clearFailedBaseline}
+                  onToggleProcoreBrowser={() => setShowProcoreBrowser((v) => !v)}
+                  onSetExpandedBaselineDoc={setExpandedBaselineDoc}
+                  onProcessFolder={handleProcessFolder}
+                  fetchBaseline={fetchBaseline}
+                />
               )}
 
               {/* Scan stage */}
@@ -1366,6 +1367,17 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Compare stage */}
+              {stage === "compare" && (
+                <ComparePanel
+                  baselineDocs={baselineDocs}
+                  onGoToBaseline={() => setStageAndPersist("baseline")}
+                  company_id={company_id}
+                  project_id={projectId}
+                  project_name={projects.find((p) => String(p.id) === projectId)?.name ?? ""}
+                />
               )}
             </div>
           </div>

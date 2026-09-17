@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Database, Search, ClipboardList } from "lucide-react";
+import { Database, Search, ClipboardList, GitCompareArrows } from "lucide-react";
 
-export type Stage = "baseline" | "scan" | "register" | "scanning";
+export type Stage = "baseline" | "scan" | "register" | "compare" | "scanning";
+
+interface CompareStats {
+  comparisonCount: number;
+  variationCount: number;
+}
 
 interface StageRailProps {
   stage: Stage;
@@ -11,6 +16,7 @@ interface StageRailProps {
   baselineStatus: string;
   scanStatus: string;
   registerStatus: string;
+  compareStats?: CompareStats;
   onStageChange: (stage: Stage) => void;
 }
 
@@ -18,6 +24,7 @@ const STAGES: { id: Stage; label: string; shortLabel: string; Icon: typeof Datab
   { id: "baseline", label: "Baseline", shortLabel: "B", Icon: Database },
   { id: "scan", label: "Scan", shortLabel: "S", Icon: Search },
   { id: "register", label: "Register", shortLabel: "R", Icon: ClipboardList },
+  { id: "compare", label: "Compare", shortLabel: "C", Icon: GitCompareArrows },
 ];
 
 export const StageRail = React.memo(function StageRail({
@@ -26,14 +33,22 @@ export const StageRail = React.memo(function StageRail({
   baselineStatus,
   scanStatus,
   registerStatus,
+  compareStats,
   onStageChange,
 }: StageRailProps) {
   const activeStage = stage === "scanning" ? "scan" : stage;
+
+  const compareStatus = compareStats
+    ? compareStats.comparisonCount > 0
+      ? `${compareStats.comparisonCount} comparison${compareStats.comparisonCount !== 1 ? "s" : ""} \u00b7 ${compareStats.variationCount} likely variation${compareStats.variationCount !== 1 ? "s" : ""}`
+      : "No comparisons yet"
+    : "No comparisons yet";
 
   const statusMap: Record<string, string> = {
     baseline: baselineStatus,
     scan: scanStatus,
     register: registerStatus,
+    compare: compareStatus,
   };
 
   const [isHorizontal, setIsHorizontal] = useState(false);
