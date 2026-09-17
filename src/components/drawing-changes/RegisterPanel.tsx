@@ -72,6 +72,8 @@ interface RegisterPanelProps {
   onClearResults: () => void;
   onDeleteSelected: () => void;
   onSetExpandedDrawings: React.Dispatch<React.SetStateAction<Set<string>>>;
+  onBatchAcceptWithinScope?: () => Promise<void>;
+  onBatchRaiseVariations?: () => Promise<void>;
 }
 
 export const RegisterPanel = React.memo(function RegisterPanel({
@@ -120,11 +122,18 @@ export const RegisterPanel = React.memo(function RegisterPanel({
   onClearResults,
   onDeleteSelected,
   onSetExpandedDrawings,
+  onBatchAcceptWithinScope,
+  onBatchRaiseVariations,
 }: RegisterPanelProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // KPI filter state
-  const [kpiFilter, setKpiFilter] = React.useState<KpiFilter>("all");
+  // KPI filter state — default to "needs_review" if there are unreviewed changes
+  const [kpiFilter, setKpiFilter] = React.useState<KpiFilter>(() => {
+    const hasUnreviewed = changes.some(
+      (c) => !c.review_status || c.review_status === "needs_review"
+    );
+    return hasUnreviewed ? "needs_review" : "all";
+  });
 
   // Filtered + sorted changes
   const filteredChanges = useMemo(() => {
@@ -536,28 +545,67 @@ export const RegisterPanel = React.memo(function RegisterPanel({
         onCollapseAll={handleCollapseAll}
         onSetSelectMode={onSetSelectMode}
         onClearSelection={onClearSelection}
+        onBatchAcceptWithinScope={onBatchAcceptWithinScope}
+        onBatchRaiseVariations={onBatchRaiseVariations}
       />
 
       {/* Change list */}
       {filteredChanges.length === 0 ? (
-        <div
-          style={{
-            borderRadius: 8,
-            border: "1px solid var(--hp-border)",
-            padding: 32,
-            textAlign: "center",
-            fontSize: 13,
-            color: "var(--hp-text-secondary)",
-          }}
-        >
-          {kpiFilter !== "all"
-            ? `No changes matching "${kpiFilter.replace(/_/g, " ")}" filter.`
-            : needsReviewOnly
-              ? "No changes needing review."
-              : highSeverityOnly
-                ? "No high severity changes."
-                : "No changes detected."}
-        </div>
+        kpiFilter === "needs_review" && changes.length > 0 ? (
+          <div
+            style={{
+              borderRadius: 12,
+              border: "1px solid var(--hp-compliant)",
+              backgroundColor: "var(--hp-compliant-bg)",
+              padding: "40px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 28, marginBottom: 8 }}>&#10003;</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--hp-compliant)", marginBottom: 6 }}>
+              All changes reviewed
+            </div>
+            <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginBottom: 16, maxWidth: 380, margin: "0 auto 16px" }}>
+              Every change has been categorised. Switch to the All view to see the full register, or export the results.
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+              <button
+                onClick={() => setKpiFilter("all")}
+                style={{
+                  borderRadius: 8,
+                  padding: "8px 18px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--hp-warm-800)",
+                  backgroundColor: "var(--hp-surface)",
+                  border: "1px solid var(--hp-border)",
+                  cursor: "pointer",
+                }}
+              >
+                View All Changes
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              borderRadius: 8,
+              border: "1px solid var(--hp-border)",
+              padding: 32,
+              textAlign: "center",
+              fontSize: 13,
+              color: "var(--hp-text-secondary)",
+            }}
+          >
+            {kpiFilter !== "all"
+              ? `No changes matching "${kpiFilter.replace(/_/g, " ")}" filter.`
+              : needsReviewOnly
+                ? "No changes needing review."
+                : highSeverityOnly
+                  ? "No high severity changes."
+                  : "No changes detected."}
+          </div>
+        )
       ) : (
         <div
           ref={parentRef}

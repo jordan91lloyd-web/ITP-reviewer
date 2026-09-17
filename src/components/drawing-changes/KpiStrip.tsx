@@ -81,47 +81,75 @@ export const KpiStrip = React.memo(function KpiStrip({
       >
         {cards.map((card) => {
           const isActive = activeFilter === card.id;
+          const isNeedsReview = card.id === "needs_review";
+          const isAllReviewed = isNeedsReview && card.count === 0 && total > 0;
+
+          // "Needs Review" card gets extra visual prominence when there are items to review
+          const prominentNeedsReview = isNeedsReview && card.count > 0 && !isActive;
+
           return (
             <button
               key={card.id}
               onClick={() => onFilterChange(isActive ? "all" : card.id)}
               aria-pressed={isActive}
-              aria-label={`${card.label}: ${card.count}`}
+              aria-label={
+                isAllReviewed
+                  ? "All reviewed"
+                  : `${card.label}: ${card.count}`
+              }
               style={{
-                flex: "1 1 0",
+                flex: isNeedsReview ? "1.3 1 0" : "1 1 0",
                 minWidth: 80,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 2,
-                padding: "10px 8px",
+                padding: isNeedsReview ? "12px 8px" : "10px 8px",
                 borderRadius: 8,
                 border: isActive
                   ? `2px solid ${card.color}`
-                  : "1px solid var(--hp-border)",
-                backgroundColor: isActive ? card.bg : "var(--hp-surface)",
+                  : isAllReviewed
+                    ? "2px solid var(--hp-compliant)"
+                    : prominentNeedsReview
+                      ? `2px solid ${card.color}`
+                      : "1px solid var(--hp-border)",
+                backgroundColor: isActive
+                  ? card.bg
+                  : isAllReviewed
+                    ? "var(--hp-compliant-bg)"
+                    : prominentNeedsReview
+                      ? card.bg
+                      : "var(--hp-surface)",
                 cursor: "pointer",
               }}
             >
               <span
                 style={{
-                  fontSize: 22,
+                  fontSize: isNeedsReview ? 26 : 22,
                   fontWeight: 700,
-                  color: card.count > 0 ? card.color : "var(--hp-text-muted)",
+                  color: isAllReviewed
+                    ? "var(--hp-compliant)"
+                    : card.count > 0
+                      ? card.color
+                      : "var(--hp-text-muted)",
                   lineHeight: 1.1,
                 }}
               >
-                {card.count}
+                {isAllReviewed ? "\u2713" : card.count}
               </span>
               <span
                 style={{
                   fontSize: 11,
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? card.color : "var(--hp-text-secondary)",
+                  fontWeight: isActive || prominentNeedsReview ? 600 : 400,
+                  color: isAllReviewed
+                    ? "var(--hp-compliant)"
+                    : isActive || prominentNeedsReview
+                      ? card.color
+                      : "var(--hp-text-secondary)",
                   whiteSpace: "nowrap",
                 }}
               >
-                {card.label}
+                {isAllReviewed ? "All Reviewed" : card.label}
               </span>
             </button>
           );

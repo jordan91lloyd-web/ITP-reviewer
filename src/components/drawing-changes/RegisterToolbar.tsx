@@ -46,6 +46,8 @@ interface RegisterToolbarProps {
   onCollapseAll: () => void;
   onSetSelectMode: (v: boolean) => void;
   onClearSelection: () => void;
+  onBatchAcceptWithinScope?: () => Promise<void>;
+  onBatchRaiseVariations?: () => Promise<void>;
 }
 
 export const RegisterToolbar = React.memo(function RegisterToolbar({
@@ -77,13 +79,30 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
   onCollapseAll,
   onSetSelectMode,
   onClearSelection,
+  onBatchAcceptWithinScope,
+  onBatchRaiseVariations,
 }: RegisterToolbarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [batchRunning, setBatchRunning] = useState<"accept" | "raise" | null>(null);
+  const [showBatchConfirm, setShowBatchConfirm] = useState<"accept" | "raise" | null>(null);
 
   const highTotal = changes.filter((c) => c.severity === "high").length;
   const variationTotal = changes.filter((c) => c.variation_risk === "likely_variation").length;
   const withinScopeTotal = changes.filter((c) => c.variation_risk === "within_scope").length;
   const needsReviewTotal = changes.filter((c) => !c.review_status || c.review_status === "needs_review").length;
+
+  // Batch action counts
+  const unreviewedWithinScope = changes.filter(
+    (c) => c.variation_risk === "within_scope" && (!c.review_status || c.review_status === "needs_review")
+  ).length;
+  const unreviewedVariations = changes.filter(
+    (c) => c.variation_risk === "likely_variation" && (!c.review_status || c.review_status === "needs_review")
+  ).length;
+  const unreviewedVariationDisciplines = new Set(
+    changes
+      .filter((c) => c.variation_risk === "likely_variation" && (!c.review_status || c.review_status === "needs_review"))
+      .map((c) => c.discipline)
+  ).size;
 
   const exportParams = new URLSearchParams({
     company_id: companyId,
@@ -95,8 +114,164 @@ export const RegisterToolbar = React.memo(function RegisterToolbar({
   if (variationsOnly) exportParams.set("variation_risk", "likely_variation");
   const qs = exportParams.toString();
 
+  const handleBatchAccept = async () => {
+    setShowBatchConfirm(null);
+    setBatchRunning("accept");
+    try {
+      await onBatchAcceptWithinScope?.();
+    } finally {
+      setBatchRunning(null);
+    }
+  };
+
+  const handleBatchRaise = async () => {
+    setShowBatchConfirm(null);
+    setBatchRunning("raise");
+    try {
+      await onBatchRaiseVariations?.();
+    } finally {
+      setBatchRunning(null);
+    }
+  };
+
   return (
     <>
+      {/* Batch actions row */}
+      {needsReviewTotal > 0 && (unreviewedWithinScope > 0 || unreviewedVariations > 0) && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+            marginBottom: 8,
+            padding: "8px 12px",
+            borderRadius: 8,
+            border: "1px solid var(--hp-border)",
+            backgroundColor: "var(--hp-warm-100)",
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-text-secondary)", marginRight: 4 }}>
+            Batch:
+          </span>
+          {unreviewedWithinScope > 0 && onBatchAcceptWithinScope && (
+            <button
+              onClick={() => setShowBatchConfirm("accept")}
+              disabled={batchRunning !== null}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                borderRadius: 8,
+                border: "1px solid var(--hp-compliant)",
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 600,
+                color: batchRunning === "accept" ? "#fff" : "var(--hp-compliant)",
+                backgroundColor: batchRunning === "accept" ? "var(--hp-compliant)" : "var(--hp-surface)",
+                cursor: batchRunning !== null ? "not-allowed" : "pointer",
+                opacity: batchRunning !== null && batchRunning !== "accept" ? 0.5 : 1,
+              }}
+            >
+              {batchRunning === "accept" ? "Accepting..." : `Accept ${unreviewedWithinScope} within scope`}
+            </button>
+          )}
+          {unreviewedVariations > 0 && onBatchRaiseVariations && (
+            <button
+              onClick={() => setShowBatchConfirm("raise")}
+              disabled={batchRunning !== null}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                borderRadius: 8,
+                border: "1px solid var(--hp-critical)",
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 600,
+                color: batchRunning === "raise" ? "#fff" : "var(--hp-critical)",
+                backgroundColor: batchRunning === "raise" ? "var(--hp-critical)" : "var(--hp-surface)",
+                cursor: batchRunning !== null ? "not-allowed" : "pointer",
+                opacity: batchRunning !== null && batchRunning !== "raise" ? 0.5 : 1,
+              }}
+            >
+              {batchRunning === "raise"
+                ? "Raising events..."
+                : `Raise ${unreviewedVariations} variation event${unreviewedVariations !== 1 ? "s" : ""} (${unreviewedVariationDisciplines} discipline${unreviewedVariationDisciplines !== 1 ? "s" : ""})`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Batch confirmation dialog */}
+      {showBatchConfirm && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0,0,0,0.4)",
+            zIndex: 50,
+          }}
+          onClick={() => setShowBatchConfirm(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--hp-surface)",
+              borderRadius: 12,
+              padding: "24px 28px",
+              maxWidth: 440,
+              width: "90%",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--hp-text-primary)", marginBottom: 8 }}>
+              {showBatchConfirm === "accept" ? "Accept within-scope changes?" : "Raise variation events?"}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginBottom: 16, lineHeight: 1.5 }}>
+              {showBatchConfirm === "accept"
+                ? `This will mark ${unreviewedWithinScope} unreviewed change${unreviewedWithinScope !== 1 ? "s" : ""} classified as "within scope" as "Not a Variation". This cannot be undone in bulk.`
+                : `This will create Change Events in Procore for ${unreviewedVariations} unreviewed likely-variation change${unreviewedVariations !== 1 ? "s" : ""} across ${unreviewedVariationDisciplines} discipline${unreviewedVariationDisciplines !== 1 ? "s" : ""}, grouped by discipline.`}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button
+                onClick={() => setShowBatchConfirm(null)}
+                style={{
+                  borderRadius: 8,
+                  padding: "8px 18px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "var(--hp-text-secondary)",
+                  backgroundColor: "var(--hp-surface)",
+                  border: "1px solid var(--hp-border)",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={showBatchConfirm === "accept" ? handleBatchAccept : handleBatchRaise}
+                style={{
+                  borderRadius: 8,
+                  padding: "8px 18px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#fff",
+                  backgroundColor: showBatchConfirm === "accept" ? "var(--hp-compliant)" : "var(--hp-critical)",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {showBatchConfirm === "accept" ? "Accept All" : "Raise Events"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filter pills and sort row */}
       {changes.length > 0 && (
         <div

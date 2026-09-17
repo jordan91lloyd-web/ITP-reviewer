@@ -817,6 +817,41 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
     }
   }, [projectId, company_id, projectName, changes]);
 
+  // ── Batch: accept all within-scope unreviewed changes ────────────────────
+
+  const batchAcceptWithinScope = useCallback(async () => {
+    const withinScopeUnreviewed = changes.filter(
+      (c) => c.variation_risk === "within_scope" && (!c.review_status || c.review_status === "needs_review")
+    );
+    if (withinScopeUnreviewed.length === 0) return;
+    const ids = withinScopeUnreviewed.map((c) => c.id);
+    await updateStatus(ids, "not_a_variation");
+  }, [changes, updateStatus]);
+
+  // ── Batch: raise change events for all unreviewed likely variations ─────
+
+  const batchRaiseVariations = useCallback(async () => {
+    const unreviewedVariations = changes.filter(
+      (c) => c.variation_risk === "likely_variation" && (!c.review_status || c.review_status === "needs_review")
+    );
+    if (unreviewedVariations.length === 0) return;
+
+    // Group by discipline
+    const byDisc: Record<string, ChangeRow[]> = {};
+    for (const c of unreviewedVariations) {
+      const disc = c.discipline || "Other";
+      if (!byDisc[disc]) byDisc[disc] = [];
+      byDisc[disc].push(c);
+    }
+
+    // Raise one event per discipline, sequentially
+    for (const [disc, discChanges] of Object.entries(byDisc)) {
+      const ids = discChanges.map((c) => c.id);
+      const title = `${disc} — ${discChanges.length} drawing variation${discChanges.length !== 1 ? "s" : ""} detected`;
+      await raiseChangeEvent(ids, disc, title);
+    }
+  }, [changes, raiseChangeEvent]);
+
   // ── Download evidence sheet ──────────────────────────────────────────────
 
   const downloadEvidence = useCallback(async (change: ChangeRow) => {
@@ -1279,6 +1314,8 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
                   onClearResults={clearResults}
                   onDeleteSelected={deleteSelected}
                   onSetExpandedDrawings={setExpandedDrawings}
+                  onBatchAcceptWithinScope={batchAcceptWithinScope}
+                  onBatchRaiseVariations={batchRaiseVariations}
                 />
               )}
 
