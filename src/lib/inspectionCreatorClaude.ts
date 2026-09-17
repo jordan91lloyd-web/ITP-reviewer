@@ -85,30 +85,84 @@ function extractJson(raw: string): unknown {
     try { return JSON.parse(raw.slice(start, end + 1)); } catch { /* fall through */ }
   }
 
-  // Attempt to repair truncated JSON — the response may have been cut off mid-item.
-  // Find the last complete item in the items array and close the JSON.
+  // Attempt to repair truncated JSON using string-aware bracket tracking.
+  // The naive regex approach breaks when report content contains { or } inside strings.
   if (start !== -1) {
-    let json = raw.slice(start);
-    // Find the last complete object in the items array (ends with })
-    const lastCompleteItem = json.lastIndexOf("}");
-    if (lastCompleteItem > 0) {
-      json = json.slice(0, lastCompleteItem + 1);
-      // Close any open arrays and objects
-      const opens = (json.match(/\[/g) || []).length;
-      const closes = (json.match(/\]/g) || []).length;
-      const openBraces = (json.match(/\{/g) || []).length;
-      const closeBraces = (json.match(/\}/g) || []).length;
-      json += "]".repeat(Math.max(0, opens - closes));
-      json += "}".repeat(Math.max(0, openBraces - closeBraces));
-      try {
-        const parsed = JSON.parse(json);
-        console.warn(`[inspection-creator] Repaired truncated JSON — some items may have been lost`);
-        return parsed;
-      } catch { /* fall through */ }
+    const repaired = repairTruncatedJson(raw.slice(start));
+    if (repaired !== null) {
+      console.warn(`[inspection-creator] Repaired truncated JSON — some items may have been lost`);
+      return repaired;
     }
   }
 
   throw new Error(`No valid JSON found in Claude response. First 500 chars: ${raw.slice(0, 500)}`);
+}
+
+/**
+ * Repairs truncated JSON by finding the last complete object boundary
+ * (tracking string state so braces inside strings are ignored),
+ * trimming there, and closing remaining open brackets.
+ */
+function repairTruncatedJson(json: string): unknown | null {
+  // Pass 1: walk the string tracking state, find the last position
+  // where a top-level-ish object closes (depth drops to ≤1)
+  let inString = false;
+  let escape = false;
+  let lastValidCut = -1;
+  const stack: string[] = [];
+
+  for (let i = 0; i < json.length; i++) {
+    const ch = json[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\" && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+
+    if (ch === "{" || ch === "[") stack.push(ch);
+    else if (ch === "}") {
+      if (stack.length > 0 && stack[stack.length - 1] === "{") {
+        stack.pop();
+        // depth ≤ 1 means we closed an item-level or top-level object
+        if (stack.length <= 2) lastValidCut = i;
+      }
+    } else if (ch === "]") {
+      if (stack.length > 0 && stack[stack.length - 1] === "[") stack.pop();
+    }
+  }
+
+  if (lastValidCut <= 0) return null;
+
+  // Pass 2: take everything up to the last valid cut, then
+  // re-count open brackets (string-aware) and close them
+  const trimmed = json.slice(0, lastValidCut + 1);
+  let openBraces = 0;
+  let openBrackets = 0;
+  inString = false;
+  escape = false;
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\" && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+
+    if (ch === "{") openBraces++;
+    else if (ch === "}") openBraces--;
+    else if (ch === "[") openBrackets++;
+    else if (ch === "]") openBrackets--;
+  }
+
+  const closed =
+    trimmed +
+    "]".repeat(Math.max(0, openBrackets)) +
+    "}".repeat(Math.max(0, openBraces));
+
+  try {
+    return JSON.parse(closed);
+  } catch {
+    return null;
+  }
 }
 
 function validateInspection(raw: unknown, filename: string): ConvertedInspection {
