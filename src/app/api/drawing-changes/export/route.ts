@@ -463,6 +463,307 @@ function DrawingChangesPdf({
   );
 }
 
+// ── By-drawing server-side summary builder ──────────────────────────────────
+
+interface DrawingSummaryExport {
+  drawingNumber: string;
+  discipline: string;
+  title: string;
+  revisionRange: string;
+  verdictLabel: string;
+  netVerdict: string;
+  likelyCount: number;
+  unclearCount: number;
+  withinScopeCount: number;
+  changes: ChangeRow[];
+}
+
+function buildDrawingSummariesServer(rows: ChangeRow[]): DrawingSummaryExport[] {
+  const byDrawing = new Map<string, ChangeRow[]>();
+  for (const c of rows) {
+    if (!byDrawing.has(c.drawing_number)) byDrawing.set(c.drawing_number, []);
+    byDrawing.get(c.drawing_number)!.push(c);
+  }
+
+  const summaries: DrawingSummaryExport[] = [];
+
+  for (const [drawingNumber, drawingChanges] of byDrawing) {
+    const first = drawingChanges[0];
+
+    // Build revision range
+    const revPairs = new Map<string, { old: string; new: string }>();
+    for (const c of drawingChanges) {
+      const key = `${c.old_revision}|${c.new_revision}`;
+      if (!revPairs.has(key)) revPairs.set(key, { old: c.old_revision, new: c.new_revision });
+    }
+    const pairs = [...revPairs.values()];
+    const sortedPairs = [...pairs].sort((a, b) => a.new.localeCompare(b.new));
+
+    let revisionRange: string;
+    if (pairs.length === 1) {
+      revisionRange = `Rev ${pairs[0].old} \u2192 Rev ${pairs[0].new}`;
+    } else {
+      const allRevs = new Set<string>();
+      for (const p of sortedPairs) { allRevs.add(p.old); allRevs.add(p.new); }
+      const revList = [...allRevs].sort();
+      revisionRange = `Rev ${revList[0]} \u2192 Rev ${revList[revList.length - 1]}`;
+    }
+
+    const likelyCount = drawingChanges.filter((c) => c.variation_risk === "likely_variation").length;
+    const unclearCount = drawingChanges.filter((c) => c.variation_risk === "unclear").length;
+    const withinScopeCount = drawingChanges.filter((c) => c.variation_risk === "within_scope").length;
+
+    let netVerdict: string;
+    const hasBaseline = drawingChanges.some((c) => c.variation_risk !== null && c.variation_risk !== undefined);
+    if (!hasBaseline) netVerdict = "no_baseline";
+    else if (likelyCount > 0) netVerdict = "likely_variation";
+    else if (unclearCount > 0) netVerdict = "unclear";
+    else netVerdict = "within_scope";
+
+    const verdictLabel = RISK_LABELS[netVerdict] ?? "No Baseline";
+
+    summaries.push({
+      drawingNumber,
+      discipline: first.discipline,
+      title: first.drawing_title,
+      revisionRange,
+      verdictLabel,
+      netVerdict,
+      likelyCount,
+      unclearCount,
+      withinScopeCount,
+      changes: drawingChanges,
+    });
+  }
+
+  // Sort: likely variations first, then unclear, then within_scope, then no_baseline
+  const verdictOrder: Record<string, number> = {
+    likely_variation: 0, unclear: 1, within_scope: 2, no_baseline: 3,
+  };
+  summaries.sort((a, b) => {
+    const va = verdictOrder[a.netVerdict] ?? 9;
+    const vb = verdictOrder[b.netVerdict] ?? 9;
+    return va - vb;
+  });
+
+  return summaries;
+}
+
+// ── By-drawing PDF ──────────────────────────────────────────────────────────
+
+const VERDICT_PDF_COLORS: Record<string, string> = {
+  likely_variation: "#991B1B",
+  unclear: "#92400E",
+  within_scope: "#166534",
+  no_baseline: "#78716C",
+};
+
+function ByDrawingPdf({
+  scan,
+  summaries,
+}: {
+  scan: ScanRow;
+  summaries: DrawingSummaryExport[];
+}) {
+  const totalChanges = summaries.reduce((sum, s) => sum + s.changes.length, 0);
+  const totalVariations = summaries.reduce((sum, s) => sum + s.likelyCount, 0);
+  const totalUnclear = summaries.reduce((sum, s) => sum + s.unclearCount, 0);
+
+  return React.createElement(
+    Document,
+    null,
+    React.createElement(
+      Page,
+      { size: "A4", style: s.page },
+      // Title
+      React.createElement(Text, { style: s.title }, "Baseline vs Current Report"),
+      React.createElement(
+        Text,
+        { style: s.subtitle },
+        `${scan.project_name} \u00B7 ${fmtDate(scan.created_at)} \u00B7 ${summaries.length} drawings \u00B7 ${totalChanges} changes`
+      ),
+
+      // Summary box
+      React.createElement(
+        View,
+        { style: s.summaryBox },
+        React.createElement(
+          View,
+          null,
+          React.createElement(Text, { style: s.summaryLabel }, "Drawings"),
+          React.createElement(Text, { style: s.summaryValue }, String(summaries.length))
+        ),
+        React.createElement(
+          View,
+          null,
+          React.createElement(Text, { style: s.summaryLabel }, "Total Changes"),
+          React.createElement(Text, { style: s.summaryValue }, String(totalChanges))
+        ),
+        React.createElement(
+          View,
+          null,
+          React.createElement(Text, { style: s.summaryLabel }, "Likely Variations"),
+          React.createElement(
+            Text,
+            { style: { ...s.summaryValue, color: totalVariations > 0 ? "#991B1B" : "#166534" } },
+            String(totalVariations)
+          )
+        ),
+        React.createElement(
+          View,
+          null,
+          React.createElement(Text, { style: s.summaryLabel }, "Unclear"),
+          React.createElement(
+            Text,
+            { style: { ...s.summaryValue, color: totalUnclear > 0 ? "#92400E" : "#166534" } },
+            String(totalUnclear)
+          )
+        )
+      ),
+
+      // Drawing sections
+      ...summaries.flatMap((ds) => {
+        const verdictColor = VERDICT_PDF_COLORS[ds.netVerdict] ?? "#78716C";
+        const prominentChanges = ds.changes.filter(
+          (c) => c.variation_risk === "likely_variation" || c.variation_risk === "unclear"
+        );
+        const withinScopeCount = ds.withinScopeCount;
+
+        return [
+          // Drawing header
+          React.createElement(
+            View,
+            {
+              key: `dh-${ds.drawingNumber}`,
+              style: {
+                ...s.drawingHeader,
+                marginTop: 10,
+                borderBottomWidth: 1,
+                borderBottomColor: "#D6D3D1",
+              },
+              wrap: false,
+            },
+            React.createElement(
+              View,
+              { style: { flex: 1 } },
+              React.createElement(
+                Text,
+                { style: { ...s.drawingTitle, fontSize: 10 } },
+                `${ds.drawingNumber} \u2014 ${ds.title}`
+              ),
+              React.createElement(
+                Text,
+                { style: { ...s.drawingMeta, marginTop: 2 } },
+                `${ds.discipline} \u00B7 ${ds.revisionRange} \u00B7 ${ds.changes.length} change${ds.changes.length !== 1 ? "s" : ""}`
+              )
+            ),
+            React.createElement(
+              Text,
+              {
+                style: {
+                  fontSize: 8,
+                  fontWeight: "bold",
+                  color: verdictColor,
+                  textTransform: "uppercase",
+                },
+              },
+              ds.verdictLabel
+            )
+          ),
+          // Prominent changes
+          ...prominentChanges.map((c, ci) =>
+            React.createElement(
+              View,
+              {
+                key: `ch-${ds.drawingNumber}-${ci}`,
+                style: {
+                  ...s.row,
+                  ...(c.severity === "high" ? s.rowHighSeverity : {}),
+                },
+                wrap: false,
+              },
+              React.createElement(
+                View,
+                { style: s.typeCell },
+                React.createElement(
+                  Text,
+                  { style: { ...s.typePill, color: TYPE_COLORS[c.change_type] ?? "#44403C" } },
+                  TYPE_LABELS[c.change_type] ?? c.change_type
+                )
+              ),
+              React.createElement(
+                View,
+                { style: s.descCell },
+                React.createElement(
+                  Text,
+                  null,
+                  c.description.length > 200 ? c.description.slice(0, 200) + "..." : c.description
+                ),
+                c.variation_note
+                  ? React.createElement(
+                      Text,
+                      { style: { fontSize: 7, color: "#78716C", marginTop: 1, fontStyle: "italic" } },
+                      c.variation_note
+                    )
+                  : null
+              ),
+              React.createElement(
+                View,
+                { style: s.sevCell },
+                React.createElement(
+                  Text,
+                  { style: { ...s.sevPill, color: SEV_COLORS[c.severity] ?? "#44403C" } },
+                  c.severity.toUpperCase()
+                )
+              ),
+              React.createElement(
+                View,
+                { style: s.riskCell },
+                c.variation_risk
+                  ? React.createElement(
+                      Text,
+                      { style: { ...s.riskPill, color: RISK_COLORS[c.variation_risk] ?? "#44403C" } },
+                      RISK_LABELS[c.variation_risk] ?? ""
+                    )
+                  : null
+              )
+            )
+          ),
+          // Within scope summary line
+          ...(withinScopeCount > 0
+            ? [
+                React.createElement(
+                  View,
+                  {
+                    key: `ws-${ds.drawingNumber}`,
+                    style: { paddingVertical: 3, paddingHorizontal: 6 },
+                    wrap: false,
+                  },
+                  React.createElement(
+                    Text,
+                    { style: { fontSize: 8, color: "#166534" } },
+                    `${withinScopeCount} change${withinScopeCount !== 1 ? "s" : ""} within scope`
+                  )
+                ),
+              ]
+            : []),
+        ];
+      }),
+
+      // Footer
+      React.createElement(
+        View,
+        { style: s.footer, fixed: true },
+        React.createElement(Text, null, "Holdpoint \u2014 Baseline vs Current Report"),
+        React.createElement(
+          Text,
+          { render: ({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) => `Page ${pageNumber} of ${totalPages}` }
+        )
+      )
+    )
+  );
+}
+
 // ── Route handler ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -474,6 +775,7 @@ export async function GET(request: NextRequest) {
   const sort = request.nextUrl.searchParams.get("sort") ?? "discipline";
   const severityFilter = request.nextUrl.searchParams.get("severity") ?? undefined;
   const variationFilter = request.nextUrl.searchParams.get("variation_risk") ?? undefined;
+  const view = request.nextUrl.searchParams.get("view") ?? undefined;
 
   const supabase = getSupabase();
 
@@ -550,6 +852,65 @@ export async function GET(request: NextRequest) {
   // Apply filter and sort
   rows = filterRows(rows, severityFilter, variationFilter);
   rows = sortRows(rows, sort);
+
+  // ── By-drawing aggregated view ─────────────────────────────────────────
+  if (view === "by_drawing") {
+    const drawingSummaries = buildDrawingSummariesServer(rows);
+
+    if (format === "csv") {
+      const csvHeaders = [
+        "Drawing Number",
+        "Discipline",
+        "Title",
+        "Revision Range",
+        "Net Verdict",
+        "Variation Count",
+        "Unclear Count",
+        "Change Count",
+        "Key Changes",
+        "Risk Level",
+      ];
+      const csvLines = [csvHeaders.join(",")];
+      for (const ds of drawingSummaries) {
+        const keyChanges = ds.changes
+          .filter((c) => c.variation_risk === "likely_variation" || c.variation_risk === "unclear")
+          .map((c) => `${c.change_type}: ${c.description}`)
+          .join("; ");
+        const riskLevel = ds.changes.some((c) => c.severity === "high") ? "High" : ds.changes.some((c) => c.severity === "medium") ? "Medium" : "Low";
+        csvLines.push(
+          [
+            escapeCsv(ds.drawingNumber),
+            escapeCsv(ds.discipline),
+            escapeCsv(ds.title),
+            escapeCsv(ds.revisionRange),
+            escapeCsv(ds.verdictLabel),
+            String(ds.likelyCount),
+            String(ds.unclearCount),
+            String(ds.changes.length),
+            escapeCsv(keyChanges),
+            escapeCsv(riskLevel),
+          ].join(",")
+        );
+      }
+      return new NextResponse(csvLines.join("\n"), {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${baseName}-by-drawing.csv"`,
+        },
+      });
+    }
+
+    // PDF by_drawing
+    const doc = React.createElement(ByDrawingPdf, { scan, summaries: drawingSummaries });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buffer = await renderToBuffer(doc as any);
+    return new NextResponse(buffer as unknown as BodyInit, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${baseName}-by-drawing.pdf"`,
+      },
+    });
+  }
 
   // ── PDF ─────────────────────────────────────────────────────────────────
   if (format === "pdf") {

@@ -1458,10 +1458,13 @@ export default function DrawingChangesTab({ company_id, projects }: Props) {
               {stage === "compare" && (
                 <ComparePanel
                   baselineDocs={baselineDocs}
+                  changes={changes}
+                  scanSummary={scanSummary}
                   onGoToBaseline={() => setStageAndPersist("baseline")}
+                  onGoToScan={handleGoToScan}
                   company_id={company_id}
                   project_id={projectId}
-                  project_name={projects.find((p) => String(p.id) === projectId)?.name ?? ""}
+                  project_name={projectName || (projects.find((p) => String(p.id) === projectId)?.name ?? "")}
                 />
               )}
             </div>

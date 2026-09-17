@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ChevronDown, ChevronRight, Search, Database } from "lucide-react";
-import type { BaselineDoc, BaselineScopeItem } from "./types";
+import { ChevronDown, ChevronRight, Search, Database, FileText } from "lucide-react";
+import type { BaselineDoc, BaselineScopeItem, ChangeRow } from "./types";
 import { CATEGORY_LABELS } from "./constants";
 import DocCompareSection from "./DocCompareSection";
+import { BaselineReportView } from "./BaselineReportView";
 
 interface ComparePanelProps {
   baselineDocs: BaselineDoc[];
+  changes: ChangeRow[];
+  scanSummary: string | null;
   onGoToBaseline: () => void;
+  onGoToScan: () => void;
   company_id: string;
   project_id: string;
   project_name: string;
@@ -30,13 +34,17 @@ interface ScopeItemWithSource extends BaselineScopeItem {
 
 export const ComparePanel = React.memo(function ComparePanel({
   baselineDocs,
+  changes,
+  scanSummary,
   onGoToBaseline,
+  onGoToScan,
   company_id,
   project_id,
   project_name,
 }: ComparePanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [showReport, setShowReport] = useState(false);
 
   const processedDocs = baselineDocs.filter((d) => d.status === "processed");
   const hasBaseline = processedDocs.length > 0;
@@ -84,6 +92,24 @@ export const ComparePanel = React.memo(function ComparePanel({
       return next;
     });
   };
+
+  const hasChanges = changes.length > 0;
+  const reportReady = hasBaseline && hasChanges;
+
+  // Report view replaces compare content
+  if (showReport) {
+    return (
+      <BaselineReportView
+        changes={changes}
+        baselineDocs={baselineDocs}
+        scanSummary={scanSummary}
+        companyId={company_id}
+        projectId={project_id}
+        projectName={project_name}
+        onBack={() => setShowReport(false)}
+      />
+    );
+  }
 
   // Empty state when no baseline docs exist
   if (!hasBaseline) {
@@ -143,6 +169,51 @@ export const ComparePanel = React.memo(function ComparePanel({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Baseline vs Current Report card */}
+      <div
+        style={{
+          borderRadius: 10,
+          border: "1px solid var(--hp-border)",
+          backgroundColor: "var(--hp-surface)",
+          padding: "20px 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <FileText size={16} style={{ color: "var(--hp-warm-800)" }} />
+            <span style={{ fontSize: 15, fontWeight: 700, color: "var(--hp-text-primary)" }}>
+              Baseline vs Current Report
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--hp-text-secondary)" }}>
+            See how current drawing revisions compare to your baseline scope
+          </div>
+        </div>
+        <button
+          onClick={() => setShowReport(true)}
+          disabled={!reportReady}
+          style={{
+            borderRadius: 8,
+            padding: "9px 20px",
+            fontSize: 13,
+            fontWeight: 600,
+            color: reportReady ? "#fff" : "var(--hp-text-muted)",
+            backgroundColor: reportReady ? "var(--hp-warm-800)" : "var(--hp-warm-100)",
+            border: "none",
+            cursor: reportReady ? "pointer" : "not-allowed",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          {!hasBaseline ? "Set up baseline first" : !hasChanges ? "Scan drawings first" : "Generate Report"}
+        </button>
+      </div>
+
       {/* Section 1: Baseline Scope Reference */}
       <div
         style={{
