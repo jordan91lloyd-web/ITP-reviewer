@@ -78,8 +78,9 @@ async function runTest(request: NextRequest) {
     log.push(`Response set: ${rsId}`);
 
     // Step 1: Create company template
+    const uniqueName = `[HP Test] Grouping ${Date.now()}`;
     const t1 = await post(token, `/rest/v1.0/companies/${CID}/checklist/list_templates`, CID, {
-      list_template: { name: "[HP Test] Grouping Experiment" },
+      list_template: { name: uniqueName },
     });
     if (!t1.ok) return NextResponse.json({ error: `Create template failed: ${t1.error}`, log }, { status: 502 });
     const companyTemplateId = (t1.json as { id: number }).id;
