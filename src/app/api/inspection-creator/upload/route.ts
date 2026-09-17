@@ -200,6 +200,7 @@ export async function POST(request: NextRequest) {
             position: pos,
             section_id: sectionId,
             response_set_id: responseSetId,
+            type: "yes_no",
           },
         },
       );
