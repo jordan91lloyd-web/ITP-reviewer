@@ -1,25 +1,24 @@
-// ─── Test: does creating an inspection from a project template pick up
-// the company template's CURRENT items (live sync), or the snapshot from copy time?
+// ─── Clean end-to-end test of the company→project sync flow
 //
-// We have from previous tests:
-// - Company template 598134335529766: currently has Section B + Item B1
-// - Project template 598134335529767: API shows empty sections
-//
-// This test creates an inspection from the project template and checks
-// what items the inspection actually gets.
+// 1. Create fresh company template with Section A + Item A1
+// 2. Copy to project
+// 3. Create inspection #1 from project template → should have Item A1
+// 4. Edit company template: add Section B + Item B1 (keep Section A)
+// 5. Create inspection #2 from project template → does it have BOTH A1 and B1?
+// 6. Report what each inspection actually contains
 //
 // DELETE this route after testing.
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 const PROCORE_BASE = process.env.PROCORE_ENV === "production"
   ? "https://api.procore.com"
   : "https://sandbox.procore.com";
 
-const PACE_MS = 600;
+const PACE_MS = 700;
 
 function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
 
@@ -43,6 +42,15 @@ async function get(token: string, path: string, cid: string) {
   return res.json();
 }
 
+type InspDetail = {
+  id: number; name: string;
+  sections?: Array<{ name: string; items?: Array<{ name: string }> }>;
+};
+
+function inspItems(d: InspDetail | null): string[] {
+  return (d?.sections ?? []).flatMap(s => (s.items ?? []).map(i => `${s.name} > ${i.name}`));
+}
+
 export async function GET(request: NextRequest) { return runTest(request); }
 export async function POST(request: NextRequest) { return runTest(request); }
 
@@ -52,69 +60,115 @@ async function runTest(request: NextRequest) {
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const CID = "598134325535477";
-  const PID = "598134325555936"; // Sandbox
-  const COMPANY_TEMPLATE = 598134335529766; // has Section B + Item B1
-  const PROJECT_TEMPLATE = 598134335529767; // API shows empty, but might be live-synced
+  const PID = "598134325555936";
   const log: string[] = [];
 
   try {
-    // 1. Read company template to confirm current state
-    const ct = await get(token, `/rest/v1.0/companies/${CID}/checklist/list_templates/${COMPANY_TEMPLATE}`, CID);
-    const ctItems = await get(token, `/rest/v1.0/companies/${CID}/inspection_templates/${COMPANY_TEMPLATE}/items`, CID);
-    log.push(`Company template items: ${JSON.stringify(ctItems)}`);
+    // Get response set
+    const rsSets = await get(token, `/rest/v1.0/companies/${CID}/checklist/item/response_sets`, CID) as Array<{ id: number; name: string; active: boolean }> | null;
+    const rsId = rsSets?.find((rs) => /pass/i.test(rs.name) && rs.active)?.id ?? rsSets?.[0]?.id;
+    if (!rsId) return NextResponse.json({ error: "No response sets" }, { status: 400 });
 
-    // 2. Read project template via API
-    const pt = await get(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/${PROJECT_TEMPLATE}`, CID);
-    const ptSections = (pt as { sections?: Array<{ name: string; items?: Array<{ name: string }> }> })?.sections ?? [];
-    log.push(`Project template sections (API): ${JSON.stringify(ptSections.map(s => ({ name: s.name, items: s.items?.map(i => i.name) })))}`);
-
-    // 3. Create an inspection from the project template
-    const insp = await post(token, `/rest/v1.1/projects/${PID}/checklist/lists`, CID, {
-      list_template_id: PROJECT_TEMPLATE,
-      list: { description: "Sync test — checking if inspection gets company template items" },
+    // ── STEP 1: Fresh company template with Section A + Item A1 ──
+    const name = `[HP Test] Full Flow ${Date.now()}`;
+    const t = await post(token, `/rest/v1.0/companies/${CID}/checklist/list_templates`, CID, {
+      list_template: { name },
     });
-    if (!insp.ok) {
-      return NextResponse.json({
-        error: `Create inspection failed: ${insp.error}`,
-        log,
-        hint: "If the project template has no items, Procore may reject the inspection creation",
-      }, { status: 502 });
-    }
-    const inspectionId = (insp.json as { id: number }).id;
-    log.push(`Inspection created: ${inspectionId}`);
+    if (!t.ok) return NextResponse.json({ error: `Create template: ${t.error}`, log }, { status: 502 });
+    const ctId = (t.json as { id: number }).id;
+    log.push(`1. Company template created: ${ctId} (${name})`);
     await sleep(PACE_MS);
 
-    // 4. Read the inspection with extended view to see its actual items
-    const inspDetail = await get(
-      token,
-      `/rest/v1.0/checklist/lists/${inspectionId}?view=extended&project_id=${PID}`,
-      CID,
-    ) as {
-      id: number;
-      name: string;
-      sections?: Array<{ name: string; items?: Array<{ name: string; status?: string }> }>;
-    } | null;
+    const secA = await post(token, `/rest/v1.0/companies/${CID}/checklist/list_templates/${ctId}/sections`, CID, {
+      section: { name: "Section A - First Report", position: 1 },
+    });
+    if (!secA.ok) return NextResponse.json({ error: `Section A: ${secA.error}`, log }, { status: 502 });
+    const secAId = (secA.json as { id: number }).id;
+    log.push(`   Section A: ${secAId}`);
+    await sleep(PACE_MS);
 
-    const inspSections = inspDetail?.sections ?? [];
-    const inspItemNames = inspSections.flatMap(s =>
-      (s.items ?? []).map(i => `${s.name} > ${i.name}`)
-    );
-    log.push(`Inspection items: ${JSON.stringify(inspItemNames)}`);
+    const itemA = await post(token, `/rest/v1.0/companies/${CID}/inspection_templates/${ctId}/items`, CID, {
+      inspection_template_item: { name: "Item A1 - from first report", position: 1, section_id: secAId, response_set_id: rsId, type: "default" },
+    });
+    if (!itemA.ok) return NextResponse.json({ error: `Item A1: ${itemA.error}`, log }, { status: 502 });
+    log.push(`   Item A1: ${(itemA.json as { id: number }).id}`);
+    await sleep(PACE_MS);
+
+    // ── STEP 2: Copy to project ──
+    const copy = await post(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/create_from_company_template`, CID, {
+      source_template_id: ctId,
+    });
+    if (!copy.ok) return NextResponse.json({ error: `Copy: ${copy.error}`, log }, { status: 502 });
+    const ptId = (copy.json as { id: number }).id;
+    log.push(`2. Project template: ${ptId}`);
+    await sleep(PACE_MS);
+
+    // ── STEP 3: Create inspection #1 ──
+    const insp1 = await post(token, `/rest/v1.1/projects/${PID}/checklist/lists`, CID, {
+      list_template_id: ptId,
+      list: { description: "Test inspection #1 — should have Section A items" },
+    });
+    if (!insp1.ok) return NextResponse.json({ error: `Inspection #1: ${insp1.error}`, log }, { status: 502 });
+    const insp1Id = (insp1.json as { id: number }).id;
+    log.push(`3. Inspection #1 created: ${insp1Id}`);
+    await sleep(PACE_MS);
+
+    const insp1Detail = await get(token, `/rest/v1.0/checklist/lists/${insp1Id}?view=extended&project_id=${PID}`, CID) as InspDetail | null;
+    const insp1Items = inspItems(insp1Detail);
+    log.push(`   Inspection #1 items: ${JSON.stringify(insp1Items)}`);
+
+    // ── STEP 4: Add Section B + Item B1 to COMPANY template ──
+    const secB = await post(token, `/rest/v1.0/companies/${CID}/checklist/list_templates/${ctId}/sections`, CID, {
+      section: { name: "Section B - Second Report", position: 2 },
+    });
+    if (!secB.ok) return NextResponse.json({ error: `Section B: ${secB.error}`, log }, { status: 502 });
+    const secBId = (secB.json as { id: number }).id;
+    log.push(`4. Added Section B to company: ${secBId}`);
+    await sleep(PACE_MS);
+
+    const itemB = await post(token, `/rest/v1.0/companies/${CID}/inspection_templates/${ctId}/items`, CID, {
+      inspection_template_item: { name: "Item B1 - from second report", position: 1, section_id: secBId, response_set_id: rsId, type: "default" },
+    });
+    if (!itemB.ok) return NextResponse.json({ error: `Item B1: ${itemB.error}`, log }, { status: 502 });
+    log.push(`   Item B1: ${(itemB.json as { id: number }).id}`);
+    await sleep(PACE_MS);
+
+    // Read project template to see if Section B appeared
+    const ptAfter = await get(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/${ptId}`, CID) as InspDetail | null;
+    const ptAfterItems = inspItems(ptAfter);
+    log.push(`   Project template after adding B: ${JSON.stringify(ptAfterItems)}`);
+
+    // ── STEP 5: Create inspection #2 ──
+    const insp2 = await post(token, `/rest/v1.1/projects/${PID}/checklist/lists`, CID, {
+      list_template_id: ptId,
+      list: { description: "Test inspection #2 — does it have Section B items too?" },
+    });
+    if (!insp2.ok) return NextResponse.json({ error: `Inspection #2: ${insp2.error}`, log }, { status: 502 });
+    const insp2Id = (insp2.json as { id: number }).id;
+    log.push(`5. Inspection #2 created: ${insp2Id}`);
+    await sleep(PACE_MS);
+
+    const insp2Detail = await get(token, `/rest/v1.0/checklist/lists/${insp2Id}?view=extended&project_id=${PID}`, CID) as InspDetail | null;
+    const insp2Items = inspItems(insp2Detail);
+    log.push(`   Inspection #2 items: ${JSON.stringify(insp2Items)}`);
+
+    // ── RESULTS ──
+    const syncWorks = insp2Items.length > insp1Items.length;
 
     return NextResponse.json({
       success: true,
-      company_template_id: COMPANY_TEMPLATE,
-      project_template_id: PROJECT_TEMPLATE,
-      inspection_id: inspectionId,
-      inspection_name: inspDetail?.name,
-      company_template_has_items: Array.isArray(ctItems) && ctItems.length > 0,
-      project_template_sections_via_api: ptSections.length,
-      inspection_sections: inspSections.length,
-      inspection_items: inspItemNames,
-      conclusion: inspItemNames.length > 0
-        ? "LIVE SYNC CONFIRMED — the inspection got items from the company template even though the project template API showed empty. The sync works!"
-        : "NO SYNC — the inspection has no items either. The project template is truly empty.",
+      company_template_id: ctId,
+      project_template_id: ptId,
+      inspection_1: { id: insp1Id, items: insp1Items },
+      inspection_2: { id: insp2Id, items: insp2Items },
+      sync_works: syncWorks,
+      conclusion: syncWorks
+        ? "SYNC WORKS — Inspection #2 has more items than #1. Editing company template propagates to project template. Your approach is confirmed!"
+        : insp2Items.length === insp1Items.length && insp1Items.length > 0
+          ? "NO SYNC — Both inspections have the same items. Company edits did not propagate via API."
+          : "INCONCLUSIVE — check the items manually.",
       log,
+      cleanup_note: `Delete company template ${ctId} and project templates/inspections from Sandbox when done testing.`,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err), log }, { status: 500 });
