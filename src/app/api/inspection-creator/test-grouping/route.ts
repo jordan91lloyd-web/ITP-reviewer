@@ -56,7 +56,11 @@ async function del(token: string, path: string, cid: string) {
   return { ok: res.ok, status: res.status };
 }
 
-export async function POST(request: NextRequest) {
+// Accept both GET and POST so you can just visit the URL in a browser
+export async function GET(request: NextRequest) { return runTest(request); }
+export async function POST(request: NextRequest) { return runTest(request); }
+
+async function runTest(request: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get("procore_access_token")?.value;
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
