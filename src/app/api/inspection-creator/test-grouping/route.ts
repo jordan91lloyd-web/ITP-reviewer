@@ -1,15 +1,12 @@
-// ─── Temporary test: does editing a company template sync to the project template?
+// ─── Test: does creating an inspection from a project template pick up
+// the company template's CURRENT items (live sync), or the snapshot from copy time?
 //
-// Test flow:
-// 1. Create company template with Section A + Item A1
-// 2. Copy to project
-// 3. Read project template → should have Section A + Item A1
-// 4. Add Section B + Item B1 to COMPANY template (don't touch project)
-// 5. Read project template again → does it now also have Section B?
-// 6. Delete Section A + Item A1 from company template
-// 7. Read project template again → did it lose Section A?
+// We have from previous tests:
+// - Company template 598134335529766: currently has Section B + Item B1
+// - Project template 598134335529767: API shows empty sections
 //
-// This tests whether the synced_to relationship is live or snapshot-at-copy.
+// This test creates an inspection from the project template and checks
+// what items the inspection actually gets.
 //
 // DELETE this route after testing.
 
@@ -46,24 +43,6 @@ async function get(token: string, path: string, cid: string) {
   return res.json();
 }
 
-async function del(token: string, path: string, cid: string) {
-  const url = `${PROCORE_BASE}${path}${path.includes("?") ? "&" : "?"}company_id=${cid}`;
-  const res = await fetch(url, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": cid } });
-  return { ok: res.ok, status: res.status };
-}
-
-type SectionData = { name: string; items?: Array<{ name: string }> };
-
-function summarise(template: unknown): { sections: Array<{ name: string; items: string[] }> } {
-  const t = template as { sections?: SectionData[] } | null;
-  return {
-    sections: (t?.sections ?? []).map((s) => ({
-      name: s.name,
-      items: (s.items ?? []).map((i) => i.name),
-    })),
-  };
-}
-
 export async function GET(request: NextRequest) { return runTest(request); }
 export async function POST(request: NextRequest) { return runTest(request); }
 
@@ -73,104 +52,68 @@ async function runTest(request: NextRequest) {
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const CID = "598134325535477";
-  const PID = "598134325555936";
+  const PID = "598134325555936"; // Sandbox
+  const COMPANY_TEMPLATE = 598134335529766; // has Section B + Item B1
+  const PROJECT_TEMPLATE = 598134335529767; // API shows empty, but might be live-synced
   const log: string[] = [];
 
   try {
-    // Get response set
-    const rsSets = await get(token, `/rest/v1.0/companies/${CID}/checklist/item/response_sets`, CID) as Array<{ id: number; name: string; active: boolean }> | null;
-    const rsId = rsSets?.find((rs) => /pass/i.test(rs.name) && rs.active)?.id ?? rsSets?.[0]?.id;
-    if (!rsId) return NextResponse.json({ error: "No response sets" }, { status: 400 });
+    // 1. Read company template to confirm current state
+    const ct = await get(token, `/rest/v1.0/companies/${CID}/checklist/list_templates/${COMPANY_TEMPLATE}`, CID);
+    const ctItems = await get(token, `/rest/v1.0/companies/${CID}/inspection_templates/${COMPANY_TEMPLATE}/items`, CID);
+    log.push(`Company template items: ${JSON.stringify(ctItems)}`);
 
-    // 1. Create company template
-    const name = `[HP Test] Sync ${Date.now()}`;
-    const t1 = await post(token, `/rest/v1.0/companies/${CID}/checklist/list_templates`, CID, {
-      list_template: { name },
+    // 2. Read project template via API
+    const pt = await get(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/${PROJECT_TEMPLATE}`, CID);
+    const ptSections = (pt as { sections?: Array<{ name: string; items?: Array<{ name: string }> }> })?.sections ?? [];
+    log.push(`Project template sections (API): ${JSON.stringify(ptSections.map(s => ({ name: s.name, items: s.items?.map(i => i.name) })))}`);
+
+    // 3. Create an inspection from the project template
+    const insp = await post(token, `/rest/v1.1/projects/${PID}/checklist/lists`, CID, {
+      list_template_id: PROJECT_TEMPLATE,
+      list: { description: "Sync test — checking if inspection gets company template items" },
     });
-    if (!t1.ok) return NextResponse.json({ error: `Create failed: ${t1.error}`, log }, { status: 502 });
-    const ctId = (t1.json as { id: number }).id;
-    log.push(`Company template: ${ctId} (${name})`);
+    if (!insp.ok) {
+      return NextResponse.json({
+        error: `Create inspection failed: ${insp.error}`,
+        log,
+        hint: "If the project template has no items, Procore may reject the inspection creation",
+      }, { status: 502 });
+    }
+    const inspectionId = (insp.json as { id: number }).id;
+    log.push(`Inspection created: ${inspectionId}`);
     await sleep(PACE_MS);
 
-    // 2. Add Section A + Item A1
-    const s1 = await post(token, `/rest/v1.0/companies/${CID}/checklist/list_templates/${ctId}/sections`, CID, {
-      section: { name: "Section A", position: 1 },
-    });
-    if (!s1.ok) return NextResponse.json({ error: `Section A: ${s1.error}`, log }, { status: 502 });
-    const secAId = (s1.json as { id: number }).id;
-    log.push(`Section A: ${secAId}`);
-    await sleep(PACE_MS);
+    // 4. Read the inspection with extended view to see its actual items
+    const inspDetail = await get(
+      token,
+      `/rest/v1.0/checklist/lists/${inspectionId}?view=extended&project_id=${PID}`,
+      CID,
+    ) as {
+      id: number;
+      name: string;
+      sections?: Array<{ name: string; items?: Array<{ name: string; status?: string }> }>;
+    } | null;
 
-    const i1 = await post(token, `/rest/v1.0/companies/${CID}/inspection_templates/${ctId}/items`, CID, {
-      inspection_template_item: { name: "Item A1", position: 1, section_id: secAId, response_set_id: rsId, type: "default" },
-    });
-    if (!i1.ok) return NextResponse.json({ error: `Item A1: ${i1.error}`, log }, { status: 502 });
-    const itemA1Id = (i1.json as { id: number }).id;
-    log.push(`Item A1: ${itemA1Id}`);
-    await sleep(PACE_MS);
-
-    // 3. Copy to project
-    const c1 = await post(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/create_from_company_template`, CID, {
-      source_template_id: ctId,
-    });
-    if (!c1.ok) return NextResponse.json({ error: `Copy: ${c1.error}`, log }, { status: 502 });
-    const ptId = (c1.json as { id: number }).id;
-    log.push(`Project template: ${ptId}`);
-    await sleep(PACE_MS);
-
-    // 4. Read project template — should have Section A + Item A1
-    const read1 = await get(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/${ptId}`, CID);
-    const snapshot1 = summarise(read1);
-    log.push(`AFTER COPY — project template has: ${JSON.stringify(snapshot1)}`);
-    await sleep(PACE_MS);
-
-    // 5. Add Section B + Item B1 to COMPANY template
-    const s2 = await post(token, `/rest/v1.0/companies/${CID}/checklist/list_templates/${ctId}/sections`, CID, {
-      section: { name: "Section B", position: 2 },
-    });
-    if (!s2.ok) return NextResponse.json({ error: `Section B: ${s2.error}`, log }, { status: 502 });
-    const secBId = (s2.json as { id: number }).id;
-    log.push(`Section B: ${secBId}`);
-    await sleep(PACE_MS);
-
-    const i2 = await post(token, `/rest/v1.0/companies/${CID}/inspection_templates/${ctId}/items`, CID, {
-      inspection_template_item: { name: "Item B1", position: 1, section_id: secBId, response_set_id: rsId, type: "default" },
-    });
-    if (!i2.ok) return NextResponse.json({ error: `Item B1: ${i2.error}`, log }, { status: 502 });
-    log.push(`Item B1: ${(i2.json as { id: number }).id}`);
-    await sleep(PACE_MS);
-
-    // 6. Read project template again — does it now have Section B too?
-    const read2 = await get(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/${ptId}`, CID);
-    const snapshot2 = summarise(read2);
-    log.push(`AFTER ADDING B TO COMPANY — project template has: ${JSON.stringify(snapshot2)}`);
-    await sleep(PACE_MS);
-
-    // 7. Delete Section A + Item A1 from company template
-    await del(token, `/rest/v1.0/companies/${CID}/inspection_templates/${ctId}/items/${itemA1Id}`, CID);
-    log.push(`Deleted item A1 from company template`);
-    await sleep(PACE_MS);
-    await del(token, `/rest/v1.0/companies/${CID}/checklist/sections/${secAId}`, CID);
-    log.push(`Deleted section A from company template`);
-    await sleep(PACE_MS);
-
-    // 8. Read project template one more time — did it lose Section A?
-    const read3 = await get(token, `/rest/v1.0/projects/${PID}/checklist/list_templates/${ptId}`, CID);
-    const snapshot3 = summarise(read3);
-    log.push(`AFTER DELETING A FROM COMPANY — project template has: ${JSON.stringify(snapshot3)}`);
+    const inspSections = inspDetail?.sections ?? [];
+    const inspItemNames = inspSections.flatMap(s =>
+      (s.items ?? []).map(i => `${s.name} > ${i.name}`)
+    );
+    log.push(`Inspection items: ${JSON.stringify(inspItemNames)}`);
 
     return NextResponse.json({
       success: true,
-      company_template_id: ctId,
-      project_template_id: ptId,
-      results: {
-        after_copy: snapshot1,
-        after_adding_B_to_company: snapshot2,
-        after_deleting_A_from_company: snapshot3,
-      },
-      conclusion: snapshot2.sections.length > snapshot1.sections.length
-        ? "SYNC IS LIVE — adding to company template propagated to project template. This approach works!"
-        : "SYNC IS SNAPSHOT — project template did not change. Company edits do not propagate.",
+      company_template_id: COMPANY_TEMPLATE,
+      project_template_id: PROJECT_TEMPLATE,
+      inspection_id: inspectionId,
+      inspection_name: inspDetail?.name,
+      company_template_has_items: Array.isArray(ctItems) && ctItems.length > 0,
+      project_template_sections_via_api: ptSections.length,
+      inspection_sections: inspSections.length,
+      inspection_items: inspItemNames,
+      conclusion: inspItemNames.length > 0
+        ? "LIVE SYNC CONFIRMED — the inspection got items from the company template even though the project template API showed empty. The sync works!"
+        : "NO SYNC — the inspection has no items either. The project template is truly empty.",
       log,
     });
   } catch (err) {
