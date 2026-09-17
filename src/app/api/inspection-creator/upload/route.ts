@@ -176,16 +176,15 @@ export async function POST(request: NextRequest) {
 
     // ── Step 3: Create items ─────────────────────────────────────────
     let itemsCreated = 0;
+    const itemsFailed: string[] = [];
     // Track position per section
     const sectionPositions = new Map<string, number>();
 
     for (const item of inspection.items) {
       const sectionId = sectionIdMap.get(item.section);
       if (!sectionId) {
-        return NextResponse.json({
-          error: `Section "${item.section}" not found in section map`,
-          company_template_id: companyTemplateId,
-        }, { status: 500 });
+        itemsFailed.push(`"${item.item_name}" — section "${item.section}" not found`);
+        continue;
       }
 
       const pos = (sectionPositions.get(item.section) ?? 0) + 1;
@@ -201,22 +200,29 @@ export async function POST(request: NextRequest) {
             position: pos,
             section_id: sectionId,
             response_set_id: responseSetId,
-            type: "yes_no",
+            type: "default",
           },
         },
       );
       if (!step3.ok) {
-        return NextResponse.json({
-          error: `Failed to create item "${item.item_name}": ${step3.error}`,
-          company_template_id: companyTemplateId,
-          sections_created: sectionIdMap.size,
-          items_created: itemsCreated,
-        }, { status: 502 });
+        console.warn(`[inspection-creator] Failed to create item "${item.item_name}": ${step3.error}`);
+        itemsFailed.push(`"${item.item_name}" — ${step3.status}: ${(step3.error ?? "").slice(0, 200)}`);
+        // Continue creating remaining items rather than aborting
+        await sleep(PACE_MS);
+        continue;
       }
       itemsCreated++;
       await sleep(PACE_MS);
     }
-    console.log(`[inspection-creator] ${itemsCreated} items created`);
+    console.log(`[inspection-creator] ${itemsCreated} items created, ${itemsFailed.length} failed`);
+
+    if (itemsCreated === 0) {
+      return NextResponse.json({
+        error: `All ${inspection.items.length} items failed to create. First failure: ${itemsFailed[0]}`,
+        company_template_id: companyTemplateId,
+        sections_created: sectionIdMap.size,
+      }, { status: 502 });
+    }
 
     // ── Step 4: Copy to project level ────────────────────────────────
     const step4 = await procorePost(
@@ -250,6 +256,9 @@ export async function POST(request: NextRequest) {
       template_name: templateName,
       sections_created: sectionIdMap.size,
       items_created: itemsCreated,
+      items_total: inspection.items.length,
+      items_failed: itemsFailed.length,
+      failed_items: itemsFailed.length > 0 ? itemsFailed : undefined,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

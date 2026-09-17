@@ -22,6 +22,9 @@ interface UploadResult {
   template_name?: string;
   sections_created?: number;
   items_created?: number;
+  items_total?: number;
+  items_failed?: number;
+  failed_items?: string[];
   error?: string;
   company_template_id?: number;
 }
@@ -408,9 +411,20 @@ export default function InspectionCreatorTab({ company_id }: { company_id: strin
                 <p style={{ fontSize: 14, color: "#15803d", marginBottom: 4 }}>
                   <strong>{uploadResult.template_name}</strong>
                 </p>
-                <p style={{ fontSize: 13, color: "#166534", marginBottom: 12 }}>
-                  {uploadResult.sections_created} section{uploadResult.sections_created === 1 ? "" : "s"}, {uploadResult.items_created} item{uploadResult.items_created === 1 ? "" : "s"}
+                <p style={{ fontSize: 13, color: "#166534", marginBottom: uploadResult.items_failed ? 4 : 12 }}>
+                  {uploadResult.sections_created} section{uploadResult.sections_created === 1 ? "" : "s"}, {uploadResult.items_created} of {uploadResult.items_total ?? uploadResult.items_created} item{(uploadResult.items_total ?? uploadResult.items_created) === 1 ? "" : "s"} created
                 </p>
+                {uploadResult.items_failed ? (
+                  <div style={{ fontSize: 12, color: "#92400E", backgroundColor: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }}>
+                    <p style={{ fontWeight: 600, marginBottom: 4 }}>{uploadResult.items_failed} item{uploadResult.items_failed === 1 ? "" : "s"} could not be created:</p>
+                    {uploadResult.failed_items?.slice(0, 5).map((msg, i) => (
+                      <p key={i} style={{ fontSize: 11, marginBottom: 2 }}>{msg}</p>
+                    ))}
+                    {(uploadResult.failed_items?.length ?? 0) > 5 && (
+                      <p style={{ fontSize: 11, fontStyle: "italic" }}>...and {(uploadResult.failed_items?.length ?? 0) - 5} more</p>
+                    )}
+                  </div>
+                ) : null}
                 {uploadResult.template_url && (
                   <a href={uploadResult.template_url} target="_blank" rel="noopener noreferrer"
                     style={{
