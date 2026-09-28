@@ -1658,7 +1658,7 @@ export default function DashboardPage() {
 
       {/* ── Tabs: mount on first visit, hide with display:none to preserve state ── */}
 
-      {visitedTabs.has("company") && <div style={{ display: dashboardView === "company" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {visitedTabs.has("company") && <div style={{ display: dashboardView === "company" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <CompanyTab
           companies={companies}
           selectedCompany={selectedCompany}
@@ -1685,7 +1685,7 @@ export default function DashboardPage() {
         />
       </div>}
 
-      {visitedTabs.has("insights") && <div style={{ display: dashboardView === "insights" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {visitedTabs.has("insights") && <div style={{ display: dashboardView === "insights" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <InsightsTab
           companyId={selectedCompany?.id ?? null}
           projects={projects}
@@ -1701,15 +1701,15 @@ export default function DashboardPage() {
         />
       </div>}
 
-      {visitedTabs.has("hold_points") && <div style={{ display: dashboardView === "hold_points" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {visitedTabs.has("hold_points") && <div style={{ display: dashboardView === "hold_points" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <HoldPointTab company_id={String(selectedCompany?.id ?? "")} projects={projects} />
       </div>}
 
-      {visitedTabs.has("report") && <div style={{ display: dashboardView === "report" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {visitedTabs.has("report") && <div style={{ display: dashboardView === "report" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <ReportTab companyId={selectedCompany?.id ?? null} companyName={selectedCompany?.name} />
       </div>}
 
-      {visitedTabs.has("queue") && <div style={{ display: dashboardView === "queue" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {visitedTabs.has("queue") && <div style={{ display: dashboardView === "queue" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <QueuePanel jobs={queueJobs} onDismiss={(job_id) => setQueueJobs(prev => prev.filter(j => j.job_id !== job_id))} />
       </div>}
 
@@ -1725,7 +1725,7 @@ export default function DashboardPage() {
         <DrawingChangesTab company_id={String(selectedCompany.id)} projects={projects} />
       </div>}
 
-      {selectedCompany && visitedTabs.has("photo_classifier") && <div style={{ display: dashboardView === "photo_classifier" ? undefined : "none", flex: 1, overflow: "hidden" }}>
+      {selectedCompany && visitedTabs.has("photo_classifier") && <div style={{ display: dashboardView === "photo_classifier" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <PhotoClassifierTab company_id={String(selectedCompany.id)} projects={projects} />
       </div>}
 
