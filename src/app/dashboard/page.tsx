@@ -9,7 +9,6 @@ import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import { useAttentionTracker } from "@/hooks/useAttentionTracker";
 import ReviewResults from "@/components/ReviewResults";
-import SiteComplianceTab from "@/components/SiteComplianceTab";
 import HoldPointTab from "@/components/HoldPointTab";
 import InsightsTab from "@/components/InsightsTab";
 import QueuePanel from "@/components/QueuePanel";
@@ -687,7 +686,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "site_compliance" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [visitedTabs, setVisitedTabs] = useState<Set<DashboardView>>(new Set(["itp_reviews"]));
   const [insightsFetched, setInsightsFetched] = useState(false);
@@ -698,7 +697,7 @@ export default function DashboardPage() {
   const [companyDateRange, setCompanyDateRange]   = useState<DateRange>("all");
   const [companyStatsFetched, setCompanyStatsFetched] = useState(false);
 
-  // Admin status (used by Site Compliance tab mapping manager)
+  // Admin status (used by score overrides)
   const [isAdmin, setIsAdmin] = useState(false);
 
   // ── Auth + company discovery ────────────────────────────────────────────────
@@ -1599,7 +1598,6 @@ export default function DashboardPage() {
           ["company",         "Company",         null],
           ["insights",        "Insights",        "sparkles"],
           ["itp_reviews",     "ITP Reviews",     null],
-          ["site_compliance", "Site Compliance", null],
           ["hold_points",     "Hold Points",     null],
           ["report",          "Report",          null],
           ["queue",           "Queue",           null],
@@ -1703,10 +1701,6 @@ export default function DashboardPage() {
         />
       </div>}
 
-      {visitedTabs.has("site_compliance") && <div style={{ display: dashboardView === "site_compliance" ? undefined : "none", flex: 1, overflow: "hidden" }}>
-        <SiteComplianceTab companyId={String(selectedCompany?.id ?? "")} />
-      </div>}
-
       {visitedTabs.has("hold_points") && <div style={{ display: dashboardView === "hold_points" ? undefined : "none", flex: 1, overflow: "hidden" }}>
         <HoldPointTab company_id={String(selectedCompany?.id ?? "")} projects={projects} />
       </div>}
@@ -1736,7 +1730,7 @@ export default function DashboardPage() {
       </div>}
 
       {/* ── ITP Reviews tab ── */}
-      <div style={{ display: dashboardView === "itp_reviews" ? undefined : "none", flex: 1, overflow: "hidden" }}><>
+      <div style={{ display: dashboardView === "itp_reviews" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}><>
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left: project list ── */}
