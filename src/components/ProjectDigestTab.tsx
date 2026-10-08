@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { RefreshCw, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, ArrowRight, Shield, FileText, Wrench, Target } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, ArrowRight, Shield, FileText, Wrench, Target, DollarSign, MessageSquare, HardHat } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface ActivityItem {
+interface SiteActivity {
   item: string;
-  category: "itps" | "contracts" | "site" | "compliance";
+  source: string;
 }
 
 interface Risk {
@@ -16,11 +16,24 @@ interface Risk {
   severity: "high" | "medium" | "low";
 }
 
+interface FinancialHealth {
+  budget_status: string;
+  cashflow_observations: string[];
+  cost_code_alerts: string[];
+}
+
 interface ContractIntelligence {
   total_subcontracts: number;
+  total_purchase_orders?: number;
   active_trades: number;
   not_started: number;
   observations: string[];
+}
+
+interface RfiStatus {
+  open: number;
+  overdue: number;
+  key_items: string[];
 }
 
 interface MissingItp {
@@ -32,7 +45,7 @@ interface MissingItp {
 interface RecommendedAction {
   action: string;
   priority: "high" | "medium" | "low";
-  category: "itps" | "contracts" | "compliance" | "planning";
+  category: string;
 }
 
 interface ComingUpItem {
@@ -45,9 +58,12 @@ interface ProjectDigest {
   project_stage: string;
   completion_pct: number;
   contract_value: number | null;
-  activity_this_week: ActivityItem[];
+  site_activity?: SiteActivity[];
+  activity_this_week?: SiteActivity[]; // backwards compat
+  financial_health?: FinancialHealth;
   risks: Risk[];
   contract_intelligence: ContractIntelligence;
+  rfi_status?: RfiStatus;
   missing_itps: MissingItp[];
   recommended_actions: RecommendedAction[];
   coming_up: ComingUpItem[];
@@ -257,25 +273,19 @@ function DigestCard({ project, digest, loading, error, onGenerate }: {
           </div>
 
           {/* Risks */}
-          {digest.risks.length > 0 && (
+          {digest.risks?.length > 0 && (
             <Section title="Risks & Gaps" count={digest.risks.length} defaultOpen={true}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {digest.risks.map((risk, i) => {
                   const styles = severityStyles(risk.severity);
                   return (
-                    <div key={i} style={{
-                      padding: "10px 14px", borderRadius: 8,
-                      backgroundColor: styles.bg,
-                      borderLeft: `3px solid ${styles.border}`,
-                    }}>
+                    <div key={i} style={{ padding: "10px 14px", borderRadius: 8, backgroundColor: styles.bg, borderLeft: `3px solid ${styles.border}` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                         <AlertTriangle className="h-3.5 w-3.5" style={{ color: styles.text }} />
                         <span style={{ fontSize: 13, fontWeight: 600, color: styles.text }}>{risk.title}</span>
                         {priorityBadge(risk.severity)}
                       </div>
-                      <p style={{ fontSize: 12, color: "var(--hp-text-secondary, #6b7280)", margin: 0, paddingLeft: 22 }}>
-                        {risk.detail}
-                      </p>
+                      <p style={{ fontSize: 12, color: "var(--hp-text-secondary, #6b7280)", margin: 0, paddingLeft: 22 }}>{risk.detail}</p>
                     </div>
                   );
                 })}
@@ -284,21 +294,13 @@ function DigestCard({ project, digest, loading, error, onGenerate }: {
           )}
 
           {/* Recommended Actions */}
-          {digest.recommended_actions.length > 0 && (
+          {digest.recommended_actions?.length > 0 && (
             <Section title="Recommended Actions" count={digest.recommended_actions.length} defaultOpen={true}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {digest.recommended_actions.map((action, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 12px",
-                    borderRadius: 6, backgroundColor: "var(--hp-surface, #f9fafb)",
-                    border: "1px solid var(--hp-border, #e5e7eb)",
-                  }}>
-                    <div style={{ marginTop: 1, color: "var(--hp-text-secondary, #9ca3af)" }}>
-                      {categoryIcon(action.category)}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 13, color: "var(--hp-text, #1f2937)", margin: 0 }}>{action.action}</p>
-                    </div>
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 12px", borderRadius: 6, backgroundColor: "var(--hp-surface, #f9fafb)", border: "1px solid var(--hp-border, #e5e7eb)" }}>
+                    <div style={{ marginTop: 1, color: "var(--hp-text-secondary, #9ca3af)" }}>{categoryIcon(action.category)}</div>
+                    <div style={{ flex: 1 }}><p style={{ fontSize: 13, color: "var(--hp-text, #1f2937)", margin: 0 }}>{action.action}</p></div>
                     {priorityBadge(action.priority)}
                   </div>
                 ))}
@@ -306,24 +308,46 @@ function DigestCard({ project, digest, loading, error, onGenerate }: {
             </Section>
           )}
 
+          {/* Financial Health */}
+          {digest.financial_health && (
+            <Section title="Financial Health" defaultOpen={true}>
+              <div style={{ padding: "10px 14px", borderRadius: 8, backgroundColor: "var(--hp-warm-50, #faf8f5)", border: "1px solid var(--hp-warm-200, #e8e0d8)", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <DollarSign className="h-4 w-4" style={{ color: "var(--hp-text, #1f2937)" }} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text, #1f2937)" }}>{digest.financial_health.budget_status}</span>
+                </div>
+                {digest.financial_health.cashflow_observations?.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingLeft: 24 }}>
+                    {digest.financial_health.cashflow_observations.map((obs, i) => (
+                      <div key={i} style={{ fontSize: 12, color: "var(--hp-text-secondary, #6b7280)", display: "flex", alignItems: "flex-start", gap: 6 }}>
+                        <ArrowRight className="h-3 w-3 shrink-0 mt-0.5" />{obs}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {digest.financial_health.cost_code_alerts?.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {digest.financial_health.cost_code_alerts.map((alert, i) => (
+                    <div key={i} style={{ padding: "6px 12px", borderRadius: 6, backgroundColor: "var(--hp-significant-bg, #fffbeb)", borderLeft: "3px solid var(--hp-significant, #d97706)", fontSize: 12, color: "var(--hp-significant, #d97706)" }}>
+                      <AlertTriangle className="h-3 w-3 inline mr-1" />{alert}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Section>
+          )}
+
           {/* Missing ITPs */}
-          {digest.missing_itps.length > 0 && (
+          {digest.missing_itps?.length > 0 && (
             <Section title="Missing ITPs" count={digest.missing_itps.length} defaultOpen={true}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {digest.missing_itps.map((itp, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 12px",
-                    borderRadius: 6, backgroundColor: "var(--hp-critical-bg, #fef2f2)",
-                    border: "1px solid #fecaca",
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--hp-critical, #dc2626)", whiteSpace: "nowrap" as const }}>
-                      {itp.itp}
-                    </span>
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 12px", borderRadius: 6, backgroundColor: "var(--hp-critical-bg, #fef2f2)", border: "1px solid #fecaca" }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--hp-critical, #dc2626)", whiteSpace: "nowrap" as const }}>{itp.itp}</span>
                     <div>
                       <span style={{ fontSize: 13, fontWeight: 500, color: "var(--hp-text, #1f2937)" }}>{itp.name}</span>
-                      <p style={{ fontSize: 12, color: "var(--hp-text-secondary, #6b7280)", margin: "2px 0 0" }}>
-                        {itp.reason}
-                      </p>
+                      <p style={{ fontSize: 12, color: "var(--hp-text-secondary, #6b7280)", margin: "2px 0 0" }}>{itp.reason}</p>
                     </div>
                   </div>
                 ))}
@@ -331,59 +355,67 @@ function DigestCard({ project, digest, loading, error, onGenerate }: {
             </Section>
           )}
 
-          {/* Activity This Week */}
-          {digest.activity_this_week.length > 0 && (
-            <Section title="Recent Activity" count={digest.activity_this_week.length} defaultOpen={false}>
+          {/* Site Activity */}
+          {(() => { const activities = digest.site_activity ?? digest.activity_this_week ?? []; return activities.length > 0 ? (
+            <Section title="Site Activity" count={activities.length} defaultOpen={true}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {digest.activity_this_week.map((item, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
-                    fontSize: 13, color: "var(--hp-text, #1f2937)",
-                  }}>
-                    <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--hp-compliant, #16a34a)" }} />
-                    {item.item}
-                    <span style={{
-                      fontSize: 10, fontWeight: 500, textTransform: "uppercase" as const,
-                      color: "var(--hp-text-secondary, #9ca3af)", marginLeft: "auto",
-                    }}>
-                      {item.category}
-                    </span>
+                {activities.map((item, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", fontSize: 13, color: "var(--hp-text, #1f2937)" }}>
+                    <HardHat className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--hp-compliant, #16a34a)" }} />
+                    <span style={{ flex: 1 }}>{item.item}</span>
+                    <span style={{ fontSize: 10, fontWeight: 500, textTransform: "uppercase" as const, color: "var(--hp-text-secondary, #9ca3af)" }}>{item.source}</span>
                   </div>
                 ))}
               </div>
+            </Section>
+          ) : null; })()}
+
+          {/* RFI Status */}
+          {digest.rfi_status && (digest.rfi_status.open > 0 || digest.rfi_status.overdue > 0) && (
+            <Section title="RFIs" defaultOpen={digest.rfi_status.overdue > 0}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+                <div style={{ padding: "8px 14px", borderRadius: 8, backgroundColor: "var(--hp-warm-50, #faf8f5)", border: "1px solid var(--hp-warm-200, #e8e0d8)", textAlign: "center" as const, flex: 1 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "var(--hp-text, #1f2937)" }}>{digest.rfi_status.open}</div>
+                  <div style={{ fontSize: 11, color: "var(--hp-text-secondary, #6b7280)" }}>Open</div>
+                </div>
+                <div style={{ padding: "8px 14px", borderRadius: 8, backgroundColor: digest.rfi_status.overdue > 0 ? "var(--hp-critical-bg, #fef2f2)" : "var(--hp-warm-50, #faf8f5)", border: `1px solid ${digest.rfi_status.overdue > 0 ? "#fecaca" : "var(--hp-warm-200, #e8e0d8)"}`, textAlign: "center" as const, flex: 1 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: digest.rfi_status.overdue > 0 ? "var(--hp-critical, #dc2626)" : "var(--hp-text, #1f2937)" }}>{digest.rfi_status.overdue}</div>
+                  <div style={{ fontSize: 11, color: "var(--hp-text-secondary, #6b7280)" }}>Overdue</div>
+                </div>
+              </div>
+              {digest.rfi_status.key_items?.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  {digest.rfi_status.key_items.map((item, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, padding: "4px 8px", fontSize: 12, color: "var(--hp-text-secondary, #6b7280)" }}>
+                      <MessageSquare className="h-3 w-3 shrink-0 mt-0.5" />{item}
+                    </div>
+                  ))}
+                </div>
+              )}
             </Section>
           )}
 
           {/* Contract Intelligence */}
           {digest.contract_intelligence && (
             <Section title="Contract Intelligence" defaultOpen={false}>
-              <div style={{
-                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12,
-              }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 12 }}>
                 {[
-                  { label: "Total subcontracts", value: digest.contract_intelligence.total_subcontracts },
+                  { label: "Subcontracts", value: digest.contract_intelligence.total_subcontracts },
+                  { label: "Purchase Orders", value: digest.contract_intelligence.total_purchase_orders ?? 0 },
                   { label: "Active trades", value: digest.contract_intelligence.active_trades },
                   { label: "Not started", value: digest.contract_intelligence.not_started },
                 ].map((stat, i) => (
-                  <div key={i} style={{
-                    padding: "10px 12px", borderRadius: 8, textAlign: "center" as const,
-                    backgroundColor: "var(--hp-warm-50, #faf8f5)",
-                    border: "1px solid var(--hp-warm-200, #e8e0d8)",
-                  }}>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: "var(--hp-text, #1f2937)" }}>{stat.value}</div>
-                    <div style={{ fontSize: 11, color: "var(--hp-text-secondary, #6b7280)" }}>{stat.label}</div>
+                  <div key={i} style={{ padding: "8px 10px", borderRadius: 8, textAlign: "center" as const, backgroundColor: "var(--hp-warm-50, #faf8f5)", border: "1px solid var(--hp-warm-200, #e8e0d8)" }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "var(--hp-text, #1f2937)" }}>{stat.value}</div>
+                    <div style={{ fontSize: 10, color: "var(--hp-text-secondary, #6b7280)" }}>{stat.label}</div>
                   </div>
                 ))}
               </div>
-              {digest.contract_intelligence.observations.length > 0 && (
+              {digest.contract_intelligence.observations?.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {digest.contract_intelligence.observations.map((obs, i) => (
-                    <div key={i} style={{
-                      display: "flex", alignItems: "flex-start", gap: 8, padding: "6px 10px",
-                      fontSize: 12, color: "var(--hp-text-secondary, #6b7280)",
-                    }}>
-                      <ArrowRight className="h-3 w-3 shrink-0 mt-0.5" />
-                      {obs}
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "6px 10px", fontSize: 12, color: "var(--hp-text-secondary, #6b7280)" }}>
+                      <ArrowRight className="h-3 w-3 shrink-0 mt-0.5" />{obs}
                     </div>
                   ))}
                 </div>
@@ -392,23 +424,14 @@ function DigestCard({ project, digest, loading, error, onGenerate }: {
           )}
 
           {/* Coming Up */}
-          {digest.coming_up.length > 0 && (
+          {digest.coming_up?.length > 0 && (
             <Section title="Coming Up" count={digest.coming_up.length} defaultOpen={false}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {digest.coming_up.map((item, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
-                    fontSize: 13, color: "var(--hp-text, #1f2937)",
-                  }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", fontSize: 13, color: "var(--hp-text, #1f2937)" }}>
                     <Clock className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--hp-text-secondary, #9ca3af)" }} />
                     <span style={{ flex: 1 }}>{item.item}</span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 500,
-                      color: "var(--hp-text-secondary, #9ca3af)",
-                      whiteSpace: "nowrap" as const,
-                    }}>
-                      {item.timeframe}
-                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 500, color: "var(--hp-text-secondary, #9ca3af)", whiteSpace: "nowrap" as const }}>{item.timeframe}</span>
                   </div>
                 ))}
               </div>
