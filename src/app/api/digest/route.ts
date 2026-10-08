@@ -43,24 +43,37 @@ const PROCORE_BASE =
 
 // ── Procore fetch helper ──────────────────────────────────────────────────────
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function procoreGet(path: string, token: string, companyId: string): Promise<any> {
-  const res = await fetch(`${PROCORE_BASE}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Procore-Company-Id": companyId,
-    },
-    signal: AbortSignal.timeout(20_000),
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`Procore ${res.status}: ${text.slice(0, 200)}`);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(`${PROCORE_BASE}${path}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Procore-Company-Id": companyId,
+      },
+      signal: AbortSignal.timeout(20_000),
+    });
+
+    if (res.status === 429) {
+      const wait = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+      console.log(`[digest] 429 on ${path.split("?")[0]}, retrying in ${wait}ms...`);
+      await sleep(wait);
+      continue;
+    }
+
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`Procore ${res.status}: ${text.slice(0, 200)}`);
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`Procore returned non-JSON: ${text.slice(0, 200)}`);
+    }
   }
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`Procore returned non-JSON: ${text.slice(0, 200)}`);
-  }
+  throw new Error("Procore 429: rate limit exceeded after 3 retries");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,19 +121,20 @@ async function fetchDigestData(
 ): Promise<DigestData> {
   const errors: string[] = [];
 
-  // Fetch all data sources in parallel
-  const [
-    projectRes,
-    primeRes,
-    subRes,
-    inspRes,
-    apRes,
-    logsRes,
-  ] = await Promise.all([
+  // Fetch data sources in serial batches of 2 with 600ms pause to avoid 429s
+  const [projectRes, primeRes] = await Promise.all([
     procoreGetSafe(`/rest/v1.0/projects/${projectId}?company_id=${companyId}`, token, companyId),
     procoreGetSafe(`/rest/v1.0/prime_contracts?project_id=${projectId}&company_id=${companyId}`, token, companyId),
+  ]);
+  await sleep(600);
+
+  const [subRes, inspRes] = await Promise.all([
     procoreGetSafe(`/rest/v1.0/work_order_contracts?project_id=${projectId}&company_id=${companyId}&view=default`, token, companyId),
     procoreGetSafe(`/rest/v1.0/projects/${projectId}/checklist/lists?company_id=${companyId}&per_page=250`, token, companyId),
+  ]);
+  await sleep(600);
+
+  const [apRes, logsRes] = await Promise.all([
     procoreGetSafe(`/rest/v1.0/projects/${projectId}/action_plans/plans?company_id=${companyId}`, token, companyId),
     procoreGetSafe(`/rest/v1.0/projects/${projectId}/daily_construction_report_logs?company_id=${companyId}&per_page=10&filters[log_date]=${formatDate(7)}...${formatDate(0)}`, token, companyId),
   ]);

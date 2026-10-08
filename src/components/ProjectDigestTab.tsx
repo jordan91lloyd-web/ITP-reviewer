@@ -503,9 +503,9 @@ export default function ProjectDigestTab({ companyId, projects, projectsLoading 
     for (let i = 0; i < visibleProjects.length; i++) {
       setRefreshProgress({ current: i + 1, total: visibleProjects.length });
       await generateDigest(visibleProjects[i].id, true);
-      // 1s pause between projects to avoid rate limiting
+      // 2s pause between projects to avoid Procore 429s
       if (i < visibleProjects.length - 1) {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 2000));
       }
     }
 
