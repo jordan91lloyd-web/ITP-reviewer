@@ -18,10 +18,18 @@ fi
 echo "[save] Staging all changes..."
 git add -A
 
-# Check if there is anything to commit
-if git diff --cached --quiet; then
-  echo "[save] Nothing to commit — working tree is clean."
-  exit 0
+# Safety check: abort if staging secrets or sensitive files
+SENSITIVE=$(git diff --cached --name-only | grep -iE '\.env|secret|credential|\.pem|\.key$' || true)
+if [ -n "$SENSITIVE" ]; then
+  echo "[save] ERROR: Refusing to commit potentially sensitive files:"
+  echo "$SENSITIVE"
+  echo "[save] Unstaging those files. Add them explicitly if intentional."
+  echo "$SENSITIVE" | xargs git reset HEAD --
+  # Re-check if anything remains staged
+  if git diff --cached --quiet; then
+    echo "[save] Nothing left to commit after removing sensitive files."
+    exit 1
+  fi
 fi
 
 echo "[save] Committing: \"${MESSAGE}\""

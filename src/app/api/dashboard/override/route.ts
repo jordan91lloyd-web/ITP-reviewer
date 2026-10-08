@@ -3,9 +3,9 @@
 // POST                      — create a new override
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,8 +13,8 @@ const supabase = createClient(
 );
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("procore_access_token")?.value) {
+  const accessToken = await resolveAccessToken();
+  if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
@@ -59,8 +59,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }

@@ -20,7 +20,7 @@
 // ─────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const PROCORE_API_BASE =
   process.env.PROCORE_ENV === "production"
@@ -48,8 +48,7 @@ function nullState(totalDays: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get("procore_access_token")?.value;
+    const accessToken = await resolveAccessToken();
     if (!accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }

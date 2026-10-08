@@ -4,8 +4,8 @@
 // Best-effort attachment of the original report file after creation.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import type { ConvertedActionPlan } from "@/lib/actionPlanTypes";
+import { resolveAccessToken } from "@/lib/resolve-token";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 export const maxDuration = 300;
@@ -136,8 +136,7 @@ async function verifyPlanAssets(
 // ── Main handler ──────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
   if (!accessToken) {
     return NextResponse.json({ success: false, error: "Not authenticated with Procore." }, { status: 401 });
   }

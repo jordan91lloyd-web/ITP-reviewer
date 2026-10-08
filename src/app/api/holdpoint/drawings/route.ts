@@ -3,7 +3,7 @@
 // Recommended = keyword match in drawing title only (no per-discipline fallback).
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +48,7 @@ function getPrefix(drawingNumber: string): string {
 }
 
 async function requireAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
+  return resolveAccessToken();
 }
 
 export async function GET(request: NextRequest) {

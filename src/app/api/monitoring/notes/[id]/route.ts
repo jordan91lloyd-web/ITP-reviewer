@@ -2,9 +2,9 @@
 // Deletes a single note. Only allowed if the note belongs to the current user.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { getProcoreUser } from "@/lib/procore";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,8 +15,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }

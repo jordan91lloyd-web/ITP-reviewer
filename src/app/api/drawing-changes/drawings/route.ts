@@ -4,8 +4,8 @@
 // that have been updated and need comparison. Also fetches disciplines.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 export const dynamic = "force-dynamic";
 
@@ -53,8 +53,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function requireAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
+  return resolveAccessToken();
 }
 
 async function fetchAllRevisions(

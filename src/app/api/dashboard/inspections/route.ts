@@ -9,8 +9,8 @@
 //   override_score/note — from the latest score_override for that record
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getInspections, type ProcoreInspection } from "@/lib/procore";
+import { resolveAccessToken } from "@/lib/resolve-token";
 import { createClient } from "@supabase/supabase-js";
 import type { ReviewResult } from "@/lib/types";
 
@@ -49,8 +49,7 @@ export interface DashboardInspection {
 }
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
   }

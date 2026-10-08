@@ -2,14 +2,13 @@
 // Returns project locations for the location picker
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getProjectLocations } from "@/lib/procore";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("procore_access_token")?.value;
+  const token = await resolveAccessToken();
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const projectId = request.nextUrl.searchParams.get("project_id");

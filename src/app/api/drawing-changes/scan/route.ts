@@ -7,8 +7,8 @@
 // processes a small number of drawings within the Vercel timeout.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveAccessToken } from "@/lib/resolve-token";
 import { createClient } from "@supabase/supabase-js";
 import {
   SYSTEM_PROMPT,
@@ -48,8 +48,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function requireAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
+  return resolveAccessToken();
 }
 
 async function downloadFile(url: string): Promise<FileInfo | null> {

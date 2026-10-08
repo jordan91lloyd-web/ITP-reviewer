@@ -4,12 +4,11 @@
 // initial company discovery before any project or inspection calls.
 
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getCompanies } from "@/lib/procore";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
 
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });

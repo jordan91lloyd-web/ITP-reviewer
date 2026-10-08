@@ -20,8 +20,8 @@
 // A diary day is "complete" if notes_logs has ≥1 entry with status "approved".
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const PROCORE_API_BASE =
   process.env.PROCORE_ENV === "production"
@@ -108,8 +108,7 @@ function getCheckRange(weekStartParam?: string | null): CheckRange | null {
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get("procore_access_token")?.value;
+    const accessToken = await resolveAccessToken();
     if (!accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }

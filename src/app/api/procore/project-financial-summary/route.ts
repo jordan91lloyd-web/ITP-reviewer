@@ -12,7 +12,7 @@
 // Never throws. All per-call failures are collected in `errors[]`.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const PROCORE_BASE =
   process.env.PROCORE_ENV === "production"
@@ -42,8 +42,7 @@ async function procoreGet(path: string, accessToken: string, companyId: string):
 }
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
   }

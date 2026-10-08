@@ -9,8 +9,8 @@
 // NEVER deletes company templates.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import type { ConvertedInspection } from "@/lib/inspectionCreatorTypes";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 export const maxDuration = 300;
 
@@ -137,8 +137,7 @@ async function procorePatch(
 }
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("procore_access_token")?.value;
+  const token = await resolveAccessToken();
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   let payload: {

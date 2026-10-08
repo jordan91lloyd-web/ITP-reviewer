@@ -7,10 +7,10 @@
 // --    ADD COLUMN IF NOT EXISTS action_items jsonb DEFAULT '[]';
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ActionItem } from "@/lib/types";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,8 +38,8 @@ interface RequestBody {
 export async function POST(request: NextRequest) {
   // ── Auth check ──────────────────────────────────────────────────────────────
   console.log("[generate-action-items] step 1: auth check");
-  const cookieStore = await cookies();
-  if (!cookieStore.get("procore_access_token")?.value) {
+  const accessToken = await resolveAccessToken();
+  if (!accessToken) {
     return NextResponse.json({ action_items: [], error: "Not authenticated." });
   }
 

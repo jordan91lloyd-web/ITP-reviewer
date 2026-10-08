@@ -17,9 +17,9 @@
 // CREATE INDEX ON project_attention_sessions(user_id, company_id);
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { getProcoreUser } from "@/lib/procore";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,8 +27,7 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }

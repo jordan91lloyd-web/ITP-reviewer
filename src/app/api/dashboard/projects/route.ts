@@ -9,8 +9,8 @@
 // Pass show_hidden=true to include them (for the "show hidden" toggle in the UI).
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getProcoreProjects } from "@/lib/procore";
+import { resolveAccessToken } from "@/lib/resolve-token";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -27,8 +27,7 @@ function getServiceSupabase() {
 }
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
   }

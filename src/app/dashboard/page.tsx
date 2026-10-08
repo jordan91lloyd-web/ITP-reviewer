@@ -4,7 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw, RotateCcw } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw, RotateCcw, Brain } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import { useAttentionTracker } from "@/hooks/useAttentionTracker";
@@ -17,6 +17,7 @@ import ActionPlansPage from "@/app/action-plans/page";
 import DrawingChangesTab from "@/components/DrawingChangesTab";
 import PhotoClassifierTab from "@/components/PhotoClassifierTab";
 import InspectionCreatorTab from "@/components/InspectionCreatorTab";
+import ProjectDigestTab from "@/components/ProjectDigestTab";
 import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
@@ -686,7 +687,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator" | "digest";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [visitedTabs, setVisitedTabs] = useState<Set<DashboardView>>(new Set(["itp_reviews"]));
   const [insightsFetched, setInsightsFetched] = useState(false);
@@ -1597,6 +1598,7 @@ export default function DashboardPage() {
         {([
           ["company",         "Company",         null],
           ["insights",        "Insights",        "sparkles"],
+          ["digest",          "Digest",          "brain"],
           ["itp_reviews",     "ITP Reviews",     null],
           ["hold_points",     "Hold Points",     null],
           ["report",          "Report",          null],
@@ -1637,6 +1639,7 @@ export default function DashboardPage() {
               }}
             >
               {icon === "sparkles" && <Sparkles className="h-3 w-3" />}
+              {icon === "brain" && <Brain className="h-3 w-3" />}
               {label}
             </button>
           );
@@ -1698,6 +1701,14 @@ export default function DashboardPage() {
             setStatusFilter("open");
             handleSelectProject(project);
           }}
+        />
+      </div>}
+
+      {visitedTabs.has("digest") && <div style={{ display: dashboardView === "digest" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+        <ProjectDigestTab
+          companyId={selectedCompany?.id ?? null}
+          projects={projects}
+          projectsLoading={projectsLoading}
         />
       </div>}
 

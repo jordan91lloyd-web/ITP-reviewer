@@ -24,9 +24,9 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { resolveAuditUser, logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,8 +66,7 @@ export async function GET(request: NextRequest) {
 // ── POST ───────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
 
   let body: {
     company_id?: string;
@@ -98,7 +97,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Resolve uploading user (best-effort — does not block the save).
-  const auditUser = await resolveAuditUser(accessToken);
+  const auditUser = await resolveAuditUser(accessToken ?? undefined);
   const uploaded_at = new Date().toISOString();
 
   const { data, error } = await supabase

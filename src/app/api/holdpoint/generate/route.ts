@@ -4,8 +4,8 @@
 // deduplicates, sorts, numbers, saves to Supabase, returns the register.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveAccessToken } from "@/lib/resolve-token";
 import { createClient } from "@supabase/supabase-js";
 import { SYSTEM_PROMPT, STAGE_ORDER } from "@/lib/holdpoint-prompt";
 
@@ -63,8 +63,7 @@ function getSupabase() {
 }
 
 async function requireAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
+  return resolveAccessToken();
 }
 
 async function downloadPdf(url: string, token: string): Promise<Buffer | null> {

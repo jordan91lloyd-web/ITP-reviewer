@@ -9,8 +9,8 @@
 // }
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 const PROCORE_BASE =
   process.env.PROCORE_ENV === "production"
@@ -127,8 +127,7 @@ export async function POST(request: NextRequest) {
   const supabase = getSupabase();
 
   // Try to create in Procore first (if user is authenticated)
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const accessToken = await resolveAccessToken();
 
   let procoreEventId: string | null = null;
   let procoreEventNumber: string | null = null;

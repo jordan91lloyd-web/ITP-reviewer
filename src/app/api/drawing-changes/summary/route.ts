@@ -3,8 +3,8 @@
 // executive summary for QA managers.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 export const maxDuration = 30;
 
@@ -20,8 +20,7 @@ interface ChangeSummaryInput {
 }
 
 async function requireAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
+  return resolveAccessToken();
 }
 
 export async function POST(request: NextRequest) {

@@ -4,8 +4,8 @@
 // Results saved to drawing_revision_changes table with discipline="Document".
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveAccessToken } from "@/lib/resolve-token";
 import { createClient } from "@supabase/supabase-js";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
@@ -84,8 +84,7 @@ function xlsxToText(buffer: Buffer): string {
 }
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("procore_access_token")?.value;
+  const token = await resolveAccessToken();
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const formData = await request.formData();

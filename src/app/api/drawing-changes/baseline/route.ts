@@ -3,8 +3,8 @@
 // DELETE /api/drawing-changes/baseline — Remove a baseline doc
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveAccessToken } from "@/lib/resolve-token";
 import { createClient } from "@supabase/supabase-js";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
@@ -248,8 +248,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, skipped: true, document_name: filename, reason: check.reason });
     }
 
-    const cookieStore = await cookies();
-    const token = cookieStore.get("procore_access_token")?.value;
+    const token = await resolveAccessToken();
 
     const isS3 = !procoreDocUrl.includes("procore.com") || procoreDocUrl.includes("s3.");
     const headers: Record<string, string> = {};

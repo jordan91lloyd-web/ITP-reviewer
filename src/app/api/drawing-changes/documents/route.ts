@@ -10,7 +10,7 @@
 // File download URLs come from the file_versions array on /folders files.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { resolveAccessToken } from "@/lib/resolve-token";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +27,7 @@ function isSupported(name: string): boolean {
 }
 
 async function requireAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
+  return resolveAccessToken();
 }
 
 // Extract download URL from a /folders file object.
