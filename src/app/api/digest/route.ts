@@ -185,36 +185,22 @@ async function fetchDigestData(
   ]);
   await sleep(600);
 
-  // Batch 8: photo albums (lightweight — just album names and counts)
-  const albumsRes = await safe(`/rest/v1.0/image_categories?project_id=${p}&per_page=200`, token, c);
+  // Batch 8: recent photos (single call — last 7 days, grouped by album client-side)
+  const recentPhotosRes = await safe(
+    `/rest/v1.0/images?project_id=${p}&per_page=200&filters[created_at]=${fmtDate(7)}...${fmtDate(0)}`,
+    token, c,
+  );
 
-  // For albums with photos, fetch recent images (last 7 days) to count activity
-  // Only check top 20 albums by count to limit API calls
   const photoActivity: DigestData["photoActivity"] = [];
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000);
-
-  if (albumsRes.data && Array.isArray(albumsRes.data)) {
+  if (recentPhotosRes.data && Array.isArray(recentPhotosRes.data)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const nonEmpty = (albumsRes.data as any[])
-      .filter(a => (a.count ?? 0) > 0)
-      .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
-      .slice(0, 20);
-
-    // Fetch recent photos in batches of 2
-    for (let i = 0; i < nonEmpty.length; i += 2) {
-      const batch = nonEmpty.slice(i, i + 2);
-      const results = await Promise.all(batch.map(album =>
-        safe(`/rest/v1.0/images?project_id=${p}&image_category_id=${album.id}&per_page=100&filters[created_at]=${fmtDate(7)}...${fmtDate(0)}`, token, c)
-      ));
-      for (let j = 0; j < batch.length; j++) {
-        const recentCount = Array.isArray(results[j].data) ? results[j].data.length : 0;
-        photoActivity.push({
-          album: batch[j].name ?? `Album ${batch[j].id}`,
-          total: batch[j].count ?? 0,
-          recent7d: recentCount,
-        });
-      }
-      if (i + 2 < nonEmpty.length) await sleep(600);
+    const byAlbum = new Map<string, number>();
+    for (const img of recentPhotosRes.data as any[]) {
+      const albumName = img.image_category_name ?? img.image_category?.name ?? "Unknown";
+      byAlbum.set(albumName, (byAlbum.get(albumName) ?? 0) + 1);
+    }
+    for (const [album, count] of [...byAlbum.entries()].sort((a, b) => b[1] - a[1])) {
+      photoActivity.push({ album, total: 0, recent7d: count });
     }
   }
 
@@ -224,7 +210,7 @@ async function fetchDigestData(
     ["Purchase orders", poRes], ["Inspections", inspRes], ["Action plans", apRes],
     ["Direct costs", dcRes], ["Daily logs", logsRes], ["RFIs", rfiRes],
     ["Submittals", submlRes], ["Budget", budgetRes], ["PCOs", pcoRes],
-    ["Payments", payRes], ["Incidents", incRes], ["Photos", albumsRes],
+    ["Payments", payRes], ["Incidents", incRes], ["Photos", recentPhotosRes],
   ];
   for (const [name, res] of sources) {
     if (res.error) errors.push(`${name}: ${res.error}`);
@@ -419,13 +405,11 @@ ${plans.length > 0 ? plans.map(p => `  - ${p.title ?? p.name ?? "Untitled"} [${p
 
 ═══ PHOTO ACTIVITY (last 7 days — photos uploaded = work being documented) ═══
 ${(() => {
-  const active = data.photoActivity.filter(a => a.recent7d > 0);
-  const totalRecent = active.reduce((s, a) => s + a.recent7d, 0);
-  const totalAll = data.photoActivity.reduce((s, a) => s + a.total, 0);
-  if (active.length === 0) return `No photos uploaded in the last 7 days (${totalAll} total across ${data.photoActivity.length} albums)`;
-  return `${totalRecent} photos uploaded across ${active.length} albums this week (${totalAll} total)\n` +
-    active.sort((a, b) => b.recent7d - a.recent7d).slice(0, 15)
-      .map(a => `  - ${a.album}: ${a.recent7d} new this week (${a.total} total)`)
+  if (data.photoActivity.length === 0) return "No photos uploaded in the last 7 days";
+  const totalRecent = data.photoActivity.reduce((s, a) => s + a.recent7d, 0);
+  return `${totalRecent} photos uploaded across ${data.photoActivity.length} albums this week\n` +
+    data.photoActivity.slice(0, 15)
+      .map(a => `  - ${a.album}: ${a.recent7d} photos`)
       .join("\n");
 })()}
 
