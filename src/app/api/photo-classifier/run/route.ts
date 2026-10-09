@@ -88,12 +88,14 @@ async function fetchPhotosInAlbum(
   token: string,
   companyId: string,
   projectId: string,
-  albumId: number
+  albumId: number,
+  sinceDate?: string, // YYYY-MM-DD — only fetch photos created on or after this date
 ): Promise<ProcoreImage[]> {
   const all: ProcoreImage[] = [];
   let page = 1;
+  const dateFilter = sinceDate ? `&filters[created_at]=${sinceDate}...${new Date().toISOString().slice(0, 10)}` : "";
   while (true) {
-    const url = `${PROCORE_BASE}/rest/v1.0/images?project_id=${projectId}&image_category_id=${albumId}&serializer_view=prostore_file&per_page=100&page=${page}`;
+    const url = `${PROCORE_BASE}/rest/v1.0/images?project_id=${projectId}&image_category_id=${albumId}&serializer_view=prostore_file&per_page=100&page=${page}${dateFilter}`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}`, "Procore-Company-Id": companyId },
     });
@@ -325,14 +327,14 @@ async function classifyBatch(
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  let body: { company_id: string; project_id: string; album_id?: number; write_back?: boolean };
+  let body: { company_id: string; project_id: string; album_id?: number; write_back?: boolean; since_date?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { company_id, project_id, album_id, write_back = true } = body;
+  const { company_id, project_id, album_id, write_back = true, since_date } = body;
   if (!company_id || !project_id) {
     return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
   }
@@ -401,7 +403,7 @@ export async function POST(request: NextRequest) {
     const resolved = resolveAlbumToLocation(album.name, locationNodes);
 
     // Fetch photos in this album
-    const photos = await fetchPhotosInAlbum(token, company_id, project_id, album.id);
+    const photos = await fetchPhotosInAlbum(token, company_id, project_id, album.id, since_date);
 
     // Check which photos are already classified
     const { data: existing } = await supabase

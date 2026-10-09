@@ -79,6 +79,11 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
   const [loadingAlbums, setLoadingAlbums] = useState(false);
   const [selectedAlbumIds, setSelectedAlbumIds] = useState<Set<number>>(new Set());
   const [albumSearch, setAlbumSearch] = useState("");
+  const [sinceDate, setSinceDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
   const [running, setRunning] = useState(false);
   const [summary, setSummary] = useState<RunSummary | null>(null);
   const [albumResults, setAlbumResults] = useState<AlbumResult[]>([]);
@@ -125,7 +130,7 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
         const res = await fetch("/api/photo-classifier/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ company_id, project_id: projectId }),
+          body: JSON.stringify({ company_id, project_id: projectId, since_date: sinceDate }),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -141,7 +146,7 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
           const res = await fetch("/api/photo-classifier/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ company_id, project_id: projectId, album_id: albumId }),
+            body: JSON.stringify({ company_id, project_id: projectId, album_id: albumId, since_date: sinceDate }),
           });
           if (!res.ok) continue;
           const data = await res.json();
@@ -183,7 +188,7 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
     } finally {
       setRunning(false);
     }
-  }, [projectId, company_id, selectedAlbumIds]);
+  }, [projectId, company_id, selectedAlbumIds, sinceDate]);
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "var(--hp-bg)" }}>
@@ -230,6 +235,15 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
                 >
                   {running ? "Classifying..." : selectedAlbumIds.size > 0 ? `Classify ${selectedAlbumIds.size} Album${selectedAlbumIds.size !== 1 ? "s" : ""}` : "Classify All"}
                 </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <label style={{ fontSize: 11, color: "var(--hp-text-muted)", whiteSpace: "nowrap" }}>Photos since</label>
+                  <input
+                    type="date"
+                    value={sinceDate}
+                    onChange={(e) => setSinceDate(e.target.value)}
+                    style={{ borderRadius: 6, border: "1px solid var(--hp-border)", padding: "4px 8px", fontSize: 11, backgroundColor: "var(--hp-surface)", color: "var(--hp-text-primary)" }}
+                  />
+                </div>
                 <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>
                   {selectedAlbumIds.size > 0
                     ? `${albums.filter((a) => selectedAlbumIds.has(a.id)).reduce((s, a) => s + a.count, 0)} photos in selection`
