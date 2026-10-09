@@ -194,7 +194,7 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
           Photo Classifier
         </h2>
         <p style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 4 }}>
-          Classify site photos by what they show. Stage 1 of evidence sync — read-only, no attachments.
+          Classify site photos and tag them in Procore — assigns locations from album names and writes subject descriptions.
         </p>
       </div>
 
@@ -314,6 +314,9 @@ export default function PhotoClassifierTab({ company_id, projects }: Props) {
               <div><strong style={{ fontSize: 18, color: "var(--hp-text-primary)" }}>{summary.newly_classified}</strong> newly classified</div>
               <div><strong style={{ fontSize: 18, color: "var(--hp-text-primary)" }}>{summary.already_classified}</strong> already done</div>
               <div><strong style={{ fontSize: 18, color: "var(--hp-text-primary)" }}>{summary.skipped}</strong> skipped</div>
+              {(summary as unknown as Record<string, unknown>).procore_patched != null && (
+                <div><strong style={{ fontSize: 18, color: "var(--hp-compliant)" }}>{String((summary as unknown as Record<string, unknown>).procore_patched)}</strong> tagged in Procore</div>
+              )}
               <div><strong style={{ fontSize: 18, color: "var(--hp-compliant)" }}>{summary.confidence.confident}</strong> confident</div>
               <div><strong style={{ fontSize: 18, color: "var(--hp-significant)" }}>{summary.confidence.needs_review}</strong> needs review</div>
               <div><strong style={{ fontSize: 18, color: "var(--hp-critical)" }}>{summary.confidence.low}</strong> low confidence</div>

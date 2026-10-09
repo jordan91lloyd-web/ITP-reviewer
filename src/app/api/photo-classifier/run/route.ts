@@ -1,6 +1,9 @@
 // POST /api/photo-classifier/run
-// Body: { company_id, project_id, album_id? }
-// Classifies photos in Procore albums. Read-only against Procore.
+// Body: { company_id, project_id, album_id?, write_back?: boolean }
+// Classifies photos in Procore albums.
+// When write_back is true (default): PATCHes location_id and description onto Procore photos.
+// - location_id: set from album→location tree matching
+// - description: set to classification subject ONLY if currently empty (never overwrites)
 // Uses the pinned integration user (MCP_PROCORE_USER_ID), not session.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -136,6 +139,68 @@ async function downloadImage(url: string, token: string): Promise<string | null>
   }
 }
 
+// ── Write-back to Procore ────────────────────────────────────────────────────
+
+async function patchPhoto(
+  token: string,
+  companyId: string,
+  projectId: string,
+  photoId: number,
+  updates: { location_id?: number; description?: string },
+): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${PROCORE_BASE}/rest/v1.0/images/${photoId}?project_id=${projectId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Procore-Company-Id": companyId,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: updates }),
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    if (res.status === 429) {
+      await sleep(2000);
+      // One retry
+      const retry = await fetch(
+        `${PROCORE_BASE}/rest/v1.0/images/${photoId}?project_id=${projectId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Procore-Company-Id": companyId,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ image: updates }),
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
+      return retry.ok;
+    }
+    return res.ok;
+  } catch (err) {
+    console.error(`[photo-classifier] PATCH failed for photo ${photoId}:`, err);
+    return false;
+  }
+}
+
+function detectMediaType(filename: string | null, base64: string): "image/jpeg" | "image/png" | "image/webp" | "image/gif" {
+  // Check magic bytes first
+  if (base64.startsWith("/9j/")) return "image/jpeg";
+  if (base64.startsWith("iVBOR")) return "image/png";
+  if (base64.startsWith("UklGR")) return "image/webp";
+  if (base64.startsWith("R0lGO")) return "image/gif";
+  // Fall back to filename extension
+  const ext = filename?.split(".").pop()?.toLowerCase();
+  if (ext === "png") return "image/png";
+  if (ext === "webp") return "image/webp";
+  if (ext === "gif") return "image/gif";
+  return "image/jpeg";
+}
+
 // ── Album to location matching ───────────────────────────────────────────────
 
 interface LocationNode {
@@ -231,7 +296,7 @@ async function classifyBatch(
       type: "image",
       source: {
         type: "base64",
-        media_type: "image/jpeg",
+        media_type: detectMediaType(photo.filename, photo.base64),
         data: photo.base64,
       },
     });
@@ -244,7 +309,7 @@ async function classifyBatch(
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: CLASSIFIER_SYSTEM_PROMPT,
     messages: [{ role: "user", content: contentBlocks }],
   });
@@ -260,14 +325,14 @@ async function classifyBatch(
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  let body: { company_id: string; project_id: string; album_id?: number };
+  let body: { company_id: string; project_id: string; album_id?: number; write_back?: boolean };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { company_id, project_id, album_id } = body;
+  const { company_id, project_id, album_id, write_back = true } = body;
   if (!company_id || !project_id) {
     return NextResponse.json({ error: "company_id and project_id required" }, { status: 400 });
   }
@@ -327,6 +392,7 @@ export async function POST(request: NextRequest) {
   let totalProcessed = 0;
   let totalSkipped = 0;
   let totalAlreadyDone = 0;
+  let totalPatched = 0;
 
   for (const album of albums) {
     console.log(`[photo-classifier] Processing album "${album.name}" (${album.count} photos)`);
@@ -453,6 +519,30 @@ export async function POST(request: NextRequest) {
             console.error(`[photo-classifier] Insert error for photo ${bp.photo.id}:`, insertErr);
           }
 
+          // ── Write back to Procore ──────────────────────────────────────
+          if (write_back) {
+            const updates: { location_id?: number; description?: string } = {};
+
+            // Set location if album resolved and photo doesn't already have one
+            if (resolved && !bp.photo.location) {
+              updates.location_id = resolved.locationId;
+            }
+
+            // Set description only if currently empty
+            if (!bp.photo.description?.trim() && cls.subject !== "unknown") {
+              const label = cls.location_detail
+                ? `${cls.subject.replace(/_/g, " ")} — ${cls.location_detail}`
+                : cls.subject.replace(/_/g, " ");
+              updates.description = label.charAt(0).toUpperCase() + label.slice(1);
+            }
+
+            if (Object.keys(updates).length > 0) {
+              const ok = await patchPhoto(token, company_id, project_id, bp.photo.id, updates);
+              if (ok) totalPatched++;
+              await sleep(300); // rate limit between PATCHes
+            }
+          }
+
           albumResult.classifications.push({
             photo_id: bp.photo.id,
             filename: bp.filename,
@@ -534,33 +624,9 @@ export async function POST(request: NextRequest) {
     })),
   };
 
-  // Debug: include sample photo shape from first album
-  let debug: Record<string, unknown> | null = null;
-  for (const album of albums) {
-    const photos = await fetchPhotosInAlbum(token, company_id, project_id, album.id);
-    if (photos.length > 0) {
-      const s = photos[0];
-      debug = {
-        sample_album: album.name,
-        sample_photo: {
-          id: s.id,
-          has_url: !!s.url,
-          url_start: s.url?.slice(0, 100) ?? null,
-          has_thumbnail: !!s.thumbnail_url,
-          thumbnail_start: s.thumbnail_url?.slice(0, 100) ?? null,
-          filename: s.filename,
-          prostore_file: s.prostore_file,
-          keys: Object.keys(s),
-        },
-      };
-      break;
-    }
-  }
-
   return NextResponse.json({
     success: true,
-    summary,
+    summary: { ...summary, procore_patched: totalPatched, write_back_enabled: write_back },
     albums: results,
-    debug,
   });
 }
