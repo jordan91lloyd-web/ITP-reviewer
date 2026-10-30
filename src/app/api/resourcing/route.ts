@@ -1,22 +1,28 @@
-// ─── GET /api/resourcing?company_id=X ────────────────────────────────────────
-// Fetches Fleek staff across all active projects from Procore project teams.
-// Maps job_title to role categories and returns a matrix of project × role.
+// ─── /api/resourcing ─────────────────────────────────────────────────────────
+// GET  ?action=load       — load saved snapshot from Supabase (default)
+// GET  ?action=sync       — sync fresh from Procore, save snapshot, return it
+// POST                    — save the current matrix state (drag/drop changes)
 //
-// POST /api/resourcing — saves manual overrides to Supabase
-//
-// CREATE TABLE resourcing_overrides (
+// CREATE TABLE resourcing_snapshots (
 //   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 //   company_id   text NOT NULL,
-//   project_id   text NOT NULL,
-//   role_key     text NOT NULL,
-//   user_email   text NOT NULL,
-//   user_name    text,
-//   action       text NOT NULL,  -- 'add' or 'remove'
-//   created_by   text,
-//   created_at   timestamptz NOT NULL DEFAULT now(),
-//   UNIQUE(company_id, project_id, role_key, user_email)
+//   snapshot     jsonb NOT NULL,
+//   synced_at    timestamptz NOT NULL,
+//   saved_at     timestamptz NOT NULL DEFAULT now(),
+//   saved_by     text,
+//   version      int NOT NULL DEFAULT 1,
+//   UNIQUE(company_id, version)
 // );
-// ALTER TABLE resourcing_overrides ENABLE ROW LEVEL SECURITY;
+// ALTER TABLE resourcing_snapshots ENABLE ROW LEVEL SECURITY;
+//
+// CREATE TABLE resourcing_hidden_projects (
+//   company_id   text NOT NULL,
+//   project_id   text NOT NULL,
+//   hidden_by    text,
+//   hidden_at    timestamptz NOT NULL DEFAULT now(),
+//   PRIMARY KEY (company_id, project_id)
+// );
+// ALTER TABLE resourcing_hidden_projects ENABLE ROW LEVEL SECURITY;
 
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/route-auth";
@@ -33,8 +39,11 @@ const PROCORE_BASE =
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+function getSupabase() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+}
+
 // ── Role categories ───────────────────────────────────────────────────────────
-// Order matters — this is left-to-right column order in the chart.
 
 const ROLE_CATEGORIES = [
   { key: "construction_manager", label: "Construction Manager", short: "CM" },
@@ -47,16 +56,13 @@ const ROLE_CATEGORIES = [
   { key: "quality",             label: "Quality",               short: "QM" },
   { key: "whse",                label: "WHS",                   short: "WHS" },
   { key: "cadet",               label: "Cadet / Graduate",      short: "CAD" },
-  { key: "other",               label: "Other",                 short: "OTH" },
 ] as const;
 
 type RoleKey = (typeof ROLE_CATEGORIES)[number]["key"];
 
-/** Map a Procore job_title to a role category key. */
-function classifyRole(jobTitle: string | null | undefined): RoleKey {
-  if (!jobTitle) return "other";
+function classifyRole(jobTitle: string | null | undefined): RoleKey | null {
+  if (!jobTitle) return null;
   const t = jobTitle.toLowerCase().trim();
-
   if (t.includes("construction manager")) return "construction_manager";
   if (t.includes("project manager")) return "project_manager";
   if (t.includes("site manager")) return "site_manager";
@@ -67,13 +73,10 @@ function classifyRole(jobTitle: string | null | undefined): RoleKey {
   if (t.includes("quality") || t.includes("qa")) return "quality";
   if (t.includes("whs") || t.includes("whse") || t.includes("safety")) return "whse";
   if (t.includes("cadet") || t.includes("graduate") || t.includes("intern")) return "cadet";
-  if (t.includes("director")) return "other"; // Directors are on every project — not a resourcing concern
-  if (t.includes("account")) return "other";   // Accounts team — not site resourcing
-
-  return "other";
+  // Skip directors, accounts — not site resourcing roles
+  return null;
 }
 
-// Domains to include
 const ALLOWED_DOMAINS = (process.env.ALLOWED_EMAIL_DOMAINS ?? "fleekconstructions.au,fleekconstructions.com.au")
   .split(",").map(d => d.trim().toLowerCase()).filter(Boolean);
 
@@ -87,49 +90,49 @@ function isFleekEmail(email: string): boolean {
 interface PersonAssignment {
   email: string;
   name: string;
-  procore_user_id: number;
-  role_key: RoleKey;
+  role_key: string;
   job_title: string;
-  source: "procore" | "override";
 }
 
 interface ProjectRow {
   project_id: string;
   project_name: string;
   project_number: string | null;
+  is_active: boolean;
   assignments: PersonAssignment[];
 }
 
-// ── GET ─────────────────────────────────────────────────────────────────────
+interface ResourcingSnapshot {
+  projects: ProjectRow[];
+  synced_at: string;
+  version: number;
+}
 
-export async function GET(request: NextRequest) {
-  const auth = await requirePermission(request, "resourcing", "view");
-  if (auth.error) return auth.error;
+// ── Sync from Procore ─────────────────────────────────────────────────────────
 
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "No Procore token" }, { status: 401 });
-  }
+async function syncFromProcore(accessToken: string): Promise<{ projects: ProjectRow[]; errors: string[] }> {
+  const errors: string[] = [];
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-
-  // 1. Fetch all active projects
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let projects: any[] = [];
   try {
-    const res = await fetch(
-      `${PROCORE_BASE}/rest/v1.0/projects?company_id=${COMPANY_ID}&per_page=100&filters[by_status]=Active`,
-      { headers: { Authorization: `Bearer ${accessToken}`, "Procore-Company-Id": COMPANY_ID } },
-    );
-    if (res.ok) projects = await res.json();
+    let page = 1;
+    while (true) {
+      const res = await fetch(
+        `${PROCORE_BASE}/rest/v1.0/projects?company_id=${COMPANY_ID}&per_page=100&page=${page}`,
+        { headers: { Authorization: `Bearer ${accessToken}`, "Procore-Company-Id": COMPANY_ID } },
+      );
+      if (!res.ok) break;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) break;
+      projects.push(...data);
+      if (data.length < 100) break;
+      page++;
+      await sleep(600);
+    }
   } catch { /* */ }
 
-  // 2. Fetch team for each project (batches of 2 with 600ms pause)
   const rows: ProjectRow[] = [];
-  const errors: string[] = [];
 
   for (let i = 0; i < projects.length; i += 2) {
     const batch = projects.slice(i, i + 2);
@@ -139,140 +142,229 @@ export async function GET(request: NextRequest) {
           `${PROCORE_BASE}/rest/v1.0/projects/${p.id}/users?per_page=250&company_id=${COMPANY_ID}`,
           { headers: { Authorization: `Bearer ${accessToken}`, "Procore-Company-Id": COMPANY_ID } },
         );
-        if (!res.ok) {
-          errors.push(`Project ${p.name}: HTTP ${res.status}`);
-          return { project: p, users: [] };
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const users: any[] = await res.json();
-        return { project: p, users };
+        if (!res.ok) { errors.push(`${p.name}: HTTP ${res.status}`); return { project: p, users: [] }; }
+        return { project: p, users: await res.json() };
       } catch (err) {
-        errors.push(`Project ${p.name}: ${err instanceof Error ? err.message : String(err)}`);
+        errors.push(`${p.name}: ${err instanceof Error ? err.message : String(err)}`);
         return { project: p, users: [] };
       }
     }));
 
     for (const { project: p, users } of results) {
-      const fleekUsers = users.filter(u => u.email_address && isFleekEmail(u.email_address));
-
-      const assignments: PersonAssignment[] = fleekUsers
-        .map(u => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fleekUsers = (users as any[]).filter(u => u.email_address && isFleekEmail(u.email_address));
+      const assignments: PersonAssignment[] = [];
+      for (const u of fleekUsers) {
+        const role = classifyRole(u.job_title);
+        if (!role) continue;
+        assignments.push({
           email: u.email_address.toLowerCase().trim(),
           name: u.name ?? `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim(),
-          procore_user_id: u.id,
-          role_key: classifyRole(u.job_title),
+          role_key: role,
           job_title: u.job_title ?? "",
-          source: "procore" as const,
-        }))
-        .filter(a => a.role_key !== "other"); // Exclude directors, accounts, etc from the chart
-
+        });
+      }
       rows.push({
         project_id: String(p.id),
         project_name: p.display_name ?? p.name,
         project_number: p.project_number ?? null,
+        is_active: p.active ?? true,
         assignments,
       });
     }
-
     if (i + 2 < projects.length) await sleep(600);
   }
 
-  // 3. Apply manual overrides from Supabase
-  const { data: overrides } = await supabase
-    .from("resourcing_overrides")
-    .select("*")
-    .eq("company_id", COMPANY_ID);
-
-  if (overrides) {
-    for (const ov of overrides) {
-      const row = rows.find(r => r.project_id === ov.project_id);
-      if (!row) continue;
-
-      if (ov.action === "add") {
-        // Add if not already there
-        const exists = row.assignments.some(a => a.email === ov.user_email && a.role_key === ov.role_key);
-        if (!exists) {
-          row.assignments.push({
-            email: ov.user_email,
-            name: ov.user_name ?? ov.user_email.split("@")[0],
-            procore_user_id: 0,
-            role_key: ov.role_key as RoleKey,
-            job_title: "",
-            source: "override",
-          });
-        }
-      } else if (ov.action === "remove") {
-        // Remove from assignments
-        row.assignments = row.assignments.filter(
-          a => !(a.email === ov.user_email && a.role_key === ov.role_key)
-        );
-      }
-    }
-  }
-
-  // 4. Build people list (unique across all projects)
-  const peopleMap = new Map<string, { email: string; name: string; role_key: RoleKey; job_title: string; project_count: number }>();
-  for (const row of rows) {
-    for (const a of row.assignments) {
-      const existing = peopleMap.get(a.email);
-      if (!existing) {
-        peopleMap.set(a.email, { email: a.email, name: a.name, role_key: a.role_key, job_title: a.job_title, project_count: 1 });
-      } else {
-        existing.project_count++;
-      }
-    }
-  }
-
-  return NextResponse.json({
-    projects: rows,
-    people: [...peopleMap.values()].sort((a, b) => a.name.localeCompare(b.name)),
-    roles: ROLE_CATEGORIES,
-    errors: errors.length > 0 ? errors : undefined,
+  // Sort by project number
+  rows.sort((a, b) => {
+    const na = parseInt(a.project_number ?? "999");
+    const nb = parseInt(b.project_number ?? "999");
+    return na - nb;
   });
+
+  return { projects: rows, errors };
 }
 
-// ── POST — save an override ─────────────────────────────────────────────────
-// Body: { project_id, role_key, user_email, user_name, action: "add" | "remove" }
+// ── GET ─────────────────────────────────────────────────────────────────────
+
+export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "resourcing", "view");
+  if (auth.error) return auth.error;
+
+  const action = request.nextUrl.searchParams.get("action") ?? "load";
+  const supabase = getSupabase();
+
+  if (action === "load") {
+    // Load latest snapshot from Supabase
+    const { data: snapshot } = await supabase
+      .from("resourcing_snapshots")
+      .select("snapshot, synced_at, version")
+      .eq("company_id", COMPANY_ID)
+      .order("version", { ascending: false })
+      .limit(1)
+      .single();
+
+    // Load hidden projects
+    const { data: hidden } = await supabase
+      .from("resourcing_hidden_projects")
+      .select("project_id")
+      .eq("company_id", COMPANY_ID);
+    const hiddenSet = new Set((hidden ?? []).map(h => h.project_id));
+
+    if (snapshot?.snapshot) {
+      const parsed = typeof snapshot.snapshot === "string" ? JSON.parse(snapshot.snapshot) : snapshot.snapshot;
+      return NextResponse.json({
+        ...parsed,
+        synced_at: snapshot.synced_at,
+        version: snapshot.version,
+        hidden_project_ids: [...hiddenSet],
+        roles: ROLE_CATEGORIES,
+        source: "cache",
+      });
+    }
+
+    // No snapshot yet — return empty
+    return NextResponse.json({
+      projects: [],
+      synced_at: null,
+      version: 0,
+      hidden_project_ids: [...hiddenSet],
+      roles: ROLE_CATEGORIES,
+      source: "empty",
+    });
+  }
+
+  if (action === "sync") {
+    const accessToken = await resolveAccessToken();
+    if (!accessToken) return NextResponse.json({ error: "No Procore token" }, { status: 401 });
+
+    const { projects, errors } = await syncFromProcore(accessToken);
+
+    // Get next version number
+    const { data: latest } = await supabase
+      .from("resourcing_snapshots")
+      .select("version")
+      .eq("company_id", COMPANY_ID)
+      .order("version", { ascending: false })
+      .limit(1)
+      .single();
+
+    const nextVersion = (latest?.version ?? 0) + 1;
+    const now = new Date().toISOString();
+
+    await supabase.from("resourcing_snapshots").insert({
+      company_id: COMPANY_ID,
+      snapshot: JSON.stringify({ projects }),
+      synced_at: now,
+      saved_at: now,
+      saved_by: auth.email,
+      version: nextVersion,
+    });
+
+    // Load hidden projects
+    const { data: hidden } = await supabase
+      .from("resourcing_hidden_projects")
+      .select("project_id")
+      .eq("company_id", COMPANY_ID);
+    const hiddenSet = new Set((hidden ?? []).map(h => h.project_id));
+
+    return NextResponse.json({
+      projects,
+      synced_at: now,
+      version: nextVersion,
+      hidden_project_ids: [...hiddenSet],
+      roles: ROLE_CATEGORIES,
+      source: "procore",
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  }
+
+  // List versions for revert
+  if (action === "versions") {
+    const { data } = await supabase
+      .from("resourcing_snapshots")
+      .select("version, synced_at, saved_at, saved_by")
+      .eq("company_id", COMPANY_ID)
+      .order("version", { ascending: false })
+      .limit(20);
+
+    return NextResponse.json({ versions: data ?? [] });
+  }
+
+  // Load a specific version
+  if (action === "revert") {
+    const version = parseInt(request.nextUrl.searchParams.get("version") ?? "0");
+    if (!version) return NextResponse.json({ error: "version required" }, { status: 400 });
+
+    const { data: snapshot } = await supabase
+      .from("resourcing_snapshots")
+      .select("snapshot, synced_at, version")
+      .eq("company_id", COMPANY_ID)
+      .eq("version", version)
+      .single();
+
+    if (!snapshot) return NextResponse.json({ error: "Version not found" }, { status: 404 });
+
+    const parsed = typeof snapshot.snapshot === "string" ? JSON.parse(snapshot.snapshot) : snapshot.snapshot;
+    return NextResponse.json({ ...parsed, synced_at: snapshot.synced_at, version: snapshot.version, roles: ROLE_CATEGORIES, source: "revert" });
+  }
+
+  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+}
+
+// ── POST — save current state ───────────────────────────────────────────────
+// Body: { projects: ProjectRow[] } — saves the full matrix as a new version
+// OR:   { action: "hide_project", project_id: string }
+// OR:   { action: "unhide_project", project_id: string }
 
 export async function POST(request: NextRequest) {
   const auth = await requirePermission(request, "resourcing", "edit");
   if (auth.error) return auth.error;
 
-  let body: { project_id: string; role_key: string; user_email: string; user_name?: string; action: "add" | "remove" };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { project_id, role_key, user_email, user_name, action } = body;
-  if (!project_id || !role_key || !user_email || !action) {
-    return NextResponse.json({ error: "project_id, role_key, user_email, action required" }, { status: 400 });
-  }
+  const supabase = getSupabase();
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-
-  const { error } = await supabase
-    .from("resourcing_overrides")
-    .upsert(
-      {
-        company_id: COMPANY_ID,
-        project_id,
-        role_key,
-        user_email: user_email.toLowerCase().trim(),
-        user_name: user_name ?? null,
-        action,
-        created_by: auth.email,
-      },
-      { onConflict: "company_id,project_id,role_key,user_email" },
+  // Hide/unhide project
+  if (body.action === "hide_project") {
+    await supabase.from("resourcing_hidden_projects").upsert(
+      { company_id: COMPANY_ID, project_id: body.project_id, hidden_by: auth.email },
+      { onConflict: "company_id,project_id" },
     );
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+  if (body.action === "unhide_project") {
+    await supabase.from("resourcing_hidden_projects").delete()
+      .eq("company_id", COMPANY_ID).eq("project_id", body.project_id);
+    return NextResponse.json({ success: true });
   }
 
-  return NextResponse.json({ success: true });
+  // Save full matrix as new version
+  if (body.projects) {
+    const { data: latest } = await supabase
+      .from("resourcing_snapshots")
+      .select("version")
+      .eq("company_id", COMPANY_ID)
+      .order("version", { ascending: false })
+      .limit(1)
+      .single();
+
+    const nextVersion = (latest?.version ?? 0) + 1;
+    const now = new Date().toISOString();
+
+    await supabase.from("resourcing_snapshots").insert({
+      company_id: COMPANY_ID,
+      snapshot: JSON.stringify({ projects: body.projects }),
+      synced_at: body.synced_at ?? now,
+      saved_at: now,
+      saved_by: auth.email,
+      version: nextVersion,
+    });
+
+    return NextResponse.json({ success: true, version: nextVersion });
+  }
+
+  return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 }

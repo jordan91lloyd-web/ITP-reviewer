@@ -1,203 +1,224 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { RefreshCw, Download, X, Plus, GripVertical, Users } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { RefreshCw, Download, X, Plus, GripVertical, Users, Eye, EyeOff, Save, RotateCcw } from "lucide-react";
 
-interface RoleCategory {
-  key: string;
-  label: string;
-  short: string;
-}
-
-interface PersonAssignment {
-  email: string;
-  name: string;
-  role_key: string;
-  job_title: string;
-  source: "procore" | "override";
-}
-
+interface RoleCategory { key: string; label: string; short: string; }
+interface PersonAssignment { email: string; name: string; role_key: string; job_title: string; }
 interface ProjectRow {
-  project_id: string;
-  project_name: string;
-  project_number: string | null;
-  assignments: PersonAssignment[];
+  project_id: string; project_name: string; project_number: string | null;
+  is_active: boolean; assignments: PersonAssignment[];
 }
 
-interface Person {
-  email: string;
-  name: string;
-  role_key: string;
-  job_title: string;
-  project_count: number;
-}
+interface Props { companyId: number | null; }
 
-interface Props {
-  companyId: number | null;
-}
-
-// Consistent colour per person (hash email to hue)
-function personColor(email: string): string {
-  let hash = 0;
-  for (let i = 0; i < email.length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 45%, 92%)`;
-}
-function personBorder(email: string): string {
-  let hash = 0;
-  for (let i = 0; i < email.length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 45%, 70%)`;
-}
-
-function initials(name: string): string {
-  return name.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+// ── Workload colour: green=1 project, amber=2, red=3+ ───────────────────────
+function workloadColor(projectCount: number): { bg: string; border: string; text: string } {
+  if (projectCount <= 1) return { bg: "#dcfce7", border: "#86efac", text: "#166534" };
+  if (projectCount === 2) return { bg: "#fef3c7", border: "#fcd34d", text: "#92400e" };
+  return { bg: "#fee2e2", border: "#fca5a5", text: "#991b1b" };
 }
 
 export default function ResourcingTab({ companyId }: Props) {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
   const [roles, setRoles] = useState<RoleCategory[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [showHidden, setShowHidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [syncedAt, setSyncedAt] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
+  const [hasUnsaved, setHasUnsaved] = useState(false);
 
   // Drag state
-  const [dragPerson, setDragPerson] = useState<PersonAssignment | null>(null);
-  const [dragSource, setDragSource] = useState<{ projectId: string; roleKey: string } | null>(null);
+  const [dragData, setDragData] = useState<{ person: PersonAssignment; fromProjectId: string; fromRole: string } | null>(null);
   const [dropTarget, setDropTarget] = useState<{ projectId: string; roleKey: string } | null>(null);
 
-  // Add person dialog
-  const [showAddDialog, setShowAddDialog] = useState<{ projectId: string; roleKey: string } | null>(null);
+  // Add person
+  const [addTarget, setAddTarget] = useState<{ projectId: string; roleKey: string } | null>(null);
   const [addSearch, setAddSearch] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // ── Workload map: email → number of project assignments ──────────────────
+  const workloadMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const visibleProjects = projects.filter(p => !hiddenIds.has(p.project_id));
+    for (const p of visibleProjects) {
+      for (const a of p.assignments) {
+        map.set(a.email, (map.get(a.email) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [projects, hiddenIds]);
+
+  // All unique people (for add dropdown)
+  const allPeople = useMemo(() => {
+    const map = new Map<string, PersonAssignment>();
+    for (const p of projects) for (const a of p.assignments) if (!map.has(a.email)) map.set(a.email, a);
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [projects]);
+
+  // ── Load saved snapshot ────────────────────────────────────────────────────
+
+  const loadSnapshot = useCallback(async () => {
+    setLoading(true); setError(null);
     try {
-      const res = await fetch(`/api/resourcing?company_id=${companyId ?? ""}`);
-      if (!res.ok) throw new Error("Failed to load resourcing data");
+      const res = await fetch("/api/resourcing?action=load");
+      if (!res.ok) throw new Error("Failed to load");
       const data = await res.json();
       setProjects(data.projects ?? []);
-      setPeople(data.people ?? []);
       setRoles(data.roles ?? []);
-      if (data.errors?.length) setError(`Some projects had errors: ${data.errors.join("; ")}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  }, [companyId]);
+      setHiddenIds(new Set(data.hidden_project_ids ?? []));
+      setSyncedAt(data.synced_at);
+      setVersion(data.version ?? 0);
+      setHasUnsaved(false);
+      if (data.source === "empty") setSuccess("No saved data yet. Click 'Sync from Procore' to populate.");
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to load"); }
+    finally { setLoading(false); }
+  }, []);
 
-  useEffect(() => { if (companyId) fetchData(); }, [companyId, fetchData]);
+  useEffect(() => { loadSnapshot(); }, [loadSnapshot]);
 
-  // ── Drag handlers ───────────────────────────────────────────────────────
+  // ── Sync from Procore ──────────────────────────────────────────────────────
 
-  const handleDragStart = (person: PersonAssignment, projectId: string, roleKey: string) => {
-    setDragPerson(person);
-    setDragSource({ projectId, roleKey });
+  const syncFromProcore = async () => {
+    setSyncing(true); setError(null); setSuccess(null);
+    try {
+      const res = await fetch("/api/resourcing?action=sync");
+      if (!res.ok) throw new Error("Sync failed");
+      const data = await res.json();
+      setProjects(data.projects ?? []);
+      setRoles(data.roles ?? []);
+      setSyncedAt(data.synced_at);
+      setVersion(data.version ?? 0);
+      setHasUnsaved(false);
+      setSuccess(`Synced ${data.projects?.length ?? 0} projects from Procore (v${data.version})`);
+    } catch (err) { setError(err instanceof Error ? err.message : "Sync failed"); }
+    finally { setSyncing(false); }
   };
 
-  const handleDragOver = (e: React.DragEvent, projectId: string, roleKey: string) => {
+  // ── Save current state ─────────────────────────────────────────────────────
+
+  const saveState = async () => {
+    setSaving(true); setError(null);
+    try {
+      const res = await fetch("/api/resourcing", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projects, synced_at: syncedAt }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      const data = await res.json();
+      setVersion(data.version);
+      setHasUnsaved(false);
+      setSuccess(`Saved as version ${data.version}`);
+    } catch (err) { setError(err instanceof Error ? err.message : "Save failed"); }
+    finally { setSaving(false); }
+  };
+
+  // ── Revert ─────────────────────────────────────────────────────────────────
+
+  const revert = async () => {
+    if (version <= 1) return;
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`/api/resourcing?action=revert&version=${version - 1}`);
+      if (!res.ok) throw new Error("Revert failed");
+      const data = await res.json();
+      setProjects(data.projects ?? []);
+      setSyncedAt(data.synced_at);
+      setVersion(data.version);
+      setHasUnsaved(false);
+      setSuccess(`Reverted to version ${data.version}`);
+    } catch (err) { setError(err instanceof Error ? err.message : "Revert failed"); }
+    finally { setLoading(false); }
+  };
+
+  // ── Hide/unhide project ────────────────────────────────────────────────────
+
+  const toggleHideProject = async (projectId: string) => {
+    const isHidden = hiddenIds.has(projectId);
+    try {
+      await fetch("/api/resourcing", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: isHidden ? "unhide_project" : "hide_project", project_id: projectId }),
+      });
+      setHiddenIds(prev => {
+        const next = new Set(prev);
+        if (isHidden) next.delete(projectId); else next.add(projectId);
+        return next;
+      });
+    } catch { /* silent */ }
+  };
+
+  // ── Drag handlers ──────────────────────────────────────────────────────────
+
+  const onDragStart = (person: PersonAssignment, projectId: string, roleKey: string) => {
+    setDragData({ person, fromProjectId: projectId, fromRole: roleKey });
+  };
+
+  const onDragOver = (e: React.DragEvent, projectId: string, roleKey: string) => {
     e.preventDefault();
     setDropTarget({ projectId, roleKey });
   };
 
-  const handleDragLeave = () => {
-    setDropTarget(null);
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetProjectId: string, targetRoleKey: string) => {
+  const onDrop = (e: React.DragEvent, toProjectId: string, toRole: string) => {
     e.preventDefault();
     setDropTarget(null);
+    if (!dragData) return;
 
-    if (!dragPerson || !dragSource) return;
+    const { person, fromProjectId, fromRole } = dragData;
+    if (fromProjectId === toProjectId && fromRole === toRole) { setDragData(null); return; }
 
-    // Same cell — no-op
-    if (dragSource.projectId === targetProjectId && dragSource.roleKey === targetRoleKey) {
-      setDragPerson(null);
-      setDragSource(null);
-      return;
-    }
+    const duplicate = e.shiftKey;
 
-    setSaving(true);
-    setSuccess(null);
-
-    try {
-      // Add to target
-      await fetch("/api/resourcing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_id: targetProjectId,
-          role_key: targetRoleKey,
-          user_email: dragPerson.email,
-          user_name: dragPerson.name,
-          action: "add",
-        }),
-      });
-
-      // If holding shift, duplicate (don't remove from source)
-      // Otherwise, remove from source
-      if (!(e as unknown as { shiftKey?: boolean }).shiftKey) {
-        await fetch("/api/resourcing", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            project_id: dragSource.projectId,
-            role_key: dragSource.roleKey,
-            user_email: dragPerson.email,
-            action: "remove",
-          }),
-        });
+    setProjects(prev => prev.map(p => {
+      // Remove from source (unless duplicating)
+      if (!duplicate && p.project_id === fromProjectId) {
+        return { ...p, assignments: p.assignments.filter(a => !(a.email === person.email && a.role_key === fromRole)) };
       }
+      return p;
+    }).map(p => {
+      // Add to target
+      if (p.project_id === toProjectId) {
+        const exists = p.assignments.some(a => a.email === person.email && a.role_key === toRole);
+        if (!exists) {
+          return { ...p, assignments: [...p.assignments, { ...person, role_key: toRole }] };
+        }
+      }
+      return p;
+    }));
 
-      setSuccess(`${dragPerson.name} updated`);
-      await fetchData();
-    } catch {
-      setError("Failed to update assignment");
-    } finally {
-      setSaving(false);
-      setDragPerson(null);
-      setDragSource(null);
-    }
+    setHasUnsaved(true);
+    setDragData(null);
   };
 
-  // ── Add/Remove person ───────────────────────────────────────────────────
+  // ── Add/Remove ─────────────────────────────────────────────────────────────
 
-  const addPerson = async (email: string, name: string, projectId: string, roleKey: string) => {
-    setSaving(true);
-    try {
-      await fetch("/api/resourcing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: projectId, role_key: roleKey, user_email: email, user_name: name, action: "add" }),
-      });
-      setShowAddDialog(null);
-      setAddSearch("");
-      await fetchData();
-    } catch { setError("Failed to add"); }
-    finally { setSaving(false); }
+  const addPerson = (person: PersonAssignment, projectId: string, roleKey: string) => {
+    setProjects(prev => prev.map(p => {
+      if (p.project_id !== projectId) return p;
+      const exists = p.assignments.some(a => a.email === person.email && a.role_key === roleKey);
+      if (exists) return p;
+      return { ...p, assignments: [...p.assignments, { ...person, role_key: roleKey }] };
+    }));
+    setAddTarget(null); setAddSearch(""); setHasUnsaved(true);
   };
 
-  const removePerson = async (email: string, projectId: string, roleKey: string) => {
-    setSaving(true);
-    try {
-      await fetch("/api/resourcing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: projectId, role_key: roleKey, user_email: email, action: "remove" }),
-      });
-      await fetchData();
-    } catch { setError("Failed to remove"); }
-    finally { setSaving(false); }
+  const removePerson = (email: string, projectId: string, roleKey: string) => {
+    setProjects(prev => prev.map(p => {
+      if (p.project_id !== projectId) return p;
+      return { ...p, assignments: p.assignments.filter(a => !(a.email === email && a.role_key === roleKey)) };
+    }));
+    setHasUnsaved(true);
   };
 
-  // Filter roles that have at least one assignment across any project (hide empty columns)
-  const activeRoles = roles.filter(role =>
-    projects.some(p => p.assignments.some(a => a.role_key === role.key))
-  );
+  // ── Visible projects ───────────────────────────────────────────────────────
+  const visibleProjects = showHidden ? projects : projects.filter(p => !hiddenIds.has(p.project_id));
+
+  // Active role columns (only show columns that have people)
+  const activeRoles = roles.filter(role => projects.some(p => p.assignments.some(a => a.role_key === role.key)));
 
   if (!companyId) {
     return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: 40 }}>
@@ -208,193 +229,187 @@ export default function ResourcingTab({ companyId }: Props) {
   return (
     <div style={{ flex: 1, overflow: "auto", padding: "16px 20px" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
         <div>
           <h2 style={{ fontSize: 18, fontWeight: 600, color: "var(--hp-text)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
             <Users className="h-5 w-5" /> Staff Resourcing
           </h2>
           <p style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 2 }}>
-            Drag people between projects. Hold Shift while dropping to duplicate across projects.
+            Drag to move, Shift+drop to duplicate. Changes are local until you save.
+            {syncedAt && <span style={{ marginLeft: 8, color: "var(--hp-text-muted)" }}>
+              Last synced: {new Date(syncedAt).toLocaleDateString("en-AU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+              {version > 0 && ` · v${version}`}
+            </span>}
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {saving && <span style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>Saving...</span>}
-          <button onClick={fetchData} disabled={loading}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {hasUnsaved && (
+            <button onClick={saveState} disabled={saving}
+              style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderRadius: 6, border: "none", backgroundColor: "#4a3728", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
+            </button>
+          )}
+          {version > 1 && (
+            <button onClick={revert} title="Revert to previous version"
+              style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", fontSize: 11, cursor: "pointer", color: "var(--hp-text-secondary)" }}>
+              <RotateCcw className="h-3 w-3" /> Undo
+            </button>
+          )}
+          <button onClick={() => setShowHidden(!showHidden)}
+            style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: showHidden ? "var(--hp-warm-100)" : "var(--hp-surface)", fontSize: 11, cursor: "pointer", color: "var(--hp-text-secondary)" }}>
+            {showHidden ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            {showHidden ? "Showing all" : `${hiddenIds.size} hidden`}
+          </button>
+          <button onClick={syncFromProcore} disabled={syncing}
             style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", fontSize: 12, cursor: "pointer", color: "var(--hp-text-secondary)" }}>
-            <Download className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-            {loading ? "Syncing..." : "Sync from Procore"}
+            <Download className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync from Procore"}
           </button>
         </div>
       </div>
 
-      {success && <div style={{ marginBottom: 12, padding: "6px 12px", borderRadius: 6, backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", fontSize: 12, color: "#15803d" }}>{success}</div>}
-      {error && <div style={{ marginBottom: 12, padding: "6px 12px", borderRadius: 6, backgroundColor: "#fee2e2", border: "1px solid #fecaca", fontSize: 12, color: "#dc2626" }}>{error}</div>}
+      {/* Legend */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 11, color: "var(--hp-text-muted)", alignItems: "center" }}>
+        <span style={{ fontWeight: 600 }}>Workload:</span>
+        {[{ n: 1, label: "1 project" }, { n: 2, label: "2 projects" }, { n: 3, label: "3+ projects" }].map(({ n, label }) => {
+          const c = workloadColor(n);
+          return <span key={n} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: c.bg, border: `1px solid ${c.border}` }} />
+            {label}
+          </span>;
+        })}
+      </div>
+
+      {success && <div style={{ marginBottom: 10, padding: "6px 12px", borderRadius: 6, backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", fontSize: 12, color: "#15803d" }}>{success}</div>}
+      {error && <div style={{ marginBottom: 10, padding: "6px 12px", borderRadius: 6, backgroundColor: "#fee2e2", border: "1px solid #fecaca", fontSize: 12, color: "#dc2626" }}>{error}</div>}
 
       {loading ? (
         <div style={{ textAlign: "center", padding: 40 }}>
           <RefreshCw className="h-5 w-5 animate-spin mx-auto" style={{ color: "var(--hp-text-secondary)" }} />
-          <p style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginTop: 8 }}>Loading project teams from Procore...</p>
+          <p style={{ fontSize: 13, color: "var(--hp-text-secondary)", marginTop: 8 }}>Loading...</p>
         </div>
-      ) : projects.length === 0 ? (
-        <p style={{ textAlign: "center", padding: 40, color: "var(--hp-text-muted)" }}>No active projects found.</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 900 }}>
+        <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid var(--hp-border)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 800 }}>
             <thead>
-              <tr>
-                <th style={{ position: "sticky", left: 0, zIndex: 10, backgroundColor: "var(--hp-surface)", padding: "8px 12px", textAlign: "left", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--hp-text-muted)", borderBottom: "2px solid var(--hp-border)", minWidth: 200 }}>
+              <tr style={{ backgroundColor: "var(--hp-warm-50)" }}>
+                <th style={{ position: "sticky", left: 0, zIndex: 10, backgroundColor: "var(--hp-warm-50)", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--hp-text-secondary)", borderBottom: "2px solid var(--hp-border)", minWidth: 180 }}>
                   Project
                 </th>
                 {activeRoles.map(role => (
-                  <th key={role.key} style={{ padding: "8px 8px", textAlign: "center", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--hp-text-muted)", borderBottom: "2px solid var(--hp-border)", minWidth: 120 }}
-                    title={role.label}>
+                  <th key={role.key} title={role.label}
+                    style={{ padding: "10px 6px", textAlign: "center", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--hp-text-secondary)", borderBottom: "2px solid var(--hp-border)", minWidth: 100 }}>
                     {role.short}
                   </th>
                 ))}
+                <th style={{ width: 36, borderBottom: "2px solid var(--hp-border)" }} />
               </tr>
             </thead>
             <tbody>
-              {projects.map((project, rowIdx) => (
-                <tr key={project.project_id} style={{ backgroundColor: rowIdx % 2 === 0 ? "var(--hp-surface)" : "var(--hp-bg)" }}>
-                  {/* Project name (sticky) */}
-                  <td style={{
-                    position: "sticky", left: 0, zIndex: 5,
-                    backgroundColor: rowIdx % 2 === 0 ? "var(--hp-surface)" : "var(--hp-bg, #faf9f7)",
-                    padding: "8px 12px", borderBottom: "1px solid var(--hp-border, #f0f0f0)",
-                    fontWeight: 500, color: "var(--hp-text)",
+              {visibleProjects.map((project, rowIdx) => {
+                const isHidden = hiddenIds.has(project.project_id);
+                return (
+                  <tr key={project.project_id} style={{
+                    backgroundColor: isHidden ? "#f9fafb" : rowIdx % 2 === 0 ? "#ffffff" : "var(--hp-warm-50, #faf8f5)",
+                    opacity: isHidden ? 0.5 : 1,
                   }}>
-                    <div style={{ fontSize: 12, lineHeight: 1.3 }}>{project.project_name}</div>
-                    {project.project_number && (
-                      <div style={{ fontSize: 10, color: "var(--hp-text-muted)" }}>#{project.project_number}</div>
-                    )}
-                  </td>
+                    <td style={{
+                      position: "sticky", left: 0, zIndex: 5,
+                      backgroundColor: isHidden ? "#f9fafb" : rowIdx % 2 === 0 ? "#ffffff" : "var(--hp-warm-50, #faf8f5)",
+                      padding: "8px 12px", borderBottom: "1px solid var(--hp-border, #f0f0f0)",
+                      fontWeight: 500, color: "var(--hp-text)",
+                    }}>
+                      <div style={{ fontSize: 12, lineHeight: 1.3 }}>
+                        {project.project_number && <span style={{ color: "var(--hp-text-muted)", marginRight: 4 }}>#{project.project_number}</span>}
+                        {project.project_name.replace(/^\d+\s*-\s*/, "")}
+                      </div>
+                    </td>
 
-                  {/* Role cells */}
-                  {activeRoles.map(role => {
-                    const cellPeople = project.assignments.filter(a => a.role_key === role.key);
-                    const isDropping = dropTarget?.projectId === project.project_id && dropTarget?.roleKey === role.key;
-                    const isAddOpen = showAddDialog?.projectId === project.project_id && showAddDialog?.roleKey === role.key;
+                    {activeRoles.map(role => {
+                      const cellPeople = project.assignments.filter(a => a.role_key === role.key);
+                      const isDropHere = dropTarget?.projectId === project.project_id && dropTarget?.roleKey === role.key;
 
-                    return (
-                      <td
-                        key={role.key}
-                        onDragOver={(e) => handleDragOver(e, project.project_id, role.key)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, project.project_id, role.key)}
-                        style={{
-                          padding: "4px 6px", borderBottom: "1px solid var(--hp-border, #f0f0f0)",
-                          verticalAlign: "top", minHeight: 40,
-                          backgroundColor: isDropping ? "#dbeafe" : undefined,
-                          border: isDropping ? "2px dashed #3b82f6" : undefined,
-                          transition: "background-color 0.15s",
-                        }}
-                      >
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 3, minHeight: 28, alignItems: "center" }}>
-                          {cellPeople.map(person => (
-                            <div
-                              key={person.email}
-                              draggable
-                              onDragStart={() => handleDragStart(person, project.project_id, role.key)}
-                              style={{
-                                display: "inline-flex", alignItems: "center", gap: 4,
-                                padding: "2px 6px 2px 4px", borderRadius: 4,
-                                backgroundColor: personColor(person.email),
-                                border: `1px solid ${personBorder(person.email)}`,
-                                cursor: "grab", fontSize: 11, fontWeight: 500,
-                                color: "#374151", maxWidth: 130,
-                                opacity: person.source === "override" ? 0.85 : 1,
-                              }}
-                              title={`${person.name} (${person.job_title || role.label})\nDrag to move • Shift+drop to duplicate`}
-                            >
-                              <GripVertical className="h-3 w-3 shrink-0" style={{ color: "#9ca3af", cursor: "grab" }} />
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {person.name.split(" ")[0]}
-                              </span>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); removePerson(person.email, project.project_id, role.key); }}
-                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", marginLeft: 2 }}
-                                title="Remove from this project"
-                              >
-                                <X className="h-3 w-3" style={{ color: "#9ca3af" }} />
-                              </button>
-                            </div>
-                          ))}
+                      return (
+                        <td key={role.key}
+                          onDragOver={(e) => onDragOver(e, project.project_id, role.key)}
+                          onDragLeave={() => setDropTarget(null)}
+                          onDrop={(e) => onDrop(e, project.project_id, role.key)}
+                          style={{
+                            padding: "4px 4px", borderBottom: "1px solid var(--hp-border, #f0f0f0)",
+                            verticalAlign: "middle", textAlign: "center",
+                            backgroundColor: isDropHere ? "#dbeafe" : undefined,
+                            outline: isDropHere ? "2px dashed #3b82f6" : undefined,
+                            transition: "background-color 0.1s",
+                          }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center", minHeight: 26, alignItems: "center" }}>
+                            {cellPeople.map(person => {
+                              const load = workloadMap.get(person.email) ?? 1;
+                              const c = workloadColor(load);
+                              return (
+                                <div key={person.email} draggable
+                                  onDragStart={() => onDragStart(person, project.project_id, role.key)}
+                                  title={`${person.name} — ${person.job_title || role.label}\n${load} project${load !== 1 ? "s" : ""}\nDrag to move · Shift+drop to duplicate`}
+                                  style={{
+                                    display: "inline-flex", alignItems: "center", gap: 2,
+                                    padding: "2px 5px 2px 3px", borderRadius: 4,
+                                    backgroundColor: c.bg, border: `1px solid ${c.border}`,
+                                    cursor: "grab", fontSize: 11, fontWeight: 500, color: c.text,
+                                    maxWidth: 110, lineHeight: 1.2,
+                                  }}>
+                                  <GripVertical className="h-2.5 w-2.5 shrink-0" style={{ opacity: 0.4 }} />
+                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {person.name.split(" ")[0]}
+                                  </span>
+                                  <button onClick={(e) => { e.stopPropagation(); removePerson(person.email, project.project_id, role.key); }}
+                                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", marginLeft: 1, opacity: 0.4 }}>
+                                    <X className="h-2.5 w-2.5" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                            <button onClick={() => { setAddTarget({ projectId: project.project_id, roleKey: role.key }); setAddSearch(""); }}
+                              style={{ width: 18, height: 18, borderRadius: 3, border: "1px dashed var(--hp-border)", backgroundColor: "transparent", cursor: "pointer", color: "var(--hp-text-muted)", display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: 0.5 }}>
+                              <Plus className="h-2.5 w-2.5" />
+                            </button>
 
-                          {/* Add button */}
-                          <button
-                            onClick={() => { setShowAddDialog({ projectId: project.project_id, roleKey: role.key }); setAddSearch(""); }}
-                            style={{
-                              display: "inline-flex", alignItems: "center", justifyContent: "center",
-                              width: 22, height: 22, borderRadius: 4,
-                              border: "1px dashed var(--hp-border)", backgroundColor: "transparent",
-                              cursor: "pointer", color: "var(--hp-text-muted)",
-                            }}
-                            title={`Add ${role.label}`}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
+                            {/* Add dropdown */}
+                            {addTarget?.projectId === project.project_id && addTarget?.roleKey === role.key && (
+                              <div style={{ position: "absolute", zIndex: 50, width: 200, maxHeight: 180, overflowY: "auto", backgroundColor: "#fff", border: "1px solid var(--hp-border)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.15)", padding: 4 }}>
+                                <input type="text" placeholder="Search..." value={addSearch} onChange={e => setAddSearch(e.target.value)} autoFocus
+                                  onBlur={() => setTimeout(() => setAddTarget(null), 200)}
+                                  style={{ width: "100%", padding: "4px 8px", borderRadius: 4, border: "1px solid var(--hp-border)", fontSize: 11, marginBottom: 4 }} />
+                                {allPeople
+                                  .filter(p => !addSearch || p.name.toLowerCase().includes(addSearch.toLowerCase()) || p.email.toLowerCase().includes(addSearch.toLowerCase()))
+                                  .filter(p => !cellPeople.some(c => c.email === p.email))
+                                  .slice(0, 12)
+                                  .map(p => (
+                                    <div key={p.email} onMouseDown={() => addPerson(p, project.project_id, role.key)}
+                                      style={{ padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+                                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
+                                      {p.name} <span style={{ color: "#9ca3af" }}>{p.job_title}</span>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
 
-                          {/* Add person dropdown */}
-                          {isAddOpen && (
-                            <div style={{
-                              position: "absolute", zIndex: 50,
-                              width: 220, maxHeight: 200, overflowY: "auto",
-                              backgroundColor: "#fff", border: "1px solid var(--hp-border)",
-                              borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                              padding: 4, marginTop: 2,
-                            }}>
-                              <input
-                                type="text"
-                                placeholder="Search..."
-                                value={addSearch}
-                                onChange={e => setAddSearch(e.target.value)}
-                                autoFocus
-                                onBlur={() => setTimeout(() => setShowAddDialog(null), 200)}
-                                style={{ width: "100%", padding: "4px 8px", borderRadius: 4, border: "1px solid var(--hp-border)", fontSize: 11, marginBottom: 4 }}
-                              />
-                              {people
-                                .filter(p => {
-                                  if (!addSearch) return true;
-                                  const q = addSearch.toLowerCase();
-                                  return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
-                                })
-                                .filter(p => !cellPeople.some(c => c.email === p.email))
-                                .slice(0, 15)
-                                .map(p => (
-                                  <div
-                                    key={p.email}
-                                    onMouseDown={() => addPerson(p.email, p.name, project.project_id, role.key)}
-                                    style={{ padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 11, color: "#374151" }}
-                                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
-                                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
-                                  >
-                                    {p.name}
-                                    <span style={{ color: "#9ca3af", marginLeft: 4 }}>{p.job_title}</span>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                    {/* Hide button */}
+                    <td style={{ padding: "4px 4px", borderBottom: "1px solid var(--hp-border, #f0f0f0)" }}>
+                      <button onClick={() => toggleHideProject(project.project_id)}
+                        title={isHidden ? "Show project" : "Hide project"}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, opacity: 0.3 }}>
+                        {isHidden ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Legend */}
-      {projects.length > 0 && (
-        <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 8, backgroundColor: "var(--hp-warm-50)", border: "1px solid var(--hp-warm-200)", fontSize: 11, color: "var(--hp-text-muted)" }}>
-          <strong>Tips:</strong> Drag a person badge to move them between projects/roles. Hold <strong>Shift</strong> while dropping to duplicate (assign to both projects).
-          Click <strong>+</strong> to add someone. Click <strong>x</strong> to remove. Changes are saved immediately.
-          {activeRoles.length > 0 && (
-            <span style={{ marginLeft: 12 }}>
-              Columns: {activeRoles.map(r => `${r.short} = ${r.label}`).join(" · ")}
-            </span>
-          )}
         </div>
       )}
     </div>
