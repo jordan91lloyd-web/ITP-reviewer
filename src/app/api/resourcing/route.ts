@@ -36,7 +36,7 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 // ── Role categories ───────────────────────────────────────────────────────────
 // Order matters — this is left-to-right column order in the chart.
 
-export const ROLE_CATEGORIES = [
+const ROLE_CATEGORIES = [
   { key: "construction_manager", label: "Construction Manager", short: "CM" },
   { key: "project_manager",     label: "Project Manager",      short: "PM" },
   { key: "site_manager",        label: "Site Manager",          short: "SM" },
@@ -50,7 +50,7 @@ export const ROLE_CATEGORIES = [
   { key: "other",               label: "Other",                 short: "OTH" },
 ] as const;
 
-export type RoleKey = (typeof ROLE_CATEGORIES)[number]["key"];
+type RoleKey = (typeof ROLE_CATEGORIES)[number]["key"];
 
 /** Map a Procore job_title to a role category key. */
 function classifyRole(jobTitle: string | null | undefined): RoleKey {
