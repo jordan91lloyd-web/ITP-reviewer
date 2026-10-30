@@ -72,24 +72,27 @@ export async function POST(request: NextRequest) {
     return ALLOWED_DOMAINS.includes(domain);
   });
 
+  // Build set of active Procore emails
+  const activeEmails = new Set(domainUsers.map(u => u.email_address.toLowerCase().trim()));
+
   // Fetch existing saas_users for this company
   const { data: existing } = await supabase
     .from("saas_users")
-    .select("email")
+    .select("email, is_super_admin")
     .eq("company_id", COMPANY_ID);
 
   const existingEmails = new Set((existing ?? []).map(u => u.email.toLowerCase()));
 
-  // Upsert — create new, update name/procore_user_id on existing
   let created = 0;
   let updated = 0;
+  let deactivated = 0;
 
+  // Create/update active users
   for (const u of domainUsers) {
     const email = u.email_address.toLowerCase().trim();
     const name = u.name || `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || email.split("@")[0];
 
     if (existingEmails.has(email)) {
-      // Update name and procore_user_id if changed
       await supabase
         .from("saas_users")
         .update({ name, procore_user_id: String(u.id) })
@@ -97,7 +100,6 @@ export async function POST(request: NextRequest) {
         .eq("email", email);
       updated++;
     } else {
-      // Create new user — defaults to no permissions, not super admin
       await supabase
         .from("saas_users")
         .insert({
@@ -111,12 +113,32 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Remove inactive users (not in active Procore directory) — but never remove super admins
+  for (const existingUser of (existing ?? [])) {
+    if (!activeEmails.has(existingUser.email.toLowerCase()) && !existingUser.is_super_admin) {
+      // Delete their permissions first
+      await supabase
+        .from("saas_permissions")
+        .delete()
+        .eq("company_id", COMPANY_ID)
+        .eq("user_email", existingUser.email.toLowerCase());
+      // Delete the user record
+      await supabase
+        .from("saas_users")
+        .delete()
+        .eq("company_id", COMPANY_ID)
+        .eq("email", existingUser.email.toLowerCase());
+      deactivated++;
+    }
+  }
+
   return NextResponse.json({
     success: true,
     procore_total: allUsers.length,
     domain_matched: domainUsers.length,
     created,
     updated,
+    deactivated,
     domains: ALLOWED_DOMAINS,
   });
 }

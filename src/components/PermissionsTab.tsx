@@ -1,43 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Save, Search, Shield, ShieldCheck, ShieldX, Eye, Pencil, Crown, Users, Download, Plus, Trash2, CheckSquare, Square } from "lucide-react";
+import { RefreshCw, Save, Search, Shield, Crown, Users, Download, Plus, Trash2, CheckSquare, Square, Check, X } from "lucide-react";
 
-interface ModuleDef {
-  key: string;
-  label: string;
-  description: string;
-}
-
+interface ModuleDef { key: string; label: string; description: string; }
 interface UserWithPerms {
-  id: string;
-  email: string;
-  name: string | null;
-  is_super_admin: boolean;
-  first_login: string | null;
-  last_login: string | null;
+  id: string; email: string; name: string | null; is_super_admin: boolean;
+  first_login: string | null; last_login: string | null;
   permissions: Record<string, string>;
 }
+interface PermTemplate { id: string; name: string; description: string | null; permissions: Record<string, string>; }
+interface Props { companyId: number | null; }
 
-interface PermTemplate {
-  id: string;
-  name: string;
-  description: string | null;
-  permissions: Record<string, string>;
+// Simplified: "edit" = has access, "none" = no access. Super Admin is separate.
+function hasAccess(level: string): boolean {
+  return level === "view" || level === "edit" || level === "admin";
 }
-
-interface Props {
-  companyId: number | null;
-}
-
-const LEVEL_LABELS: Record<string, { label: string; color: string; bg: string; icon: typeof Eye }> = {
-  none:  { label: "No Access", color: "var(--hp-text-muted, #9ca3af)", bg: "transparent", icon: ShieldX },
-  view:  { label: "View",     color: "var(--hp-text-secondary, #6b7280)", bg: "var(--hp-warm-50, #faf8f5)", icon: Eye },
-  edit:  { label: "Edit",     color: "var(--hp-significant, #d97706)", bg: "var(--hp-significant-bg, #fffbeb)", icon: Pencil },
-  admin: { label: "Admin",    color: "var(--hp-compliant, #16a34a)", bg: "var(--hp-compliant-bg, #f0fdf4)", icon: ShieldCheck },
-};
-
-const LEVELS = ["none", "view", "edit", "admin"];
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "Never";
@@ -55,20 +33,17 @@ export default function PermissionsTab({ companyId }: Props) {
   const [success, setSuccess] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // Single user editing
   const [selectedUser, setSelectedUser] = useState<UserWithPerms | null>(null);
   const [editedPerms, setEditedPerms] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Multi-select for bulk
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
 
-  // Template editor
-  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
-  const [templateName, setTemplateName] = useState("");
-  const [templateDesc, setTemplateDesc] = useState("");
-  const [templatePerms, setTemplatePerms] = useState<Record<string, string>>({});
+  // Template creation
+  const [creatingTemplate, setCreatingTemplate] = useState(false);
+  const [newTmplName, setNewTmplName] = useState("");
+  const [newTmplPerms, setNewTmplPerms] = useState<Record<string, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -78,169 +53,128 @@ export default function PermissionsTab({ companyId }: Props) {
         fetch("/api/permissions?admin=true"),
         fetch("/api/permissions/templates"),
       ]);
-      if (usersRes.status === 403) {
-        setError("You do not have permission to manage user access.");
-        return;
-      }
+      if (usersRes.status === 403) { setError("You do not have permission to manage user access."); return; }
       if (!usersRes.ok) throw new Error("Failed to load permissions");
       const usersData = await usersRes.json();
       setUsers(usersData.users ?? []);
       setModules(usersData.modules ?? []);
-
       if (templatesRes.ok) {
         const tmplData = await templatesRes.json();
         setTemplates(tmplData.templates ?? []);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const syncDirectory = async () => {
-    setSyncing(true);
-    setError(null);
-    setSuccess(null);
+    setSyncing(true); setError(null); setSuccess(null);
     try {
       const res = await fetch("/api/permissions/sync", { method: "POST" });
       if (!res.ok) throw new Error("Sync failed");
       const data = await res.json();
-      setSuccess(`Synced ${data.domain_matched} users from Procore (${data.created} new, ${data.updated} updated)`);
+      setSuccess(`Synced: ${data.domain_matched} active users (${data.created} new, ${data.deactivated ?? 0} removed)`);
       await fetchData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Sync failed");
-    } finally {
-      setSyncing(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : "Sync failed"); }
+    finally { setSyncing(false); }
   };
 
   const selectUser = (user: UserWithPerms) => {
-    setBulkMode(false);
-    setSelectedUser(user);
-    setEditedPerms({ ...user.permissions });
-    setHasChanges(false);
-    setSuccess(null);
+    setBulkMode(false); setSelectedUser(user);
+    setEditedPerms({ ...user.permissions }); setHasChanges(false); setSuccess(null);
   };
 
-  const changeLevel = (moduleKey: string, level: string) => {
+  const toggleAccess = (moduleKey: string) => {
     if (selectedUser?.is_super_admin) return;
-    setEditedPerms(prev => ({ ...prev, [moduleKey]: level }));
-    setHasChanges(true);
-    setSuccess(null);
+    const current = editedPerms[moduleKey] ?? "none";
+    setEditedPerms(prev => ({ ...prev, [moduleKey]: hasAccess(current) ? "none" : "edit" }));
+    setHasChanges(true); setSuccess(null);
   };
 
   const savePermissions = async () => {
     if (!selectedUser) return;
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
+    setSaving(true); setError(null); setSuccess(null);
     try {
       const res = await fetch("/api/permissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target_email: selectedUser.email, permissions: editedPerms }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Failed (${res.status})`);
-      }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `Failed`); }
       const data = await res.json();
       setSuccess(`Saved ${data.changes} change${data.changes !== 1 ? "s" : ""}`);
       setHasChanges(false);
-      setUsers(prev => prev.map(u =>
-        u.email === selectedUser.email ? { ...u, permissions: { ...editedPerms } } : u
-      ));
+      setUsers(prev => prev.map(u => u.email === selectedUser.email ? { ...u, permissions: { ...editedPerms } } : u));
       setSelectedUser(prev => prev ? { ...prev, permissions: { ...editedPerms } } : null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : "Save failed"); }
+    finally { setSaving(false); }
   };
 
-  // ── Template functions ──────────────────────────────────────────────────
+  // ── Templates ─────────────────────────────────────────────────────────
 
-  const applyTemplate = (tmpl: PermTemplate) => {
-    if (bulkMode) {
-      // Bulk apply to selected users
-      applyBulk(tmpl.permissions);
-    } else if (selectedUser && !selectedUser.is_super_admin) {
-      setEditedPerms({ ...tmpl.permissions });
-      setHasChanges(true);
-      setSuccess(null);
-    }
+  const startCreateTemplate = () => {
+    // Default all modules to "none"
+    const perms: Record<string, string> = {};
+    modules.forEach(m => perms[m.key] = "none");
+    setNewTmplPerms(perms);
+    setNewTmplName("");
+    setCreatingTemplate(true);
+    setSelectedUser(null);
+    setBulkMode(false);
   };
 
-  const saveTemplate = async () => {
-    if (!templateName.trim()) return;
+  const saveNewTemplate = async () => {
+    if (!newTmplName.trim()) return;
     try {
-      const perms = templatePerms;
       const res = await fetch("/api/permissions/templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: templateName.trim(), description: templateDesc.trim(), permissions: perms }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTmplName.trim(), permissions: newTmplPerms }),
       });
       if (!res.ok) throw new Error("Failed to save template");
-      setSuccess(`Template "${templateName}" saved`);
-      setShowTemplateEditor(false);
-      setTemplateName("");
-      setTemplateDesc("");
-      setTemplatePerms({});
+      setSuccess(`Template "${newTmplName}" created`);
+      setCreatingTemplate(false);
       await fetchData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save template");
-    }
-  };
-
-  const deleteTemplate = async (name: string) => {
-    try {
-      await fetch(`/api/permissions/templates?name=${encodeURIComponent(name)}`, { method: "DELETE" });
-      await fetchData();
-    } catch { /* silent */ }
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed"); }
   };
 
   const saveCurrentAsTemplate = () => {
-    setTemplatePerms({ ...editedPerms });
-    setTemplateName("");
-    setTemplateDesc("");
-    setShowTemplateEditor(true);
+    setNewTmplPerms({ ...editedPerms });
+    setNewTmplName("");
+    setCreatingTemplate(true);
   };
 
-  // ── Bulk apply ──────────────────────────────────────────────────────────
+  const deleteTemplate = async (name: string) => {
+    await fetch(`/api/permissions/templates?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await fetchData();
+  };
 
-  const applyBulk = async (perms: Record<string, string>) => {
-    if (selectedEmails.size === 0) return;
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const res = await fetch("/api/permissions/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_emails: [...selectedEmails], permissions: perms }),
-      });
-      if (!res.ok) throw new Error("Bulk apply failed");
-      const data = await res.json();
-      setSuccess(`Updated ${data.users_updated} users (${data.total_changes} changes)`);
-      setBulkMode(false);
-      setSelectedEmails(new Set());
-      await fetchData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Bulk apply failed");
-    } finally {
-      setSaving(false);
+  const applyTemplateToUser = (tmpl: PermTemplate) => {
+    if (selectedUser && !selectedUser.is_super_admin) {
+      setEditedPerms({ ...tmpl.permissions });
+      setHasChanges(true); setSuccess(null);
     }
   };
 
+  const applyTemplateBulk = async (tmpl: PermTemplate) => {
+    if (selectedEmails.size === 0) return;
+    setSaving(true); setError(null); setSuccess(null);
+    try {
+      const res = await fetch("/api/permissions/bulk", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_emails: [...selectedEmails], permissions: tmpl.permissions }),
+      });
+      if (!res.ok) throw new Error("Bulk apply failed");
+      const data = await res.json();
+      setSuccess(`Applied "${tmpl.name}" to ${data.users_updated} users (${data.total_changes} changes)`);
+      setBulkMode(false); setSelectedEmails(new Set());
+      await fetchData();
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed"); }
+    finally { setSaving(false); }
+  };
+
   const toggleEmail = (email: string) => {
-    setSelectedEmails(prev => {
-      const next = new Set(prev);
-      if (next.has(email)) next.delete(email); else next.add(email);
-      return next;
-    });
+    setSelectedEmails(prev => { const n = new Set(prev); if (n.has(email)) n.delete(email); else n.add(email); return n; });
   };
 
   const filteredUsers = users.filter(u => {
@@ -250,77 +184,66 @@ export default function PermissionsTab({ companyId }: Props) {
   });
 
   if (!companyId) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: 40 }}>
-        <p style={{ fontSize: 14, color: "var(--hp-text-secondary)" }}>Select a company first.</p>
-      </div>
-    );
+    return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: 40 }}>
+      <p style={{ fontSize: 14, color: "var(--hp-text-secondary)" }}>Select a company first.</p>
+    </div>;
   }
+
+  // ── Access pill component ─────────────────────────────────────────────
+  const AccessPill = ({ on }: { on: boolean }) => (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
+      backgroundColor: on ? "#dcfce7" : "#fee2e2",
+      color: on ? "#15803d" : "#dc2626",
+      border: `1px solid ${on ? "#bbf7d0" : "#fecaca"}`,
+    }}>
+      {on ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+      {on ? "Access" : "No Access"}
+    </span>
+  );
 
   return (
     <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
-      {/* ── User list panel ── */}
-      <div style={{ width: 340, borderRight: "1px solid var(--hp-border, #e5e7eb)", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "var(--hp-surface, #ffffff)" }}>
-        {/* Header */}
+      {/* ── Left panel: users ── */}
+      <div style={{ width: 340, borderRight: "1px solid var(--hp-border)", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "var(--hp-surface)" }}>
         <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--hp-border)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--hp-text, #1f2937)", margin: 0 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--hp-text)", margin: 0 }}>
               <Shield className="inline h-4 w-4 mr-2" style={{ verticalAlign: "text-bottom" }} />
               Permissions
             </h2>
             <div style={{ display: "flex", gap: 4 }}>
-              <button
-                onClick={syncDirectory}
-                disabled={syncing}
-                title="Sync users from Procore"
-                style={{ background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, cursor: "pointer", padding: "4px 8px", fontSize: 11, display: "flex", alignItems: "center", gap: 4, color: "var(--hp-text-secondary)" }}
-              >
-                <Download className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Syncing..." : "Sync Procore"}
+              <button onClick={syncDirectory} disabled={syncing} title="Sync users from Procore"
+                style={{ background: "none", border: "1px solid var(--hp-border)", borderRadius: 6, cursor: "pointer", padding: "4px 8px", fontSize: 11, display: "flex", alignItems: "center", gap: 4, color: "var(--hp-text-secondary)" }}>
+                <Download className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} /> {syncing ? "Syncing..." : "Sync"}
               </button>
-              <button
-                onClick={() => { setBulkMode(!bulkMode); setSelectedUser(null); setSelectedEmails(new Set()); }}
-                style={{ background: bulkMode ? "var(--hp-warm-100)" : "none", border: "1px solid var(--hp-border)", borderRadius: 6, cursor: "pointer", padding: "4px 8px", fontSize: 11, display: "flex", alignItems: "center", gap: 4, color: bulkMode ? "var(--hp-warm-800)" : "var(--hp-text-secondary)" }}
-              >
-                <Users className="h-3 w-3" />
-                Bulk
+              <button onClick={() => { setBulkMode(!bulkMode); setSelectedUser(null); setCreatingTemplate(false); setSelectedEmails(new Set()); }}
+                style={{ background: bulkMode ? "var(--hp-warm-100)" : "none", border: "1px solid var(--hp-border)", borderRadius: 6, cursor: "pointer", padding: "4px 8px", fontSize: 11, display: "flex", alignItems: "center", gap: 4, color: bulkMode ? "var(--hp-warm-800)" : "var(--hp-text-secondary)" }}>
+                <Users className="h-3 w-3" /> Bulk
               </button>
             </div>
           </div>
           <div style={{ position: "relative" }}>
             <Search className="h-3.5 w-3.5" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--hp-text-muted)" }} />
             <input type="text" placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)}
-              style={{ width: "100%", padding: "7px 10px 7px 32px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 12, backgroundColor: "var(--hp-bg, #faf9f7)", color: "var(--hp-text)" }} />
+              style={{ width: "100%", padding: "7px 10px 7px 32px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 12, backgroundColor: "var(--hp-bg)", color: "var(--hp-text)" }} />
           </div>
         </div>
 
-        {/* User list */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {loading ? (
-            <div style={{ padding: 20, textAlign: "center" }}>
-              <RefreshCw className="h-4 w-4 animate-spin mx-auto" style={{ color: "var(--hp-text-secondary)" }} />
-            </div>
-          ) : error && users.length === 0 ? (
-            <div style={{ padding: 20, fontSize: 13, color: "var(--hp-critical, #dc2626)" }}>{error}</div>
+            <div style={{ padding: 20, textAlign: "center" }}><RefreshCw className="h-4 w-4 animate-spin mx-auto" style={{ color: "var(--hp-text-secondary)" }} /></div>
           ) : filteredUsers.length === 0 ? (
-            <div style={{ padding: 20, fontSize: 13, color: "var(--hp-text-muted)" }}>
-              No users found. Click "Sync Procore" to import your team.
-            </div>
+            <div style={{ padding: 20, fontSize: 13, color: "var(--hp-text-muted)" }}>No users found. Click "Sync" to import from Procore.</div>
           ) : (
             filteredUsers.map(user => {
               const isSelected = bulkMode ? selectedEmails.has(user.email) : selectedUser?.email === user.email;
-              const activeCount = Object.values(user.permissions).filter(v => v !== "none").length;
+              const activeCount = Object.values(user.permissions).filter(v => hasAccess(v)).length;
+              const totalModules = Object.keys(user.permissions).length;
               return (
-                <div
-                  key={user.email}
-                  onClick={() => bulkMode ? toggleEmail(user.email) : selectUser(user)}
-                  style={{
-                    padding: "10px 16px", cursor: "pointer",
-                    borderBottom: "1px solid var(--hp-border, #f0f0f0)",
-                    backgroundColor: isSelected ? "var(--hp-warm-100, #f5f0eb)" : "transparent",
-                    display: "flex", alignItems: "center", gap: 10,
-                  }}
-                >
+                <div key={user.email} onClick={() => bulkMode ? toggleEmail(user.email) : selectUser(user)}
+                  style={{ padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid var(--hp-border, #f0f0f0)", backgroundColor: isSelected ? "var(--hp-warm-100)" : "transparent", display: "flex", alignItems: "center", gap: 10 }}>
                   {bulkMode && (
                     selectedEmails.has(user.email)
                       ? <CheckSquare className="h-4 w-4 shrink-0" style={{ color: "var(--hp-warm-800)" }} />
@@ -331,11 +254,13 @@ export default function PermissionsTab({ companyId }: Props) {
                       <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 400, color: "var(--hp-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {user.name ?? user.email.split("@")[0]}
                       </span>
-                      {user.is_super_admin && <Crown className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--hp-significant, #d97706)" }} />}
+                      {user.is_super_admin && <Crown className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--hp-significant)" }} />}
                     </div>
                     <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 2, display: "flex", justifyContent: "space-between" }}>
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</span>
-                      <span style={{ flexShrink: 0, marginLeft: 8 }}>{activeCount} module{activeCount !== 1 ? "s" : ""}</span>
+                      <span style={{ flexShrink: 0, marginLeft: 8, color: activeCount > 0 ? "#15803d" : "var(--hp-text-muted)" }}>
+                        {user.is_super_admin ? "All" : `${activeCount}/${totalModules}`}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -344,110 +269,151 @@ export default function PermissionsTab({ companyId }: Props) {
           )}
         </div>
 
-        {/* Bulk actions bar */}
+        {/* Bulk actions */}
         {bulkMode && selectedEmails.size > 0 && (
-          <div style={{ padding: "10px 16px", borderTop: "1px solid var(--hp-border)", backgroundColor: "var(--hp-warm-50)", fontSize: 12 }}>
-            <div style={{ fontWeight: 600, color: "var(--hp-text)", marginBottom: 8 }}>
+          <div style={{ padding: "12px 16px", borderTop: "1px solid var(--hp-border)", backgroundColor: "var(--hp-warm-50)" }}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: "var(--hp-text)", marginBottom: 8 }}>
               {selectedEmails.size} user{selectedEmails.size !== 1 ? "s" : ""} selected
             </div>
-            <div style={{ fontSize: 11, color: "var(--hp-text-secondary)", marginBottom: 6 }}>Apply template:</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {templates.map(t => (
-                <button key={t.name} onClick={() => applyTemplate(t)}
-                  style={{ textAlign: "left", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", fontSize: 12, cursor: "pointer", color: "var(--hp-text)" }}>
-                  {t.name}
-                  {t.description && <span style={{ color: "var(--hp-text-muted)", marginLeft: 6 }}>— {t.description}</span>}
-                </button>
-              ))}
-              {templates.length === 0 && (
-                <p style={{ fontSize: 11, color: "var(--hp-text-muted)", fontStyle: "italic" }}>
-                  No templates yet. Edit a user's permissions and save as template.
-                </p>
-              )}
-            </div>
+            {templates.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {templates.map(t => (
+                  <button key={t.name} onClick={() => applyTemplateBulk(t)} disabled={saving}
+                    style={{ textAlign: "left", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", fontSize: 12, cursor: "pointer", color: "var(--hp-text)", fontWeight: 500 }}>
+                    Apply: {t.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: 11, color: "var(--hp-text-muted)", fontStyle: "italic" }}>
+                Create a template first, then you can bulk assign it here.
+              </p>
+            )}
           </div>
         )}
       </div>
 
-      {/* ── Permission editor panel ── */}
+      {/* ── Right panel: editor ── */}
       <div style={{ flex: 1, overflow: "auto", padding: "20px 24px" }}>
-        {/* Status messages */}
-        {success && (
-          <div style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 6, backgroundColor: "var(--hp-compliant-bg, #f0fdf4)", border: "1px solid var(--hp-compliant, #16a34a)", fontSize: 12, color: "var(--hp-compliant)" }}>
-            {success}
-          </div>
-        )}
-        {error && users.length > 0 && (
-          <div style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 6, backgroundColor: "var(--hp-critical-bg, #fef2f2)", border: "1px solid var(--hp-critical, #dc2626)", fontSize: 12, color: "var(--hp-critical)" }}>
-            {error}
-          </div>
-        )}
+        {success && <div style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 6, backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", fontSize: 12, color: "#15803d" }}>{success}</div>}
+        {error && users.length > 0 && <div style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 6, backgroundColor: "#fee2e2", border: "1px solid #fecaca", fontSize: 12, color: "#dc2626" }}>{error}</div>}
 
-        {/* Template editor modal */}
-        {showTemplateEditor && (
-          <div style={{ marginBottom: 20, padding: 16, borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-warm-50)" }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 12px", color: "var(--hp-text)" }}>Save as Template</h3>
-            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-              <input type="text" placeholder="Template name (e.g. Site Supervisor)" value={templateName} onChange={e => setTemplateName(e.target.value)}
-                style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 12, color: "var(--hp-text)" }} />
-              <input type="text" placeholder="Description (optional)" value={templateDesc} onChange={e => setTemplateDesc(e.target.value)}
-                style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 12, color: "var(--hp-text)" }} />
+        {/* ── Templates section (always visible) ── */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text)", margin: 0 }}>Permission Templates</h3>
+            <button onClick={startCreateTemplate}
+              style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", fontSize: 12, cursor: "pointer", color: "var(--hp-text)", fontWeight: 500 }}>
+              <Plus className="h-3 w-3" /> New Template
+            </button>
+          </div>
+
+          {templates.length === 0 && !creatingTemplate && (
+            <div style={{ padding: "16px 20px", borderRadius: 8, border: "1px dashed var(--hp-border)", backgroundColor: "var(--hp-warm-50)", textAlign: "center" }}>
+              <p style={{ fontSize: 13, color: "var(--hp-text-secondary)", margin: "0 0 8px" }}>No templates yet</p>
+              <p style={{ fontSize: 12, color: "var(--hp-text-muted)", margin: 0 }}>
+                Create a template to quickly assign the same permissions to multiple users.
+                For example: "Site Supervisor" with access to Company and ITP Reviews only.
+              </p>
             </div>
+          )}
+
+          {templates.length > 0 && !creatingTemplate && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {templates.map(t => {
+                const accessCount = Object.values(t.permissions).filter(v => hasAccess(v)).length;
+                const accessModules = modules.filter(m => hasAccess(t.permissions[m.key] ?? "none")).map(m => m.label);
+                return (
+                  <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 8, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--hp-text)" }}>{t.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 2 }}>
+                        {accessCount === 0 ? "No access to any module" : accessModules.join(", ")}
+                      </div>
+                    </div>
+                    <button onClick={() => deleteTemplate(t.name)} title="Delete template"
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                      <Trash2 className="h-3.5 w-3.5" style={{ color: "var(--hp-text-muted)" }} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Template creator ── */}
+        {creatingTemplate && (
+          <div style={{ marginBottom: 20, padding: 16, borderRadius: 8, border: "1px solid var(--hp-warm-200)", backgroundColor: "var(--hp-warm-50)" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text)", margin: "0 0 12px" }}>
+              {newTmplName ? `Template: ${newTmplName}` : "New Permission Template"}
+            </h3>
+            <input type="text" placeholder="Template name (e.g. Site Supervisor)" value={newTmplName} onChange={e => setNewTmplName(e.target.value)}
+              style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 13, color: "var(--hp-text)", marginBottom: 12, backgroundColor: "var(--hp-surface)" }} />
+
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-text-secondary)", marginBottom: 8 }}>
+              Toggle which modules this template gives access to:
+            </div>
+
+            <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden", marginBottom: 12 }}>
+              {modules.filter(m => m.key !== "permissions").map((mod, idx) => {
+                const on = hasAccess(newTmplPerms[mod.key] ?? "none");
+                return (
+                  <div key={mod.key} onClick={() => setNewTmplPerms(prev => ({ ...prev, [mod.key]: hasAccess(prev[mod.key] ?? "none") ? "none" : "edit" }))}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "10px 14px", cursor: "pointer",
+                      borderBottom: idx < modules.length - 2 ? "1px solid var(--hp-border, #f0f0f0)" : "none",
+                      backgroundColor: on ? "#f0fdf4" : "var(--hp-surface)",
+                    }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--hp-text)" }}>{mod.label}</div>
+                      <div style={{ fontSize: 11, color: "var(--hp-text-muted)" }}>{mod.description}</div>
+                    </div>
+                    <AccessPill on={on} />
+                  </div>
+                );
+              })}
+            </div>
+
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={saveTemplate} disabled={!templateName.trim()}
-                style={{ padding: "6px 16px", borderRadius: 6, border: "none", backgroundColor: "var(--hp-warm-700)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: templateName.trim() ? "pointer" : "not-allowed", opacity: templateName.trim() ? 1 : 0.5 }}>
+              <button onClick={saveNewTemplate} disabled={!newTmplName.trim()}
+                style={{ padding: "7px 20px", borderRadius: 6, border: "none", backgroundColor: "var(--hp-warm-700)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: newTmplName.trim() ? "pointer" : "not-allowed", opacity: newTmplName.trim() ? 1 : 0.5 }}>
                 Save Template
               </button>
-              <button onClick={() => setShowTemplateEditor(false)}
-                style={{ padding: "6px 16px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text)", fontSize: 12, cursor: "pointer" }}>
+              <button onClick={() => setCreatingTemplate(false)}
+                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text)", fontSize: 12, cursor: "pointer" }}>
                 Cancel
               </button>
             </div>
           </div>
         )}
 
-        {!selectedUser && !bulkMode ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--hp-text-muted)", gap: 16 }}>
-            <Shield className="h-10 w-10" style={{ opacity: 0.3 }} />
-            <p style={{ fontSize: 14 }}>Select a user to manage their permissions</p>
-            {users.length <= 1 && (
-              <button onClick={syncDirectory} disabled={syncing}
-                style={{ padding: "8px 20px", borderRadius: 8, border: "none", backgroundColor: "var(--hp-warm-700)", color: "#fff", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                <Download className="h-4 w-4" />
-                Sync team from Procore
-              </button>
-            )}
-          </div>
-        ) : bulkMode ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--hp-text-muted)", gap: 12 }}>
-            <Users className="h-10 w-10" style={{ opacity: 0.3 }} />
-            <p style={{ fontSize: 14 }}>Select users on the left, then apply a template</p>
-          </div>
-        ) : (
+        {/* ── User permission editor ── */}
+        {selectedUser && !creatingTemplate && (
           <>
-            {/* User header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 600, color: "var(--hp-text)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                  {selectedUser!.name ?? selectedUser!.email.split("@")[0]}
-                  {selectedUser!.is_super_admin && (
+                  {selectedUser.name ?? selectedUser.email.split("@")[0]}
+                  {selectedUser.is_super_admin && (
                     <span style={{ fontSize: 11, fontWeight: 600, color: "var(--hp-significant)", backgroundColor: "var(--hp-significant-bg)", padding: "2px 8px", borderRadius: 4 }}>SUPER ADMIN</span>
                   )}
                 </h3>
-                <p style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 4 }}>{selectedUser!.email}</p>
+                <p style={{ fontSize: 12, color: "var(--hp-text-secondary)", marginTop: 4 }}>{selectedUser.email}</p>
                 <p style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 2 }}>
-                  First login: {fmtDate(selectedUser!.first_login)} · Last login: {fmtDate(selectedUser!.last_login)}
+                  First login: {fmtDate(selectedUser.first_login)} · Last login: {fmtDate(selectedUser.last_login)}
                 </p>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                {hasChanges && (
+                {hasChanges && !selectedUser.is_super_admin && (
                   <>
                     <button onClick={saveCurrentAsTemplate}
                       style={{ display: "flex", alignItems: "center", gap: 4, padding: "7px 14px", borderRadius: 8, fontSize: 12, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text)", cursor: "pointer" }}>
                       <Plus className="h-3.5 w-3.5" /> Save as Template
                     </button>
                     <button onClick={savePermissions} disabled={saving}
-                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: saving ? "not-allowed" : "pointer", backgroundColor: "var(--hp-warm-700, #5c4a3a)", color: "#fff", opacity: saving ? 0.7 : 1 }}>
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: saving ? "not-allowed" : "pointer", backgroundColor: "var(--hp-warm-700)", color: "#fff", opacity: saving ? 0.7 : 1 }}>
                       <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
                     </button>
                   </>
@@ -455,78 +421,71 @@ export default function PermissionsTab({ companyId }: Props) {
               </div>
             </div>
 
-            {/* Quick apply templates */}
-            {templates.length > 0 && !selectedUser!.is_super_admin && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--hp-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-                  Apply Template
-                </div>
+            {/* Quick apply template */}
+            {templates.length > 0 && !selectedUser.is_super_admin && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--hp-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Quick Apply Template</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {templates.map(t => (
-                    <button key={t.name} onClick={() => applyTemplate(t)}
-                      style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", fontSize: 12, cursor: "pointer", color: "var(--hp-text)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <button key={t.name} onClick={() => applyTemplateToUser(t)}
+                      style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", fontSize: 12, cursor: "pointer", color: "var(--hp-text)", fontWeight: 500 }}>
                       {t.name}
-                      <button onClick={(e) => { e.stopPropagation(); deleteTemplate(t.name); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
-                        <Trash2 className="h-3 w-3" style={{ color: "var(--hp-text-muted)" }} />
-                      </button>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Permission matrix */}
+            {/* Permission toggles */}
             <div style={{ borderRadius: 8, border: "1px solid var(--hp-border)", overflow: "hidden" }}>
-              {modules.map((mod, idx) => {
-                const currentLevel = editedPerms[mod.key] ?? "none";
-                const levelInfo = LEVEL_LABELS[currentLevel] ?? LEVEL_LABELS.none;
-                const LevelIcon = levelInfo.icon;
-                const isDisabled = selectedUser!.is_super_admin;
-
+              {modules.filter(m => m.key !== "permissions").map((mod, idx, arr) => {
+                const on = hasAccess(editedPerms[mod.key] ?? "none");
+                const isDisabled = selectedUser.is_super_admin;
                 return (
-                  <div key={mod.key} style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
-                    borderBottom: idx < modules.length - 1 ? "1px solid var(--hp-border, #f0f0f0)" : "none",
-                    backgroundColor: isDisabled ? "var(--hp-warm-50, #faf8f5)" : "var(--hp-surface, #ffffff)",
-                  }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                  <div key={mod.key}
+                    onClick={() => !isDisabled && toggleAccess(mod.key)}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "12px 16px", cursor: isDisabled ? "default" : "pointer",
+                      borderBottom: idx < arr.length - 1 ? "1px solid var(--hp-border, #f0f0f0)" : "none",
+                      backgroundColor: isDisabled ? "var(--hp-warm-50)" : on ? "#f0fdf4" : "var(--hp-surface)",
+                      transition: "background-color 0.15s",
+                    }}>
+                    <div>
                       <div style={{ fontSize: 13, fontWeight: 500, color: "var(--hp-text)" }}>{mod.label}</div>
                       <div style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 1 }}>{mod.description}</div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 80 }}>
-                      <LevelIcon className="h-3.5 w-3.5" style={{ color: levelInfo.color }} />
-                      <span style={{ fontSize: 12, fontWeight: 500, color: levelInfo.color }}>{levelInfo.label}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: 2 }}>
-                      {LEVELS.map(level => {
-                        const isActive = currentLevel === level;
-                        const info = LEVEL_LABELS[level];
-                        return (
-                          <button key={level} onClick={() => changeLevel(mod.key, level)} disabled={isDisabled} title={info.label}
-                            style={{
-                              padding: "4px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500,
-                              border: isActive ? `1px solid ${info.color}` : "1px solid transparent",
-                              backgroundColor: isActive ? info.bg : "transparent",
-                              color: isActive ? info.color : "var(--hp-text-muted)",
-                              cursor: isDisabled ? "not-allowed" : "pointer", opacity: isDisabled ? 0.5 : 1,
-                            }}>
-                            {info.label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <AccessPill on={on} />
                   </div>
                 );
               })}
             </div>
 
-            {selectedUser!.is_super_admin && (
+            {selectedUser.is_super_admin && (
               <p style={{ fontSize: 11, color: "var(--hp-text-muted)", marginTop: 12, fontStyle: "italic" }}>
-                Super Admin permissions cannot be modified. They have full access to all modules.
+                Super Admin has full access to all modules. This cannot be changed.
               </p>
             )}
           </>
+        )}
+
+        {/* Empty state */}
+        {!selectedUser && !creatingTemplate && !bulkMode && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 60, color: "var(--hp-text-muted)", gap: 12 }}>
+            <Shield className="h-10 w-10" style={{ opacity: 0.3 }} />
+            <p style={{ fontSize: 14 }}>Select a user to manage their permissions</p>
+          </div>
+        )}
+
+        {bulkMode && !creatingTemplate && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 60, color: "var(--hp-text-muted)", gap: 12 }}>
+            <Users className="h-10 w-10" style={{ opacity: 0.3 }} />
+            <p style={{ fontSize: 14 }}>
+              {selectedEmails.size === 0
+                ? "Select users on the left to bulk assign a template"
+                : `${selectedEmails.size} selected — choose a template from the left panel`}
+            </p>
+          </div>
         )}
       </div>
     </div>
