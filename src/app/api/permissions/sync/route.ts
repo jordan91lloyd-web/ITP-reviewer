@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
     allUsers.push(...data);
     if (data.length < 250) break;
     page++;
+    await new Promise(r => setTimeout(r, 600));
   }
 
   // Filter to allowed domains
