@@ -10,7 +10,7 @@ interface UserWithPerms {
   permissions: Record<string, string>;
 }
 interface PermTemplate { id: string; name: string; description: string | null; permissions: Record<string, string>; }
-interface Props { companyId: number | null; }
+interface Props { companyId?: number | null; }
 
 // Simplified: "edit" = has access, "none" = no access. Super Admin is separate.
 function hasAccess(level: string): boolean {
@@ -183,11 +183,7 @@ export default function PermissionsTab({ companyId }: Props) {
     return u.email.toLowerCase().includes(q) || (u.name ?? "").toLowerCase().includes(q);
   });
 
-  if (!companyId) {
-    return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: 40 }}>
-      <p style={{ fontSize: 14, color: "var(--hp-text-secondary)" }}>Select a company first.</p>
-    </div>;
-  }
+  // Permissions tab works independently of company selection — uses FLEEK_COMPANY_ID server-side
 
   // ── Access pill component ─────────────────────────────────────────────
   const AccessPill = ({ on }: { on: boolean }) => (
@@ -348,8 +344,18 @@ export default function PermissionsTab({ companyId }: Props) {
             <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--hp-text)", margin: "0 0 12px" }}>
               {newTmplName ? `Template: ${newTmplName}` : "New Permission Template"}
             </h3>
-            <input type="text" placeholder="Template name (e.g. Site Supervisor)" value={newTmplName} onChange={e => setNewTmplName(e.target.value)}
-              style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 13, color: "var(--hp-text)", marginBottom: 12, backgroundColor: "var(--hp-surface)" }} />
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <input type="text" placeholder="Template name (e.g. Site Supervisor)" value={newTmplName} onChange={e => setNewTmplName(e.target.value)}
+                style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 13, color: "var(--hp-text)", backgroundColor: "var(--hp-surface)" }} />
+              <button onClick={saveNewTemplate} disabled={!newTmplName.trim()}
+                style={{ padding: "7px 20px", borderRadius: 6, border: "none", backgroundColor: "var(--hp-warm-700)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: newTmplName.trim() ? "pointer" : "not-allowed", opacity: newTmplName.trim() ? 1 : 0.5, whiteSpace: "nowrap" }}>
+                Save Template
+              </button>
+              <button onClick={() => setCreatingTemplate(false)}
+                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text)", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                Cancel
+              </button>
+            </div>
 
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--hp-text-secondary)", marginBottom: 8 }}>
               Toggle which modules this template gives access to:
@@ -376,16 +382,6 @@ export default function PermissionsTab({ companyId }: Props) {
               })}
             </div>
 
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={saveNewTemplate} disabled={!newTmplName.trim()}
-                style={{ padding: "7px 20px", borderRadius: 6, border: "none", backgroundColor: "var(--hp-warm-700)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: newTmplName.trim() ? "pointer" : "not-allowed", opacity: newTmplName.trim() ? 1 : 0.5 }}>
-                Save Template
-              </button>
-              <button onClick={() => setCreatingTemplate(false)}
-                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text)", fontSize: 12, cursor: "pointer" }}>
-                Cancel
-              </button>
-            </div>
           </div>
         )}
 

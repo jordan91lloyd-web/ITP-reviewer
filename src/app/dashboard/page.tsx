@@ -1767,7 +1767,7 @@ export default function DashboardPage() {
       </div>}
 
       {visitedTabs.has("permissions") && <div style={{ display: dashboardView === "permissions" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-        <PermissionsTab companyId={selectedCompany?.id ?? null} />
+        <PermissionsTab />
       </div>}
 
       {/* ── ITP Reviews tab ── */}
