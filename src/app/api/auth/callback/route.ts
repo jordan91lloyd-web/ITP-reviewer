@@ -9,6 +9,7 @@ import { exchangeCodeForTokens, getProcoreUser } from "@/lib/procore";
 import { cookies } from "next/headers";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 import { upsertToken } from "@/lib/token-store";
+import { upsertSaasUser } from "@/lib/permissions";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -182,14 +183,25 @@ export async function GET(request: NextRequest) {
   // company_id must match exactly. Skip when FLEEK_COMPANY_ID is unset (dev mode).
   if (fleekCompanyId) {
     void getProcoreUser(tokens.access_token)
-      .then(user =>
-        upsertToken(fleekCompanyId, String(user.id), {
+      .then(user => {
+        // Persist token for background jobs
+        void upsertToken(fleekCompanyId, String(user.id), {
           access_token:  tokens.access_token,
           refresh_token: tokens.refresh_token,
           expires_at:    expiresAt,
-        })
-      )
-      .catch(err => console.error("[auth/callback] Failed to persist token to store:", err));
+        });
+        // Create/update SaaS user record for permissions
+        void upsertSaasUser(fleekCompanyId, String(user.id), user.login, user.name);
+        // Cache user email in cookie for fast permission lookups
+        cookieStore.set("holdpoint_user_email", user.login.toLowerCase().trim(), {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24 * 30,
+          path: "/",
+        });
+      })
+      .catch(err => console.error("[auth/callback] Failed to persist token/user:", err));
   }
 
   // Fire-and-forget audit log — must not delay the redirect

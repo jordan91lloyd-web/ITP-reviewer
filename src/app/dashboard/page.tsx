@@ -4,7 +4,7 @@
 // Project → ITP overview with review history, score overrides, and side panel.
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw, RotateCcw, Brain } from "lucide-react";
+import { Download, ArrowUpDown, ArrowDown, ArrowUp, Sparkles, ExternalLink, Paperclip, PenLine, CheckCircle, AlertTriangle, ChevronDown, FileText, Server, RefreshCw, RotateCcw, Brain, Shield } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
 import Link from "next/link";
 import { useAttentionTracker } from "@/hooks/useAttentionTracker";
@@ -18,6 +18,7 @@ import DrawingChangesTab from "@/components/DrawingChangesTab";
 import PhotoClassifierTab from "@/components/PhotoClassifierTab";
 import InspectionCreatorTab from "@/components/InspectionCreatorTab";
 import ProjectDigestTab from "@/components/ProjectDigestTab";
+import PermissionsTab from "@/components/PermissionsTab";
 import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
@@ -687,7 +688,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator" | "digest";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator" | "digest" | "permissions";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [visitedTabs, setVisitedTabs] = useState<Set<DashboardView>>(new Set(["itp_reviews"]));
   const [insightsFetched, setInsightsFetched] = useState(false);
@@ -700,6 +701,10 @@ export default function DashboardPage() {
 
   // Admin status (used by score overrides)
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // User permissions (module_key → access_level)
+  const [userPerms, setUserPerms] = useState<Record<string, string> | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // ── Auth + company discovery ────────────────────────────────────────────────
 
@@ -714,6 +719,14 @@ export default function DashboardPage() {
           fetch("/api/admin/check")
             .then(r => r.ok ? r.json() : null)
             .then(d => setIsAdmin(!!d?.isAdmin))
+            .catch(() => {});
+          // Fetch SaaS permissions
+          fetch("/api/permissions")
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+              if (d?.permissions) setUserPerms(d.permissions);
+              if (d?.user?.is_super_admin) setIsSuperAdmin(true);
+            })
             .catch(() => {});
         } else {
           setAuthenticated(false);
@@ -1607,7 +1620,19 @@ export default function DashboardPage() {
           ["inspection_creator", "Inspections",  null],
           ["drawing_changes", "Drawing Changes", null],
           ["photo_classifier", "Photo Classifier", null],
-        ] as [DashboardView, string, string | null][]).map(([view, baseLabel, icon]) => {
+          ["permissions",     "Permissions",     "shield"],
+        ] as [DashboardView, string, string | null][])
+        .filter(([view]) => {
+          // If permissions haven't loaded yet, show all tabs (loading state)
+          if (!userPerms) return true;
+          // Super admin sees everything
+          if (isSuperAdmin) return true;
+          // Map tab key to module key (they match for all current tabs)
+          const moduleKey = view as string;
+          const level = userPerms[moduleKey] ?? "none";
+          return level !== "none";
+        })
+        .map(([view, baseLabel, icon]) => {
           const runningCount = view === "queue"
             ? queueJobs.filter(j => j.status === "running").length
             : 0;
@@ -1640,6 +1665,7 @@ export default function DashboardPage() {
             >
               {icon === "sparkles" && <Sparkles className="h-3 w-3" />}
               {icon === "brain" && <Brain className="h-3 w-3" />}
+              {icon === "shield" && <Shield className="h-3 w-3" />}
               {label}
             </button>
           );
@@ -1738,6 +1764,10 @@ export default function DashboardPage() {
 
       {selectedCompany && visitedTabs.has("photo_classifier") && <div style={{ display: dashboardView === "photo_classifier" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <PhotoClassifierTab company_id={String(selectedCompany.id)} projects={projects} />
+      </div>}
+
+      {visitedTabs.has("permissions") && <div style={{ display: dashboardView === "permissions" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+        <PermissionsTab companyId={selectedCompany?.id ?? null} />
       </div>}
 
       {/* ── ITP Reviews tab ── */}

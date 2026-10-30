@@ -20,7 +20,7 @@
 // imported. The import only aborts if the inspection itself cannot be loaded.
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 import {
   getInspectionDetail,
   getInspectionItems,
@@ -98,7 +98,9 @@ async function extractDocxText(buffer: Buffer): Promise<string> {
 export async function POST(request: NextRequest) {
   console.log("[procore/import] POST handler called");
 
-  const accessToken = await resolveAccessToken();
+  const auth = await requirePermission(request, "itp_reviews", "edit");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   if (!accessToken) {
     return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });

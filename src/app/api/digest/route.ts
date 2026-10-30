@@ -476,10 +476,11 @@ Rules:
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
-  }
+  // Require at least view access to the digest module
+  const { requirePermission: reqPerm } = await import("@/lib/route-auth");
+  const auth = await reqPerm(request, "digest", "view");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   const sp = request.nextUrl.searchParams;
   const projectId = sp.get("project_id");
