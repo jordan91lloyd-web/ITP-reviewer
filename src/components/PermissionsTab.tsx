@@ -348,11 +348,11 @@ export default function PermissionsTab({ companyId }: Props) {
               <input type="text" placeholder="Template name (e.g. Site Supervisor)" value={newTmplName} onChange={e => setNewTmplName(e.target.value)}
                 style={{ flex: 1, padding: "8px 12px", borderRadius: 6, border: "1px solid var(--hp-border)", fontSize: 13, color: "var(--hp-text)", backgroundColor: "var(--hp-surface)" }} />
               <button onClick={saveNewTemplate} disabled={!newTmplName.trim()}
-                style={{ padding: "7px 20px", borderRadius: 6, border: "none", backgroundColor: "var(--hp-warm-700)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: newTmplName.trim() ? "pointer" : "not-allowed", opacity: newTmplName.trim() ? 1 : 0.5, whiteSpace: "nowrap" }}>
+                style={{ padding: "7px 20px", borderRadius: 6, border: "none", backgroundColor: "#4a3728", color: "#ffffff", fontSize: 12, fontWeight: 600, cursor: newTmplName.trim() ? "pointer" : "not-allowed", opacity: newTmplName.trim() ? 1 : 0.5, whiteSpace: "nowrap" }}>
                 Save Template
               </button>
               <button onClick={() => setCreatingTemplate(false)}
-                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid var(--hp-border)", backgroundColor: "var(--hp-surface)", color: "var(--hp-text)", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #d1d5db", backgroundColor: "#ffffff", color: "#374151", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
                 Cancel
               </button>
             </div>
@@ -409,7 +409,7 @@ export default function PermissionsTab({ companyId }: Props) {
                       <Plus className="h-3.5 w-3.5" /> Save as Template
                     </button>
                     <button onClick={savePermissions} disabled={saving}
-                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: saving ? "not-allowed" : "pointer", backgroundColor: "var(--hp-warm-700)", color: "#fff", opacity: saving ? 0.7 : 1 }}>
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: saving ? "not-allowed" : "pointer", backgroundColor: "#4a3728", color: "#ffffff", opacity: saving ? 0.7 : 1 }}>
                       <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
                     </button>
                   </>
