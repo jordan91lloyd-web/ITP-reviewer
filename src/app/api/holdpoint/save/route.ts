@@ -2,8 +2,8 @@
 // POST /api/holdpoint/save                             → upsert hold_points array
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 
 function getSupabase() {
   return createClient(
@@ -12,15 +12,9 @@ function getSupabase() {
   );
 }
 
-async function requireAuth(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return !!cookieStore.get("procore_access_token")?.value;
-}
-
 export async function GET(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "hold_points", "view");
+  if (auth.error) return auth.error;
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");
@@ -49,9 +43,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const authPost = await requirePermission(request, "hold_points", "edit");
+  if (authPost.error) return authPost.error;
 
   let body: {
     company_id?:   string;

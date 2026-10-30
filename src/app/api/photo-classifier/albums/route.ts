@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getValidToken } from "@/lib/token-store";
+import { requirePermission } from "@/lib/route-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "photo_classifier", "view");
+  if (auth.error) return auth.error;
+
   const projectId = request.nextUrl.searchParams.get("project_id");
   if (!projectId) {
     return NextResponse.json({ error: "project_id required" }, { status: 400 });

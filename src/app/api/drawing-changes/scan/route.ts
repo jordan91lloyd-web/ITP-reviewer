@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 import { createClient } from "@supabase/supabase-js";
 import {
   SYSTEM_PROMPT,
@@ -45,10 +45,6 @@ function getSupabase() {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-async function requireAuth(): Promise<string | null> {
-  return resolveAccessToken();
 }
 
 async function downloadFile(url: string): Promise<FileInfo | null> {
@@ -191,10 +187,9 @@ async function compareDrawings(
 }
 
 export async function POST(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "drawing_changes", "edit");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   let body: {
     company_id: string;

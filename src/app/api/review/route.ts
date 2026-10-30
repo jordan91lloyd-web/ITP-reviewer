@@ -4,7 +4,6 @@
 // No user-supplied metadata — Claude extracts all header fields automatically.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { runBundleReview } from "@/lib/claude";
 import {
   isAllowedType,
@@ -14,15 +13,16 @@ import {
 } from "@/lib/validation";
 import type { ProcessedFile } from "@/lib/types";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
+import { requirePermission } from "@/lib/route-auth";
 
 export async function POST(request: NextRequest) {
   console.log("\n[review] ─────────────────────────────────────");
   console.log("[review] New review request received");
 
-  // Resolve audit identity from Procore cookie if present (manual uploads may
-  // not be authenticated, in which case we log as "anonymous").
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+  const auth = await requirePermission(request, "itp_reviews", "edit");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
+
   const auditUser   = await resolveAuditUser(accessToken);
   const auditCompany = process.env.FLEEK_COMPANY_ID ?? "manual";
 

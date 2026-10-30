@@ -26,7 +26,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { resolveAuditUser, logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,6 +36,9 @@ const supabase = createClient(
 // ── GET ────────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
+
   const companyId  = request.nextUrl.searchParams.get("company_id");
   const weekStart  = request.nextUrl.searchParams.get("week_start");
 
@@ -66,7 +69,9 @@ export async function GET(request: NextRequest) {
 // ── POST ───────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
+  const authPost = await requirePermission(request, "company", "edit");
+  if (authPost.error) return authPost.error;
+  const accessToken = authPost.token;
 
   let body: {
     company_id?: string;

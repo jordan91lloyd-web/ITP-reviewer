@@ -12,7 +12,7 @@
 // Never throws. All per-call failures are collected in `errors[]`.
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const PROCORE_BASE =
   process.env.PROCORE_ENV === "production"
@@ -42,10 +42,9 @@ async function procoreGet(path: string, accessToken: string, companyId: string):
 }
 
 export async function GET(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   const sp        = request.nextUrl.searchParams;
   const projectId = sp.get("project_id");

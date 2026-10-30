@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import type { ConvertedActionPlan } from "@/lib/actionPlanTypes";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
 
 export const maxDuration = 300;
@@ -136,10 +136,9 @@ async function verifyPlanAssets(
 // ── Main handler ──────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ success: false, error: "Not authenticated with Procore." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "action_plans", "edit");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   // Parse multipart/form-data
   let formData: FormData;

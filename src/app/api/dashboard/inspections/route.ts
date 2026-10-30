@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getInspections, type ProcoreInspection } from "@/lib/procore";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 import { createClient } from "@supabase/supabase-js";
 import type { ReviewResult } from "@/lib/types";
 
@@ -49,10 +49,9 @@ export interface DashboardInspection {
 }
 
 export async function GET(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "itp_reviews", "view");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   const projectIdParam    = request.nextUrl.searchParams.get("project_id");
   const companyIdParam    = request.nextUrl.searchParams.get("company_id");

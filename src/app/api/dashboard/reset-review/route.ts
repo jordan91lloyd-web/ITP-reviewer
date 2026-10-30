@@ -4,9 +4,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { isCompanyAdmin } from "@/lib/admin";
 import { resolveAuditUser, logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,10 +13,9 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "itp_reviews", "edit");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   let body: { review_record_id?: string; company_id?: string };
   try {
@@ -37,14 +35,6 @@ export async function POST(request: NextRequest) {
   // Resolve requesting user
   const auditUser = await resolveAuditUser(accessToken);
   console.log("[reset-review] Resolved user:", auditUser.user_email, "| company_id:", company_id, "| review_record_id:", review_record_id);
-
-  // Admin check
-  const admin = await isCompanyAdmin(auditUser.user_email, company_id);
-  console.log("[reset-review] isCompanyAdmin result:", admin);
-  if (!admin) {
-    console.error("[reset-review] Admin check failed for email:", auditUser.user_email, "company_id:", company_id);
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-  }
 
   // Verify the record belongs to this company (security check)
   const { data: record, error: fetchError } = await supabase

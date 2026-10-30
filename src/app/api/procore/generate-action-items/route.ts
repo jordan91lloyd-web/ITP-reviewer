@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ActionItem } from "@/lib/types";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,10 +38,9 @@ interface RequestBody {
 export async function POST(request: NextRequest) {
   // ── Auth check ──────────────────────────────────────────────────────────────
   console.log("[generate-action-items] step 1: auth check");
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ action_items: [], error: "Not authenticated." });
-  }
+  const auth = await requirePermission(request, "itp_reviews", "edit");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   // ── Parse body ──────────────────────────────────────────────────────────────
   let body: RequestBody;

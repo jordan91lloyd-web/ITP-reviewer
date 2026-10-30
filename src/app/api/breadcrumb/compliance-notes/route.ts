@@ -2,8 +2,8 @@
 // Upserts a compliance note for a site/week into site_compliance_notes.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 
 function getSupabase() {
   return createClient(
@@ -12,15 +12,9 @@ function getSupabase() {
   );
 }
 
-async function requireAuth(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return !!cookieStore.get("procore_access_token")?.value;
-}
-
 export async function POST(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
 
   let body: { company_id?: string; site_reference?: string; week_start?: string; notes?: string };
   try {

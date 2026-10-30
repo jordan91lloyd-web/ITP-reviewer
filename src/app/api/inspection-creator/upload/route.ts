@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import type { ConvertedInspection } from "@/lib/inspectionCreatorTypes";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export const maxDuration = 300;
 
@@ -137,8 +137,9 @@ async function procorePatch(
 }
 
 export async function POST(request: NextRequest) {
-  const token = await resolveAccessToken();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requirePermission(request, "inspection_creator", "edit");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   let payload: {
     inspection: ConvertedInspection;

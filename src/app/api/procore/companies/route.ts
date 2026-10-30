@@ -3,16 +3,14 @@
 // This endpoint does NOT require a Procore-Company-Id header — it is used for
 // initial company discovery before any project or inspection calls.
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCompanies } from "@/lib/procore";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
-export async function GET() {
-  const accessToken = await resolveAccessToken();
-
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
-  }
+export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   try {
     const companies = await getCompanies(accessToken);

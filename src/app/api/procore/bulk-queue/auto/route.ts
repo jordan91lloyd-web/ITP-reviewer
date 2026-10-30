@@ -5,9 +5,9 @@
 // Then queues them for background review without requiring manual selection.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { getInspections } from "@/lib/procore";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,11 +15,9 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "itp_reviews", "edit");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   let body: { company_id?: string; project_id?: string };
   try {

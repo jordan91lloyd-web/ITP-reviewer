@@ -5,10 +5,10 @@
 // Called once per document from the frontend; frontend merges results.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { SYSTEM_PROMPT } from "@/lib/holdpoint-prompt";
+import { requirePermission } from "@/lib/route-auth";
 
 export const maxDuration = 120;
 
@@ -27,15 +27,9 @@ function getSupabase() {
   );
 }
 
-async function requireAuth(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return !!cookieStore.get("procore_access_token")?.value;
-}
-
 export async function POST(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "hold_points", "edit");
+  if (auth.error) return auth.error;
 
   let body: {
     company_id?:  string;

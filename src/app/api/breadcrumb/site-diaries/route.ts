@@ -21,7 +21,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const PROCORE_API_BASE =
   process.env.PROCORE_ENV === "production"
@@ -108,10 +108,9 @@ function getCheckRange(weekStartParam?: string | null): CheckRange | null {
 
 export async function GET(request: NextRequest) {
   try {
-    const accessToken = await resolveAccessToken();
-    if (!accessToken) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    const auth = await requirePermission(request, "company", "view");
+    if (auth.error) return auth.error;
+    const accessToken = auth.token;
 
     const sp         = request.nextUrl.searchParams;
     const companyId  = sp.get("company_id");

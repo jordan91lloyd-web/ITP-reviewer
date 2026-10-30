@@ -20,7 +20,7 @@
 // ─────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const PROCORE_API_BASE =
   process.env.PROCORE_ENV === "production"
@@ -48,10 +48,9 @@ function nullState(totalDays: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    const accessToken = await resolveAccessToken();
-    if (!accessToken) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    const auth = await requirePermission(request, "company", "view");
+    if (auth.error) return auth.error;
+    const accessToken = auth.token;
 
     const sp        = request.nextUrl.searchParams;
     const projectId = sp.get("project_id");

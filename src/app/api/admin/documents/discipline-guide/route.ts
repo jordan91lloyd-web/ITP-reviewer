@@ -5,7 +5,7 @@
 // read-only reference documents.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { requirePermission } from "@/lib/route-auth";
 import React from "react";
 import { renderToBuffer, Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { DISCIPLINE_GUIDES } from "@/lib/discipline-guides";
@@ -61,11 +61,8 @@ const styles = StyleSheet.create({
 
 export async function GET(request: NextRequest) {
   // ── Auth ────────────────────────────────────────────────────────────────────
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "admin", "view");
+  if (auth.error) return auth.error;
 
   // ── Find guide ──────────────────────────────────────────────────────────────
   const { searchParams } = new URL(request.url);

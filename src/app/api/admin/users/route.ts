@@ -5,10 +5,8 @@
 // All operations require the caller to be a company admin.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
-import { getProcoreUser } from "@/lib/procore";
-import { isCompanyAdmin } from "@/lib/admin";
+import { requirePermission } from "@/lib/route-auth";
 
 interface AdminRow {
   id:         string;
@@ -19,31 +17,7 @@ interface AdminRow {
   created_by: string | null;
 }
 
-async function getCallerAndAssertAdmin(): Promise<
-  { ok: true; user: { email: string; name: string }; companyId: string } |
-  { ok: false; response: NextResponse }
-> {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
-  if (!accessToken) {
-    return { ok: false, response: NextResponse.json({ error: "Not authenticated." }, { status: 401 }) };
-  }
-
-  const companyId = process.env.FLEEK_COMPANY_ID ?? "";
-  let user: { login: string; name: string };
-  try {
-    user = await getProcoreUser(accessToken);
-  } catch {
-    return { ok: false, response: NextResponse.json({ error: "Failed to verify identity." }, { status: 401 }) };
-  }
-
-  const admin = await isCompanyAdmin(user.login, companyId);
-  if (!admin) {
-    return { ok: false, response: NextResponse.json({ error: "Access denied." }, { status: 403 }) };
-  }
-
-  return { ok: true, user: { email: user.login, name: user.name }, companyId };
-}
+const COMPANY_ID = process.env.FLEEK_COMPANY_ID ?? "";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -53,14 +27,14 @@ function getSupabase() {
 
 // ── GET — list admins ──────────────────────────────────────────────────────────
 
-export async function GET() {
-  const auth = await getCallerAndAssertAdmin();
-  if (!auth.ok) return auth.response;
+export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "admin", "admin");
+  if (auth.error) return auth.error;
 
   const { data, error } = await getSupabase()
     .from("company_admins")
     .select("id, company_id, email, name, created_at, created_by")
-    .eq("company_id", auth.companyId)
+    .eq("company_id", COMPANY_ID)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -73,8 +47,8 @@ export async function GET() {
 // ── POST — add admin ───────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const auth = await getCallerAndAssertAdmin();
-  if (!auth.ok) return auth.response;
+  const auth = await requirePermission(request, "admin", "admin");
+  if (auth.error) return auth.error;
 
   let body: { email?: string; name?: string };
   try { body = await request.json(); } catch {
@@ -89,10 +63,10 @@ export async function POST(request: NextRequest) {
   const { error } = await getSupabase()
     .from("company_admins")
     .insert({
-      company_id: auth.companyId,
+      company_id: COMPANY_ID,
       email,
       name:       body.name?.trim() || null,
-      created_by: auth.user.email,
+      created_by: auth.email,
     });
 
   if (error) {
@@ -108,8 +82,8 @@ export async function POST(request: NextRequest) {
 // ── DELETE — remove admin ──────────────────────────────────────────────────────
 
 export async function DELETE(request: NextRequest) {
-  const auth = await getCallerAndAssertAdmin();
-  if (!auth.ok) return auth.response;
+  const auth = await requirePermission(request, "admin", "admin");
+  if (auth.error) return auth.error;
 
   let body: { email?: string };
   try { body = await request.json(); } catch {
@@ -120,14 +94,14 @@ export async function DELETE(request: NextRequest) {
   if (!email) {
     return NextResponse.json({ error: "email is required." }, { status: 400 });
   }
-  if (email === auth.user.email.toLowerCase()) {
+  if (email === auth.email.toLowerCase()) {
     return NextResponse.json({ error: "You cannot remove yourself as an admin." }, { status: 400 });
   }
 
   const { error } = await getSupabase()
     .from("company_admins")
     .delete()
-    .eq("company_id", auth.companyId)
+    .eq("company_id", COMPANY_ID)
     .eq("email", email);
 
   if (error) {

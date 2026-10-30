@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 import { createClient } from "@supabase/supabase-js";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
@@ -84,8 +84,9 @@ function xlsxToText(buffer: Buffer): string {
 }
 
 export async function POST(request: NextRequest) {
-  const token = await resolveAccessToken();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requirePermission(request, "drawing_changes", "edit");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   const formData = await request.formData();
   const companyId = formData.get("company_id") as string;

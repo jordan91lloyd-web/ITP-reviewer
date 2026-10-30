@@ -3,10 +3,10 @@
 // Processing is handled by the Vercel Cron at /api/cron/process-queue (every 2 min).
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { getProcoreUser } from "@/lib/procore";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,11 +14,9 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "itp_reviews", "edit");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   let body: { company_id?: string; project_id?: string; inspection_ids?: number[] };
   try {

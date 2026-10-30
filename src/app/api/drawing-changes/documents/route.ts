@@ -10,7 +10,7 @@
 // File download URLs come from the file_versions array on /folders files.
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +24,6 @@ const SUPPORTED_EXTENSIONS = new Set([".pdf", ".docx", ".xlsx", ".jpg", ".jpeg",
 function isSupported(name: string): boolean {
   const lower = name.toLowerCase();
   return [...SUPPORTED_EXTENSIONS].some((ext) => lower.endsWith(ext));
-}
-
-async function requireAuth(): Promise<string | null> {
-  return resolveAccessToken();
 }
 
 // Extract download URL from a /folders file object.
@@ -165,10 +161,9 @@ async function crawlFolder(
 }
 
 export async function GET(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "drawing_changes", "view");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");

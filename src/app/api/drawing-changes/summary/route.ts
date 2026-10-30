@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export const maxDuration = 30;
 
@@ -19,15 +19,9 @@ interface ChangeSummaryInput {
   review_status: string | null;
 }
 
-async function requireAuth(): Promise<string | null> {
-  return resolveAccessToken();
-}
-
 export async function POST(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "drawing_changes", "view");
+  if (auth.error) return auth.error;
 
   let body: {
     project_name: string;

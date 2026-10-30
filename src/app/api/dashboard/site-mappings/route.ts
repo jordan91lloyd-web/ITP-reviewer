@@ -6,9 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { isCompanyAdmin } from "@/lib/admin";
-import { getProcoreUser } from "@/lib/procore";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,6 +16,9 @@ const supabase = createClient(
 // ── GET ────────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
+
   const companyId = request.nextUrl.searchParams.get("company_id");
   if (!companyId) {
     return NextResponse.json({ error: "company_id is required" }, { status: 400 });
@@ -39,10 +40,8 @@ export async function GET(request: NextRequest) {
 // ── POST ───────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const authPost = await requirePermission(request, "company", "edit");
+  if (authPost.error) return authPost.error;
 
   let body: { company_id?: string; breadcrumb_site_name?: string; procore_project_id?: string };
   try {
@@ -57,20 +56,6 @@ export async function POST(request: NextRequest) {
       { error: "company_id, breadcrumb_site_name, and procore_project_id are required" },
       { status: 400 }
     );
-  }
-
-  // Verify admin.
-  let userEmail: string;
-  try {
-    const user = await getProcoreUser(accessToken);
-    userEmail = user.login;
-  } catch {
-    return NextResponse.json({ error: "Could not verify user identity" }, { status: 401 });
-  }
-
-  const admin = await isCompanyAdmin(userEmail, company_id);
-  if (!admin) {
-    return NextResponse.json({ error: "Forbidden — admin access required" }, { status: 403 });
   }
 
   const { error } = await supabase

@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 import { createClient } from "@supabase/supabase-js";
 import { SYSTEM_PROMPT, STAGE_ORDER } from "@/lib/holdpoint-prompt";
 
@@ -60,10 +60,6 @@ function getSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
-}
-
-async function requireAuth(): Promise<string | null> {
-  return resolveAccessToken();
 }
 
 async function downloadPdf(url: string, token: string): Promise<Buffer | null> {
@@ -146,8 +142,9 @@ function sortAndNumber(items: RawHoldPoint[]): HoldPoint[] {
 }
 
 export async function POST(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requirePermission(request, "hold_points", "edit");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   let body: {
     company_id?:        string;

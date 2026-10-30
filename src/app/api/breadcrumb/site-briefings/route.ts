@@ -9,6 +9,7 @@
 //   days        (optional — days to look back, default 7, max 31)
 
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermission } from "@/lib/route-auth";
 
 const API_KEY  = process.env.BREADCRUMB_API_KEY;
 const BASE_URL = (process.env.BREADCRUMB_API_BASE_URL ?? "https://ext-au.1bc.app").replace(/\/$/, "");
@@ -40,6 +41,9 @@ async function fetchAllPages(body: Record<string, unknown>): Promise<Record<stri
 }
 
 export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
+
   if (!API_KEY) {
     return NextResponse.json({ source: "env_missing", rows: [] });
   }

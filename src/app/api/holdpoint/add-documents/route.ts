@@ -4,10 +4,10 @@
 // numbers continuing from last existing ID, merges, saves to Supabase, returns new points.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { SYSTEM_PROMPT, STAGE_ORDER } from "@/lib/holdpoint-prompt";
+import { requirePermission } from "@/lib/route-auth";
 
 export const maxDuration = 300;
 
@@ -33,11 +33,6 @@ function getSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
-}
-
-async function requireAuth(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return !!cookieStore.get("procore_access_token")?.value;
 }
 
 async function extractHoldPoints(
@@ -79,9 +74,8 @@ async function extractHoldPoints(
 }
 
 export async function POST(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const authCheck = await requirePermission(request, "hold_points", "edit");
+  if (authCheck.error) return authCheck.error;
 
   let body: {
     company_id?:            string;

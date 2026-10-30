@@ -3,7 +3,7 @@
 // Returns: landscape A4 PDF for the site compliance report.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { requirePermission } from "@/lib/route-auth";
 import React from "react";
 import {
   renderToBuffer,
@@ -180,15 +180,9 @@ function CompliancePdf({ data, companyName, generatedDate }: { data: ComplianceD
   );
 }
 
-async function requireAuth(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return !!cookieStore.get("procore_access_token")?.value;
-}
-
 export async function POST(request: NextRequest) {
-  if (!await requireAuth()) {
-    return new NextResponse("Not authenticated", { status: 401 });
-  }
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
 
   let body: { data?: ComplianceData; companyName?: string };
   try {

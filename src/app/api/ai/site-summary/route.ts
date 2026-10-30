@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 
 const client = new Anthropic();
 const MODEL  = "claude-sonnet-4-6";
@@ -65,6 +66,9 @@ interface MissingItp {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "insights", "view");
+  if (auth.error) return auth.error;
+
   try {
     const body = await request.json() as {
       project_id:     string;

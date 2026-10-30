@@ -6,8 +6,8 @@
 //   most_active_user — user_name with the most events
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,10 +15,8 @@ const supabase = createClient(
 );
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("procore_access_token")?.value) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "audit", "view");
+  if (auth.error) return auth.error;
 
   const sp         = request.nextUrl.searchParams;
   const company_id = sp.get("company_id");

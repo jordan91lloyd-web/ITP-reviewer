@@ -3,13 +3,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getProjectLocations } from "@/lib/procore";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const token = await resolveAccessToken();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requirePermission(request, "inspection_creator", "view");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   const projectId = request.nextUrl.searchParams.get("project_id");
   const companyId = request.nextUrl.searchParams.get("company_id") ?? process.env.FLEEK_COMPANY_ID;

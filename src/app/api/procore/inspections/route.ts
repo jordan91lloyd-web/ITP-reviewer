@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getInspections } from "@/lib/procore";
 import { findLatestForInspection } from "@/lib/history";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export interface InspectionWithStatus {
   id: number;
@@ -27,11 +27,9 @@ export interface InspectionWithStatus {
 }
 
 export async function GET(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "itp_reviews", "view");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   const projectIdParam = request.nextUrl.searchParams.get("project_id");
   if (!projectIdParam || isNaN(Number(projectIdParam))) {

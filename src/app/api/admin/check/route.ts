@@ -2,26 +2,20 @@
 // Returns whether the currently authenticated user is a company admin.
 // Used by client components to conditionally show admin UI.
 
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getProcoreUser } from "@/lib/procore";
-import { isCompanyAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/route-auth";
+import { checkPermission } from "@/lib/permissions";
 
-export async function GET() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
+const COMPANY_ID = process.env.FLEEK_COMPANY_ID ?? "";
 
-  if (!accessToken) {
+export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request);
+  if (auth.error) {
     return NextResponse.json({ isAdmin: false }, { status: 401 });
   }
 
-  const companyId = process.env.FLEEK_COMPANY_ID ?? "";
+  // Check if user has admin-level access on the admin module
+  const isAdmin = await checkPermission(COMPANY_ID, auth.email, "admin", "admin");
 
-  try {
-    const user = await getProcoreUser(accessToken);
-    const admin = await isCompanyAdmin(user.login, companyId);
-    return NextResponse.json({ isAdmin: admin, email: user.login, company_id: companyId });
-  } catch {
-    return NextResponse.json({ isAdmin: false });
-  }
+  return NextResponse.json({ isAdmin, email: auth.email, company_id: COMPANY_ID });
 }

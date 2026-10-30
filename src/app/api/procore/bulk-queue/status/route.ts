@@ -3,8 +3,8 @@
 // Returns job status and per-item statuses.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,10 +12,8 @@ const supabase = createClient(
 );
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("procore_access_token")?.value) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "itp_reviews", "view");
+  if (auth.error) return auth.error;
 
   const jobId    = request.nextUrl.searchParams.get("job_id");
   const companyId = request.nextUrl.searchParams.get("company_id");

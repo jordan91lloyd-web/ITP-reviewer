@@ -6,9 +6,9 @@
 // Columns: Date, Time, User, Email, Action, Project, ITP / Entity, Details
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import type { AuditLogRow } from "@/lib/audit";
+import { requirePermission } from "@/lib/route-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -60,10 +60,8 @@ function detailsText(row: AuditLogRow): string {
 }
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("procore_access_token")?.value) {
-    return new NextResponse("Not authenticated.", { status: 401 });
-  }
+  const auth = await requirePermission(request, "audit", "view");
+  if (auth.error) return auth.error;
 
   const sp         = request.nextUrl.searchParams;
   const company_id = sp.get("company_id");

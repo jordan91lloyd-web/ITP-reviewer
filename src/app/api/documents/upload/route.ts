@@ -5,10 +5,9 @@
 // Logs the upload to the audit_log table.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { getProcoreUser } from "@/lib/procore";
-import { isCompanyAdmin } from "@/lib/admin";
+import { requirePermission } from "@/lib/route-auth";
 import { logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
 import { invalidateScoringCache, nextVersionNumber } from "@/lib/scoring";
 
@@ -22,12 +21,9 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("procore_access_token")?.value;
-
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "admin", "admin");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   const supabaseUrl        = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -40,17 +36,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Admin check
+  // Resolve user for audit logging
   let user: { login: string; name: string; id: number };
   try {
     user = await getProcoreUser(accessToken);
   } catch {
     return NextResponse.json({ error: "Failed to verify identity." }, { status: 401 });
-  }
-
-  const admin = await isCompanyAdmin(user.login, companyId);
-  if (!admin) {
-    return NextResponse.json({ error: "Access denied. Admin role required." }, { status: 403 });
   }
 
   // Parse form data

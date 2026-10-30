@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 import { resolveAccessToken } from "@/lib/resolve-token";
 
 const PROCORE_BASE =
@@ -103,6 +104,9 @@ async function createProcoreChangeEvent(
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "drawing_changes", "edit");
+  if (auth.error) return auth.error;
+
   let body: {
     company_id: string;
     project_id: string;
@@ -196,6 +200,9 @@ export async function POST(request: NextRequest) {
 // Lists all change events for a project.
 
 export async function GET(request: NextRequest) {
+  const authGet = await requirePermission(request, "drawing_changes", "view");
+  if (authGet.error) return authGet.error;
+
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");
 

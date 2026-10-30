@@ -7,13 +7,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { logAuditEvent, resolveAuditUser, AUDIT_ACTIONS } from "@/lib/audit";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export async function POST(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "report", "view");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   let body: {
     company_id:        string;

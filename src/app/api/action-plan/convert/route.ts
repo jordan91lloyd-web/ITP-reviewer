@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { runActionPlanConversion } from "@/lib/actionPlanClaude";
+import { requirePermission } from "@/lib/route-auth";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 
@@ -67,6 +68,9 @@ function xlsxToText(buffer: Buffer): string {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "action_plans", "edit");
+  if (auth.error) return auth.error;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");

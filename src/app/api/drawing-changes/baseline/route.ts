@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { requirePermission } from "@/lib/route-auth";
 import { resolveAccessToken } from "@/lib/resolve-token";
 import { createClient } from "@supabase/supabase-js";
 import mammoth from "mammoth";
@@ -139,6 +140,9 @@ function isSupportedFile(name: string): { supported: boolean; reason?: string } 
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "drawing_changes", "edit");
+  if (auth.error) return auth.error;
+
   const formData = await request.formData();
   const companyId = formData.get("company_id") as string;
   const projectId = formData.get("project_id") as string;
@@ -369,6 +373,9 @@ export async function POST(request: NextRequest) {
 // ── GET: List baseline documents for a project ───────────────────────────
 
 export async function GET(request: NextRequest) {
+  const authGet = await requirePermission(request, "drawing_changes", "view");
+  if (authGet.error) return authGet.error;
+
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");
 
@@ -420,6 +427,9 @@ export async function GET(request: NextRequest) {
 // ── PATCH: Clear failed/skipped docs so they can be re-added from the folder browser ──
 
 export async function PATCH(request: NextRequest) {
+  const authPatch = await requirePermission(request, "drawing_changes", "edit");
+  if (authPatch.error) return authPatch.error;
+
   const body = await request.json().catch(() => ({}));
   const { company_id: companyId, project_id: projectId } = body as { company_id?: string; project_id?: string };
 
@@ -464,6 +474,9 @@ export async function PATCH(request: NextRequest) {
 // ── DELETE: Remove a baseline document ────────────────────────────────────
 
 export async function DELETE(request: NextRequest) {
+  const authDel = await requirePermission(request, "drawing_changes", "edit");
+  if (authDel.error) return authDel.error;
+
   const docId = request.nextUrl.searchParams.get("document_id");
   if (!docId) {
     return NextResponse.json({ error: "document_id required" }, { status: 400 });

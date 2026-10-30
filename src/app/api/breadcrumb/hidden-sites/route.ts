@@ -3,8 +3,8 @@
 // DELETE { company_id, site_reference }            → show a site
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 
 function getSupabase() {
   return createClient(
@@ -13,15 +13,9 @@ function getSupabase() {
   );
 }
 
-async function requireAuth(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return !!cookieStore.get("procore_access_token")?.value;
-}
-
 export async function GET(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   if (!companyId) {
@@ -42,9 +36,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const authPost = await requirePermission(request, "company", "view");
+  if (authPost.error) return authPost.error;
 
   let body: { company_id?: string; site_reference?: string };
   try {
@@ -68,9 +61,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const authDel = await requirePermission(request, "company", "view");
+  if (authDel.error) return authDel.error;
 
   let body: { company_id?: string; site_reference?: string };
   try {

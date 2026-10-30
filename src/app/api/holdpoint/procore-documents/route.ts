@@ -7,7 +7,7 @@
 // filtered to direct children only.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { requirePermission } from "@/lib/route-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -46,14 +46,10 @@ function resolveDocSize(d: Record<string, unknown>): number | null {
   return null;
 }
 
-async function requireAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("procore_access_token")?.value ?? null;
-}
-
 export async function GET(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requirePermission(request, "hold_points", "view");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");

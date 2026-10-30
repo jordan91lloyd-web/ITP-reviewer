@@ -2,8 +2,8 @@
 // Returns weekly prestart, toolbox, induction, and doc compliance per site.
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { requirePermission } from "@/lib/route-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,10 +17,7 @@ function getSupabase() {
   );
 }
 
-async function requireAuth(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return !!cookieStore.get("procore_access_token")?.value;
-}
+// Auth handled by requirePermission in GET handler
 
 function sydneyTodayStr(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
@@ -118,9 +115,8 @@ function groupBySiteRef<T extends { siteReference?: string }>(items: T[]): Map<s
 }
 
 export async function GET(request: NextRequest) {
-  if (!await requireAuth()) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "company", "view");
+  if (auth.error) return auth.error;
   const companyId = request.nextUrl.searchParams.get("company_id");
   if (!companyId) {
     return NextResponse.json({ error: "company_id required" }, { status: 400 });

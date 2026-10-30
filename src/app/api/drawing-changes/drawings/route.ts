@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -50,10 +50,6 @@ function getPrefix(drawingNumber: string): string {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-async function requireAuth(): Promise<string | null> {
-  return resolveAccessToken();
 }
 
 async function fetchAllRevisions(
@@ -112,10 +108,9 @@ function revisionSortKey(rev: string): number {
 }
 
 export async function GET(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "drawing_changes", "view");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");

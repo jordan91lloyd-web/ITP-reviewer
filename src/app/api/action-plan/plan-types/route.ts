@@ -3,7 +3,7 @@
 // Returns { plan_types: [...] }.
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 const PROCORE_ENV = process.env.PROCORE_ENV ?? "sandbox";
 const PROCORE_BASE_URL =
@@ -13,10 +13,9 @@ const PROCORE_BASE_URL =
     : "https://sandbox.procore.com");
 
 export async function GET(request: NextRequest) {
-  const accessToken = await resolveAccessToken();
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated with Procore." }, { status: 401 });
-  }
+  const auth = await requirePermission(request, "action_plans", "view");
+  if (auth.error) return auth.error;
+  const accessToken = auth.token;
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   if (!companyId) {

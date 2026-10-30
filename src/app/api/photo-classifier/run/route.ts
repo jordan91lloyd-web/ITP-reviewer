@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { getValidToken } from "@/lib/token-store";
+import { requirePermission } from "@/lib/route-auth";
 import { getProjectLocations } from "@/lib/procore";
 import {
   CLASSIFIER_SYSTEM_PROMPT,
@@ -327,6 +328,9 @@ async function classifyBatch(
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "photo_classifier", "edit");
+  if (auth.error) return auth.error;
+
   let body: { company_id: string; project_id: string; album_id?: number; write_back?: boolean; since_date?: string };
   try {
     body = await request.json();

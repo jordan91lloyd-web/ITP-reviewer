@@ -3,7 +3,7 @@
 // Recommended = keyword match in drawing title only (no per-discipline fallback).
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccessToken } from "@/lib/resolve-token";
+import { requirePermission } from "@/lib/route-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -47,13 +47,10 @@ function getPrefix(drawingNumber: string): string {
   return m ? m[1].toUpperCase() : "OTHER";
 }
 
-async function requireAuth(): Promise<string | null> {
-  return resolveAccessToken();
-}
-
 export async function GET(request: NextRequest) {
-  const token = await requireAuth();
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const auth = await requirePermission(request, "hold_points", "view");
+  if (auth.error) return auth.error;
+  const token = auth.token;
 
   const companyId = request.nextUrl.searchParams.get("company_id");
   const projectId = request.nextUrl.searchParams.get("project_id");
