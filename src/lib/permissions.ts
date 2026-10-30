@@ -97,6 +97,7 @@ export const MODULES: ModuleDef[] = [
   { key: "inspection_creator", label: "Inspections",      description: "Inspection creation tool",                    tabKey: "inspection_creator" },
   { key: "drawing_changes",    label: "Drawing Changes",  description: "Drawing revision tracker",                    tabKey: "drawing_changes" },
   { key: "photo_classifier",   label: "Photo Classifier", description: "Photo classification and location tagging",   tabKey: "photo_classifier" },
+  { key: "resourcing",         label: "Resourcing",       description: "Staff resourcing across projects",             tabKey: "resourcing" },
   { key: "admin",              label: "Admin",            description: "User and document management",                tabKey: null },
   { key: "permissions",        label: "Permissions",      description: "Manage user permissions",                     tabKey: null },
   { key: "audit",              label: "Audit Log",        description: "System audit trail",                          tabKey: null },

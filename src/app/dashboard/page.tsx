@@ -19,6 +19,7 @@ import PhotoClassifierTab from "@/components/PhotoClassifierTab";
 import InspectionCreatorTab from "@/components/InspectionCreatorTab";
 import ProjectDigestTab from "@/components/ProjectDigestTab";
 import PermissionsTab from "@/components/PermissionsTab";
+import ResourcingTab from "@/components/ResourcingTab";
 import type { QueueJob } from "@/components/QueuePanel";
 import HoldpointLogo from "@/components/HoldpointLogo";
 import type { ReviewResult, CategoryScore } from "@/lib/types";
@@ -688,7 +689,7 @@ export default function DashboardPage() {
   const [reviewError, setReviewError]     = useState<string | null>(null);
 
   // Top-level tab
-  type DashboardView = "company" | "insights" | "itp_reviews" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator" | "digest" | "permissions";
+  type DashboardView = "company" | "insights" | "itp_reviews" | "queue" | "hold_points" | "report" | "action_plans" | "drawing_changes" | "photo_classifier" | "inspection_creator" | "digest" | "resourcing" | "permissions";
   const [dashboardView, setDashboardView] = useState<DashboardView>("itp_reviews");
   const [visitedTabs, setVisitedTabs] = useState<Set<DashboardView>>(new Set(["itp_reviews"]));
   const [insightsFetched, setInsightsFetched] = useState(false);
@@ -1620,6 +1621,7 @@ export default function DashboardPage() {
           ["inspection_creator", "Inspections",  null],
           ["drawing_changes", "Drawing Changes", null],
           ["photo_classifier", "Photo Classifier", null],
+          ["resourcing",      "Resourcing",      null],
           ["permissions",     "Permissions",     "shield"],
         ] as [DashboardView, string, string | null][])
         .filter(([view]) => {
@@ -1764,6 +1766,10 @@ export default function DashboardPage() {
 
       {selectedCompany && visitedTabs.has("photo_classifier") && <div style={{ display: dashboardView === "photo_classifier" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <PhotoClassifierTab company_id={String(selectedCompany.id)} projects={projects} />
+      </div>}
+
+      {visitedTabs.has("resourcing") && <div style={{ display: dashboardView === "resourcing" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+        <ResourcingTab companyId={selectedCompany?.id ?? null} />
       </div>}
 
       {visitedTabs.has("permissions") && <div style={{ display: dashboardView === "permissions" ? "flex" : "none", flexDirection: "column", flex: 1, overflow: "hidden" }}>
