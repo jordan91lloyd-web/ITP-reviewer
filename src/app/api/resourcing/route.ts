@@ -356,7 +356,11 @@ export async function POST(request: NextRequest) {
 
     await supabase.from("resourcing_snapshots").insert({
       company_id: COMPANY_ID,
-      snapshot: JSON.stringify({ projects: body.projects }),
+      snapshot: JSON.stringify({
+        projects: body.projects,
+        workload_overrides: body.workload_overrides ?? [],
+        project_order: body.project_order ?? [],
+      }),
       synced_at: body.synced_at ?? now,
       saved_at: now,
       saved_by: auth.email,
