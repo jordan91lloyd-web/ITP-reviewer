@@ -1612,15 +1612,19 @@ export default function DashboardPage() {
         {([
           ["company",         "Company",         null],
           ["insights",        "Insights",        "sparkles"],
-          ["digest",          "Digest",          "brain"],
           ["itp_reviews",     "ITP Reviews",     null],
           ["hold_points",     "Hold Points",     null],
           ["report",          "Report",          null],
           ["queue",           "Queue",           null],
           ["action_plans",   "Action Plans",    null],
           ["inspection_creator", "Inspections",  null],
-          ["drawing_changes", "Drawing Changes", null],
-          ["photo_classifier", "Photo Classifier", null],
+          // ── Hidden tabs (code retained, re-enable by uncommenting) ──
+          // Hidden 31 Oct 2026 — not actively used, keeping code for future use.
+          // Components: DrawingChangesTab, PhotoClassifierTab, ProjectDigestTab
+          // API routes: /api/drawing-changes/*, /api/photo-classifier/*, /api/digest
+          // ["drawing_changes", "Drawing Changes", null],
+          // ["photo_classifier", "Photo Classifier", null],
+          // ["digest",          "Digest",          "brain"],
           ["resourcing",      "Resourcing",      null],
           ["permissions",     "Permissions",     "shield"],
         ] as [DashboardView, string, string | null][])

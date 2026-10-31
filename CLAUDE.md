@@ -46,14 +46,23 @@ This app has two completely separate Claude-powered engines. They share nothing.
 |-----|-----------|---------|
 | **Company** | Inline in `dashboard/page.tsx` | Financial summary, subcontract progress, site-level stats |
 | **Insights** | `InsightsTab.tsx` | Per-project AI insight cards |
-| **Digest** | `ProjectDigestTab.tsx` | AI weekly project digest: risks, missing ITPs, contract intelligence, recommended actions |
 | **ITP Reviews** | Inline in `dashboard/page.tsx` | Project → ITP list with scores, status filters, bulk review, side panel |
 | **Hold Points** | `HoldPointTab.tsx` | Extract hold point register from Procore drawings/documents via Claude |
-| **Resourcing** | `ResourcingTab.tsx` | Programme-aligned subcontractor matrix |
 | **Report** | `ReportTab.tsx` | Cross-project ITP Status Report with PDF exports |
 | **Queue** | `QueuePanel.tsx` | Background bulk-review job monitor |
-| **Photo Classifier** | `PhotoClassifierTab.tsx` | AI photo classification |
 | **Action Plans** | `action-plans/page.tsx` | Report → Action Plan converter with Procore upload |
+| **Inspections** | `InspectionCreatorTab.tsx` | Inspection creation tool |
+| **Resourcing** | `ResourcingTab.tsx` | Staff resourcing matrix across projects with drag-and-drop |
+| **Permissions** | `PermissionsTab.tsx` | User permission management with templates and bulk assign |
+
+### Hidden tabs (code retained — not deleted, just commented out of tab bar)
+These tabs were hidden on 31 Oct 2026 as they're not actively used. All code, components, and API routes remain intact. To re-enable, uncomment the entries in `dashboard/page.tsx` at the `// Hidden tabs` comment block.
+
+| Tab | Component | API routes | Why hidden |
+|-----|-----------|------------|------------|
+| **Digest** | `ProjectDigestTab.tsx` | `/api/digest` | Project intelligence — useful but not used daily |
+| **Drawing Changes** | `DrawingChangesTab.tsx` | `/api/drawing-changes/*` | Drawing revision tracker |
+| **Photo Classifier** | `PhotoClassifierTab.tsx` | `/api/photo-classifier/*` | Photo classification and location tagging |
 
 ### Other features
 - **Procore OAuth** — login, callback, token refresh, logout, CSRF-protected state cookie
